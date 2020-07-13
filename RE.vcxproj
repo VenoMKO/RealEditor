@@ -25,6 +25,7 @@
     <ClCompile Include="App\RootPathWindow.cpp" />
     <ClCompile Include="App\RpcCom.cpp" />
     <ClCompile Include="Unreal\MiniLZO\minilzo.c" />
+    <ClCompile Include="Unreal\Tera\AConfiguration.cpp" />
     <ClCompile Include="Unreal\Tera\Core.cpp" />
     <ClCompile Include="Unreal\Tera\FName.cpp" />
     <ClCompile Include="Unreal\Tera\FObjectResource.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="Unreal\MiniLZO\lzoconf.h" />
     <ClInclude Include="Unreal\MiniLZO\lzodefs.h" />
     <ClInclude Include="Unreal\MiniLZO\minilzo.h" />
+    <ClInclude Include="Unreal\Tera\AConfiguration.h" />
     <ClInclude Include="Unreal\Tera\Core.h" />
     <ClInclude Include="Unreal\Tera\FFlags.h" />
     <ClInclude Include="Unreal\Tera\FName.h" />

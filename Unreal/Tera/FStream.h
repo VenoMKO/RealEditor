@@ -140,87 +140,22 @@ public:
     return *this;
   }
 
-  /*
-  template <typename TK, typename TV>
-  void SerializeMap(std::map<TK, TV>& map, std::function<std::pair<TK, TV>(FStream&)> read)
-  {
-    uint32 cnt = (uint32)map.size();
-    (*this) << cnt;
-    if (Reading)
-    {
-      map.clear();
-      for (uint32 idx = 0; idx < cnt; ++idx)
-      {
-        map.emplace(read(*this));
-      }
-    }
-    else
-    {
-      for (std::pair<const TK, TV>& pair : map)
-      {
-        TK first(pair.first);
-        (*this) << first;
-        (*this) << pair.second;
-      }
-    }
-  }
-  
-  // Non FObject array serialization
-  template <typename T>
-  void SerializeArray(std::vector<T>& arr)
-  {
-    uint32 cnt = (uint32)arr.size();
-    (*this) << cnt;
-    if (Reading)
-    {
-      arr.resize(0);
-      for (uint32 idx = 0; idx < cnt; ++idx)
-      {
-        (*this) << arr.emplace_back(T());
-      }
-    }
-    else
-    {
-      for (T& v : arr)
-      {
-        (*this) << v;
-      }
-    }
-  }
-
-  // FObject array serialization
-  template <typename T>
-  void SerializeFArray(std::vector<T>& arr)
-  {
-    uint32 cnt = (uint32)arr.size();
-    (*this) << cnt;
-    if (Reading)
-    {
-      arr.clear();
-      for (uint32 idx = 0; idx < cnt; ++idx)
-      {
-        (*this) << arr.emplace_back(Package);
-      }
-    }
-    else
-    {
-      for (T& v : arr)
-      {
-        (*this) << v;
-      }
-    }
-  }*/
-
   virtual void SerializeBytes(void* ptr, FILE_OFFSET size) = 0;
 
   virtual void SetPosition(FILE_OFFSET offset) = 0;
 
   virtual FILE_OFFSET GetPosition() = 0;
 
+  virtual FILE_OFFSET GetSize() = 0;
+
   inline bool IsReading() const
   {
     return Reading;
   }
+
+  virtual bool IsGood() const = 0;
+
+  virtual void Close() = 0;
 
   inline void SetPackage(FPackage* p)
   {
@@ -289,6 +224,29 @@ public:
     Stream.seekg(pos);
   }
 
+  FILE_OFFSET GetSize() override
+  {
+    FILE_OFFSET size = 0;
+    if (IsGood())
+    {
+      FILE_OFFSET tmpPos = GetPosition();
+      Stream.seekg(0, std::ios::end);
+      size = GetPosition();
+      SetPosition(tmpPos);
+    }
+    return size;
+  }
+
+  bool IsGood() const override
+  {
+    return Stream.good();
+  }
+
+  void Close() override
+  {
+    Stream.close();
+  }
+
 protected:
   std::string Path;
   std::ifstream Stream;
@@ -324,6 +282,29 @@ public:
   void SetPosition(FILE_OFFSET pos) override
   {
     Stream.seekp(pos);
+  }
+
+  FILE_OFFSET GetSize() override
+  {
+    FILE_OFFSET size = 0;
+    if (IsGood())
+    {
+      FILE_OFFSET tmpPos = GetPosition();
+      Stream.seekp(0, std::ios::end);
+      size = GetPosition();
+      SetPosition(tmpPos);
+    }
+    return size;
+  }
+
+  bool IsGood() const override
+  {
+    return Stream.good();
+  }
+
+  void Close() override
+  {
+    Stream.close();
   }
 
 protected:

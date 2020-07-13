@@ -6,6 +6,7 @@
 #include "RpcCom.h"
 #include "PackageWindow.h"
 
+#include <Tera/AConfiguration.h>
 
 
 #define WIN_POS_FULLSCREEN INT_MIN
@@ -35,6 +36,7 @@ private:
   wxString RequestS1GameFolder();
 
 private:
+  FConfig Config;
   wxPoint LastWindowPosition = wxDefaultPosition;
   wxSingleInstanceChecker* InstanceChecker = NULL;
   RpcServer* Server = NULL;

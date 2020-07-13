@@ -3,10 +3,22 @@
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
+#include <wx/stdpaths.h>
 
 #include <Tera/FPackage.h>
 
 wxIMPLEMENT_APP(App);
+
+wxString GetConfigPath()
+{
+  wxString path = wxStandardPaths::Get().GetUserLocalDataDir() + wxFILE_SEP_PATH;
+  if (!wxDirExists(path))
+  {
+    wxMkDir(path);
+  }
+  path += wxS("RE.cfg");
+  return path;
+}
 
 void CreateFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager* man)
 {
@@ -144,7 +156,25 @@ bool App::OnInit()
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
   SetConsoleOutputCP(CP_UTF8);
-  FPackage::SetRootPath("D:\\Program Files (x86)\\Destiny\\TERA\\S1Game\\CookedPC");
+  AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
+  if (cfg.Load())
+  {
+    Config = cfg.GetConfig();
+  }
+  else
+  {
+    Config = cfg.GetDefaultConfig();
+    RootPathWindow rtw;
+    rtw.ShowModal();
+    Config.RootDir = W2A(rtw.GetRootPath().ToStdWstring());
+    if (Config.RootDir.empty())
+    {
+      return false;
+    }
+    cfg.SetConfig(Config);
+    cfg.Save();
+  }
+  FPackage::SetRootPath(Config.RootDir);
   LastWindowPosition = wxPoint(WIN_POS_CENTER, 0);
   InstanceChecker = new wxSingleInstanceChecker;
   return wxApp::OnInit();
@@ -191,7 +221,7 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
 bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 {
   int paramsCount = parser.GetParamCount();
-  if (InstanceChecker->IsAnotherRunning())
+  if (InstanceChecker && InstanceChecker->IsAnotherRunning())
   {
     RpcClient::SendRequest("open", paramsCount ? parser.GetParam(paramsCount - 1) : wxEmptyString);
     return false;

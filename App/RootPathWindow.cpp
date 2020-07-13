@@ -4,7 +4,7 @@
 namespace 
 {
   const wxString FrameTitle = "Aruns Hand";
-  const wxString PanelTitle = "Provide the S1Game folder path";
+  const wxString PanelTitle = "Provide the CookedPC folder path";
   const wxString PanelDescription = "This path will be used to load dependencies. You may need to run Aruns Hand as an Administrator if Tera is in a priveleged folder (e.g. Program Files).";
   const wxString SelectTitle = "Select...";
   const wxString ContinueTitle = "Continue";
@@ -16,14 +16,14 @@ namespace
 
   bool IsS1Folder(const wxString& path)
   {
-    return path.EndsWith(wxFILE_SEP_PATH + wxString("S1Game")) || path.EndsWith(wxFILE_SEP_PATH + wxString("S1Game") + wxFILE_SEP_PATH);
+    return path.EndsWith(wxFILE_SEP_PATH + wxString("CookedPC")) || path.EndsWith(wxFILE_SEP_PATH + wxString("CookedPC") + wxFILE_SEP_PATH);
   }
 }
 
 RootPathWindow::RootPathWindow()
   : wxDialog(nullptr, wxID_ANY, FrameTitle, wxPoint(20, 20), wxSize(535, 211), wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
-  S1GamePath = wxEmptyString;
+  S1CookedPC = wxEmptyString;
   wxPoint pos(20, 20);
   wxPanel* content = new wxPanel(this, wxID_ANY);
   wxStaticText* title = new wxStaticText(content, wxID_ANY, PanelTitle, pos);
@@ -49,7 +49,7 @@ RootPathWindow::RootPathWindow()
 
 wxString RootPathWindow::GetRootPath() const
 {
-  return S1GamePath;
+  return S1CookedPC;
 }
 
 void RootPathWindow::OnPathChanged(wxCommandEvent& e)
@@ -85,10 +85,10 @@ void RootPathWindow::OnContinueClicked(wxCommandEvent& e)
   wxDir s1Dir(PathTextfield->GetValue());
   if (!s1Dir.IsOpened())
   {
-    wxMessageBox(wxT("Make sure you entered a correct path and have enough privileges to access it."), wxT("Error: Failed to open S1Game folder!"), wxICON_ERROR);
+    wxMessageBox(wxT("Make sure you entered a correct path and have enough privileges to access it."), wxT("Error: Failed to open CookedPC folder!"), wxICON_ERROR);
     return;
   }
-  S1GamePath = PathTextfield->GetValue();
+  S1CookedPC = PathTextfield->GetValue();
   s1Dir.Close();
   Close();
 }

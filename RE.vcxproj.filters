@@ -59,6 +59,9 @@
     <ClCompile Include="Unreal\Tera\UProperty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unreal\Tera\AConfiguration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -92,5 +95,6 @@
     <ClInclude Include="Unreal\Tera\UClass.h" />
     <ClInclude Include="Unreal\Tera\UObject.h" />
     <ClInclude Include="Unreal\Tera\UProperty.h" />
+    <ClInclude Include="Unreal\Tera\AConfiguration.h" />
   </ItemGroup>
 </Project>

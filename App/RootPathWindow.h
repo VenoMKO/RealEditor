@@ -17,6 +17,6 @@ private:
   wxTextCtrl* PathTextfield = nullptr;
   wxButton* SelectButton = nullptr;
   wxButton* ContinueButton = nullptr;
-  wxString S1GamePath;
+  wxString S1CookedPC;
 };
 
