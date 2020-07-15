@@ -9,6 +9,9 @@
 
 #include <map>
 
+wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
+wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
+
 class App;
 class FPackage;
 typedef signed int PACKAGE_INDEX;
@@ -36,6 +39,9 @@ private:
 	void OnCloseWindow(wxCloseEvent& e);
 	void OnMoveEnd(wxMoveEvent& e);
 	void OnMaximized(wxMaximizeEvent& e);
+
+	void OnPackageReady(wxCommandEvent&);
+	void OnPackageError(wxCommandEvent& e);
 
 	void SidebarSplitterOnIdle(wxIdleEvent&);
 	void OnObjectTreeStartEdit(wxDataViewEvent& e);
@@ -73,6 +79,7 @@ private:
 	wxPanel* PropertiesPanel = nullptr;
 	wxPanel* ObjectInfoPanel = nullptr;
 	wxImageList* ImageList = nullptr;
+	wxStatusBar* StatusBar = nullptr;
 
 	std::map<PACKAGE_INDEX, GenericEditor*> Editors;
 

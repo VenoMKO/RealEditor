@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\ProgressWindow.cpp" />
     <ClCompile Include="Unreal\Tera\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
     <ClCompile Include="App\GenericEditor.cpp" />
@@ -40,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\ProgressWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\GenericEditor.h" />
     <ClInclude Include="App\LogWindow.h" />
@@ -128,6 +130,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
+    <TargetName>Real Editor</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

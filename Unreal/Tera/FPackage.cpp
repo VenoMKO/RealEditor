@@ -425,6 +425,11 @@ void FPackage::Initialize()
 
 void FPackage::Preheat()
 {
+  if (Ready)
+  {
+    return;
+  }
+  LogI("Loading imports...");
   for (FObjectImport* imp : RootImports)
   {
     if (imp->GetClassName() == "Package")
@@ -442,7 +447,7 @@ void FPackage::Preheat()
       imp->GetObject();
     }
   }
-  
+  Ready = true;
 }
 
 std::string FPackage::GetPackageName(bool extension) const

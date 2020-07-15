@@ -116,12 +116,18 @@ public:
 		return Summary.SourcePath;
 	}
 
+	bool IsReady()
+	{
+		return Ready;
+	}
+
 	// Get package name
 	std::string GetPackageName(bool extension = false) const;
 
 private:
 	FPackageSummary Summary;
 	FStream* Stream = nullptr;
+	bool Ready = false;
 
 	std::vector<FNameEntry> Names;
 	std::vector<FObjectExport*> Exports;

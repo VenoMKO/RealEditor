@@ -315,6 +315,8 @@ void PackageWindow::InitLayout()
 	SetDoubleBuffered(true);
 	Centre(wxBOTH);
 	Layout();
+
+	StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
 }
 
 void PackageWindow::SetPropertiesHidden(bool hidden)

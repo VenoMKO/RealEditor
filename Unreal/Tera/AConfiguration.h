@@ -14,7 +14,7 @@ struct FLogConfig
   };
 
   // CFG_ShowLog: Show logger on startup
-  bool ShowLog = true;
+  bool ShowLog = false;
   // CFG_LogPos: Last window position
   FVector2D LogPosition = { -1, -1 };
   // CFG_LogSize: Last window size

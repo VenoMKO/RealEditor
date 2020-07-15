@@ -32,6 +32,9 @@ enum ControlElementId {
 	Forward
 };
 
+wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
+wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
+
 #include "PackageWindowLayout.h"
 
 void LoadImportToTree(wxDataViewTreeCtrl* tree, const wxDataViewItem& parent, FObjectImport* imp)
@@ -101,6 +104,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 
 	SetPropertiesHidden(true);
 	SetContentHidden(true);
+	ObjectTreeCtrl->Enable(false);
 
 	wxPoint pos = Application->GetLastWindowPosition();
 	if (pos.x == WIN_POS_FULLSCREEN)
@@ -318,6 +322,18 @@ void PackageWindow::OnMaximized(wxMaximizeEvent& e)
 	e.Skip();
 }
 
+void PackageWindow::OnPackageReady(wxCommandEvent&)
+{
+	ObjectTreeCtrl->Enable();
+}
+
+void PackageWindow::OnPackageError(wxCommandEvent& e)
+{
+	wxMessageBox("Failed to load the package!", e.GetString(), wxICON_ERROR);
+	FPackage::UnloadPackage(Package.get());
+	Close();
+}
+
 void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 {
 	wxDataViewItem item = e.GetItem();
@@ -345,4 +361,6 @@ EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, OnObjectTreeSelectItem)
 EVT_MOVE_END(OnMoveEnd)
 EVT_MAXIMIZE(OnMaximized)
 EVT_CLOSE(OnCloseWindow)
+EVT_COMMAND(wxID_ANY, PACKAGE_READY, OnPackageReady)
+EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, OnPackageError)
 wxEND_EVENT_TABLE()
