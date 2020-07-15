@@ -8,12 +8,10 @@
 
 #include <Tera/AConfiguration.h>
 
-
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1
 
-class App 
-  : public wxApp
+class App : public wxApp
 {
 public:
   ~App();
@@ -26,6 +24,11 @@ public:
   void SetLastWindowPosition(const wxPoint& pos);
   wxPoint GetLastWindowPosition() const;
 
+  FAppConfig& GetConfig()
+  {
+    return Config;
+  }
+
 private:
   bool OnInit();
   int OnRun();
@@ -36,10 +39,10 @@ private:
   wxString RequestS1GameFolder();
 
 private:
-  FConfig Config;
+  FAppConfig Config;
   wxPoint LastWindowPosition = wxDefaultPosition;
-  wxSingleInstanceChecker* InstanceChecker = NULL;
-  RpcServer* Server = NULL;
+  wxSingleInstanceChecker* InstanceChecker = nullptr;
+  RpcServer* Server = nullptr;
   bool IsReady = false;
   std::vector<PackageWindow*> PackageWindows;
 };

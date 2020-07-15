@@ -60,3 +60,8 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.AdditionalPackagesToCook;
   return s;
 }
+
+FStream& operator<<(FStream& s, FVector2D& v)
+{
+  return s << v.X << v.Y;
+}

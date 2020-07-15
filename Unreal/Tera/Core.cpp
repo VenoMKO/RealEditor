@@ -37,6 +37,8 @@
 
 #include "../MiniLZO/minilzo.h"
 
+#include "ALog.h"
+
 #define HEAP_ALLOC(var,size) lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
 static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 #define COMPRESSED_BLOCK_SIZE 0x20000
@@ -112,7 +114,7 @@ void DThrow(const std::string& msg)
   }
   catch (std::runtime_error& e)
   {
-    DLog(e.what());
+    LogE(e.what());
   }
 #endif
 }
@@ -152,31 +154,6 @@ std::string Sprintf(const std::string fmt, ...)
     }
   }
   return std::string(formatted.get());
-}
-
-void __Log(const std::string fmt, ...)
-{
-  std::string format = fmt + "\r\n";
-  int final_n, n = ((int)fmt.size()) * 2;
-  std::unique_ptr<char[]> formatted;
-  va_list ap;
-  while (1)
-  {
-    formatted.reset(new char[n]);
-    strcpy(&formatted[0], fmt.c_str());
-    va_start(ap, fmt);
-    final_n = vsnprintf(&formatted[0], n, fmt.c_str(), ap);
-    va_end(ap);
-    if (final_n < 0 || final_n >= n)
-    {
-      n += abs(final_n - n + 1);
-    }
-    else
-    {
-      break;
-    }
-  }
-  std::cout << formatted.get() << std::endl;
 }
 
 void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize)

@@ -5,7 +5,10 @@
 #include <wx/cmdline.h>
 #include <wx/stdpaths.h>
 
+#include <Tera/ALog.h>
 #include <Tera/FPackage.h>
+
+const char* APP_NAME = "Real Editor";
 
 wxIMPLEMENT_APP(App);
 
@@ -108,15 +111,18 @@ bool App::OpenPackage(const wxString& path)
   try
   {
     package = FPackage::LoadPackage(W2A(path.ToStdWstring()));
+    package->Preheat();
   }
   catch (const std::exception& e)
   {
+    LogE("Failed to open the package: %s", e.what());
     wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
     return false;
   }
 
   if (package == nullptr)
   {
+    LogE("Failed to open the package: Unknow error");
     wxMessageBox("Unknown error!", "Failed to open the package!", wxICON_ERROR);
     return false;
   }
@@ -148,6 +154,10 @@ void App::PackageWindowWillClose(const PackageWindow* frame)
       break;
     }
   }
+  if (PackageWindows.empty())
+  {
+    ALog::Show(false);
+  }
 }
 
 bool App::OnInit()
@@ -155,13 +165,18 @@ bool App::OnInit()
 #ifdef _DEBUG
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
-  SetConsoleOutputCP(CP_UTF8);
+  
+  // If renames the executable our AppData storage path will change too. We don't want that.
+  // So we set AppName manually. This will keep paths consistent.
+  SetAppName(APP_NAME);
+  SetAppDisplayName(APP_NAME);
+
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   if (cfg.Load())
   {
     Config = cfg.GetConfig();
   }
-  else
+  if (Config.RootDir.empty())
   {
     Config = cfg.GetDefaultConfig();
     RootPathWindow rtw;
@@ -177,6 +192,8 @@ bool App::OnInit()
   FPackage::SetRootPath(Config.RootDir);
   LastWindowPosition = wxPoint(WIN_POS_CENTER, 0);
   InstanceChecker = new wxSingleInstanceChecker;
+  ALog::SharedLog();
+  ALog::SetConfig(Config.LogConfig);
   return wxApp::OnInit();
 }
 
@@ -188,6 +205,10 @@ int App::OnRun()
     Server = new RpcServer;
     Server->RunWithDelegate(this);
     RegisterMimeTypes(argv[0]);
+    if (Config.LogConfig.ShowLog)
+    {
+      ALog::SharedLog()->Show();
+    }
     return wxApp::OnRun();
   }
   return 0;
@@ -205,6 +226,11 @@ wxString App::RequestS1GameFolder()
 int App::OnExit()
 {
   FPackage::UnloadDefaultClassPackages();
+  ALog::GetConfig(Config.LogConfig);
+  AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
+  cfg.SetConfig(Config);
+  cfg.Save();
+  ALog::SharedLog()->OnAppExit();
   return wxApp::OnExit();
 }
 

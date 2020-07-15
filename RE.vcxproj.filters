@@ -62,6 +62,12 @@
     <ClCompile Include="Unreal\Tera\AConfiguration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\LogWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Unreal\Tera\ALog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -96,5 +102,7 @@
     <ClInclude Include="Unreal\Tera\UObject.h" />
     <ClInclude Include="Unreal\Tera\UProperty.h" />
     <ClInclude Include="Unreal\Tera\AConfiguration.h" />
+    <ClInclude Include="App\LogWindow.h" />
+    <ClInclude Include="Unreal\Tera\ALog.h" />
   </ItemGroup>
 </Project>

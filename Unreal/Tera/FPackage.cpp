@@ -1,8 +1,9 @@
 #include "FPackage.h"
+#include "ALog.h"
 #include "FStream.h"
 #include "FObjectResource.h"
 #include "UObject.h"
-#include "UClass.h"
+#include "UClass.h" 
 
 #include <iostream>
 #include <algorithm>
@@ -21,7 +22,7 @@ namespace
 
   void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
   {
-    DLog("Building package list: \"%s\"", path.c_str());
+    LogI("Building package list: \"%s\"", path.c_str());
     std::filesystem::path fspath(A2W(path));
     dirCache.resize(0);
     std::vector<std::filesystem::path> tmpPaths;
@@ -54,7 +55,7 @@ namespace
       s << wpath << std::endl;
     }
     s.close();
-    DLog("Found %ld items", dirCache.size());
+    LogI("Done. Found %ld items", dirCache.size());
   }
 }
 
@@ -132,8 +133,12 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
     LoadedPackages.push_back(found);
     return found;
   }
-  DLog("Loading package: %s", path.c_str());
+  LogI("Loading package: %s", path.c_str());
   FStream *stream = new FReadStream(path);
+  if (!stream->IsGood())
+  {
+    UThrow("Couldn't open the file!");
+  }
   FPackageSummary sum;
   sum.SourcePath = path;
   sum.DataPath = path;
@@ -170,12 +175,30 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
     std::swap(sum.CompressedChunks, tmpChunks);
 
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
-    concurrency::parallel_for(size_t(0), sum.CompressedChunks.size(), [sum, stream, compressedChunksData, decompressedData, startOffset](size_t idx) {
-      const FCompressedChunk& chunk = sum.CompressedChunks[idx];
-      uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
-      LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+    try
+    {
+      concurrency::parallel_for(size_t(0), sum.CompressedChunks.size(), [sum, stream, compressedChunksData, decompressedData, startOffset](size_t idx) {
+        const FCompressedChunk& chunk = sum.CompressedChunks[idx];
+        uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
+        LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+      });
+    }
+    catch (const std::exception& e)
+    {
+      for (size_t idx = 0; idx < sum.CompressedChunks.size(); ++idx)
+      {
+        free(compressedChunksData[idx]);
+      }
+      delete[] compressedChunksData;
+      free(decompressedData);
+      delete tempStream;
+      delete stream;
+      throw e;
+    }
+    for (size_t idx = 0; idx < sum.CompressedChunks.size(); ++idx)
+    {
       free(compressedChunksData[idx]);
-    });
+    }
     delete[] compressedChunksData;
     tempStream->SerializeBytes(decompressedData, totalDecompressedSize);
     free(decompressedData);
@@ -184,12 +207,35 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
 
     // Read decompressed header
     stream = new FReadStream(sum.DataPath);
-    (*stream) << sum;
+    try
+    {
+      (*stream) << sum;
+    }
+    catch (const std::exception& e)
+    {
+      delete stream;
+      throw e;
+    }
   }
   
   delete stream;
   std::shared_ptr<FPackage> package = LoadedPackages.emplace_back(new FPackage(sum));
-  package->Initialize();
+  try
+  {
+    package->Initialize();
+  }
+  catch (const std::exception& e)
+  {
+    for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
+    {
+      if (LoadedPackages[idx].get() == package.get())
+      {
+        LoadedPackages.erase(LoadedPackages.begin() + idx);
+        break;
+      }
+    }
+    throw e;
+  }
   return package;
 }
 
@@ -375,14 +421,25 @@ void FPackage::Initialize()
     }
     ObjectNameToExportMap[objName].push_back(exp);
   }
-  if (!(Summary.PackageFlags & PKG_ContainsScript))
+}
+
+void FPackage::Preheat()
+{
+  for (FObjectImport* imp : RootImports)
   {
-    for (uint32 idx = 0; idx < Summary.ExportsCount; ++idx)
+    if (imp->GetClassName() == "Package")
     {
-      FObjectExport* exp = Exports[idx];
-      //std::cout << "Loading: " << exp->GetObjectName() << "(" << exp->GetClassName() << ")" << std::endl;
-      UObject* obj = GetObject(exp);
-      obj->Load();
+      if (std::shared_ptr<FPackage> p = LoadPackageNamed(imp->GetObjectName()))
+      {
+        ExternalPackages.push_back(p);
+      }
+    }
+  }
+  for (FObjectImport* imp : Imports)
+  {
+    if (imp->GetObjectName() != "Package" && imp->GetClassName() != "Package")
+    {
+      imp->GetObject();
     }
   }
   
@@ -462,7 +519,7 @@ UObject* FPackage::GetObject(FObjectImport* imp)
       }
       UnloadPackage(package.get());
     }
-    DLog("Couldn't find import %s(%s)", imp->GetObjectName().c_str(), imp->GetClassName().c_str());
+    LogW("Couldn't find import %s(%s)", imp->GetObjectName().c_str(), imp->GetClassName().c_str());
     imp->DontLookUp = true;
     return nullptr;
   }

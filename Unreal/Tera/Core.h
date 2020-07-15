@@ -101,12 +101,6 @@ namespace LZO
   void Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize);
 }
 
-// Private log
-void __Log(const std::string fmt, ...);
-
-// DLog - debug logging
-#ifdef _DEBUG
-#define DLog(...) __Log(__VA_ARGS__)
-#else
-#define DLog(...) {}
-#endif
+#define LogI(...) ALog::ILog(Sprintf(__VA_ARGS__))
+#define LogW(...) ALog::WLog(Sprintf(__VA_ARGS__))
+#define LogE(...) ALog::ELog(Sprintf(__VA_ARGS__))

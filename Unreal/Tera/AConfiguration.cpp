@@ -1,10 +1,9 @@
 #include "AConfiguration.h"
 #include "FStream.h"
 
-enum ConfigKeys : uint16 {
-  CFG_RootDir = 1,
-  CFG_End = 0xFFFF
-};
+#define SerializeKey(key) { uint16 k = key; s << k; } //
+#define SerializeKeyValue(key, value) { uint16 k = key; s << k << value; } //
+#define CheckKey(key) { if (!s.IsGood()) { return s; } uint16 k = key; s << k; if (k != key) { s.Close(); return s; }} //
 
 AConfiguration::AConfiguration(const std::string& path)
   : Path(path)
@@ -42,22 +41,61 @@ bool AConfiguration::Save()
   return true;
 }
 
-FConfig AConfiguration::GetDefaultConfig() const
+FAppConfig AConfiguration::GetDefaultConfig() const
 {
-  return FConfig();
+  return FAppConfig();
 }
 
-FConfig AConfiguration::GetConfig() const
+FAppConfig AConfiguration::GetConfig() const
 {
   return Config;
 }
 
-void AConfiguration::SetConfig(const FConfig& cfg)
+void AConfiguration::SetConfig(const FAppConfig& cfg)
 {
   Config = cfg;
 }
 
-FStream& operator<<(FStream& s, FConfig& c)
+FStream& operator<<(FStream& s, FLogConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FLogConfig::CFG_ShowLog:
+        s << c.ShowLog;
+        break;
+      case FLogConfig::CFG_LogPos:
+        s << c.LogPosition;
+        break;
+      case FLogConfig::CFG_LogSize:
+        s << c.LogSize;
+        break;
+      case FLogConfig::CFG_End:
+        return s;
+      default:
+        s.Close();
+        return s;
+      }
+    }
+  }
+  else
+  {
+    SerializeKeyValue(FLogConfig::CFG_ShowLog, c.ShowLog);
+    SerializeKeyValue(FLogConfig::CFG_LogPos, c.LogPosition);
+    SerializeKeyValue(FLogConfig::CFG_LogSize, c.LogSize);
+
+    // End
+    SerializeKey(FLogConfig::CFG_End);
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FAppConfig& c)
 {
   s << c.Magic;
   if (c.Magic != PACKAGE_MAGIC)
@@ -68,16 +106,20 @@ FStream& operator<<(FStream& s, FConfig& c)
   s << c.Size;
   if (s.IsReading())
   {
-    while (s.GetPosition() < c.Size)
+    uint16 key = 0;
+    while (s.GetPosition() < (FILE_OFFSET)c.Size)
     {
-      uint16 key = 0;
       s << key;
       switch (key)
       {
-      case CFG_RootDir:
+      case FAppConfig::CFG_RootDir:
         s << c.RootDir;
         break;
-      case CFG_End:
+      case FAppConfig::CFG_LogBegin:
+        s << c.LogConfig;
+        CheckKey(FAppConfig::CFG_LogEnd);
+        break;
+      case FAppConfig::CFG_End:
         return s;
       default:
         s.Close();
@@ -87,13 +129,18 @@ FStream& operator<<(FStream& s, FConfig& c)
   }
   else
   {
-#define SK(key) { uint16 k = key; s << k; } //
-#define SKV(key, value) { uint16 k = key; s << k << value; } //
+    // Writing
+    // General
+    SerializeKeyValue(FAppConfig::CFG_RootDir, c.RootDir);
 
-    SKV(CFG_RootDir, c.RootDir);
+    // Log settings
+    SerializeKey(FAppConfig::CFG_LogBegin);
+    s << c.LogConfig;
+    SerializeKey(FAppConfig::CFG_LogEnd);
 
     // End
-    SK(CFG_End);
+    SerializeKey(FAppConfig::CFG_End);
+
     // Fixup storage size
     c.Size = s.GetSize();
     s.SetPosition(6);

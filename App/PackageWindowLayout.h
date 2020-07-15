@@ -40,6 +40,13 @@ void PackageWindow::InitLayout()
 
 	menuBar->Append(fileMenu, wxT("File"));
 
+	wxMenu* m_menu2;
+	m_menu2 = new wxMenu();
+	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Log Window")), wxEmptyString, wxITEM_NORMAL);
+	m_menu2->Append(LogWindowMenu);
+
+	menuBar->Append(m_menu2, wxT("View"));
+
 	this->SetMenuBar(menuBar);
 
 	wxBoxSizer* topSizer;

@@ -5,11 +5,13 @@
 #include <wx/toolbar.h>
 #include <wx/propgrid/manager.h>
 
-#include <Tera/Core.h>
-
 #include "GenericEditor.h"
 
+#include <map>
+
 class App;
+class FPackage;
+typedef signed int PACKAGE_INDEX;
 class PackageWindow : public wxFrame {
 public:
   PackageWindow(std::shared_ptr<FPackage>& package, App* application);
@@ -30,6 +32,7 @@ private:
 	void OnSaveAsClicked(wxCommandEvent&);
 	void OnCloseClicked(wxCommandEvent&);
 	void OnExitClicked(wxCommandEvent&);
+	void OnToggleLogClicked(wxCommandEvent&);
 	void OnCloseWindow(wxCloseEvent& e);
 	void OnMoveEnd(wxMoveEvent& e);
 	void OnMaximized(wxMaximizeEvent& e);
@@ -51,6 +54,7 @@ private:
   App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
 	wxDataViewTreeCtrl* ObjectTreeCtrl = nullptr;
+	wxMenuItem* LogWindowMenu = nullptr;
 	wxTextCtrl* ObjectFlagsTextfield = nullptr;
 	wxStaticText* ObjectOffsetLabel = nullptr;
 	wxStaticText* ObjectSizeLabel = nullptr;

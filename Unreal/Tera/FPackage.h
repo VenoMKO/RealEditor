@@ -32,6 +32,9 @@ public:
 	// Create a read stream using DataPath and serialize tables
 	void Initialize();
 
+	// Load imports
+	void Preheat();
+
 	// Get an object at index
 	UObject* GetObject(PACKAGE_INDEX index);
 

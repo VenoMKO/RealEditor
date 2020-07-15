@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Unreal\Tera\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
     <ClCompile Include="App\GenericEditor.cpp" />
+    <ClCompile Include="App\LogWindow.cpp" />
     <ClCompile Include="App\PackageWindow.cpp" />
     <ClCompile Include="App\RootPathWindow.cpp" />
     <ClCompile Include="App\RpcCom.cpp" />
@@ -38,7 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\GenericEditor.h" />
+    <ClInclude Include="App\LogWindow.h" />
     <ClInclude Include="App\PackageWindow.h" />
     <ClInclude Include="App\PackageWindowLayout.h" />
     <ClInclude Include="App\RootPathWindow.h" />

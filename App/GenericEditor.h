@@ -1,5 +1,5 @@
 #pragma once
-
+class UObject;
 class GenericEditor : public wxPanel
 {
 public:

@@ -77,6 +77,7 @@ public:
   {
     int32 intv = v ? 1 : 0;
     SerializeBytes(&intv, 4);
+    v = (bool)intv;
     return *this;
   }
 

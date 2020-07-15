@@ -6,6 +6,7 @@
 #include <wx/collpane.h>
 #include <wx/artprov.h>
 
+#include <Tera/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
@@ -26,6 +27,7 @@ enum ControlElementId {
 	SaveAs,
 	Close,
 	Exit,
+	LogWin,
 	Back,
 	Forward
 };
@@ -85,7 +87,7 @@ void LoadExportToTree(wxDataViewTreeCtrl* tree, const wxDataViewItem& parent, FO
 }
 
 PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* application)
-  : wxFrame(nullptr, wxID_ANY, L"Aruns Hand - " + A2W(package->GetSourcePath()))
+  : wxFrame(nullptr, wxID_ANY, application->GetAppDisplayName() + L" - " + A2W(package->GetSourcePath()))
   , Application(application)
   , Package(package)
 {
@@ -290,6 +292,13 @@ void PackageWindow::OnExitClicked(wxCommandEvent&)
 	Application->ExitMainLoop();
 }
 
+void PackageWindow::OnToggleLogClicked(wxCommandEvent&)
+{
+	bool isShown = ALog::IsShown();
+	ALog::Show(!isShown);
+	Application->GetConfig().LogConfig.ShowLog = !isShown;
+}
+
 void PackageWindow::OnMoveEnd(wxMoveEvent& e)
 {
 	if (IsMaximized())
@@ -330,6 +339,7 @@ EVT_MENU(ControlElementId::Save, OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, OnExitClicked)
+EVT_MENU(ControlElementId::LogWin, OnToggleLogClicked)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, OnObjectTreeSelectItem)
 EVT_MOVE_END(OnMoveEnd)

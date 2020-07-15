@@ -117,3 +117,23 @@ struct FPackageSummary {
 
 	friend FStream& operator<<(FStream& s, FPackageSummary& sum);
 };
+
+struct FVector2D {
+	FVector2D()
+	{}
+
+	FVector2D(float a)
+		: X(a)
+		, Y(a)
+	{}
+
+	FVector2D(float x, float y)
+		: X(x)
+		, Y(y)
+	{}
+
+	float X = 0;
+	float Y = 0;
+
+	friend FStream& operator<<(FStream& s, FVector2D& v);
+};
