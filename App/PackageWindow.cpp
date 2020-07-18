@@ -4,7 +4,6 @@
 #include <wx/sizer.h>
 #include <wx/statline.h>
 #include <wx/collpane.h>
-#include <wx/artprov.h>
 
 #include <Tera/ALog.h>
 #include <Tera/FPackage.h>
@@ -13,12 +12,6 @@
 
 #define FAKE_IMPORT_ROOT MININT
 #define FAKE_EXPORT_ROOT MAXINT
-
-#define PACKAGE_ICON 0
-#define PACKAGE_O_ICON 1
-#define FILE_ICON 2
-#define FILE_O_ICON FILE_ICON
-
 
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
@@ -37,58 +30,6 @@ wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 
 #include "PackageWindowLayout.h"
 
-void LoadImportToTree(wxDataViewTreeCtrl* tree, const wxDataViewItem& parent, FObjectImport* imp)
-{
-	wxDataViewItem item;
-	int icon = FILE_ICON;
-	int icon_o = FILE_O_ICON;
-	wxStringClientData* data = new wxStringClientData(std::to_string(imp->ObjectIndex));
-
-	if (imp->GetClassName() == "Package")
-	{
-		icon = PACKAGE_ICON;
-		icon_o = PACKAGE_O_ICON;
-	}
-	if (imp->Inner.size())
-	{
-		item = tree->AppendContainer(parent, imp->GetObjectName(), icon, icon_o, data);
-		for (FObjectImport* inner : imp->Inner)
-		{
-			LoadImportToTree(tree, item, inner);
-		}
-	}
-	else
-	{
-		item = tree->AppendItem(parent, imp->GetObjectName(), icon, data);
-	}
-}
-
-void LoadExportToTree(wxDataViewTreeCtrl* tree, const wxDataViewItem& parent, FObjectExport* exp)
-{
-	wxDataViewItem item;
-	int icon = FILE_ICON;
-	int icon_o = FILE_O_ICON;
-	wxStringClientData* data = new wxStringClientData(std::to_string(exp->ObjectIndex));
-
-	if (exp->GetClassName() == "Package")
-	{
-		icon = PACKAGE_ICON;
-		icon_o = PACKAGE_O_ICON;
-	}
-	if (exp->Inner.size())
-	{
-		item = tree->AppendContainer(parent, exp->GetObjectName(), icon, icon_o, data);
-		for (FObjectExport* inner : exp->Inner)
-		{
-			LoadExportToTree(tree, item, inner);
-		}
-	}
-	else
-	{
-		item = tree->AppendItem(parent, exp->GetObjectName(), icon, data);
-	}
-}
-
 PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* application)
   : wxFrame(nullptr, wxID_ANY, application->GetAppDisplayName() + L" - " + A2W(package->GetSourcePath()))
   , Application(application)
@@ -98,13 +39,8 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 	InitLayout();
 	
 	ObjectTreeCtrl->SetFocus();
-
-	LoadTreeIcons();
-	LoadObjectTree();
-
 	SetPropertiesHidden(true);
 	SetContentHidden(true);
-	ObjectTreeCtrl->Enable(false);
 
 	wxPoint pos = Application->GetLastWindowPosition();
 	if (pos.x == WIN_POS_FULLSCREEN)
@@ -126,13 +62,17 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 
 void PackageWindow::OnCloseWindow(wxCloseEvent& event)
 {
+	if (!Package->IsReady())
+	{
+		Package->CancelOperation();
+	}
 	Application->PackageWindowWillClose(this);
 	wxFrame::OnCloseWindow(event);
 }
 
 PackageWindow::~PackageWindow()
 {
-	FPackage::UnloadPackage(Package.get());
+	FPackage::UnloadPackage(Package);
 	delete ImageList;
 }
 
@@ -141,39 +81,18 @@ wxString PackageWindow::GetPackagePath() const
   return wxString(Package->GetSourcePath());
 }
 
-void PackageWindow::LoadTreeIcons()
-{
-	ImageList = new wxImageList(16, 16, true, 1);
-	ObjectTreeCtrl->SetImageList(ImageList);
-	auto clientId = wxART_MAKE_CLIENT_ID("OBJECT_TREE_ICONS");
-	wxBitmap icon = wxArtProvider::GetBitmap(wxART_FOLDER, clientId, wxSize(16, 16));
-	ImageList->Add(icon);
-	icon = wxArtProvider::GetBitmap(wxART_FOLDER_OPEN, clientId, wxSize(16, 16));
-	ImageList->Add(icon);
-	icon = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, clientId, wxSize(16, 16));
-	ImageList->Add(icon);
-}
 
 void PackageWindow::LoadObjectTree()
 {
-	ObjectTreeCtrl->Freeze();
-	ObjectTreeCtrl->DeleteAllItems();
+	DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports());
+	ObjectTreeCtrl->AssociateModel(DataModel.get());
+	wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
+	ObjectTreeCtrl->AppendColumn(col);
+	col->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
+}
 
-	wxDataViewItem expRoot = ObjectTreeCtrl->AppendContainer(wxDataViewItem(0), Package->GetPackageName(), PACKAGE_ICON, PACKAGE_O_ICON, new wxStringClientData(std::to_string(FAKE_EXPORT_ROOT)));
-	std::vector<FObjectExport*> exports = Package->GetRootExports();
-	for (FObjectExport* exp : exports)
-	{
-		LoadExportToTree(ObjectTreeCtrl, expRoot, exp);
-	}
-
-	wxDataViewItem impRoot = ObjectTreeCtrl->AppendContainer(wxDataViewItem(0), "Imports", PACKAGE_ICON, PACKAGE_O_ICON, new wxStringClientData(std::to_string(FAKE_IMPORT_ROOT)));
-	std::vector<FObjectImport*> imports = Package->GetRootImports();
-	for (FObjectImport* imp : imports)
-	{
-		LoadImportToTree(ObjectTreeCtrl, impRoot, imp);
-	}
-	
-	ObjectTreeCtrl->Thaw();
+void PackageWindow::OnIdle(wxIdleEvent& e)
+{
 }
 
 void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
@@ -184,13 +103,13 @@ void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
 
 void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
 {
-	wxStringClientData *client = (wxStringClientData*)ObjectTreeCtrl->GetItemData(e.GetItem());
-	if (!client)
+	ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
+	if (!node || !node->GetParent())
 	{
 		OnNoneObjectSelected();
 		return;
 	}
-	INT index = wxAtoi(client->GetData());
+	PACKAGE_INDEX index = node->GetObjectIndex();
 	if (index < 0)
 	{
 		OnImportObjectSelected(index);
@@ -232,8 +151,10 @@ void PackageWindow::OnExportObjectSelected(INT index)
 	ObjectTitleLabel->SetLabelText(wxString::Format("%s (%s)", fobj->GetObjectName(), fobj->GetClassName()));
 	ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialSize));
 	ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialOffset));
-	//std::string flags = ObjectFlagsToString(fobj->ObjectFlags);
-	//ObjectFlagsTextfield->SetLabelText(flags);
+	std::string flags = ObjectFlagsToString(fobj->ObjectFlags);
+	ObjectFlagsTextfield->SetLabelText(flags);
+	flags = ExportFlagsToString(fobj->ExportFlags);
+	ExportFlagsTextfield->SetLabelText(flags);
 	SetPropertiesHidden(false);
 	SetContentHidden(false);
 
@@ -324,13 +245,15 @@ void PackageWindow::OnMaximized(wxMaximizeEvent& e)
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)
 {
-	ObjectTreeCtrl->Enable();
+	ObjectTreeCtrl->Freeze();
+	LoadObjectTree();
+	ObjectTreeCtrl->Thaw();
 }
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)
 {
 	wxMessageBox("Failed to load the package!", e.GetString(), wxICON_ERROR);
-	FPackage::UnloadPackage(Package.get());
+	FPackage::UnloadPackage(Package);
 	Close();
 }
 
@@ -363,4 +286,5 @@ EVT_MAXIMIZE(OnMaximized)
 EVT_CLOSE(OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, OnPackageError)
+EVT_IDLE(OnIdle)
 wxEND_EVENT_TABLE()

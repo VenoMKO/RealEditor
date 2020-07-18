@@ -60,11 +60,20 @@ UObject* FObjectImport::GetObject()
 std::string FObjectImport::GetPackageName() const
 {
   PACKAGE_INDEX outerIndex = OuterIndex;
-  FObjectImport* outer = nullptr;
+  FObjectResource* outer = nullptr;
   while (outerIndex)
   {
-    outer = Package->GetImportObject(outerIndex);
-    outerIndex = outer->OuterIndex;
+    if (outerIndex < 0)
+    {
+      outer = Package->GetImportObject(outerIndex);
+      outerIndex = outer->OuterIndex;
+    }
+    else
+    {
+      // Imports outer object is Export. Not sure what is the correct behaviour
+      outer = Package->GetExportObject(outerIndex);
+      outerIndex = 0;
+    }
   }
   return outer ? outer->GetObjectName() : nullptr;
 }

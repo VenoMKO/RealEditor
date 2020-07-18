@@ -9,10 +9,15 @@ public:
     : Package(package)
   {}
 
+  virtual ~FObjectResource()
+  {}
+
   std::string GetObjectName() const
   {
     return ObjectName.String();
   }
+
+  virtual std::string GetClassName() const = 0;
 
   FName ObjectName;
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
@@ -28,7 +33,7 @@ public:
     : FObjectResource(p)
   {}
 
-  std::string GetClassName() const
+  std::string GetClassName() const override
   {
     return ClassName.String();
   }
@@ -53,7 +58,7 @@ public:
 
   friend FStream& operator<<(FStream& s, FObjectExport& e);
 
-  std::string GetClassName() const;
+  std::string GetClassName() const override;
   UObject* GetObject();
 
   PACKAGE_INDEX ClassIndex = 0;

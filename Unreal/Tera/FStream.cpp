@@ -24,12 +24,7 @@ FStream& FStream::operator<<(std::string& s)
       SerializeBytes(data, len * 2);
       std::string tmp = W2A(data, tlen);
       s.resize(tmp.size());
-#ifdef _DEBUG
-      if (tmp.size() != s.size())
-      {
-        DThrow("Failed to inialize a string! Size missmatch: " + std::to_string(tmp.size()) + ", " + std::to_string(s.size()));
-      }
-#endif
+      DBreakIf(tmp.size() != s.size());
       memcpy_s(&s[0], s.size(), &tmp[0], tmp.size());
     }
   }

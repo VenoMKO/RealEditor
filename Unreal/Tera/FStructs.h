@@ -85,6 +85,24 @@ struct FGeneration {
 	friend FStream& operator<<(FStream& s, FGeneration& g);
 };
 
+struct FTextureAllocations {
+	struct FTextureType
+	{
+		int32 SizeX = 0;
+		int32 SizeY = 0;
+		int32 NumMips = 0;
+		uint32 Format = 0;
+		uint32 TexCreateFlags = 0; //ETextureCreateFlags
+		std::vector<int32> ExportIndices;
+
+		friend FStream& operator<<(FStream& s, FTextureAllocations::FTextureType& t);
+	};
+
+	std::vector<FTextureType>	TextureTypes;
+
+	friend FStream& operator<<(FStream& s, FTextureAllocations& t);
+};
+
 struct FPackageSummary {
 	uint32 Magic = PACKAGE_MAGIC;
 	uint16 FileVersion = 610;
@@ -99,6 +117,10 @@ struct FPackageSummary {
 	uint32 ImportsCount = 0;
 	FILE_OFFSET ImportsOffset = 0;
 	FILE_OFFSET DependsOffset = 0;
+	FILE_OFFSET ImportExportGuidsOffset = 0;
+	uint32 ImportGuidsCount = 0;
+	uint32 ExportGuidsCount = 0;
+	uint32 ThumbnailTableOffset = 0;
 	FGuid Guid;
 	std::vector<FGeneration> Generations;
 	int32 EngineVersion = 4206;
@@ -107,6 +129,7 @@ struct FPackageSummary {
 	uint32 PackageSource = 0;
 	std::vector<FCompressedChunk> CompressedChunks;
 	std::vector<std::string> AdditionalPackagesToCook;
+	FTextureAllocations TextureAllocations;
 
 	// Path to the package
 	std::string SourcePath;

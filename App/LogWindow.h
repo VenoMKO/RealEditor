@@ -8,7 +8,7 @@ class wxRichTextCtrl;
 class LogWindow : public wxFrame
 {
 public:
-	LogWindow(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(700, 300), long style = wxDEFAULT_FRAME_STYLE | wxFRAME_TOOL_WINDOW | wxSTAY_ON_TOP | wxTAB_TRAVERSAL);
+	LogWindow(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(700, 300), long style = wxSYSTEM_MENU | wxRESIZE_BORDER | wxMINIMIZE_BOX | wxCLOSE_BOX | wxCAPTION | wxTAB_TRAVERSAL);
 	~LogWindow();
 
 	void SetLogger(ALog* logger)

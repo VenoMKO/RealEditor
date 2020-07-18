@@ -168,9 +168,31 @@ public:
     return Package;
   }
 
+  inline uint16 GetFV() const
+  {
+    return FileVersion;
+  }
+
+  inline uint16 GetLV() const
+  {
+    return LicenseeVersion;
+  }
+
+  inline void SetFV(uint16 fv)
+  {
+    FileVersion = fv;
+  }
+
+  inline void SetLV(uint16 lv)
+  {
+    LicenseeVersion = lv;
+  }
+
 protected:
   bool Reading = false;
   FPackage* Package = nullptr;
+  uint16 FileVersion = 0;
+  uint16 LicenseeVersion = 0;
 };
 
 class FReadStream : public FStream {
@@ -181,8 +203,6 @@ public:
     , Stream(A2W(path), std::ios::binary)
   {
     Reading = true;
-    bool test = Stream.good();
-    int k = 1;
   }
 
   FReadStream(const FReadStream& s)

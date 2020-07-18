@@ -77,7 +77,7 @@ void PackageWindow::InitLayout()
 	stObjects->Wrap(-1);
 	treeSizer->Add(stObjects, 0, wxALL, 3);
 
-	ObjectTreeCtrl = new wxDataViewTreeCtrl(sidebarPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
+	ObjectTreeCtrl = new ObjectTreeDataViewCtrl(sidebarPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
 	ObjectTreeCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
 	ObjectTreeCtrl->SetMinSize(wxSize(230, 600));
 

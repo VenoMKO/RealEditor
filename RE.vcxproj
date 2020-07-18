@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp" />
     <ClCompile Include="App\ProgressWindow.cpp" />
     <ClCompile Include="Unreal\Tera\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
@@ -41,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
     <ClInclude Include="App\ProgressWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\GenericEditor.h" />

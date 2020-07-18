@@ -71,6 +71,9 @@
     <ClCompile Include="App\ProgressWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -108,5 +111,6 @@
     <ClInclude Include="App\LogWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\ProgressWindow.h" />
+    <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,9 @@
 #include "FName.h"
 #include "FStructs.h"
 #include <memory>
+#include <atomic>
+#include <mutex>
+#include <unordered_map>
 
 class FPackage {
 public:
@@ -11,12 +14,14 @@ public:
 	static void LoadDefaultClassPackages();
 	// Unload class packages
 	static void UnloadDefaultClassPackages();
-	// Load and retain a package at the path. Every LoadPackage call must pair a UnloadPackage call
-	static std::shared_ptr<FPackage> LoadPackage(const std::string& path);
-	// Load and retain a package by name and guid(if valid). Every LoadPackageNamed call must pair a UnloadPackage call
-	static std::shared_ptr<FPackage> LoadPackageNamed(const std::string& name, FGuid guid = FGuid());
+	// Load Composite Package Map
+	static void LoadCompositePackageMap();
+	// Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
+	static std::shared_ptr<FPackage> GetPackage(const std::string& path, bool noInit = false);
+	// Load and retain a package by name and guid(if valid). Every GetPackageNamed call must pair a UnloadPackage call
+	static std::shared_ptr<FPackage> GetPackageNamed(const std::string& name, FGuid guid = FGuid());
 	// Release a package. 
-	static void UnloadPackage(FPackage* package);
+	static void UnloadPackage(std::shared_ptr<FPackage> package);
 	// Find and cache all packages
 	static void SetRootPath(const std::string& path);
 
@@ -30,10 +35,7 @@ public:
 	~FPackage();
 
 	// Create a read stream using DataPath and serialize tables
-	void Initialize();
-
-	// Load imports
-	void Preheat();
+	void Load();
 
 	// Get an object at index
 	UObject* GetObject(PACKAGE_INDEX index);
@@ -116,9 +118,21 @@ public:
 		return Summary.SourcePath;
 	}
 
+	// Returns true if Load() finished
 	bool IsReady()
 	{
-		return Ready;
+		return Ready.load();
+	}
+
+	// Cancell loading operation
+	void CancelOperation()
+	{
+		Cancelled.store(true);
+	}
+
+	bool IsOperationCancelled()
+	{
+		return Cancelled.load();
 	}
 
 	// Get package name
@@ -127,7 +141,13 @@ public:
 private:
 	FPackageSummary Summary;
 	FStream* Stream = nullptr;
-	bool Ready = false;
+
+	// Prevent multiple Load() calls
+	std::atomic_bool Loading = { false };
+	// Load finished 
+	std::atomic_bool Ready = { false };
+	// Load was cancelled
+	std::atomic_bool Cancelled = { false };
 
 	std::vector<FNameEntry> Names;
 	std::vector<FObjectExport*> Exports;
@@ -141,11 +161,12 @@ private:
 	// Cached netIndices for faster netIndex lookup. Containes only loaded objects!
 	std::map<NET_INDEX, UObject*> NetIndexMap;
 	// Name to Object map for faster import lookup
-	std::map<std::string, std::vector<FObjectExport*>> ObjectNameToExportMap;
+	std::unordered_map<std::string, std::vector<FObjectExport*>> ObjectNameToExportMap;
 	// List of packages we rely on
 	std::vector<std::shared_ptr<FPackage>> ExternalPackages;
 
 	static std::string RootDir;
+	static std::recursive_mutex PackagesMutex;
 	static std::vector<std::shared_ptr<FPackage>> LoadedPackages;
 	static std::vector<std::shared_ptr<FPackage>> DefaultClassPackages;
 	static std::vector<std::string> DirCache;

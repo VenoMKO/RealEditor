@@ -3,7 +3,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
-
+#include <string.h>
 #define NOGDICAPMASKS
 #define NOMENUS
 #define NOATOM
@@ -100,23 +100,150 @@ bool Stricmp(const std::string& a, const std::string& b)
   return (a.size() == b.size()) && (std::equal(a.begin(), a.end(), b.begin(), CaseInsCharCompare));
 }
 
-void UThrow(const std::string& msg)
+std::string ObjectFlagsToString(uint64 expFlag)
 {
-  throw std::runtime_error(msg);
+  std::string s;
+  if (expFlag & RF_InSingularFunc)
+    s += "InSingularFunc, ";
+  if (expFlag & RF_StateChanged)
+    s += "StateChanged, ";
+  if (expFlag & RF_DebugPostLoad)
+    s += "DebugPostLoad, ";
+  if (expFlag & RF_DebugSerialize)
+    s += "DebugSerialize, ";
+  if (expFlag & RF_DebugFinishDestroyed)
+    s += "DebugFinishDestroyed, ";
+  if (expFlag & RF_EdSelected)
+    s += "EdSelected, ";
+  if (expFlag & RF_ZombieComponent)
+    s += "ZombieComponent, ";
+  if (expFlag & RF_Protected)
+    s += "Protected, ";
+  if (expFlag & RF_ClassDefaultObject)
+    s += "ClassDefaultObject, ";
+  if (expFlag & RF_ArchetypeObject)
+    s += "ArchetypeObject, ";
+  if (expFlag & RF_ForceTagExp)
+    s += "ForceTagExp, ";
+  if (expFlag & RF_TokenStreamAssembled)
+    s += "TokenStreamAssembled, ";
+  if (expFlag & RF_MisalignedObject)
+    s += "MisalignedObject, ";
+  if (expFlag & RF_RootSet)
+    s += "RootSet, ";
+  if (expFlag & RF_BeginDestroyed)
+    s += "BeginDestroyed, ";
+  if (expFlag & RF_FinishDestroyed)
+    s += "FinishDestroyed, ";
+  if (expFlag & RF_DebugBeginDestroyed)
+    s += "DebugBeginDestroyed, ";
+  if (expFlag & RF_MarkedByCooker)
+    s += "MarkedByCooker, ";
+  if (expFlag & RF_LocalizedResource)
+    s += "LocalizedResource, ";
+  if (expFlag & RF_InitializedProps)
+    s += "InitializedProps, ";
+  if (expFlag & RF_PendingFieldPatches)
+    s += "PendingFieldPatches, ";
+  if (expFlag & RF_IsCrossLevelReferenced)
+    s += "IsCrossLevelReferenced, ";
+  if (expFlag & RF_DebugBeginDestroyed)
+    s += "DebugBeginDestroyed, ";
+  if (expFlag & RF_Saved)
+    s += "Saved, ";
+  if (expFlag & RF_Transactional)
+    s += "Transactional, ";
+  if (expFlag & RF_Unreachable)
+    s += "Unreachable, ";
+  if (expFlag & RF_Public)
+    s += "Public, ";
+  if (expFlag & RF_TagImp)
+    s += "TagImp, ";
+  if (expFlag & RF_TagExp)
+    s += "TagExp, ";
+  if (expFlag & RF_Obsolete)
+    s += "Obsolete, ";
+  if (expFlag & RF_TagGarbage)
+    s += "TagGarbage, ";
+  if (expFlag & RF_DisregardForGC)
+    s += "DisregardForGC, ";
+  if (expFlag & RF_PerObjectLocalized)
+    s += "PerObjectLocalized, ";
+  if (expFlag & RF_NeedLoad)
+    s += "NeedLoad, ";
+  if (expFlag & RF_AsyncLoading)
+    s += "AsyncLoading, ";
+  if (expFlag & RF_NeedPostLoadSubobjects)
+    s += "NeedPostLoadSubobjects, ";
+  if (expFlag & RF_Suppress)
+    s += "Suppress, ";
+  if (expFlag & RF_InEndState)
+    s += "InEndState, ";
+  if (expFlag & RF_Transient)
+    s += "Transient, ";
+  if (expFlag & RF_Cooked)
+    s += "Cooked, ";
+  if (expFlag & RF_LoadForClient)
+    s += "LoadForClient, ";
+  if (expFlag & RF_LoadForServer)
+    s += "LoadForServer, ";
+  if (expFlag & RF_LoadForEdit)
+    s += "LoadForEdit, ";
+  if (expFlag & RF_Standalone)
+    s += "Standalone, ";
+  if (expFlag & RF_NotForClient)
+    s += "NotForClient, ";
+  if (expFlag & RF_NotForServer)
+    s += "NotForServer, ";
+  if (expFlag & RF_NotForEdit)
+    s += "NotForEdit, ";
+  if (expFlag & RF_NeedPostLoad)
+    s += "NeedPostLoad, ";
+  if (expFlag & RF_HasStack)
+    s += "HasStack, ";
+  if (expFlag & RF_Native)
+    s += "Native, ";
+  if (expFlag & RF_Marked)
+    s += "Marked, ";
+  if (expFlag & RF_ErrorShutdown)
+    s += "ErrorShutdown, ";
+  if (expFlag & RF_NotForEdit)
+    s += "NotForEdit, ";
+  if (expFlag & RF_PendingKill)
+    s += "PendingKill, ";
+  if (s.length())
+  {
+    s = s.substr(0, s.length() - 2);
+  }
+  return s;
 }
 
-void DThrow(const std::string& msg)
+std::string ExportFlagsToString(uint32 flags)
 {
-#ifdef _DEBUG
-  try
+  std::string s;
+  if (flags & EF_ForcedExport)
   {
-    UThrow(msg);
+    s += "ForcedExport, ";
   }
-  catch (std::runtime_error& e)
+  if (flags & EF_ScriptPatcherExport)
   {
-    LogE(e.what());
+    s += "ScriptPatcherExport, ";
   }
-#endif
+  if (flags & EF_MemberFieldPatchPending)
+  {
+    s += "MemberFieldPatchPending, ";
+  }
+  if (s.length())
+  {
+    s = s.substr(0, s.length() - 2);
+  }
+  return s;
+}
+
+void UThrow(const std::string& msg)
+{
+  LogE(msg);
+  throw std::runtime_error(msg);
 }
 
 bool IsAnsi(const std::string& str)
@@ -156,7 +283,7 @@ std::string Sprintf(const std::string fmt, ...)
   return std::string(formatted.get());
 }
 
-void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize)
+void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
 {
   lzo_bytep ptr = (lzo_bytep)src;
   lzo_bytep start = ptr;
@@ -201,14 +328,29 @@ void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstS
     decompressedOffset += compressionInfo[i].dstSize;
   }
 
-  concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
-    lzo_uint decompressedSize = compressionInfo[i].dstSize;
-    int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
-    if (e != LZO_E_OK)
+  if (concurrent)
+  {
+    concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
+      lzo_uint decompressedSize = compressionInfo[i].dstSize;
+      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+      if (e != LZO_E_OK)
+      {
+        UThrow("Corrupted compression block. Code: " + std::to_string(e));
+      }
+    });
+  }
+  else
+  {
+    for (int32 i = 0; i < totalBlocks; ++i)
     {
-      UThrow("Corrupted compression block. Code: " + std::to_string(e));
+      lzo_uint decompressedSize = compressionInfo[i].dstSize;
+      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+      if (e != LZO_E_OK)
+      {
+        UThrow("Corrupted compression block. Code: " + std::to_string(e));
+      }
     }
-  });
+  }
 
   delete[] compressionInfo;
 }

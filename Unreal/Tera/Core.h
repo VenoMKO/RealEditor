@@ -49,6 +49,8 @@ enum { NET_INDEX_NONE = 0 };
 // Forward
 // --------------------------------------------------------------------
 
+class ALog;
+
 class FStream;
 class FPackage;
 class FName;
@@ -72,10 +74,11 @@ class UProperty;
 
 #define SET_PACKAGE(s, obj) if (s.IsReading() && s.GetPackage()) obj.Package = s.GetPackage()
 
+std::string ObjectFlagsToString(uint64 flags);
+std::string ExportFlagsToString(uint32 flags);
+
 // Generic runtime error
 void UThrow(const std::string& msg);
-// Debug error. Recoverable
-void DThrow(const std::string& msg);
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
 // Wide string to UTF8
@@ -92,15 +95,41 @@ bool Stricmp(const std::string& a, const std::string& b);
 // Format like a C string
 std::string Sprintf(const std::string fmt, ...);
 
+#define Check(expr) if (!expr) UThrow(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__))
+
+#ifdef _DEBUG
+#define DBreak() __debugbreak()
+#define DBreakIf(expr) if (expr) DBreak()
+#else
+#define DBreak()
+#define DBreakIf(expr)
+#endif
+
 // --------------------------------------------------------------------
 // Compression
 // --------------------------------------------------------------------
 
 namespace LZO
 {
-  void Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize);
+  void Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent = true);
 }
+
+// --------------------------------------------------------------------
+// Logging
+// --------------------------------------------------------------------
 
 #define LogI(...) ALog::ILog(Sprintf(__VA_ARGS__))
 #define LogW(...) ALog::WLog(Sprintf(__VA_ARGS__))
 #define LogE(...) ALog::ELog(Sprintf(__VA_ARGS__))
+
+// --------------------------------------------------------------------
+// Misc
+// --------------------------------------------------------------------
+
+#ifdef _DEBUG
+#define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
+#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
+#else
+#define PERF_START(ID)
+#define PERF_END(ID)
+#endif

@@ -6,19 +6,22 @@
 #include "UClass.h" 
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <filesystem>
 #include <ppl.h>
 
 std::string FPackage::RootDir;
+std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<std::string> FPackage::DirCache;
 
 namespace
 {
+  const char* CompositePackageMapperName = "CompositePackageMapper.dat.txt";
   const char* PackageListName = "Packages.list";
-  const std::vector<std::string> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u" };
+  const std::vector<std::string> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
 
   void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
   {
@@ -55,10 +58,9 @@ namespace
       s << wpath << std::endl;
     }
     s.close();
-    LogI("Done. Found %ld items", dirCache.size());
+    LogI("Done. Found %ld packages", dirCache.size());
   }
 }
-
 
 void FPackage::SetRootPath(const std::string& path)
 {
@@ -101,10 +103,14 @@ void FPackage::LoadDefaultClassPackages()
 {
   for (const auto& name : DefaultClassPackageNames)
   {
-    if (auto package = LoadPackageNamed(name))
+    if (auto package = GetPackageNamed(name))
     {
       DefaultClassPackages.push_back(package);
     }
+  }
+  for (auto package : DefaultClassPackages)
+  {
+    package->Load();
   }
 }
 
@@ -112,28 +118,73 @@ void FPackage::UnloadDefaultClassPackages()
 {
   for (auto package : DefaultClassPackages)
   {
-    UnloadPackage(package.get());
+    UnloadPackage(package);
   }
   DefaultClassPackages.clear();
 }
 
-std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
+void FPackage::LoadCompositePackageMap()
+{
+  std::vector<std::string> packages;
+  std::vector<std::string> mapping;
+  {
+    std::filesystem::path listPath(A2W(RootDir));
+    listPath /= CompositePackageMapperName;
+
+    std::string compositMapString;
+    if (std::filesystem::exists(listPath))
+    {
+      std::ifstream s(listPath);
+      if (s.is_open())
+      {
+        std::stringstream buffer;
+        buffer << s.rdbuf();
+        compositMapString = buffer.str();
+      }
+    }
+    if (compositMapString.empty())
+    {
+      UThrow("Failed to load composit map! File CompositePackageMapper.dat.txt does not exist or empty!");
+    }
+    return;
+    size_t pos = 0;
+    size_t prevPos = 0;
+
+    while ((pos = compositMapString.find('?', pos)) != std::string::npos)
+    {
+      packages.emplace_back(compositMapString.substr(prevPos, pos));
+      prevPos = compositMapString.find('!', pos);
+      mapping.emplace_back(compositMapString.substr(pos + 1, prevPos - pos - 1));
+      std::swap(prevPos, pos);
+    }
+    Check(packages.size() == mapping.size());
+  }
+  
+  // TODO: implement mapping
+  // Probable struct: "UE3ObjectPath.ObjectName,PackageName,Offset,Size,|"
+}
+
+std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noInit)
 {
   std::shared_ptr<FPackage> found = nullptr;
-  for (auto package : LoadedPackages)
   {
-    if (package->GetSourcePath() == path)
+    std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
+    for (auto package : LoadedPackages)
     {
-      found = package;
-      break;
+      if (package->GetSourcePath() == path)
+      {
+        found = package;
+        break;
+      }
+    }
+    if (found)
+    {
+      LoadedPackages.push_back(found);
+      return found;
     }
   }
-  if (found)
-  {
-    LoadedPackages.push_back(found);
-    return found;
-  }
-  LogI("Loading package: %s", path.c_str());
+  
+  LogI("Opening package: %ls", A2W(path).c_str());
   FStream *stream = new FReadStream(path);
   if (!stream->IsGood())
   {
@@ -167,6 +218,7 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
 
     std::filesystem::path decompressedPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
     sum.DataPath = W2A(decompressedPath.wstring());
+    LogI("Decompressing package %s to %ls", sum.PackageName.c_str(), decompressedPath.wstring().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath);
 
     std::vector<FCompressedChunk> tmpChunks;
@@ -177,7 +229,7 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
     {
-      concurrency::parallel_for(size_t(0), sum.CompressedChunks.size(), [sum, stream, compressedChunksData, decompressedData, startOffset](size_t idx) {
+      concurrency::parallel_for(size_t(0), size_t(sum.CompressedChunks.size()), [sum, stream, compressedChunksData, decompressedData, startOffset](size_t idx) {
         const FCompressedChunk& chunk = sum.CompressedChunks[idx];
         uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
         LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
@@ -219,100 +271,98 @@ std::shared_ptr<FPackage> FPackage::LoadPackage(const std::string& path)
   }
   
   delete stream;
-  std::shared_ptr<FPackage> package = LoadedPackages.emplace_back(new FPackage(sum));
-  try
+  std::shared_ptr<FPackage> result = nullptr;
   {
-    package->Initialize();
+    std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
+    result = LoadedPackages.emplace_back(new FPackage(sum));
   }
-  catch (const std::exception& e)
-  {
-    for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
-    {
-      if (LoadedPackages[idx].get() == package.get())
-      {
-        LoadedPackages.erase(LoadedPackages.begin() + idx);
-        break;
-      }
-    }
-    throw e;
-  }
-  return package;
+  return result;
 }
 
-std::shared_ptr<FPackage> FPackage::LoadPackageNamed(const std::string& name, FGuid guid)
+std::shared_ptr<FPackage> FPackage::GetPackageNamed(const std::string& name, FGuid guid)
 {
   std::shared_ptr<FPackage> found = nullptr;
-  for (auto package : LoadedPackages)
   {
-    if (Wstricmp(package->GetPackageName(), name))
+    std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
+    for (auto package : LoadedPackages)
     {
-      if (guid.IsValid())
+      if (Wstricmp(package->GetPackageName(), name))
       {
-        if (package->GetGuid() == guid)
+        if (guid.IsValid())
+        {
+          if (package->GetGuid() == guid)
+          {
+            found = package;
+            break;
+          }
+        }
+        else
         {
           found = package;
           break;
         }
       }
-      else
-      {
-        found = package;
-        break;
-      }
+    }
+    if (found)
+    {
+      LoadedPackages.push_back(found);
+      return found;
     }
   }
-  if (found)
+  
+  std::wstring wname = A2W(name);
+  for (std::string& path : DirCache)
   {
-    LoadedPackages.push_back(found);
-    return found;
-  }
-  bool updatedDirCache = false;
-  while (1)
-  {
-    std::wstring wname = A2W(name);
-    for (std::string& path : DirCache)
+    std::wstring filename = std::filesystem::path(A2W(path)).filename().wstring();
+    if (filename.size() < wname.size())
     {
-      std::wstring filename = std::filesystem::path(A2W(path)).filename().wstring();
-      if (filename.size() < wname.size())
+      continue;
+    }
+    if (std::mismatch(wname.begin(), wname.end(), filename.begin()).first == wname.end())
+    {
+      if (auto package = GetPackage(path))
       {
-        continue;
-      }
-      if (std::mismatch(wname.begin(), wname.end(), filename.begin()).first == wname.end())
-      {
-        if (auto package = LoadPackage(path))
+        if (!guid.IsValid() || guid == package->GetGuid())
         {
-          if (!guid.IsValid() || guid == package->GetGuid())
-          {
-            return package;
-          }
-          UnloadPackage(package.get());
+          return package;
         }
+        UnloadPackage(package);
       }
     }
-    // Update DirCache if we couldn't find the package
-    if (updatedDirCache)
-    {
-      break;
-    }
-    BuildPackageList(RootDir, DirCache);
-    updatedDirCache = true;
   }
   return nullptr;
 }
 
-void FPackage::UnloadPackage(FPackage* package)
+void FPackage::UnloadPackage(std::shared_ptr<FPackage> package)
 {
   if (!package)
   {
     return;
   }
-  for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
+  bool lastPackageRef = false;
   {
-    if (LoadedPackages[idx].get() == package)
+    std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
+    for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
     {
-      LoadedPackages.erase(LoadedPackages.begin() + idx);
-      break;
+      if (LoadedPackages[idx].get() == package.get())
+      {
+        if (!lastPackageRef)
+        {
+          LoadedPackages.erase(LoadedPackages.begin() + idx);
+          lastPackageRef = true;
+        }
+        else
+        {
+          // There are more refs. No need to continue
+          lastPackageRef = false;
+          break;
+        }
+      }
     }
+  }
+  if (lastPackageRef)
+  {
+    LogI("Package %s unloaded", package->GetPackageName().c_str());
   }
 }
 
@@ -336,7 +386,7 @@ FPackage::~FPackage()
   }
   for (auto& pkg : ExternalPackages)
   {
-    UnloadPackage(pkg.get());
+    UnloadPackage(pkg);
   }
   ExternalPackages.clear();
   if (Summary.DataPath != Summary.SourcePath)
@@ -345,66 +395,74 @@ FPackage::~FPackage()
   }
 }
 
-void FPackage::Initialize()
+void FPackage::Load()
 {
+#define CheckCancel() if (Cancelled.load()) { Loading.store(false); return; } //
+  if (Ready.load() || Loading.load())
+  {
+    return;
+  }
+  Loading.store(true);
   Stream = new FReadStream(Summary.DataPath);
   Stream->SetPackage(this);
   FStream& s = GetStream();
 
-  s.SetPosition(Summary.NamesOffset);
-
+  if (Summary.NamesOffset != s.GetPosition())
+  {
+    s.SetPosition(Summary.NamesOffset);
+  }
+  Names.clear();
   for (uint32 idx = 0; idx < Summary.NamesCount; ++idx)
   {
     FNameEntry& e = Names.emplace_back(FNameEntry());
     s << e;
+    CheckCancel();
   }
 
-  s.SetPosition(Summary.ImportsOffset);
-
+  if (Summary.ImportsOffset != s.GetPosition())
+  {
+    s.SetPosition(Summary.ImportsOffset);
+  }
+  Imports.clear();
   for (uint32 idx = 0; idx < Summary.ImportsCount; ++idx)
   {
     FObjectImport* imp = Imports.emplace_back(new FObjectImport(this));
     imp->ObjectIndex = -(PACKAGE_INDEX)idx - 1;
     s << *imp;
+    CheckCancel();
   }
 
-  s.SetPosition(Summary.ExportsOffset);
-
+  if (Summary.ExportsOffset != s.GetPosition())
+  {
+    s.SetPosition(Summary.ExportsOffset);
+  }
+  Exports.clear();
   for (uint32 idx = 0; idx < Summary.ExportsCount; ++idx)
   {
     FObjectExport* exp = Exports.emplace_back(new FObjectExport(this));
     exp->ObjectIndex = (PACKAGE_INDEX)idx + 1;
     s << *exp;
+#ifdef _DEBUG
+    exp->ClassNameValue = exp->GetClassName();
+#endif
+    CheckCancel();
   }
 
-  s.SetPosition(Summary.DependsOffset);
-
+  if (Summary.DependsOffset != s.GetPosition())
+  {
+    s.SetPosition(Summary.DependsOffset);
+  }
+  Depends.clear();
   for (uint32 idx = 0; idx < Summary.ExportsCount; ++idx)
   {
     std::vector<int>& arr = Depends.emplace_back(std::vector<int>());
     s << arr;
-  }
-
-  for (uint32 idx = 0; idx < Summary.ImportsCount; ++idx)
-  {
-    FObjectImport* imp = Imports[idx];
-    if (imp->OuterIndex)
-    {
-      FObjectImport* outer = GetImportObject(imp->OuterIndex);
-      outer->Inner.push_back(imp);
-    }
-    else
-    {
-      RootImports.push_back(imp);
-    }
+    CheckCancel();
   }
 
   for (uint32 index = 0; index < Summary.ExportsCount; ++index)
   {
     FObjectExport* exp = Exports[index];
-#ifdef _DEBUG
-    exp->ClassNameValue = exp->GetClassName();
-#endif
     if (exp->OuterIndex)
     {
       FObjectExport* outer = GetExportObject(exp->OuterIndex);
@@ -414,40 +472,34 @@ void FPackage::Initialize()
     {
       RootExports.push_back(exp);
     }
+    CheckCancel();
     const std::string objName = exp->GetObjectName();
-    if (!ObjectNameToExportMap.count(objName))
+    if (ObjectNameToExportMap[objName].empty())
     {
-      ObjectNameToExportMap[objName] = std::vector<FObjectExport*>();
+      ObjectNameToExportMap[objName].push_back(exp);
     }
-    ObjectNameToExportMap[objName].push_back(exp);
   }
-}
 
-void FPackage::Preheat()
-{
-  if (Ready)
+  for (uint32 idx = 0; idx < Summary.ImportsCount; ++idx)
   {
-    return;
-  }
-  LogI("Loading imports...");
-  for (FObjectImport* imp : RootImports)
-  {
-    if (imp->GetClassName() == "Package")
+    CheckCancel();
+    FObjectImport* imp = Imports[idx];
+    if (imp->OuterIndex)
     {
-      if (std::shared_ptr<FPackage> p = LoadPackageNamed(imp->GetObjectName()))
+      if (imp->OuterIndex < 0)
       {
-        ExternalPackages.push_back(p);
+        FObjectImport* outer = GetImportObject(imp->OuterIndex);
+        outer->Inner.push_back(imp);
       }
     }
-  }
-  for (FObjectImport* imp : Imports)
-  {
-    if (imp->GetObjectName() != "Package" && imp->GetClassName() != "Package")
+    else
     {
-      imp->GetObject();
+      RootImports.push_back(imp);
     }
   }
-  Ready = true;
+
+  Ready.store(true);
+  Loading.store(false);
 }
 
 std::string FPackage::GetPackageName(bool extension) const
@@ -515,18 +567,22 @@ UObject* FPackage::GetObject(FObjectImport* imp)
   }
   if (imp->Package == this)
   {
-    if (auto package = LoadPackageNamed(imp->GetPackageName()))
+    if (imp->GetPackageName() != GetPackageName())
     {
-      if (UObject* obj = package->GetObject(imp))
+      if (auto package = GetPackageNamed(imp->GetPackageName()))
       {
-        ExternalPackages.push_back(package);
-        return obj;
+        package->Load();
+        if (UObject* obj = package->GetObject(imp))
+        {
+          ExternalPackages.push_back(package);
+          return obj;
+        }
+        UnloadPackage(package);
       }
-      UnloadPackage(package.get());
+      LogW("%s: Couldn't find import %s(%s)", GetPackageName().c_str(), imp->GetObjectName().c_str(), imp->GetClassName().c_str());
+      imp->DontLookUp = true;
+      return nullptr;
     }
-    LogW("Couldn't find import %s(%s)", imp->GetObjectName().c_str(), imp->GetClassName().c_str());
-    imp->DontLookUp = true;
-    return nullptr;
   }
   std::vector<FObjectExport*> exps = GetExportObject(imp->GetObjectName());
   for (FObjectExport* exp : exps)

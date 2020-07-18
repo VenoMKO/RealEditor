@@ -13,6 +13,7 @@
 #define WIN_POS_CENTER INT_MIN + 1
 
 wxDECLARE_EVENT(DELAY_LOAD, wxCommandEvent);
+wxDECLARE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 
 class ProgressWindow;
 class App : public wxApp {
@@ -20,6 +21,7 @@ public:
   ~App();
   bool OpenPackage(const wxString& path);
   bool OpenDialog(const wxString& rootDir = wxEmptyString);
+  void OnOpenPackage(wxCommandEvent& e);
 
   void PackageWindowWillClose(const PackageWindow* frame);
   void OnRpcOpenFile(const wxString& path);

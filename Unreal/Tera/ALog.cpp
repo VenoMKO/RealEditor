@@ -28,7 +28,10 @@ ALog* ALog::SharedLog()
 
 void ALog::Log(const std::string& msg, ALogEntry::Type channel)
 {
-  SharedLogger->Push({ std::time(nullptr), msg, channel });
+  if (SharedLogger)
+  {
+    SharedLogger->Push({ std::time(nullptr), msg, channel });
+  }
 }
 
 void ALog::ILog(const std::string& msg)
@@ -66,7 +69,7 @@ void ALog::_GetConfig(FLogConfig& cfg)
 void ALog::_SetConfig(const FLogConfig& cfg)
 {
   ALog* l = ALog::SharedLog();
-  std::lock_guard<std::recursive_mutex> locker(WLocker);
+  std::scoped_lock<std::recursive_mutex> locker(WLocker);
   LastPosition = cfg.LogPosition;
   LastSize = cfg.LogSize;
   if (Window)
@@ -92,18 +95,22 @@ bool ALog::IsShown()
 
 bool ALog::_IsShown()
 {
-  std::lock_guard<std::recursive_mutex> locker(WLocker);
-  return Window ? Window->IsShown() : false;
+  std::scoped_lock<std::recursive_mutex> locker(WLocker);
+  return Window ? Window->IsShown() && !Window->IsIconized() : false;
 }
 
 void ALog::_Show(bool show)
 {
-  std::lock_guard<std::recursive_mutex> lock(WLocker);
+  std::scoped_lock<std::recursive_mutex> lock(WLocker);
   if (Window)
   {
     if (!show)
     {
       Window->Close();
+    }
+    else if (Window->IsIconized())
+    {
+      Window->Restore();
     }
   }
   else if (show)
@@ -119,7 +126,7 @@ void ALog::_Show(bool show)
 
 void ALog::OnLogClose()
 {
-  std::lock_guard<std::recursive_mutex> lock(WLocker);
+  std::scoped_lock<std::recursive_mutex> lock(WLocker);
   LastPosition.X = Window->GetPosition().x;
   LastPosition.Y = Window->GetPosition().y;
   LastSize.X = Window->GetSize().x;
@@ -132,12 +139,13 @@ void ALog::OnAppExit()
   if (SharedLogger)
   {
     delete SharedLogger;
+    SharedLogger = nullptr;
   }
 }
 
 void ALog::GetEntries(std::vector<ALogEntry>& output, size_t& index)
 {
-  std::lock_guard<std::recursive_mutex> lock(ELocker);
+  std::scoped_lock<std::recursive_mutex> lock(ELocker);
   while (index < Entries.size())
   {
     output.push_back(Entries[index]);
@@ -148,10 +156,10 @@ void ALog::GetEntries(std::vector<ALogEntry>& output, size_t& index)
 void ALog::Push(const ALogEntry& entry)
 {
   {
-    std::lock_guard<std::recursive_mutex> lock(ELocker);
+    std::scoped_lock<std::recursive_mutex> lock(ELocker);
     Entries.push_back(entry);
   }
-  std::lock_guard<std::recursive_mutex> lock(WLocker);
+  std::scoped_lock<std::recursive_mutex> lock(WLocker);
   if (Window)
   {
     UpdateWindow();
@@ -160,7 +168,7 @@ void ALog::Push(const ALogEntry& entry)
 
 void ALog::UpdateWindow()
 {
-  std::lock_guard<std::recursive_mutex> lock(WLocker);
+  std::scoped_lock<std::recursive_mutex> lock(WLocker);
   if (Window)
   {
     wxCommandEvent* event = new wxCommandEvent(PUMP_LOG_WINDOW);

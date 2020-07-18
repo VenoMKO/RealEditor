@@ -14,6 +14,7 @@ const char* APP_NAME = "Real Editor";
 wxIMPLEMENT_APP(App);
 
 wxDEFINE_EVENT(DELAY_LOAD, wxCommandEvent);
+wxDEFINE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 
 wxString GetConfigPath()
 {
@@ -26,7 +27,7 @@ wxString GetConfigPath()
   return path;
 }
 
-void CreateFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager* man)
+void RegisterFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager* man)
 {
   wxFileTypeInfo info = wxFileTypeInfo("application/octet-stream");
   info.AddExtension(extension);
@@ -41,33 +42,34 @@ void CreateFileType(const wxString& extension, const wxString& description, cons
 void RegisterMimeTypes(const wxString& appPath)
 {
   wxMimeTypesManager* man = new wxMimeTypesManager();
-  CreateFileType(".gpk", "Tera Package", appPath, man);
-  CreateFileType(".gmp", "Tera Map Package", appPath, man);
-  CreateFileType(".u", "Tera Script Package", appPath, man);
+  RegisterFileType(".gpk", "Tera Package", appPath, man);
+  RegisterFileType(".gmp", "Tera Map Package", appPath, man);
+  RegisterFileType(".u", "Tera Script Package", appPath, man);
+  RegisterFileType(".tfc", "Texture File Cache", appPath, man);
+  RegisterFileType(".upk", "Unreal Package", appPath, man);
+  RegisterFileType(".umap", "Unreal Map", appPath, man);
   delete man;
 }
 
-void UnregisterMimeType()
+void UnegisterFileType(const wxString& extension, wxMimeTypesManager* man)
+{
+  wxFileType* type = man->GetFileTypeFromExtension(".gpk");
+  if (type)
+  {
+    man->Unassociate(type);
+    delete type;
+  }
+}
+
+void UnregisterMimeTypes()
 {
   wxMimeTypesManager* man = new wxMimeTypesManager();
-  wxFileType* t = man->GetFileTypeFromExtension(".gpk");
-  if (t)
-  {
-    man->Unassociate(t);
-    delete t;
-  }
-  t = man->GetFileTypeFromExtension(".gmp");
-  if (t)
-  {
-    man->Unassociate(t);
-    delete t;
-  }
-  t = man->GetFileTypeFromExtension(".u");
-  if (t)
-  {
-    man->Unassociate(t);
-    delete t;
-  }
+  UnegisterFileType(".gpk", man);
+  UnegisterFileType(".gmp", man);
+  UnegisterFileType(".u", man);
+  UnegisterFileType(".tfc", man);
+  UnegisterFileType(".upk", man);
+  UnegisterFileType(".umap", man);
   delete man;
 }
 
@@ -75,7 +77,9 @@ void App::OnRpcOpenFile(const wxString& path)
 {
   if (IsReady && !path.empty())
   {
-    OpenPackage(path);
+    wxCommandEvent* event = new wxCommandEvent(OPEN_PACKAGE);
+    event->SetString(path);
+    wxQueueEvent(this, event);
   }
   else
   {
@@ -113,7 +117,7 @@ bool App::OpenPackage(const wxString& path)
   std::shared_ptr<FPackage> package = nullptr;
   try
   {
-    package = FPackage::LoadPackage(W2A(path.ToStdWstring()));
+    package = FPackage::GetPackage(W2A(path.ToStdWstring()), true);
   }
   catch (const std::exception& e)
   {
@@ -136,8 +140,10 @@ bool App::OpenPackage(const wxString& path)
   std::thread([package, window]() {
     try
     {
-      package->Preheat();
-      std::this_thread::sleep_for(std::chrono::seconds(5));
+      if (!package->IsReady())
+      {
+        package->Load();
+      }
     }
     catch (const std::exception& e)
     {
@@ -147,20 +153,28 @@ bool App::OpenPackage(const wxString& path)
       wxQueueEvent(window, event);
       return;
     }
-    wxQueueEvent(window, new wxCommandEvent(PACKAGE_READY));
+    if (!package->IsOperationCancelled())
+    {
+      wxQueueEvent(window, new wxCommandEvent(PACKAGE_READY));
+    }
   }).detach();
   return true;
 }
 
 bool App::OpenDialog(const wxString& rootDir)
 {
-  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u)|*.gpk;*.gmp;*.u");
+  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.tfc; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.tfc;*.upk");
   wxString packagePath = wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
   if (packagePath.size())
   {
     return OpenPackage(packagePath);
   }
   return false;
+}
+
+void App::OnOpenPackage(wxCommandEvent& e)
+{
+  OpenPackage(e.GetString());
 }
 
 void App::PackageWindowWillClose(const PackageWindow* frame)
@@ -259,6 +273,12 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
   {
+    wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_DESC);
+    event->SetString(wxT("Loading composit package mapping..."));
+    wxQueueEvent(pWindow, event);
+  }
+  FPackage::LoadCompositePackageMap();
+  {
     wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_FINISH);
     wxQueueEvent(pWindow, event);
     event = new wxCommandEvent(DELAY_LOAD);
@@ -333,4 +353,5 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 
 wxBEGIN_EVENT_TABLE(App, wxApp)
 EVT_COMMAND(wxID_ANY, DELAY_LOAD, DelayLoad)
+EVT_COMMAND(wxID_ANY, OPEN_PACKAGE, OnOpenPackage)
 wxEND_EVENT_TABLE()

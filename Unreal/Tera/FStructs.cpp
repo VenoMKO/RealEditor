@@ -16,6 +16,22 @@ FStream& operator<<(FStream& s, FGeneration& g)
   return s << g.Exports << g.Names << g.NetObjects;
 }
 
+FStream& operator<<(FStream& s, FTextureAllocations::FTextureType& t)
+{
+  s << t.SizeX;
+  s << t.SizeY;
+  s << t.NumMips;
+  s << t.Format;
+  s << t.TexCreateFlags;
+  s << t.ExportIndices;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FTextureAllocations& t)
+{
+  return s << t.TextureTypes;
+}
+
 FStream& operator<<(FStream& s, FPackageSummary& sum)
 {
   s << sum.Magic;
@@ -25,7 +41,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   }
 
   s << sum.FileVersion << sum.LicenseeVersion;
-  if (s.IsReading() && sum.FileVersion != 610)
+  if (s.IsReading() && (sum.FileVersion != 610 && sum.FileVersion != 897))
   {
     UThrow("Package version \"" + std::to_string(sum.FileVersion) + "/" + std::to_string(sum.LicenseeVersion) + "\" is not supported.");
   }
@@ -34,7 +50,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.FolderName;
   s << sum.PackageFlags;
 
-  if (sum.LicenseeVersion > 13)
+  if (sum.LicenseeVersion == 14)
   {
     if (!s.IsReading())
     {
@@ -51,6 +67,13 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.ExportsCount << sum.ExportsOffset;
   s << sum.ImportsCount << sum.ImportsOffset;
   s << sum.DependsOffset;
+  if (sum.FileVersion == 897)
+  {
+    s << sum.ImportExportGuidsOffset;
+    s << sum.ImportGuidsCount;
+    s << sum.ExportGuidsCount;
+    s << sum.ThumbnailTableOffset;
+  }
   s << sum.Guid;
   s << sum.Generations;
   s << sum.EngineVersion << sum.ContentVersion;
@@ -58,6 +81,10 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.CompressedChunks;
   s << sum.PackageSource;
   s << sum.AdditionalPackagesToCook;
+  if (sum.FileVersion == 897)
+  {
+    s << sum.TextureAllocations;
+  }
   return s;
 }
 

@@ -1,11 +1,11 @@
 #pragma once
 #include <wx/frame.h>
 #include <wx/splitter.h>
-#include <wx/dataview.h>
 #include <wx/toolbar.h>
 #include <wx/propgrid/manager.h>
 
 #include "GenericEditor.h"
+#include "ObjectTreeDataViewCtrl.h"
 
 #include <map>
 
@@ -14,7 +14,7 @@ wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 
 class App;
 class FPackage;
-typedef signed int PACKAGE_INDEX;
+
 class PackageWindow : public wxFrame {
 public:
   PackageWindow(std::shared_ptr<FPackage>& package, App* application);
@@ -24,10 +24,9 @@ public:
 private:
 
 	void InitLayout();
-	void LoadTreeIcons();
 	void LoadObjectTree();
+	void OnIdle(wxIdleEvent& e);
 
-	wxDECLARE_EVENT_TABLE();
 	// Menu
 	void OnNewClicked(wxCommandEvent&);
 	void OnOpenClicked(wxCommandEvent&);
@@ -56,10 +55,12 @@ private:
 
 	void ShowEditor(GenericEditor* editor);
 
+	wxDECLARE_EVENT_TABLE();
+
 private:
   App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
-	wxDataViewTreeCtrl* ObjectTreeCtrl = nullptr;
+	ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
 	wxMenuItem* LogWindowMenu = nullptr;
 	wxTextCtrl* ObjectFlagsTextfield = nullptr;
 	wxStaticText* ObjectOffsetLabel = nullptr;
@@ -83,7 +84,11 @@ private:
 
 	std::map<PACKAGE_INDEX, GenericEditor*> Editors;
 
+	wxObjectDataPtr<ObjectTreeModel> DataModel;
 	bool ContentHidden = false;
 	bool PropertiesHidden = false;
+	size_t ProcessedItemCnt = 0;
+	wxDataViewItem RootExport;
+	wxDataViewItemArray Exports;
 	int PropertiesPos = 0;
 };
