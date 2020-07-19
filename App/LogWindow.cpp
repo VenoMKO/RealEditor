@@ -36,12 +36,14 @@ void LogWindow::PumpMessages(wxCommandEvent&)
 {
 	std::vector<ALogEntry> entries;
 	Logger->GetEntries(entries, LastMessageIndex);
+	LogCtrl->Freeze();
+	LogCtrl->SetInsertionPointEnd();
 	for (ALogEntry& e : entries)
 	{
 		std::string msg = e.Text;
 		if (msg.back() != '\n')
 		{
-			msg += "\r\n";
+			msg += "\n";
 		}
 		std::tm* tm = std::localtime(&e.Time);
 		char buffer[32];
@@ -62,8 +64,9 @@ void LogWindow::PumpMessages(wxCommandEvent&)
 		}
 		LogCtrl->WriteText(A2W(msg));
 		LogCtrl->EndTextColour();
-		LogCtrl->ScrollIntoView(LogCtrl->GetCaretPosition(), WXK_PAGEDOWN);
 	}
+	LogCtrl->Thaw();
+	LogCtrl->ScrollIntoView(LogCtrl->GetCaretPosition(), WXK_PAGEDOWN);
 }
 
 wxBEGIN_EVENT_TABLE(LogWindow, wxFrame)
