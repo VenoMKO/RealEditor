@@ -1,13 +1,13 @@
 #include "RootPathWindow.h"
 #include <wx/dir.h>
+#include <Tera/Core.h>
 
 namespace 
 {
-  const wxString FrameTitle = "Aruns Hand";
-  const wxString PanelTitle = "Provide the CookedPC folder path";
-  const wxString PanelDescription = "This path will be used to load dependencies. You may need to run Aruns Hand as an Administrator if Tera is in a priveleged folder (e.g. Program Files).";
-  const wxString SelectTitle = "Select...";
-  const wxString ContinueTitle = "Continue";
+  const wxString PanelTitle = wxS("Provide the CookedPC folder path");
+  const wxString PanelDescription = wxS("This path will be used to load dependencies. You may need to run the program as an Administrator if Tera is in a priveleged folder (e.g. Program Files).");
+  const wxString SelectTitle = wxS("Select...");
+  const wxString ContinueTitle = wxS("Continue");
   enum ControlElementId {
     Path = wxID_HIGHEST + 1,
     Select,
@@ -16,14 +16,14 @@ namespace
 
   bool IsS1Folder(const wxString& path)
   {
-    return path.EndsWith(wxFILE_SEP_PATH + wxString("CookedPC")) || path.EndsWith(wxFILE_SEP_PATH + wxString("CookedPC") + wxFILE_SEP_PATH);
+    return path.EndsWith(wxFILE_SEP_PATH + wxString(L"CookedPC")) || path.EndsWith(wxFILE_SEP_PATH + wxString(L"CookedPC") + wxFILE_SEP_PATH);
   }
 }
 
-RootPathWindow::RootPathWindow()
-  : wxDialog(nullptr, wxID_ANY, FrameTitle, wxPoint(20, 20), wxSize(535, 211), wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
+RootPathWindow::RootPathWindow(const std::string& path)
+  : wxDialog(nullptr, wxID_ANY, wxTheApp->GetAppDisplayName(), wxPoint(20, 20), wxSize(535, 211), wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
-  S1CookedPC = wxEmptyString;
+  S1CookedPC = path.size() ? A2W(path) : wxEmptyString;
   wxPoint pos(20, 20);
   wxPanel* content = new wxPanel(this, wxID_ANY);
   wxStaticText* title = new wxStaticText(content, wxID_ANY, PanelTitle, pos);
@@ -35,7 +35,7 @@ RootPathWindow::RootPathWindow()
   pos.y += title->GetSize().y + 5;
   wxStaticText* description = new wxStaticText(content, wxID_ANY, PanelDescription, pos, wxSize(500, 32));
   pos.y += description->GetSize().y + 15;
-  PathTextfield = new wxTextCtrl(content, ControlElementId::Path, wxEmptyString, pos, wxSize(385, 20), wxTE_PROCESS_ENTER);
+  PathTextfield = new wxTextCtrl(content, ControlElementId::Path, S1CookedPC, pos, wxSize(385, 20), wxTE_PROCESS_ENTER);
   PathTextfield->ShowNativeCaret(true);
   pos.x += PathTextfield->GetSize().x + 5;
   pos.y -= 1;
@@ -43,7 +43,7 @@ RootPathWindow::RootPathWindow()
   pos.y += SelectButton->GetSize().y + 20;
   ContinueButton = new wxButton(content, ControlElementId::Continue, ContinueTitle, pos, wxSize(90, 24));
   SelectButton->SetFocus();
-  ContinueButton->Enable(false);
+  ContinueButton->Enable(IsS1Folder(S1CookedPC));
   Center();
 }
 
@@ -59,7 +59,7 @@ void RootPathWindow::OnPathChanged(wxCommandEvent& e)
 
 void RootPathWindow::OnSelectClicked(wxCommandEvent& e)
 {
-  wxDirDialog *openPanel = new wxDirDialog(this, "Select S1Game folder", PathTextfield->GetLabelText());
+  wxDirDialog *openPanel = new wxDirDialog(this, wxS("Select S1Game folder"), PathTextfield->GetLabelText());
   openPanel->Center();
   if (openPanel->ShowModal() == wxID_OK)
   {
@@ -70,7 +70,7 @@ void RootPathWindow::OnSelectClicked(wxCommandEvent& e)
     }
     else
     {
-      wxMessageBox(wxT("Folder must be called S1Game"), wxT("Error: Invalid path!"), wxICON_ERROR);
+      wxMessageBox(wxS("Folder must be called S1Game"), wxS("Error: Invalid path!"), wxICON_ERROR);
     }
   }
   openPanel->Destroy();
@@ -85,12 +85,22 @@ void RootPathWindow::OnContinueClicked(wxCommandEvent& e)
   wxDir s1Dir(PathTextfield->GetValue());
   if (!s1Dir.IsOpened())
   {
-    wxMessageBox(wxT("Make sure you entered a correct path and have enough privileges to access it."), wxT("Error: Failed to open CookedPC folder!"), wxICON_ERROR);
+    wxMessageBox(wxS("Make sure you entered a correct path and have enough privileges to access it."), wxS("Error: Failed to open CookedPC folder!"), wxICON_ERROR);
     return;
   }
+  ContinuePressed = true;
   S1CookedPC = PathTextfield->GetValue();
   s1Dir.Close();
   Close();
+}
+
+void RootPathWindow::OnClose(wxCloseEvent& e)
+{
+  if (!ContinuePressed)
+  {
+    S1CookedPC = wxEmptyString;
+  }
+  e.Skip();
 }
 
 wxBEGIN_EVENT_TABLE(RootPathWindow, wxDialog)
@@ -98,4 +108,5 @@ EVT_BUTTON(ControlElementId::Select, OnSelectClicked)
 EVT_BUTTON(ControlElementId::Continue, OnContinueClicked)
 EVT_TEXT(ControlElementId::Path, OnPathChanged)
 EVT_TEXT_ENTER(ControlElementId::Path, OnContinueClicked)
+EVT_CLOSE(OnClose)
 wxEND_EVENT_TABLE()

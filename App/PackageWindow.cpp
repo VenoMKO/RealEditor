@@ -194,7 +194,7 @@ void PackageWindow::OnNewClicked(wxCommandEvent& e)
 
 void PackageWindow::OnOpenClicked(wxCommandEvent& e)
 {
-	Application->OpenDialog();
+	Application->ShowOpenDialog();
 }
 
 void PackageWindow::OnSaveClicked(wxCommandEvent& e)

@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "FName.h"
 #include "FStructs.h"
+
 #include <memory>
 #include <atomic>
 #include <mutex>
@@ -10,12 +11,24 @@
 class FPackage {
 public:
 
+	typedef enum class EArch
+	{
+		x86 = 0,
+		x64
+	} EArch;
+
+	// RootDir architecture
+	static FPackage::EArch GetEngineArchitecture();
 	// Load class packages
 	static void LoadDefaultClassPackages();
 	// Unload class packages
 	static void UnloadDefaultClassPackages();
+	// Load Package Map
+	static void LoadPkgMapper();
 	// Load Composite Package Map
-	static void LoadCompositePackageMap();
+	static void LoadCompositePackageMapper();
+	// Load ObjectReference Map
+	static void LoadObjectRedirectorMapper();
 	// Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
 	static std::shared_ptr<FPackage> GetPackage(const std::string& path, bool noInit = false);
 	// Load and retain a package by name and guid(if valid). Every GetPackageNamed call must pair a UnloadPackage call
@@ -68,6 +81,12 @@ public:
 	inline std::vector<FObjectImport*> GetRootImports()
 	{
 		return RootImports;
+	}
+
+	// Get package architecture
+	inline EArch GetPackageEngineMode() const
+	{
+		return GetFileVersion() != 610 ? EArch::x64 : EArch::x86;
 	}
 
 	// Get import/export object at index
@@ -135,6 +154,16 @@ public:
 		return Cancelled.load();
 	}
 
+	uint16 GetFileVersion() const
+	{
+		return Summary.FileVersion;
+	}
+
+	uint16 GetLicenseeVersion() const
+	{
+		return Summary.LicenseeVersion;
+	}
+
 	// Get package name
 	std::string GetPackageName(bool extension = false) const;
 
@@ -170,4 +199,8 @@ private:
 	static std::vector<std::shared_ptr<FPackage>> LoadedPackages;
 	static std::vector<std::shared_ptr<FPackage>> DefaultClassPackages;
 	static std::vector<std::string> DirCache;
+	static std::unordered_map<std::string, std::string> PkgMap;
+	static std::unordered_map<std::string, std::string> ObjectRedirectorMap;
+	static std::unordered_map<std::string, std::vector<FCompositePackageMapEntry>> CompositPackageMap;
+	static EArch EngineArchitecture;
 };

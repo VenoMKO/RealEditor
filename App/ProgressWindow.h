@@ -30,7 +30,8 @@ private:
 
   wxDECLARE_EVENT_TABLE();
 private:
-  wxStaticText* ActionLabel;
-  wxGauge* ProgressBar;
+  wxStaticText* ActionLabel = nullptr;
+  wxGauge* ProgressBar = nullptr;
+  wxButton* CancelButton = nullptr;
   std::atomic_bool Cancelled = { false };
 };

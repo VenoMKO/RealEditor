@@ -100,6 +100,16 @@ bool Stricmp(const std::string& a, const std::string& b)
   return (a.size() == b.size()) && (std::equal(a.begin(), a.end(), b.begin(), CaseInsCharCompare));
 }
 
+uint64 GetFileTime(const std::wstring& path)
+{
+  struct _stat64 fileInfo;
+  if (!_wstati64(path.c_str(), &fileInfo))
+  {
+    return fileInfo.st_mtime;
+  }
+  return 0;
+}
+
 std::string ObjectFlagsToString(uint64 expFlag)
 {
   std::string s;
@@ -244,6 +254,12 @@ void UThrow(const std::string& msg)
 {
   LogE(msg);
   throw std::runtime_error(msg);
+}
+
+void UThrow(const std::wstring& msg)
+{
+  LogE(W2A(msg));
+  throw std::runtime_error(W2A(msg));
 }
 
 bool IsAnsi(const std::string& str)

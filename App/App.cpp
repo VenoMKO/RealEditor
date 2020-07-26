@@ -15,6 +15,7 @@ wxIMPLEMENT_APP(App);
 
 wxDEFINE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDEFINE_EVENT(OPEN_PACKAGE, wxCommandEvent);
+wxDEFINE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
 
 wxString GetConfigPath()
 {
@@ -97,10 +98,26 @@ wxPoint App::GetLastWindowPosition() const
   return LastWindowPosition;
 }
 
+void App::OnOpenPackage(wxCommandEvent& e)
+{
+  OpenPackage(e.GetString());
+}
+
 App::~App()
 {
   delete InstanceChecker;
   delete Server;
+}
+
+bool App::ShowOpenDialog(const wxString& rootDir)
+{
+  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.tfc; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.tfc;*.upk");
+  wxString packagePath = wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+  if (packagePath.size())
+  {
+    return OpenPackage(packagePath);
+  }
+  return false;
 }
 
 bool App::OpenPackage(const wxString& path)
@@ -137,51 +154,34 @@ bool App::OpenPackage(const wxString& path)
   PackageWindows.push_back(window);
   window->Show();
 
-  std::thread([package, window]() {
-    try
-    {
-      if (!package->IsReady())
+  if (!package->IsReady())
+  {
+    std::thread([package, window]() {
+      try
       {
         package->Load();
       }
-    }
-    catch (const std::exception& e)
-    {
-      LogE("Failed to load the package. %s.", e.what());
-      wxCommandEvent* event = new wxCommandEvent(PACKAGE_ERROR);
-      event->SetString(e.what());
-      wxQueueEvent(window, event);
-      return;
-    }
-    if (!package->IsOperationCancelled())
-    {
-      wxQueueEvent(window, new wxCommandEvent(PACKAGE_READY));
-    }
-  }).detach();
-  return true;
-}
-
-bool App::OpenDialog(const wxString& rootDir)
-{
-  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.tfc; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.tfc;*.upk");
-  wxString packagePath = wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-  if (packagePath.size())
-  {
-    return OpenPackage(packagePath);
+      catch (const std::exception& e)
+      {
+        LogE("Failed to load the package. %s.", e.what());
+        SendEvent(window, PACKAGE_ERROR, e.what());
+        return;
+      }
+      if (!package->IsOperationCancelled())
+      {
+        SendEvent(window, PACKAGE_READY);
+      }
+    }).detach();
   }
-  return false;
-}
 
-void App::OnOpenPackage(wxCommandEvent& e)
-{
-  OpenPackage(e.GetString());
+  return true;
 }
 
 void App::PackageWindowWillClose(const PackageWindow* frame)
 {
   for (auto it = PackageWindows.begin(); it < PackageWindows.end(); it++)
   {
-    if ((*it)->GetPackagePath() == frame->GetPackagePath())
+    if (*it == frame)
     {
       PackageWindows.erase(it);
       break;
@@ -199,7 +199,7 @@ bool App::OnInit()
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
   
-  // If renames the executable our AppData storage path will change too. We don't want that.
+  // If the executable name changes our AppData storage path will change too. We don't want that.
   // So we set AppName manually. This will keep paths consistent.
   SetAppName(APP_NAME);
   SetAppDisplayName(APP_NAME);
@@ -212,9 +212,7 @@ bool App::OnInit()
   if (Config.RootDir.empty())
   {
     Config = cfg.GetDefaultConfig();
-    RootPathWindow rtw;
-    rtw.ShowModal();
-    Config.RootDir = W2A(rtw.GetRootPath().ToStdWstring());
+    Config.RootDir = RequestRootDir();
     if (Config.RootDir.empty())
     {
       return false;
@@ -243,6 +241,11 @@ int App::OnRun()
     {
       ALog::SharedLog()->Show();
     }
+    ProgressWindow* progressWindow = new ProgressWindow(nullptr);
+    progressWindow->SetActionText(wxS("Loading..."));
+    progressWindow->SetCurrentProgress(-1);
+    progressWindow->Show();
+    std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();
     return wxApp::OnRun();
   }
   return 0;
@@ -250,40 +253,91 @@ int App::OnRun()
 
 void App::LoadCore(ProgressWindow* pWindow)
 {
-  {
-    wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_DESC);
-    event->SetString(wxT("Enumerating root folder..."));
-    wxQueueEvent(pWindow, event);
-  }
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating root folder...");
   FPackage::SetRootPath(Config.RootDir);
+
   if (pWindow->IsCancelled())
   {
     wxQueueEvent(this, new wxCloseEvent());
     return;
   }
+
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading class packages...");
+
+  try
   {
-    wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_DESC);
-    event->SetString(wxT("Loading class packages..."));
-    wxQueueEvent(pWindow, event);
+    FPackage::LoadDefaultClassPackages();
   }
-  FPackage::LoadDefaultClassPackages();
+  catch (const std::exception& e)
+  {
+    SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+    SendEvent(this, LOAD_CORE_ERROR, e.what());
+    return;
+  }
+
   if (pWindow->IsCancelled())
   {
     wxQueueEvent(this, new wxCloseEvent());
     return;
   }
+
+  if (FPackage::GetEngineArchitecture() == FPackage::EArch::x64)
   {
-    wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_DESC);
-    event->SetString(wxT("Loading composit package mapping..."));
-    wxQueueEvent(pWindow, event);
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading PkgMapper...");
+    try
+    {
+      FPackage::LoadPkgMapper();
+    }
+    catch (const std::exception& e)
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, e.what());
+    }
+
+    if (pWindow->IsCancelled())
+    {
+      wxQueueEvent(this, new wxCloseEvent());
+      return;
+    }
+
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading CompositePackageMapper...");
+    try
+    {
+      FPackage::LoadCompositePackageMapper();
+    }
+    catch (const std::exception& e)
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, e.what());
+    }
+
+    if (pWindow->IsCancelled())
+    {
+      wxQueueEvent(this, new wxCloseEvent());
+      return;
+    }
+
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading ObjectRedirectorMapper...");
+    try
+    {
+      FPackage::LoadObjectRedirectorMapper();
+    }
+    catch (const std::exception& e)
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, e.what());
+    }
+
+    if (pWindow->IsCancelled())
+    {
+      wxQueueEvent(this, new wxCloseEvent());
+      return;
+    }
   }
-  FPackage::LoadCompositePackageMap();
-  {
-    wxCommandEvent* event = new wxCommandEvent(UPDATE_PROGRESS_FINISH);
-    wxQueueEvent(pWindow, event);
-    event = new wxCommandEvent(DELAY_LOAD);
-    wxQueueEvent(this, event);
-  }
+  
+
+  SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+  SendEvent(this, DELAY_LOAD);
 }
 
 void App::DelayLoad(wxCommandEvent&)
@@ -295,13 +349,11 @@ void App::DelayLoad(wxCommandEvent&)
   OpenList.clear();
 }
 
-wxString App::RequestS1GameFolder()
+std::string App::RequestRootDir()
 {
-  RootPathWindow* frame = new RootPathWindow();
-  frame->ShowModal();
-  wxString path = frame->GetRootPath();
-  frame->Destroy();
-  return path;
+  RootPathWindow frame(Config.RootDir);
+  frame.ShowModal();
+  return W2A(frame.GetRootPath().ToStdWstring());
 }
 
 int App::OnExit()
@@ -325,6 +377,25 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
   parser.SetDesc(cmdLineDesc);
 }
 
+void App::OnLoadError(wxCommandEvent& e)
+{
+  wxMessageBox(e.GetString(), "Error!", wxICON_ERROR);
+  FPackage::UnloadDefaultClassPackages();
+  wxString rootDir = RequestRootDir();
+  if (rootDir.empty())
+  {
+    Exit();
+    return;
+  }
+  // Retry to load the core with a new path
+  Config.RootDir = rootDir;
+  ProgressWindow* progressWindow = new ProgressWindow(nullptr);
+  progressWindow->SetActionText(wxS("Loading..."));
+  progressWindow->SetCurrentProgress(-1);
+  progressWindow->Show();
+  std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();
+}
+
 bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 {
   int paramsCount = parser.GetParamCount();
@@ -333,25 +404,27 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     RpcClient::SendRequest("open", paramsCount ? parser.GetParam((size_t)paramsCount - 1) : wxEmptyString);
     return false;
   }
-  else
+  if (paramsCount)
   {
-    if (paramsCount)
+    for (int idx = 0; idx < paramsCount; ++idx)
     {
-      for (int idx = 0; idx < paramsCount; ++idx)
-      {
-        OpenList.push_back(parser.GetParam(idx));
-      }
+      OpenList.push_back(parser.GetParam(idx));
     }
-    ProgressWindow* progressWindow = new ProgressWindow(nullptr);
-    progressWindow->SetActionText(wxS("Loading..."));
-    progressWindow->SetCurrentProgress(-1);
-    progressWindow->Show();
-    std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();
+    return true;
   }
-  return true;
+  // If we have no input args, we want to show a Root selector window
+  Config.RootDir = RequestRootDir();
+  if (Config.RootDir.size())
+  {
+    AConfiguration cfg(W2A(GetConfigPath().ToStdWstring()));
+    cfg.SetConfig(Config);
+    cfg.Save();
+  }
+  return false;
 }
 
 wxBEGIN_EVENT_TABLE(App, wxApp)
 EVT_COMMAND(wxID_ANY, DELAY_LOAD, DelayLoad)
 EVT_COMMAND(wxID_ANY, OPEN_PACKAGE, OnOpenPackage)
+EVT_COMMAND(wxID_ANY, LOAD_CORE_ERROR, OnLoadError)
 wxEND_EVENT_TABLE()

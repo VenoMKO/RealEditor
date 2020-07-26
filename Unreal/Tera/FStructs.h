@@ -103,7 +103,30 @@ struct FTextureAllocations {
 	friend FStream& operator<<(FStream& s, FTextureAllocations& t);
 };
 
+struct FCompositePackageMapEntry {
+	std::string Package;
+	std::string ObjectPath;
+	FILE_OFFSET Offset = 0;
+	FILE_OFFSET Size = 0;
+
+	friend FStream& operator<<(FStream& s, FCompositePackageMapEntry& e);
+};
+
 struct FPackageSummary {
+	FPackageSummary()
+	{}
+
+	FPackageSummary(bool modern)
+	{
+		if (modern)
+		{
+			FileVersion = 897;
+			LicenseeVersion = 17;
+			EngineVersion = 13249;
+			ContentVersion = 142;
+		}
+	}
+
 	uint32 Magic = PACKAGE_MAGIC;
 	uint16 FileVersion = 610;
 	uint16 LicenseeVersion = 14;

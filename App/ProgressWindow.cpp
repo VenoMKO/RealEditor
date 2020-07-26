@@ -22,8 +22,8 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
 	ProgressBar->SetValue(0);
 	bSizer2->Add(ProgressBar, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-	wxButton* m_button1 = new wxButton(this, wxID_ANY, cancel, wxDefaultPosition, wxDefaultSize, 0);
-	bSizer2->Add(m_button1, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+	CancelButton = new wxButton(this, wxID_ANY, cancel, wxDefaultPosition, wxDefaultSize, 0);
+	bSizer2->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
 	bSizer1->Add(bSizer2, 0, wxEXPAND, 5);
@@ -35,7 +35,7 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
 	this->Centre(wxBOTH);
 
 	// Connect Events
-	m_button1->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancellClicked), NULL, this);
+	CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancellClicked), NULL, this);
 }
 
 void ProgressWindow::SetActionText(const wxString& text)
@@ -64,6 +64,7 @@ void ProgressWindow::SetCurrentProgress(int progress)
 
 void ProgressWindow::OnCancellClicked(wxCommandEvent&)
 {
+	CancelButton->Enable(false);
 	Cancelled.store(true);
 	ActionLabel->SetLabelText("Stopping...");
 	ProgressBar->Pulse();
@@ -81,6 +82,8 @@ void ProgressWindow::OnUpdateProgressDescription(wxCommandEvent& e)
 
 void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
 {
+	SetCurrentProgress(0);
+	CancelButton->Enable(false);
 	Close();
 }
 

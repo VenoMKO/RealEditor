@@ -1,5 +1,5 @@
 #include "../../App/LogWindow.h"
-
+#include "../../App/App.h"
 #include "ALog.h"
 #include "FStream.h"
 
@@ -171,7 +171,6 @@ void ALog::UpdateWindow()
   std::scoped_lock<std::recursive_mutex> lock(WLocker);
   if (Window)
   {
-    wxCommandEvent* event = new wxCommandEvent(PUMP_LOG_WINDOW);
-    wxQueueEvent(Window, event);
+    SendEvent(Window, PUMP_LOG_WINDOW);
   }
 }

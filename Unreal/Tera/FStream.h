@@ -141,6 +141,34 @@ public:
     return *this;
   }
 
+  template <typename Tk, typename Tv>
+  inline FStream& operator<<(std::unordered_map<Tk, Tv>& map)
+  {
+    uint32 cnt = (uint32)map.size();
+    (*this) << cnt;
+    if (Reading)
+    {
+      map.clear();
+      for (uint32 idx = 0; idx < cnt; ++idx)
+      {
+        Tk k; Tv v;
+        (*this) << k;
+        (*this) << v;
+        map.emplace(k, v);
+      }
+    }
+    else
+    {
+      for (std::pair<const Tk, Tv>& pair : map)
+      {
+        Tk k(pair.first);
+        (*this) << k;
+        (*this) << pair.second;
+      }
+    }
+    return *this;
+  }
+
   virtual void SerializeBytes(void* ptr, FILE_OFFSET size) = 0;
 
   virtual void SetPosition(FILE_OFFSET offset) = 0;
@@ -201,6 +229,14 @@ public:
     : FStream()
     , Path(path)
     , Stream(A2W(path), std::ios::binary)
+  {
+    Reading = true;
+  }
+
+  FReadStream(const std::wstring& path)
+    : FStream()
+    , Path(W2A(path))
+    , Stream(path, std::ios::binary)
   {
     Reading = true;
   }
@@ -277,7 +313,16 @@ class FWriteStream : public FStream {
 public:
   FWriteStream(const std::string& path, bool trunk = true)
     : FStream()
+    , Path(path)
     , Stream(A2W(path), trunk ? (std::ios::out | std::ios::trunc | std::ios::binary) : (std::ios::out | std::ios::binary))
+  {
+    Reading = false;
+  }
+
+  FWriteStream(const std::wstring& path, bool trunk = true)
+    : FStream()
+    , Path(W2A(path))
+    , Stream(path, trunk ? (std::ios::out | std::ios::trunc | std::ios::binary) : (std::ios::out | std::ios::binary))
   {
     Reading = false;
   }

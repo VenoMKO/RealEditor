@@ -79,6 +79,7 @@ std::string ExportFlagsToString(uint32 flags);
 
 // Generic runtime error
 void UThrow(const std::string& msg);
+void UThrow(const std::wstring& msg);
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
 // Wide string to UTF8
@@ -91,6 +92,8 @@ std::wstring A2W(const std::string& str);
 bool Wstricmp(const std::string& a, const std::string& b);
 // Case-insensitive string comparison
 bool Stricmp(const std::string& a, const std::string& b);
+// Get file's last modification date
+uint64 GetFileTime(const std::wstring& path);
 
 // Format like a C string
 std::string Sprintf(const std::string fmt, ...);

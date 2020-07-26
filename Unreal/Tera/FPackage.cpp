@@ -11,101 +11,172 @@
 #include <filesystem>
 #include <ppl.h>
 
+const char* PackageMapperName = "PkgMapper";
+const char* CompositePackageMapperName = "CompositePackageMapper";
+const char* ObjectRedirectorMapperName = "ObjectRedirectorMapper";
+const char* PackageListName = "DirCache.re";
+
+const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
+const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
+
+const std::vector<std::string> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
+
 std::string FPackage::RootDir;
 std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<std::string> FPackage::DirCache;
+std::unordered_map<std::string, std::string> FPackage::PkgMap;
+std::unordered_map<std::string, std::string> FPackage::ObjectRedirectorMap;
+std::unordered_map<std::string, std::vector<FCompositePackageMapEntry>> FPackage::CompositPackageMap;
 
-namespace
+FPackage::EArch FPackage::EngineArchitecture = FPackage::EArch::x86;
+
+void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
 {
-  const char* CompositePackageMapperName = "CompositePackageMapper.dat.txt";
-  const char* PackageListName = "Packages.list";
-  const std::vector<std::string> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
-
-  void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
+  std::filesystem::path fspath(A2W(path));
+  dirCache.resize(0);
+  std::vector<std::filesystem::path> tmpPaths;
+  for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
   {
-    LogI("Building package list: \"%s\"", path.c_str());
-    std::filesystem::path fspath(A2W(path));
-    dirCache.resize(0);
-    std::vector<std::filesystem::path> tmpPaths;
-    for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
+    if (!p.is_regular_file() || !p.file_size())
     {
-      if (!p.is_regular_file() || !p.file_size())
-      {
-        continue;
-      }
-      std::filesystem::path itemPath = p.path();
-      std::string ext = itemPath.extension().string();
-      if (Stricmp(ext, ".gpk") || Stricmp(ext, ".gmp") || Stricmp(ext, ".upk") || Stricmp(ext, ".u"))
-      {
-        tmpPaths.push_back(itemPath);
-      }
+      continue;
     }
-
-    std::sort(tmpPaths.begin(), tmpPaths.end(), [](std::filesystem::path& a, std::filesystem::path& b) {
-      auto tA = a.filename().replace_extension();
-      auto tB = b.filename().replace_extension();
-      return tA.wstring() < tB.wstring();
-    });
-
-    std::filesystem::path listPath = fspath / PackageListName;
-    std::wofstream s(listPath.wstring());
-    for (const auto& path : tmpPaths)
+    std::filesystem::path itemPath = p.path();
+    std::string ext = itemPath.extension().string();
+    if (Stricmp(ext, ".gpk") || Stricmp(ext, ".gmp") || Stricmp(ext, ".upk") || Stricmp(ext, ".u"))
     {
-      std::wstring wpath = path.wstring();
-      dirCache.push_back(W2A(wpath));
-      s << wpath << std::endl;
+      tmpPaths.push_back(itemPath);
     }
-    s.close();
-    LogI("Done. Found %ld packages", dirCache.size());
   }
+
+  std::sort(tmpPaths.begin(), tmpPaths.end(), [](std::filesystem::path& a, std::filesystem::path& b) {
+    auto tA = a.filename().replace_extension();
+    auto tB = b.filename().replace_extension();
+    return tA.wstring() < tB.wstring();
+  });
+
+  std::filesystem::path listPath = fspath / PackageListName;
+  std::ofstream s(listPath.wstring());
+  for (const auto& path : tmpPaths)
+  {
+    s << dirCache.emplace_back(W2A(path.wstring())) << std::endl;
+  }
+}
+
+void DecryptMapper(const std::filesystem::path& path, std::string& decrypted)
+{
+  if (!std::filesystem::exists(path))
+  {
+    UThrow(L"File \"" + path.wstring() + L"\" does not exist!");
+  }
+  std::vector<char> encrypted;
+  size_t size = 0;
+
+  {
+    std::ifstream s(path.wstring(), std::ios::binary | std::ios::ate);
+    if (!s.is_open())
+    {
+      UThrow(L"Can't open \"" + path.wstring() + L"\"!");
+    }
+    s.seekg(0, std::ios_base::end);
+    size = s.tellg();
+    s.seekg(0, std::ios_base::beg);
+    encrypted.resize(size);
+    decrypted.resize(size);
+    s.read(&encrypted[0], size);
+  }
+  
+  LogI("Decrypting %s", path.filename().string().c_str());
+
+  size_t offset = 0;
+  for (; offset + sizeof(Key1) < size; offset += sizeof(Key1))
+  {
+    for (size_t idx = 0; idx < sizeof(Key1); ++idx)
+    {
+      decrypted[offset + idx] = encrypted[offset + Key1[idx]];
+    }
+  }
+  for (; offset < size; ++offset)
+  {
+    decrypted[offset] = encrypted[offset];
+  }
+
+  {
+    size_t a = 1;
+    size_t b = size - 1;
+    for (offset = (size / 2 + 1) / 2; offset; --offset, a += 2, b -= 2)
+    {
+      std::swap(decrypted[a], decrypted[b]);
+    }
+  }
+
+  for (offset = 0; offset < size; ++offset)
+  {
+    decrypted[offset] ^= Key2[offset % sizeof(Key2)];
+  }
+}
+
+void DecryptMapper(const std::filesystem::path& path, std::wstring& decrypted)
+{
+  std::string tmp;
+  DecryptMapper(path, tmp);
+  decrypted.resize(tmp.size() / 2);
+  memcpy_s((void*)decrypted.c_str(), decrypted.size(), tmp.c_str(), decrypted.size());
 }
 
 void FPackage::SetRootPath(const std::string& path)
 {
   RootDir = path;
-  std::filesystem::path listPath(A2W(path));
-  listPath /= PackageListName;
+  std::filesystem::path listPath = std::filesystem::path(A2W(path)) / PackageListName;
+  std::ifstream s(listPath.wstring());
+  if (s.is_open())
+  {
+    std::stringstream buffer;
+    buffer << s.rdbuf();
+    size_t pos = 0;
+    size_t prevPos = 0;
+    std::string str = buffer.str();
+    while ((pos = str.find('\n', prevPos)) != std::string::npos)
+    {
+      DirCache.push_back(str.substr(prevPos, pos - prevPos));
+      pos++;
+      std::swap(pos, prevPos);
+    }
+    return;
+  }
+  LogI("Building directory cache: \"%s\"", path.c_str());
+  BuildPackageList(path, DirCache);
+  LogI("Done. Found %ld packages", DirCache.size());
+}
 
-  if (std::filesystem::exists(listPath))
-  {
-    std::wifstream s(listPath);
-    if (s.is_open())
-    {
-      std::wstring l;
-      while (std::getline(s, l))
-      {
-        if (l.size())
-        {
-          std::filesystem::path itemPath(l);
-          std::string ext = itemPath.extension().string();
-          if (Stricmp(ext, ".gpk") || Stricmp(ext, ".gmp") || Stricmp(ext, ".upk") || Stricmp(ext, ".u"))
-          {
-            DirCache.push_back(W2A(l));
-          }
-        }
-      }
-      s.close();
-    }
-    else
-    {
-      BuildPackageList(path, DirCache);
-    }
-  }
-  else
-  {
-    BuildPackageList(path, DirCache);
-  }
+FPackage::EArch FPackage::GetEngineArchitecture()
+{
+  return EngineArchitecture;
 }
 
 void FPackage::LoadDefaultClassPackages()
 {
+  LogI("Loading default class packages...");
   for (const auto& name : DefaultClassPackageNames)
   {
     if (auto package = GetPackageNamed(name))
     {
       DefaultClassPackages.push_back(package);
+      if (name == DefaultClassPackageNames[0])
+      {
+        EngineArchitecture = package->GetEngineArchitecture();
+        LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
+      }
+      else if (package->GetEngineArchitecture() != EngineArchitecture)
+      {
+        UThrow("Package " + name + " has different version " + std::to_string(package->GetFileVersion()) + "/" + std::to_string(package->GetLicenseeVersion()));
+      }
+    }
+    else
+    {
+      UThrow("Failed to load " + name + " package");
     }
   }
   for (auto package : DefaultClassPackages)
@@ -123,45 +194,176 @@ void FPackage::UnloadDefaultClassPackages()
   DefaultClassPackages.clear();
 }
 
-void FPackage::LoadCompositePackageMap()
+void FPackage::LoadPkgMapper()
 {
-  std::vector<std::string> packages;
-  std::vector<std::string> mapping;
+  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / PackageMapperName;
+  std::filesystem::path storagePath = path;
+  storagePath.replace_extension(".re");
+  std::filesystem::path encryptedPath = path;
+  encryptedPath.replace_extension(".dat");
+  LogI("Reading %s storage...", path.filename().string().c_str());
+
+  uint64 fts = GetFileTime(encryptedPath.wstring());
+  if (std::filesystem::exists(storagePath))
   {
-    std::filesystem::path listPath(A2W(RootDir));
-    listPath /= CompositePackageMapperName;
-
-    std::string compositMapString;
-    if (std::filesystem::exists(listPath))
+    FReadStream rs(storagePath.wstring());
+    uint64 ts = 0;
+    rs << ts;
+    if (fts == ts || !fts)
     {
-      std::ifstream s(listPath);
-      if (s.is_open())
-      {
-        std::stringstream buffer;
-        buffer << s.rdbuf();
-        compositMapString = buffer.str();
-      }
+      rs << PkgMap;
+      return;
     }
-    if (compositMapString.empty())
+    else
     {
-      UThrow("Failed to load composit map! File CompositePackageMapper.dat.txt does not exist or empty!");
+      LogW("%s storage is outdated! Updating...", path.filename().string().c_str());
     }
-    return;
-    size_t pos = 0;
-    size_t prevPos = 0;
-
-    while ((pos = compositMapString.find('?', pos)) != std::string::npos)
-    {
-      packages.emplace_back(compositMapString.substr(prevPos, pos));
-      prevPos = compositMapString.find('!', pos);
-      mapping.emplace_back(compositMapString.substr(pos + 1, prevPos - pos - 1));
-      std::swap(prevPos, pos);
-    }
-    Check(packages.size() == mapping.size());
   }
-  
-  // TODO: implement mapping
-  // Probable struct: "UE3ObjectPath.ObjectName,PackageName,Offset,Size,|"
+
+  std::string buffer;
+  DecryptMapper(encryptedPath, buffer);
+
+  size_t pos = 0;
+  size_t prevPos = 0;
+  while ((pos = buffer.find('|', prevPos)) != std::string::npos)
+  {
+    size_t sepPos = buffer.find(',', prevPos);
+    if (sepPos == std::string::npos || sepPos > pos)
+    {
+      UThrow(path.filename().string() + " is corrupted!");
+    }
+    std::string key = buffer.substr(prevPos, sepPos - prevPos);
+    std::string value = buffer.substr(sepPos + 1, pos - sepPos - 1);
+    PkgMap.emplace(key, value);
+    pos++;
+    std::swap(pos, prevPos);
+  }
+
+  LogI("Saving %s storage", path.filename().string().c_str());
+  FWriteStream ws(storagePath.wstring());
+  ws << fts;
+  ws << PkgMap;
+}
+
+void FPackage::LoadCompositePackageMapper()
+{
+  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / CompositePackageMapperName;
+  std::filesystem::path storagePath = path;
+  storagePath.replace_extension(".re");
+  std::filesystem::path encryptedPath = path;
+  encryptedPath.replace_extension(".dat");
+  LogI("Reading %s storage...", path.filename().string().c_str());
+
+  uint64 fts = GetFileTime(encryptedPath.wstring());
+  if (std::filesystem::exists(storagePath))
+  {
+    FReadStream rs(storagePath.wstring());
+    uint64 ts = 0;
+    rs << ts;
+    if (fts == ts || !fts)
+    {
+      rs << CompositPackageMap;
+      return;
+    }
+    else
+    {
+      LogW("%s storage is outdated! Updating...", path.filename().string().c_str());
+    }
+  }
+
+  std::string buffer;
+  DecryptMapper(encryptedPath, buffer);
+
+  size_t pos = 0;
+  size_t posEnd = 0;
+  std::vector<std::string> packages;
+  while ((pos = buffer.find('?', posEnd)) != std::string::npos)
+  {
+    std::string pkgName = buffer.substr(posEnd + 1, pos - posEnd - 1);
+    auto& mapEntry = CompositPackageMap.emplace(pkgName, std::vector<FCompositePackageMapEntry>());
+    posEnd = buffer.find('!', pos);
+    
+    do
+    {
+      pos++;
+      FCompositePackageMapEntry& entry = mapEntry.first->second.emplace_back();
+
+      size_t elementEnd = buffer.find(',', pos);
+      entry.ObjectPath = buffer.substr(pos, elementEnd - pos);
+      std::swap(pos, elementEnd);
+      pos++;
+
+      elementEnd = buffer.find(',', pos);
+      entry.Package = buffer.substr(pos, elementEnd - pos);
+      std::swap(pos, elementEnd);
+      pos++;
+
+      elementEnd = buffer.find(',', pos);
+      entry.Offset = (FILE_OFFSET)std::stoul(buffer.substr(pos, elementEnd - pos));
+      std::swap(pos, elementEnd);
+      pos++;
+
+      elementEnd = buffer.find(',', pos);
+      entry.Size = (FILE_OFFSET)std::stoul(buffer.substr(pos, elementEnd - pos));
+      std::swap(pos, elementEnd);
+      pos++;
+    } while (buffer.find('|', pos) < posEnd - 1);
+  }
+
+  LogI("Saving %s storage", path.filename().string().c_str());
+  FWriteStream ws(storagePath.wstring());
+  ws << fts;
+  ws << CompositPackageMap;
+}
+
+void FPackage::LoadObjectRedirectorMapper()
+{
+  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / ObjectRedirectorMapperName;
+  std::filesystem::path storagePath = path;
+  storagePath.replace_extension(".re");
+  std::filesystem::path encryptedPath = path;
+  encryptedPath.replace_extension(".dat");
+  LogI("Reading %s storage...", path.filename().string().c_str());
+  uint64 fts = GetFileTime(encryptedPath.wstring());
+  if (std::filesystem::exists(storagePath))
+  {
+    FReadStream rs(storagePath.wstring());
+    uint64 ts = 0;
+    rs << ts;
+    if (fts == ts || !fts)
+    {
+      rs << ObjectRedirectorMap;
+      return;
+    }
+    else
+    {
+      LogW("%s storage is outdated! Updating...", path.filename().string().c_str());
+    }
+  }
+
+  std::wstring buffer;
+  DecryptMapper(encryptedPath, buffer);
+
+  size_t pos = 0;
+  size_t prevPos = 0;
+  while ((pos = buffer.find('|', prevPos)) != std::string::npos)
+  {
+    size_t sepPos = buffer.find(',', prevPos);
+    if (sepPos == std::string::npos || sepPos > pos)
+    {
+      UThrow(path.filename().string() + " is corrupted!");
+    }
+    std::string key = W2A(buffer.substr(prevPos, sepPos - prevPos));
+    std::string value = W2A(buffer.substr(sepPos + 1, pos - sepPos - 1));
+    ObjectRedirectorMap.emplace(key, value);
+    pos++;
+    std::swap(pos, prevPos);
+  }
+
+  LogI("Saving %s storage", path.filename().string().c_str());
+  FWriteStream ws(storagePath.wstring());
+  ws << fts;
+  ws << ObjectRedirectorMap;
 }
 
 std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noInit)

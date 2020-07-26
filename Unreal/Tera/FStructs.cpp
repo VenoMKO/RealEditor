@@ -32,6 +32,15 @@ FStream& operator<<(FStream& s, FTextureAllocations& t)
   return s << t.TextureTypes;
 }
 
+FStream& operator<<(FStream& s, FCompositePackageMapEntry& e)
+{
+  s << e.Package;
+  s << e.ObjectPath;
+  s << e.Offset;
+  s << e.Size;
+  return s;
+}
+
 FStream& operator<<(FStream& s, FPackageSummary& sum)
 {
   s << sum.Magic;

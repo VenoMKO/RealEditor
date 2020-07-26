@@ -26,6 +26,7 @@ FStream& FStream::operator<<(std::string& s)
       s.resize(tmp.size());
       DBreakIf(tmp.size() != s.size());
       memcpy_s(&s[0], s.size(), &tmp[0], tmp.size());
+      free(data);
     }
   }
   else
