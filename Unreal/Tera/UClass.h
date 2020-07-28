@@ -27,6 +27,7 @@ class UTextBuffer : public UObject {
 public:
   DECL_UOBJ(UTextBuffer, UObject);
 
+protected:
   void Serialize(FStream& s);
 
 protected:
@@ -49,6 +50,7 @@ public:
     return Next;
   }
 
+protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -60,6 +62,7 @@ class UEnum : public UField {
 public:
   DECL_UOBJ(UEnum, UField);
 
+protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -71,6 +74,7 @@ public:
   DECL_UOBJ(UStruct, UField);
   ~UStruct();
 
+protected:
   void Serialize(FStream& s);
 
 protected:
@@ -87,6 +91,7 @@ class UState : public UStruct {
 public:
   DECL_UOBJ(UState, UStruct);
 
+protected:
   void Serialize(FStream& s);
 
 protected:
@@ -106,6 +111,7 @@ public:
     : UState(exp)
   {}
 
+protected:
   void Serialize(FStream& s) override;
 
 protected:

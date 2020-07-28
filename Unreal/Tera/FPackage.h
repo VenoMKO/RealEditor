@@ -84,7 +84,7 @@ public:
 	}
 
 	// Get package architecture
-	inline EArch GetPackageEngineMode() const
+	inline EArch GetPackageArchitecture() const
 	{
 		return GetFileVersion() != 610 ? EArch::x64 : EArch::x86;
 	}

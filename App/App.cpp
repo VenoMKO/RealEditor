@@ -283,49 +283,63 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   if (FPackage::GetEngineArchitecture() == FPackage::EArch::x64)
   {
-    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading PkgMapper...");
-    try
-    {
-      FPackage::LoadPkgMapper();
-    }
-    catch (const std::exception& e)
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
+    std::mutex errorMutex;
+    std::string error;
+    std::thread pkgMapper([&errorMutex, &error] {
+      try
+      {
+        FPackage::LoadPkgMapper();
+      }
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(errorMutex);
+        if (error.empty())
+        {
+          error = e.what();
+        }
+      }
+    });
+
+    std::thread compositMapper([&errorMutex, &error] {
+      try
+      {
+        FPackage::LoadCompositePackageMapper();
+      }
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(errorMutex);
+        if (error.empty())
+        {
+          error = e.what();
+        }
+      }
+    });
+
+    std::thread objectRedirectorMapper([&errorMutex, &error] {
+      try
+      {
+        FPackage::LoadObjectRedirectorMapper();
+      }
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(errorMutex);
+        if (error.empty())
+        {
+          error = e.what();
+        }
+      }
+    });
+
+    pkgMapper.join();
+    compositMapper.join();
+    objectRedirectorMapper.join();
+
+    if (error.size())
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, e.what());
-    }
-
-    if (pWindow->IsCancelled())
-    {
-      wxQueueEvent(this, new wxCloseEvent());
+      SendEvent(this, LOAD_CORE_ERROR, error);
       return;
-    }
-
-    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading CompositePackageMapper...");
-    try
-    {
-      FPackage::LoadCompositePackageMapper();
-    }
-    catch (const std::exception& e)
-    {
-      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, e.what());
-    }
-
-    if (pWindow->IsCancelled())
-    {
-      wxQueueEvent(this, new wxCloseEvent());
-      return;
-    }
-
-    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading ObjectRedirectorMapper...");
-    try
-    {
-      FPackage::LoadObjectRedirectorMapper();
-    }
-    catch (const std::exception& e)
-    {
-      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, e.what());
     }
 
     if (pWindow->IsCancelled())

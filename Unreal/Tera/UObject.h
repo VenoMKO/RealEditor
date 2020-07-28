@@ -21,9 +21,6 @@ public:
   // Load the object from a package
   virtual void Load();
 
-  // Serialize the object from a stream. Should not be called outside of the Load
-  virtual void Serialize(FStream& s);
-
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
 
@@ -51,6 +48,10 @@ public:
   }
 
   FPackage* GetPackage() const;
+
+protected:
+  // Serialize the object from a stream. Should not be called outside of the Load
+  virtual void Serialize(FStream& s);
 
 protected:
   bool Loaded = false;

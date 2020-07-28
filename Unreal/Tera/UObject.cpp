@@ -215,10 +215,7 @@ FStream& operator<<(FStream& s, UObject*& obj)
   }
   else
   {
-    if (obj)
-    {
-      idx = s.GetPackage()->GetObjectIndex(obj);
-    }
+    idx = s.GetPackage()->GetObjectIndex(obj);
     s << idx;
   }
   return s;

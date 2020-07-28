@@ -166,10 +166,10 @@ void FPackage::LoadDefaultClassPackages()
       DefaultClassPackages.push_back(package);
       if (name == DefaultClassPackageNames[0])
       {
-        EngineArchitecture = package->GetEngineArchitecture();
+        EngineArchitecture = package->GetPackageArchitecture();
         LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
       }
-      else if (package->GetEngineArchitecture() != EngineArchitecture)
+      else if (package->GetPackageArchitecture() != EngineArchitecture)
       {
         UThrow("Package " + name + " has different version " + std::to_string(package->GetFileVersion()) + "/" + std::to_string(package->GetLicenseeVersion()));
       }
@@ -243,6 +243,13 @@ void FPackage::LoadPkgMapper()
   FWriteStream ws(storagePath.wstring());
   ws << fts;
   ws << PkgMap;
+
+#ifdef _DEBUG
+  std::filesystem::path debugPath = path;
+  debugPath.replace_extension(".txt");
+  std::ofstream os(debugPath.wstring());
+  os.write(&buffer[0], buffer.size());
+#endif
 }
 
 void FPackage::LoadCompositePackageMapper()
@@ -314,6 +321,13 @@ void FPackage::LoadCompositePackageMapper()
   FWriteStream ws(storagePath.wstring());
   ws << fts;
   ws << CompositPackageMap;
+
+#ifdef _DEBUG
+  std::filesystem::path debugPath = path;
+  debugPath.replace_extension(".txt");
+  std::ofstream os(debugPath.wstring());
+  os.write(&buffer[0], buffer.size());
+#endif
 }
 
 void FPackage::LoadObjectRedirectorMapper()
@@ -364,6 +378,13 @@ void FPackage::LoadObjectRedirectorMapper()
   FWriteStream ws(storagePath.wstring());
   ws << fts;
   ws << ObjectRedirectorMap;
+
+#ifdef _DEBUG
+  std::filesystem::path debugPath = path;
+  debugPath.replace_extension(".txt");
+  std::wofstream os(debugPath.wstring());
+  os.write(&buffer[0], buffer.size());
+#endif
 }
 
 std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noInit)
@@ -746,7 +767,7 @@ UObject* FPackage::GetObject(PACKAGE_INDEX index)
     }
     UObject* obj = UObject::Object(exp);
     Objects[index] = obj;
-
+    obj->Load();
     return obj;
   }
   else if (index < 0)
@@ -815,6 +836,10 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
   }
   if (object->GetPackage() != this)
   {
+    if (!object->GetImportObject())
+    {
+      UThrow(GetPackageName() + " does not have import object for " + object->GetObjectName());
+    }
     return object->GetImportObject()->ObjectIndex;
   }
   return object->GetExportObject()->ObjectIndex;
