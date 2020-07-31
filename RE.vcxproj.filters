@@ -74,6 +74,15 @@
     <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unreal\Tera\UObjectRedirector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Unreal\Tera\UComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Unreal\Tera\UObjectFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -112,5 +121,7 @@
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\ProgressWindow.h" />
     <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
+    <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
+    <ClInclude Include="Unreal\Tera\UComponent.h" />
   </ItemGroup>
 </Project>

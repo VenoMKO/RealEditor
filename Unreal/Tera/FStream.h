@@ -196,31 +196,13 @@ public:
     return Package;
   }
 
-  inline uint16 GetFV() const
-  {
-    return FileVersion;
-  }
+  uint16 GetFV() const;
 
-  inline uint16 GetLV() const
-  {
-    return LicenseeVersion;
-  }
-
-  inline void SetFV(uint16 fv)
-  {
-    FileVersion = fv;
-  }
-
-  inline void SetLV(uint16 lv)
-  {
-    LicenseeVersion = lv;
-  }
+  uint16 GetLV() const;
 
 protected:
   bool Reading = false;
   FPackage* Package = nullptr;
-  uint16 FileVersion = 0;
-  uint16 LicenseeVersion = 0;
 };
 
 class FReadStream : public FStream {
@@ -265,7 +247,7 @@ public:
 
   void SerializeBytes(void* ptr, FILE_OFFSET size) override
   {
-    if (size)
+    if (ptr && size)
     {
       Stream.read((char*)ptr, size);
     }
@@ -334,7 +316,7 @@ public:
 
   void SerializeBytes(void* ptr, FILE_OFFSET size) override
   {
-    if (size)
+    if (ptr && size)
     {
       Stream.write((const char*)ptr, size);
     }

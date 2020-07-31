@@ -34,9 +34,10 @@ typedef int32 PACKAGE_INDEX;
 typedef int32 NET_INDEX;
 
 enum { INDEX_NONE = -1 };
-enum { NET_INDEX_NONE = 0 };
 
 #define PACKAGE_MAGIC 0x9E2A83C1
+#define VER_TERA_CLASSIC 610
+#define VER_TERA_MODERN 897
 
 // Use UTF-8 encoded std::string as internal string storage
 #include <string>
@@ -76,6 +77,8 @@ class UProperty;
 
 std::string ObjectFlagsToString(uint64 flags);
 std::string ExportFlagsToString(uint32 flags);
+std::string PixelFormatToString(uint32 pf);
+std::string PackageFlagsToString(uint32 flags);
 
 // Generic runtime error
 void UThrow(const std::string& msg);
@@ -101,8 +104,13 @@ std::string Sprintf(const std::string fmt, ...);
 #define Check(expr) if (!expr) UThrow(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__))
 
 #ifdef _DEBUG
-#define DBreak() __debugbreak()
-#define DBreakIf(expr) if (expr) DBreak()
+inline void DBreak()
+{
+  // BP here
+  int test = 1;
+}
+
+inline void DBreakIf(bool test) { if (test) DBreak(); }
 #else
 #define DBreak()
 #define DBreakIf(expr)

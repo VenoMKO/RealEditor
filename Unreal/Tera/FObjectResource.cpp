@@ -77,3 +77,25 @@ std::string FObjectImport::GetPackageName() const
   }
   return outer ? outer->GetObjectName() : nullptr;
 }
+
+FObjectResource* FObjectResource::GetOuter() const
+{
+  if (OuterIndex)
+  {
+    return Package->GetResourceObject(OuterIndex);
+  }
+  return nullptr;
+}
+
+std::string FObjectResource::GetObjectPath() const
+{
+  std::string path = Package->GetPackageName();
+  FObjectResource* outer = GetOuter();
+  while (outer)
+  {
+    path += "." + outer->GetObjectName();
+    outer = outer->GetOuter();
+  }
+  path += "." + GetObjectName();
+  return path;
+}

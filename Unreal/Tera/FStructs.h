@@ -61,6 +61,11 @@ public:
 
 	friend FStream& operator<<(FStream& s, FGuid& g);
 
+	std::string String() const
+	{
+		return Sprintf("%08X%08X%08X%08X", A, B, C, D);
+	}
+
 private:
 	uint32 A = 0;
 	uint32 B = 0;
@@ -104,8 +109,8 @@ struct FTextureAllocations {
 };
 
 struct FCompositePackageMapEntry {
-	std::string Package;
 	std::string ObjectPath;
+	std::string FileName;
 	FILE_OFFSET Offset = 0;
 	FILE_OFFSET Size = 0;
 

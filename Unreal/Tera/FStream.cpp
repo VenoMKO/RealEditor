@@ -1,4 +1,5 @@
 #include "FStream.h"
+#include "FPackage.h"
 
 FStream& FStream::operator<<(std::string& s)
 {
@@ -56,4 +57,14 @@ FStream& FStream::operator<<(std::string& s)
     }
   }
   return *this;
+}
+
+uint16 FStream::GetFV() const
+{
+  return Package ? Package->GetFileVersion() : 0;
+}
+
+uint16 FStream::GetLV() const
+{
+  return Package ? Package->GetLicenseeVersion() : 0;
 }

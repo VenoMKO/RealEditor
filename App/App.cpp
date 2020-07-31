@@ -134,7 +134,7 @@ bool App::OpenPackage(const wxString& path)
   std::shared_ptr<FPackage> package = nullptr;
   try
   {
-    package = FPackage::GetPackage(W2A(path.ToStdWstring()), true);
+    package = FPackage::GetPackage(W2A(path.ToStdWstring()));
   }
   catch (const std::exception& e)
   {
@@ -173,7 +173,10 @@ bool App::OpenPackage(const wxString& path)
       }
     }).detach();
   }
-
+  else
+  {
+    SendEvent(window, PACKAGE_READY);
+  }
   return true;
 }
 
@@ -281,7 +284,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
-  if (FPackage::GetEngineArchitecture() == FPackage::EArch::x64)
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
     SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
     std::mutex errorMutex;

@@ -24,9 +24,9 @@ extern const char* NAME_PropStructGuid;
 extern const char* NAME_PropStructRotator;
 extern const char* NAME_PropStructMatrix;
 
-class UProperty : public UStruct {
+class UProperty : public UField {
 public:
-  DECL_UOBJ(UProperty, UStruct);
+  DECL_UOBJ(UProperty, UField);
 
 	void Serialize(FStream& s) override;
 
@@ -207,4 +207,8 @@ public:
 	{
 		return NAME_PropDelegate;
 	}
+	void Serialize(FStream& s) override;
+
+	UObject* Function;
+	UObject* SourceDelegate;
 };

@@ -74,17 +74,22 @@ public:
   DECL_UOBJ(UStruct, UField);
   ~UStruct();
 
+  void SerializeTaggedProperties(FStream& s, UObject* data, UStruct* defaultStruct, void* defaults, int32 defaultsCount = 0);
+
 protected:
   void Serialize(FStream& s);
 
 protected:
+  UStruct* SuperStruct = nullptr;
   UTextBuffer* CppText = nullptr;
   UTextBuffer* ScriptText = nullptr;
   UField* Children = nullptr;
   int32 Line = 0;
   int32 TextPos = 0;
   uint32 ScriptDataSize = 0;
+  uint32 ScriptStorageSize = 0;
   void* ScriptData = nullptr;
+  void* ScriptStorage = nullptr;
 };
 
 class UState : public UStruct {
@@ -95,11 +100,9 @@ protected:
   void Serialize(FStream& s);
 
 protected:
-  int32 Unk;
-  int32 ProbeMask;
-  int32 StateFlags;
-  int16 LabelTableOffset;
-  uint64 IgnoreMask;
+  int32 ProbeMask = 0;
+  int32 StateFlags = 0;
+  int16 LabelTableOffset = 0;
   std::map<FName, UObject*> FuncMap;
 };
 
@@ -111,6 +114,20 @@ public:
     : UState(exp)
   {}
 
+  UObject* GetClassDefaultObject()
+  {
+    if (ClassDefaultObject)
+    {
+      ClassDefaultObject->Load();
+    }
+    return ClassDefaultObject;
+  }
+
+  UClass* GetSuperClass() const
+  {
+    return (UClass*)SuperStruct;
+  }
+
 protected:
   void Serialize(FStream& s) override;
 
@@ -119,10 +136,16 @@ protected:
   int32 ClassUnique = 0;
   UClass* ClassWithin = nullptr;
   FName ClassConfigName;
+  bool bForceScriptOrder = false;
   std::map<FName, UObject*> ComponentNameToDefaultObjectMap;
   std::vector<FImplementedInterface> Interfaces;
   std::vector<FName> HideCategories;
   std::vector<FName> AutoExpandCategories;
+  std::vector<FName> AutoCollapseCategories;
+  std::vector<FName> DontSortCategories;
+  std::vector<FName> ClassGroupNames;
+  std::string ClassHeaderFilename;
+  FName DLLBindName;
   UObject* ClassDefaultObject = nullptr;
 };
 

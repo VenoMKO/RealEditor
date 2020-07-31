@@ -11,7 +11,10 @@ void UTextBuffer::Serialize(FStream& s)
 void UField::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Superfield;
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    s << Superfield;
+  }
   s << Next;
 }
 
@@ -21,32 +24,55 @@ UStruct::~UStruct()
   {
     free(ScriptData);
   }
+  if (ScriptStorage)
+  {
+    free(ScriptStorage);
+  }
 }
 
 void UStruct::Serialize(FStream& s)
 {
   Super::Serialize(s);
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << SuperStruct;
+  }
   s << ScriptText;
   s << Children;
   s << CppText;
   s << Line << TextPos;
   s << ScriptDataSize;
-  if (s.IsReading() && ScriptDataSize)
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    ScriptData = malloc(ScriptDataSize);
+    s << ScriptStorageSize;
   }
+  if (s.IsReading())
+  {
+    if (ScriptStorageSize)
+    {
+      ScriptStorage = malloc(ScriptStorageSize);
+    }
+    else if (ScriptDataSize)
+    {
+      ScriptData = malloc(ScriptDataSize);
+    }
+  }
+  s.SerializeBytes(ScriptStorage, ScriptStorageSize);
   s.SerializeBytes(ScriptData, ScriptDataSize);
 }
 
 void UState::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Unk;
   s << ProbeMask;
-  s << IgnoreMask;
   s << LabelTableOffset;
   s << StateFlags;
   s << FuncMap;
+}
+
+void UStruct::SerializeTaggedProperties(FStream& s, UObject* data, UStruct* defaultStruct, void* defaults, int32 defaultsCount)
+{
+  UClass* defaultsClass = (UClass*)defaultStruct;
 }
 
 void UClass::Serialize(FStream& s)
@@ -55,10 +81,19 @@ void UClass::Serialize(FStream& s)
   s << ClassFlags;
   s << ClassWithin;
   s << ClassConfigName;
-  s << HideCategories;
   s << ComponentNameToDefaultObjectMap;
   s << Interfaces;
+  s << DontSortCategories;
+  s << HideCategories;
   s << AutoExpandCategories;
+  s << AutoCollapseCategories;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << bForceScriptOrder;
+    s << ClassGroupNames;
+  }
+  s << ClassHeaderFilename;
+  s << DLLBindName;
   s << ClassDefaultObject;
 }
 

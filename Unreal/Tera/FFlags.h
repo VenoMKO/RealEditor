@@ -90,5 +90,39 @@ enum EFExportFlags : uint32
   EF_None = 0x00000000, // No flags
   EF_ForcedExport = 0x00000001, // Whether the export was forced into the export table via RF_ForceTagExp.
   EF_ScriptPatcherExport = 0x00000002, // indicates that this export was added by the script patcher, so this object's data will come from memory, not disk
-  EF_MemberFieldPatchPending = 0x00000004 // indicates that this export is a UStruct which will be patched with additional member fields by the script patcher
+  EF_MemberFieldPatchPending = 0x00000004, // indicates that this export is a UStruct which will be patched with additional member fields by the script patcher
+  EF_Composit = 0x00000008
+};
+
+enum EPixelFormat : uint32
+{
+  PF_Unknown = 0,
+  PF_A32B32G32R32F = 1,
+  PF_A8R8G8B8 = 2,
+  PF_G8 = 3,
+  PF_G16 = 4,
+  PF_DXT1 = 5,
+  PF_DXT3 = 6,
+  PF_DXT5 = 7,
+  PF_UYVY = 8,
+  PF_FloatRGB = 9,
+  PF_FloatRGBA = 10,
+  PF_DepthStencil = 11,
+  PF_ShadowDepth = 12,
+  PF_FilteredShadowDepth = 13,
+  PF_R32F = 14,
+  PF_G16R16 = 15,
+  PF_G16R16F = 16,
+  PF_G16R16F_FILTER = 17,
+  PF_G32R32F = 18,
+  PF_A2B10G10R10 = 19,
+  PF_A16B16G16R16 = 20,
+  PF_D24 = 21,
+  PF_R16F = 22,
+  PF_R16F_FILTER = 23,
+  PF_BC5 = 24,
+  PF_V8U8 = 25,
+  PF_A1 = 26,
+  PF_FloatR11G11B10 = 27,
+  PF_Max = 28
 };

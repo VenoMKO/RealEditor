@@ -3,105 +3,17 @@
 #include "FPackage.h"
 #include "FObjectResource.h"
 #include "UClass.h"
-#include "UProperty.h"
+#include "UComponent.h"
 
-UObject* UObject::Object(FObjectExport* exp)
-{
-  if (exp->Object)
-  {
-    return exp->Object;
-  }
-  UObject* result = nullptr;
-  const std::string c = exp->GetClassName();
-  if (c == "Class")
-  {
-    result = new UClass(exp);
-  }
-  else if (c == "Field")
-  {
-    result = new UField(exp);
-  }
-  else if (c == "Struct")
-  {
-    result = new UStruct(exp);
-  }
-  else if (c == "State")
-  {
-    result = new UState(exp);
-  }
-  else if (c == "Enum")
-  {
-    result = new UEnum(exp);
-  }
-  else if (c == "TextBuffer")
-  {
-    result = new UTextBuffer(exp);
-  }
-  else if (c == NAME_PropInt)
-  {
-    result = new UIntProperty(exp);
-  }
-  else if (c == NAME_PropBool)
-  {
-    result = new UBoolProperty(exp);
-  }
-  else if (c == NAME_PropByte)
-  {
-    result = new UByteProperty(exp);
-  }
-  else if (c == NAME_PropFloat)
-  {
-    result = new UFloatProperty(exp);
-  }
-  else if (c == NAME_PropObj)
-  {
-    result = new UObjectProperty(exp);
-  }
-  else if (c == NAME_PropName)
-  {
-    result = new UNameProperty(exp);
-  }
-  else if (c == NAME_PropString)
-  {
-    result = new UStrProperty(exp);
-  }
-  else if (c == NAME_PropStruct)
-  {
-    result = new UStructProperty(exp);
-  }
-  else if (c == NAME_PropArray)
-  {
-    result = new UArrayProperty(exp);
-  }
-  else if (c == NAME_PropMap)
-  {
-    result = new UMapProperty(exp);
-  }
-  else if (c == NAME_PropInterface)
-  {
-    result = new UInterfaceProperty(exp);
-  }
-  else if (c == NAME_PropDelegate)
-  {
-    result = new UDelegateProperty(exp);
-  }
-  else if (c == "SomeCustomClass")
-  {
-    // result = new SomeCustomClass(exp);
-  }
-  else
-  {
-    result = new UObject(exp);
-  }
-  exp->Object = result;
-  return result;
-}
+#include "ALog.h"
+
+#include <filesystem>
 
 UObject::UObject(FObjectExport* exp)
   : Export(exp)
 {
 #ifdef _DEBUG
-  Description = Export->GetObjectName() + "(" + Export->GetClassName() + ")";
+  Description = Export->GetFullObjectName();
 #endif
 }
 
@@ -120,6 +32,38 @@ FPackage* UObject::GetPackage() const
   return Export->Package;
 }
 
+UObject* UObject::GetOuter() const
+{
+  return GetPackage()->GetObject((FObjectExport*)Export->GetOuter());
+}
+
+void UObject::SerializeScriptProperties(FStream& s) const
+{
+  if (Class)
+  {
+    Class->SerializeTaggedProperties(s, (UObject*)this, (GetObjectFlags() & RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
+    return;
+  }
+  // TODO: serialize props without a Class obj
+  // I belive the object has only a None property if there is no Class
+  FName nonePropertyName;
+  s << nonePropertyName;
+  DBreakIf(nonePropertyName.String() != "None");
+}
+
+std::string UObject::GetObjectPath() const
+{
+  std::string path = GetPackage()->GetPackageName();
+  FObjectResource* outer = Export->GetOuter();
+  while (outer)
+  {
+    path += "." + outer->GetObjectName();
+    outer = outer->GetOuter();
+  }
+  path += "." + GetObjectName();
+  return path;
+}
+
 std::string UObject::GetObjectName() const
 {
   return Export->GetObjectName();
@@ -136,6 +80,10 @@ UObject::~UObject()
   {
     delete StateFrame;
   }
+  if (RawData)
+  {
+    delete[] RawData;
+  }
 }
 
 void UObject::Serialize(FStream& s)
@@ -143,6 +91,20 @@ void UObject::Serialize(FStream& s)
   if (s.IsReading())
   {
     s.SetPosition(Export->SerialOffset);
+#if defined(_DEBUG) && defined(DUMP_PATH)
+    if (s.IsReading())
+    {
+      void* data = malloc(Export->SerialSize);
+      s.SerializeBytes(data, Export->SerialSize);
+      s.SetPosition(Export->SerialOffset);
+      std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackage()->GetPackageName() / "Objects";
+      std::filesystem::create_directories(path);
+      path /= (Export->GetFullObjectName() + ".bin");
+      std::ofstream os(path.wstring(), std::ios::out | std::ios::binary);
+      os.write((const char*)data, Export->SerialSize);
+      free(data);
+    }
+#endif
   }
   if (GetObjectFlags() & RF_HasStack)
   {
@@ -156,31 +118,52 @@ void UObject::Serialize(FStream& s)
     }
   }
 
+  if (IsComponent())
+  {
+    ((UComponent*)this)->PreSerialize(s);
+  }
+
   s << NetIndex;
-  if (s.IsReading() && NetIndex != NET_INDEX_NONE)
+
+  if (s.IsReading() && NetIndex != INDEX_NONE)
   {
     GetPackage()->AddNetObject(this);
   }
 
-  // TODO: Load class component
-
-  if (GetObjectFlags() & RF_Native)
+  if (GetStaticClassName() != UClass::StaticClassName())
   {
-    return;
+    SerializeScriptProperties(s);
   }
 
-  
+  if (s.IsReading())
+  {
+    RawDataOffset = s.GetPosition();
+  }
+  // Serialize RawData for unimplemented classes
+  if (!strcmp(GetStaticClassName(), UObject::StaticClassName()))
+  {
+    if (s.IsReading())
+    {
+      RawDataSize = Export->SerialOffset + Export->SerialSize - RawDataOffset;
+      if (RawDataSize)
+      {
+        RawData = new char[RawDataSize];
+      }
+    }
+    s.SerializeBytes(RawData, RawDataSize);
+  }
 }
 
 void UObject::Load()
 {
-  if (Loaded)
+  if (Loaded || Loading)
   {
     return;
   }
+  Loading = true;
 
   // Load object's class and a default object
-  if (!Class && GetClassName() != "Class")
+  if (GetClassName() != UClass::StaticClassName())
   {
     bool isNative = GetObjectFlags() & RF_Native;
     PACKAGE_INDEX outerIndex = Export->OuterIndex;
@@ -193,16 +176,31 @@ void UObject::Load()
     if (!isNative)
     {
       Class = GetPackage()->LoadClass(GetClassName());
+      if (Class && !(GetObjectFlags() & RF_ClassDefaultObject))
+      {
+        DefaultObject = Class->GetClassDefaultObject();
+      }
     }
-    if (!(GetObjectFlags() & RF_ClassDefaultObject))
+    else
     {
-      // TODO: Get default object
+      LogI("Skip class load for %s", Export->GetFullObjectName().c_str());
     }
   }
 
   FStream& s = GetPackage()->GetStream();
   Serialize(s);
   Loaded = true;
+  Loading = false;
+
+  if (s.IsReading())
+  {
+    PostLoad();
+    //DBreakIf(s.GetPosition() != Export->SerialOffset + Export->SerialSize);
+  }
+}
+
+void UObject::PostLoad()
+{
 }
 
 FStream& operator<<(FStream& s, UObject*& obj)
@@ -211,7 +209,11 @@ FStream& operator<<(FStream& s, UObject*& obj)
   if (s.IsReading())
   {
     s << idx;
+    // GetObject will try to load the object, so we need to save our current stream position
+    // Loading objects here is actually a bit risky. May end up with a stack overflow
+    FILE_OFFSET tmpPos = s.GetPosition();
     obj = s.GetPackage()->GetObject(idx);
+    s.SetPosition(tmpPos);
   }
   else
   {

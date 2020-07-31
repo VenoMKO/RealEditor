@@ -80,3 +80,9 @@ void UByteProperty::Serialize(FStream& s)
   Super::Serialize(s);
   s << Enum;
 }
+
+void UDelegateProperty::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << Function << SourceDelegate;
+}

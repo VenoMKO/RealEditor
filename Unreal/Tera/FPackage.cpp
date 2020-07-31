@@ -28,9 +28,9 @@ std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<std::string> FPackage::DirCache;
 std::unordered_map<std::string, std::string> FPackage::PkgMap;
 std::unordered_map<std::string, std::string> FPackage::ObjectRedirectorMap;
-std::unordered_map<std::string, std::vector<FCompositePackageMapEntry>> FPackage::CompositPackageMap;
+std::unordered_map<std::string, FCompositePackageMapEntry> FPackage::CompositPackageMap;
 
-FPackage::EArch FPackage::EngineArchitecture = FPackage::EArch::x86;
+uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
 void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
 {
@@ -123,7 +123,7 @@ void DecryptMapper(const std::filesystem::path& path, std::wstring& decrypted)
   std::string tmp;
   DecryptMapper(path, tmp);
   decrypted.resize(tmp.size() / 2);
-  memcpy_s((void*)decrypted.c_str(), decrypted.size(), tmp.c_str(), decrypted.size());
+  memcpy_s((void*)decrypted.c_str(), tmp.size(), tmp.c_str(), tmp.size());
 }
 
 void FPackage::SetRootPath(const std::string& path)
@@ -151,9 +151,9 @@ void FPackage::SetRootPath(const std::string& path)
   LogI("Done. Found %ld packages", DirCache.size());
 }
 
-FPackage::EArch FPackage::GetEngineArchitecture()
+uint16 FPackage::GetCoreVersion()
 {
-  return EngineArchitecture;
+  return CoreVersion;
 }
 
 void FPackage::LoadDefaultClassPackages()
@@ -163,13 +163,14 @@ void FPackage::LoadDefaultClassPackages()
   {
     if (auto package = GetPackageNamed(name))
     {
+      package->Load();
       DefaultClassPackages.push_back(package);
       if (name == DefaultClassPackageNames[0])
       {
-        EngineArchitecture = package->GetPackageArchitecture();
+        CoreVersion = package->GetFileVersion();
         LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
       }
-      else if (package->GetPackageArchitecture() != EngineArchitecture)
+      else if (package->GetFileVersion() != CoreVersion)
       {
         UThrow("Package " + name + " has different version " + std::to_string(package->GetFileVersion()) + "/" + std::to_string(package->GetLicenseeVersion()));
       }
@@ -264,12 +265,12 @@ void FPackage::LoadCompositePackageMapper()
   uint64 fts = GetFileTime(encryptedPath.wstring());
   if (std::filesystem::exists(storagePath))
   {
-    FReadStream rs(storagePath.wstring());
+    FReadStream s(storagePath.wstring());
     uint64 ts = 0;
-    rs << ts;
+    s << ts;
     if (fts == ts || !fts)
     {
-      rs << CompositPackageMap;
+      s << CompositPackageMap;
       return;
     }
     else
@@ -286,14 +287,14 @@ void FPackage::LoadCompositePackageMapper()
   std::vector<std::string> packages;
   while ((pos = buffer.find('?', posEnd)) != std::string::npos)
   {
-    std::string pkgName = buffer.substr(posEnd + 1, pos - posEnd - 1);
-    auto& mapEntry = CompositPackageMap.emplace(pkgName, std::vector<FCompositePackageMapEntry>());
+    std::string fileName = buffer.substr(posEnd + 1, pos - posEnd - 1);
     posEnd = buffer.find('!', pos);
     
     do
     {
       pos++;
-      FCompositePackageMapEntry& entry = mapEntry.first->second.emplace_back();
+      FCompositePackageMapEntry entry;
+      entry.FileName = fileName;
 
       size_t elementEnd = buffer.find(',', pos);
       entry.ObjectPath = buffer.substr(pos, elementEnd - pos);
@@ -301,7 +302,7 @@ void FPackage::LoadCompositePackageMapper()
       pos++;
 
       elementEnd = buffer.find(',', pos);
-      entry.Package = buffer.substr(pos, elementEnd - pos);
+      std::string packageName = buffer.substr(pos, elementEnd - pos);
       std::swap(pos, elementEnd);
       pos++;
 
@@ -314,13 +315,16 @@ void FPackage::LoadCompositePackageMapper()
       entry.Size = (FILE_OFFSET)std::stoul(buffer.substr(pos, elementEnd - pos));
       std::swap(pos, elementEnd);
       pos++;
+
+      DBreakIf(CompositPackageMap.count(packageName));
+      CompositPackageMap[packageName] = entry;
     } while (buffer.find('|', pos) < posEnd - 1);
   }
 
   LogI("Saving %s storage", path.filename().string().c_str());
-  FWriteStream ws(storagePath.wstring());
-  ws << fts;
-  ws << CompositPackageMap;
+  FWriteStream s(storagePath.wstring());
+  s << fts;
+  s << CompositPackageMap;
 
 #ifdef _DEBUG
   std::filesystem::path debugPath = path;
@@ -373,7 +377,7 @@ void FPackage::LoadObjectRedirectorMapper()
     pos++;
     std::swap(pos, prevPos);
   }
-
+  
   LogI("Saving %s storage", path.filename().string().c_str());
   FWriteStream ws(storagePath.wstring());
   ws << fts;
@@ -382,12 +386,14 @@ void FPackage::LoadObjectRedirectorMapper()
 #ifdef _DEBUG
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
-  std::wofstream os(debugPath.wstring());
-  os.write(&buffer[0], buffer.size());
+  std::ofstream os(debugPath.wstring(), std::ios::out | std::ios::binary | std::ios::trunc);
+  const char* tmp = (const char*)buffer.c_str();
+  os.write(tmp, buffer.size() * 2);
+  os.close();
 #endif
 }
 
-std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noInit)
+std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
 {
   std::shared_ptr<FPackage> found = nullptr;
   {
@@ -422,6 +428,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noI
   {
     FILE_OFFSET startOffset = INT_MAX;
     FILE_OFFSET totalDecompressedSize = 0;
+    FILE_OFFSET streamSize = stream->GetSize();
     void** compressedChunksData = new void*[sum.CompressedChunks.size()];
     {
       uint32 idx = 0;
@@ -491,6 +498,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noI
       delete stream;
       throw e;
     }
+    sum.PackageName = W2A(std::filesystem::path(path).filename().wstring());
   }
   
   delete stream;
@@ -499,6 +507,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path, bool noI
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
     result = LoadedPackages.emplace_back(new FPackage(sum));
   }
+  DBreakIf(sum.ThumbnailTableOffset);
   return result;
 }
 
@@ -528,11 +537,59 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const std::string& name, FGu
     }
     if (found)
     {
-      LoadedPackages.push_back(found);
-      return found;
+      return LoadedPackages.emplace_back(found);
     }
   }
   
+  // Check and load if the package is a composit package
+  if (CoreVersion > VER_TERA_CLASSIC && CompositPackageMap.count(name))
+  {
+    const FCompositePackageMapEntry& entry = CompositPackageMap[name];
+    std::string packagePath;
+    for (std::string& path : DirCache)
+    {
+      std::wstring filename = std::filesystem::path(A2W(path)).filename().wstring();
+      if (filename.size() < entry.FileName.size())
+      {
+        continue;
+      }
+      if (std::mismatch(entry.FileName.begin(), entry.FileName.end(), filename.begin()).first == entry.FileName.end())
+      {
+        packagePath = path;
+        break;
+      }
+    }
+    if (packagePath.size())
+    {
+      LogI("Reading composite package %s from %s...", name.c_str(), entry.FileName.c_str());
+      void* rawData = malloc(entry.Size);
+      {
+        FReadStream rs(packagePath);
+        rs.SetPosition(entry.Offset);
+        rs.SerializeBytes(rawData, entry.Size);
+        if (!rs.IsGood())
+        {
+          UThrow("Failed to read " + name);
+        }
+      }
+      std::filesystem::path tmpPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
+      LogI("Writing composite package %s to %ls...", name.c_str(), tmpPath.wstring().c_str());
+      {
+        FWriteStream ws(tmpPath);
+        ws.SerializeBytes(rawData, entry.Size);
+        if (!ws.IsGood())
+        {
+          UThrow("Failed to save composit package " + name + " to " + W2A(tmpPath.wstring()));
+        }
+      }
+      std::shared_ptr<FPackage> package = GetPackage(W2A(tmpPath.wstring()));
+      package->CompositeDataPath = tmpPath.wstring();
+      package->CompositeSourcePath = A2W(packagePath);
+      package->Summary.PackageName = name;
+      return package;
+    }
+  }
+
   std::wstring wname = A2W(name);
   for (std::string& path : DirCache)
   {
@@ -573,6 +630,7 @@ void FPackage::UnloadPackage(std::shared_ptr<FPackage> package)
         {
           LoadedPackages.erase(LoadedPackages.begin() + idx);
           lastPackageRef = true;
+          idx--;
         }
         else
         {
@@ -616,6 +674,10 @@ FPackage::~FPackage()
   {
     std::filesystem::remove(std::filesystem::path(A2W(Summary.DataPath)));
   }
+  if (CompositeDataPath.size())
+  {
+    std::filesystem::remove(std::filesystem::path(CompositeDataPath));
+  }
 }
 
 void FPackage::Load()
@@ -629,7 +691,6 @@ void FPackage::Load()
   Stream = new FReadStream(Summary.DataPath);
   Stream->SetPackage(this);
   FStream& s = GetStream();
-
   if (Summary.NamesOffset != s.GetPosition())
   {
     s.SetPosition(Summary.NamesOffset);
@@ -686,6 +747,9 @@ void FPackage::Load()
   for (uint32 index = 0; index < Summary.ExportsCount; ++index)
   {
     FObjectExport* exp = Exports[index];
+#ifdef _DEBUG
+    exp->Path = exp->GetObjectPath();
+#endif
     if (exp->OuterIndex)
     {
       FObjectExport* outer = GetExportObject(exp->OuterIndex);
@@ -696,17 +760,16 @@ void FPackage::Load()
       RootExports.push_back(exp);
     }
     CheckCancel();
-    const std::string objName = exp->GetObjectName();
-    if (ObjectNameToExportMap[objName].empty())
-    {
-      ObjectNameToExportMap[objName].push_back(exp);
-    }
+    ObjectNameToExportMap[exp->GetObjectName()].push_back(exp);
   }
 
   for (uint32 idx = 0; idx < Summary.ImportsCount; ++idx)
   {
     CheckCancel();
     FObjectImport* imp = Imports[idx];
+#ifdef _DEBUG
+    imp->Path = imp->GetObjectPath();
+#endif
     if (imp->OuterIndex)
     {
       if (imp->OuterIndex < 0)
@@ -720,6 +783,10 @@ void FPackage::Load()
       RootImports.push_back(imp);
     }
   }
+
+#ifdef _DEBUG
+  _DebugDump();
+#endif
 
   Ready.store(true);
   Loading.store(false);
@@ -790,7 +857,9 @@ UObject* FPackage::GetObject(FObjectImport* imp)
   }
   if (imp->Package == this)
   {
-    if (imp->GetPackageName() != GetPackageName())
+    std::string impPkgName = imp->GetPackageName();
+
+    if (impPkgName != GetPackageName())
     {
       if (auto package = GetPackageNamed(imp->GetPackageName()))
       {
@@ -897,4 +966,116 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const std::string& name)
     return ObjectNameToExportMap[name];
   }
   return std::vector<FObjectExport*>();
+}
+
+void FPackage::_DebugDump() const
+{
+#if defined(DUMP_PATH) && defined(_DEBUG)
+  std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackageName();
+  std::filesystem::create_directories(path);
+  path /= "Info.txt";
+  std::ofstream ds(path.wstring());
+  ds << "SourcePath: \"" << Summary.SourcePath << "\"\n";
+  ds << "DataPath: \"" << Summary.DataPath << "\"\n";
+  if (GetFileVersion() > VER_TERA_CLASSIC && CompositeDataPath.size())
+  {
+    ds << "CompositeSourcePath: \"" << W2A(CompositeSourcePath) << "\"\n";
+    ds << "CompositeDataPath: \"" << W2A(CompositeDataPath) << "\"\n";
+  }
+  ds << "Version: " << Summary.FileVersion << "/" << Summary.LicenseeVersion << std::endl;
+  ds << "HeaderSize: " << Summary.HeaderSize << std::endl;
+  ds << "FolderName: \"" << Summary.FolderName << "\"\n";
+  ds << "PackageFlags: " << PackageFlagsToString(Summary.PackageFlags) << std::endl;
+  ds << "CompressionFlags: " << Sprintf("0x%08X", Summary.CompressionFlags) << std::endl;
+  ds << "PackageSource: " << Sprintf("0x%08X", Summary.PackageSource) << std::endl;
+  ds << "Guid: " << Summary.Guid.String() << std::endl;
+  ds << "EngineVersion: " << Summary.EngineVersion << " ContentVersion: " << Summary.ContentVersion << std::endl;
+  ds << "Names Count: " << Summary.NamesCount << " Offset: " << Summary.NamesOffset << std::endl;
+  ds << "Exports Count: " << Summary.ExportsCount << " Offset: " << Summary.ExportsOffset << std::endl;
+  ds << "Imports Count: " << Summary.ImportsCount << " Offset: " << Summary.ImportsOffset << std::endl;
+  ds << "Depends Count: " << Summary.ExportsCount << " Offset: " << Summary.DependsOffset << std::endl;
+  if (GetFileVersion() > VER_TERA_CLASSIC)
+  {
+    ds << "ImportGuids Count: " << Summary.ImportGuidsCount << " ExportGuids Count: " << Summary.ExportGuidsCount << " Offset: " << Summary.ImportExportGuidsOffset << std::endl;
+    ds << "ThumbnailTable Offset: " << Summary.ThumbnailTableOffset << std::endl;
+  }
+  ds << "Generations:\n";
+  for (const FGeneration& generation : Summary.Generations)
+  {
+    ds << "\tExports: " << generation.Exports << " Names: " << generation.Names << " Nets: " << generation.NetObjects << std::endl;
+  }
+  if (Summary.TextureAllocations.TextureTypes.size() && GetFileVersion() > VER_TERA_CLASSIC)
+  {
+    ds << "TextureAllocations:\n";
+    for (const FTextureAllocations::FTextureType& ttype : Summary.TextureAllocations.TextureTypes)
+    {
+      ds << "\tSizeX: " << ttype.SizeX << " SizeY: " << ttype.SizeY << " NumMips: " << ttype.NumMips;
+      ds << " Format: " << PixelFormatToString(ttype.Format) << " TexFlags: " << Sprintf("0x%08X", ttype.TexCreateFlags);
+      ds << " ExportIndices: ";
+      for (const int32& idx : ttype.ExportIndices)
+      {
+        ds << idx << ", ";
+      }
+      ds << std::endl;
+    }
+  }
+  if (Summary.AdditionalPackagesToCook.size())
+  {
+    ds << "AdditionalPackagesToCook:\n";
+    for (const std::string& pkg : Summary.AdditionalPackagesToCook)
+    {
+      ds << "\t" << pkg << std::endl;
+    }
+  }
+
+  ds << "Names:\n";
+  for (int32 index = 0; index < Names.size(); ++index)
+  {
+    ds << "\t[" << index << "]" << Names[index].GetString() << "\n";
+  }
+  ds << "\n\nExports:\n";
+
+  std::function<void(FObjectExport*, int32)> printExp;
+  printExp = [&ds, &printExp](FObjectExport* exp, int32 depth) {
+    for (int32 i = 0; i < depth; ++i)
+    {
+      ds << "\t";
+    }
+    ds << "[" << exp->ObjectIndex << "]" << exp->GetFullObjectName();
+    ds << "(Offset: " << exp->SerialOffset << ", Size: " << exp->SerialSize;
+    if (exp->ExportFlags)
+    {
+      ds << ", EF: " << ExportFlagsToString(exp->ExportFlags);
+    }
+    ds << ", OF: " << ObjectFlagsToString(exp->ObjectFlags);
+    ds << ")\n";
+    depth++;
+    for (FObjectExport* cexp : exp->Inner)
+    {
+      printExp(cexp, depth);
+    }
+  };
+  for (FObjectExport* e : RootExports)
+  {
+    printExp(e, 1);
+  }
+  ds << "\n\nImports:\n";
+  std::function<void(FObjectImport*, int32)> printImp;
+  printImp = [&ds, &printImp](FObjectImport* imp, int32 depth) {
+    for (int32 i = 0; i < depth; ++i)
+    {
+      ds << "\t";
+    }
+    ds << "[" << imp->ObjectIndex << "]" << imp->GetFullObjectName() << "\n";
+    depth++;
+    for (FObjectImport* cimp : imp->Inner)
+    {
+      printImp(cimp, depth);
+    }
+  };
+  for (FObjectImport* i : RootImports)
+  {
+    printImp(i, 1);
+  }
+#endif
 }

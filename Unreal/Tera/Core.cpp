@@ -250,6 +250,173 @@ std::string ExportFlagsToString(uint32 flags)
   return s;
 }
 
+std::string PixelFormatToString(uint32 pf)
+{
+  if (pf == PF_DXT1)
+  {
+    return "PF_DXT1";
+  }
+  else if (pf == PF_DXT5)
+  {
+    return "PF_DXT5";
+  }
+  else if (pf == PF_A8R8G8B8)
+  {
+    return "PF_A8R8G8B8";
+  }
+  else if (pf == PF_A32B32G32R32F)
+  {
+    return "PF_A32B32G32R32F";
+  }
+  else if (pf == PF_G8)
+  {
+    return "PF_G8";
+  }
+  else if (pf == PF_G16)
+  {
+    return "PF_G16";
+  }
+  else if (pf == PF_DXT3)
+  {
+    return "PF_DXT3";
+  }
+  else if (pf == PF_UYVY)
+  {
+    return "PF_UYVY";
+  }
+  else if (pf == PF_FloatRGB)
+  {
+    return "PF_FloatRGB";
+  }
+  else if (pf == PF_FloatRGBA)
+  {
+    return "PF_FloatRGBA";
+  }
+  else if (pf == PF_DepthStencil)
+  {
+    return "PF_DepthStencil";
+  }
+  else if (pf == PF_ShadowDepth)
+  {
+    return "PF_ShadowDepth";
+  }
+  else if (pf == PF_FilteredShadowDepth)
+  {
+    return "PF_FilteredShadowDepth";
+  }
+  else if (pf == PF_R32F)
+  {
+    return "PF_R32F";
+  }
+  else if (pf == PF_G16R16)
+  {
+    return "PF_G16R16";
+  }
+  else if (pf == PF_G16R16F)
+  {
+    return "PF_G16R16F";
+  }
+  else if (pf == PF_G16R16F_FILTER)
+  {
+    return "PF_G16R16F_FILTER";
+  }
+  else if (pf == PF_G32R32F)
+  {
+    return "PF_G32R32F";
+  }
+  else if (pf == PF_A2B10G10R10)
+  {
+    return "PF_A2B10G10R10";
+  }
+  else if (pf == PF_A16B16G16R16)
+  {
+    return "PF_A16B16G16R16";
+  }
+  else if (pf == PF_D24)
+  {
+    return "PF_D24";
+  }
+  else if (pf == PF_R16F)
+  {
+    return "PF_R16F";
+  }
+  else if (pf == PF_R16F_FILTER)
+  {
+    return "PF_R16F_FILTER";
+  }
+  else if (pf == PF_BC5)
+  {
+    return "PF_BC5";
+  }
+  else if (pf == PF_V8U8)
+  {
+    return "PF_V8U8";
+  }
+  else if (pf == PF_A1)
+  {
+    return "PF_A1";
+  }
+  else if (pf == PF_FloatR11G11B10)
+  {
+    return "PF_FloatR11G11B10";
+  }
+  return "PF_Unknown";
+}
+
+std::string PackageFlagsToString(uint32 flags)
+{
+  std::string s;
+  if (flags & PKG_AllowDownload)
+    s += "AllowDownload, ";
+  if (flags & PKG_ClientOptional)
+    s += "ClientOptional, ";
+  if (flags & PKG_ServerSideOnly)
+    s += "ServerSideOnly, ";
+  if (flags & PKG_Cooked)
+    s += "Cooked, ";
+  if (flags & PKG_Unsecure)
+    s += "Unsecure, ";
+  if (flags & PKG_SavedWithNewerVersion)
+    s += "SavedWithNewerVersion, ";
+  if (flags & PKG_Need)
+    s += "Need, ";
+  if (flags & PKG_Compiling)
+    s += "Compiling, ";
+  if (flags & PKG_ContainsMap)
+    s += "ContainsMap, ";
+  if (flags & PKG_Trash)
+    s += "Trash, ";
+  if (flags & PKG_DisallowLazyLoading)
+    s += "DisallowLazyLoading, ";
+  if (flags & PKG_PlayInEditor)
+    s += "PlayInEditor, ";
+  if (flags & PKG_ContainsScript)
+    s += "ContainsScript, ";
+  if (flags & PKG_ContainsDebugInfo)
+    s += "ContainsDebugInfo, ";
+  if (flags & PKG_RequireImportsAlreadyLoaded)
+    s += "RequireImportsAlreadyLoaded, ";
+  if (flags & PKG_SelfContainedLighting)
+    s += "SelfContainedLighting, ";
+  if (flags & PKG_StoreCompressed)
+    s += "StoreCompressed, ";
+  if (flags & PKG_StoreFullyCompressed)
+    s += "StoreFullyCompressed, ";
+  if (flags & PKG_ContainsInlinedShaders)
+    s += "ContainsInlinedShaders, ";
+  if (flags & PKG_ContainsFaceFXData)
+    s += "ContainsFaceFXData, ";
+  if (flags & PKG_NoExportAllowed)
+    s += "NoExportAllowed, ";
+  if (flags & PKG_NoExportAllowed)
+    s += "StrippedSource, ";
+  if (s.size())
+  {
+    s = s.substr(0, s.size() - 2);
+  }
+  return s;
+}
+
 void UThrow(const std::string& msg)
 {
   LogE(msg);

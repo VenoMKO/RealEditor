@@ -17,7 +17,16 @@ public:
     return ObjectName.String();
   }
 
+  std::string GetFullObjectName() const
+  {
+    return GetClassName() + " " + GetObjectPath();
+  }
+
   virtual std::string GetClassName() const = 0;
+
+  FObjectResource* GetOuter() const;
+
+  std::string GetObjectPath() const;
 
   FName ObjectName;
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
@@ -25,6 +34,9 @@ public:
 
   UObject* Object = nullptr;
   FPackage* Package = nullptr;
+#ifdef _DEBUG
+  std::string Path;
+#endif
 };
 
 class FObjectImport : public FObjectResource {

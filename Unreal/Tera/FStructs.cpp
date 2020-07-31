@@ -34,8 +34,8 @@ FStream& operator<<(FStream& s, FTextureAllocations& t)
 
 FStream& operator<<(FStream& s, FCompositePackageMapEntry& e)
 {
-  s << e.Package;
   s << e.ObjectPath;
+  s << e.FileName;
   s << e.Offset;
   s << e.Size;
   return s;

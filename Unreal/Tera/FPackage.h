@@ -11,14 +11,8 @@
 class FPackage {
 public:
 
-	typedef enum class EArch
-	{
-		x86 = 0,
-		x64
-	} EArch;
-
 	// RootDir architecture
-	static FPackage::EArch GetEngineArchitecture();
+	static uint16 GetCoreVersion();
 	// Load class packages
 	static void LoadDefaultClassPackages();
 	// Unload class packages
@@ -30,7 +24,7 @@ public:
 	// Load ObjectReference Map
 	static void LoadObjectRedirectorMapper();
 	// Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
-	static std::shared_ptr<FPackage> GetPackage(const std::string& path, bool noInit = false);
+	static std::shared_ptr<FPackage> GetPackage(const std::string& path);
 	// Load and retain a package by name and guid(if valid). Every GetPackageNamed call must pair a UnloadPackage call
 	static std::shared_ptr<FPackage> GetPackageNamed(const std::string& name, FGuid guid = FGuid());
 	// Release a package. 
@@ -81,12 +75,6 @@ public:
 	inline std::vector<FObjectImport*> GetRootImports()
 	{
 		return RootImports;
-	}
-
-	// Get package architecture
-	inline EArch GetPackageArchitecture() const
-	{
-		return GetFileVersion() != 610 ? EArch::x64 : EArch::x86;
 	}
 
 	// Get import/export object at index
@@ -168,6 +156,9 @@ public:
 	std::string GetPackageName(bool extension = false) const;
 
 private:
+	void _DebugDump() const;
+
+private:
 	FPackageSummary Summary;
 	FStream* Stream = nullptr;
 
@@ -187,6 +178,9 @@ private:
 	std::vector<FObjectExport*> RootExports;
 	std::vector<FObjectImport*> RootImports;
 
+	std::wstring CompositeDataPath;
+	std::wstring CompositeSourcePath;
+
 	// Cached netIndices for faster netIndex lookup. Containes only loaded objects!
 	std::map<NET_INDEX, UObject*> NetIndexMap;
 	// Name to Object map for faster import lookup
@@ -201,6 +195,7 @@ private:
 	static std::vector<std::string> DirCache;
 	static std::unordered_map<std::string, std::string> PkgMap;
 	static std::unordered_map<std::string, std::string> ObjectRedirectorMap;
-	static std::unordered_map<std::string, std::vector<FCompositePackageMapEntry>> CompositPackageMap;
-	static EArch EngineArchitecture;
+	static std::unordered_map<std::string, FCompositePackageMapEntry> CompositPackageMap;
+
+	static uint16 CoreVersion;
 };
