@@ -31,6 +31,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UStruct(exp);
   }
+  else if (c == UScriptStruct::StaticClassName())
+  {
+    result = new UScriptStruct(exp);
+  }
   else if (c == UState::StaticClassName())
   {
     result = new UState(exp);
@@ -38,6 +42,14 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UEnum::StaticClassName())
   {
     result = new UEnum(exp);
+  }
+  else if (c == UConst::StaticClassName())
+  {
+    result = new UConst(exp);
+  }
+  else if (c == UFunction::StaticClassName())
+  {
+    result = new UFunction(exp);
   }
   else if (c == UTextBuffer::StaticClassName())
   {

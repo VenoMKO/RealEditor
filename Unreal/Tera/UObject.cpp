@@ -34,6 +34,10 @@ FPackage* UObject::GetPackage() const
 
 UObject* UObject::GetOuter() const
 {
+  if (!Export->GetOuter())
+  {
+    return false;
+  }
   return GetPackage()->GetObject((FObjectExport*)Export->GetOuter());
 }
 
@@ -45,10 +49,10 @@ void UObject::SerializeScriptProperties(FStream& s) const
     return;
   }
   // TODO: serialize props without a Class obj
-  // I belive the object has only a None property if there is no Class
+  // I belive the object has only a None property if there is no Class(unless we failed to load the class)
   FName nonePropertyName;
   s << nonePropertyName;
-  DBreakIf(nonePropertyName.String() != "None");
+  //DBreakIf(nonePropertyName.String() != "None");
 }
 
 std::string UObject::GetObjectPath() const
@@ -91,7 +95,7 @@ void UObject::Serialize(FStream& s)
   if (s.IsReading())
   {
     s.SetPosition(Export->SerialOffset);
-#if defined(_DEBUG) && defined(DUMP_PATH)
+#if DUMP_OBJECTS
     if (s.IsReading())
     {
       void* data = malloc(Export->SerialSize);
@@ -156,6 +160,15 @@ void UObject::Serialize(FStream& s)
 
 void UObject::Load()
 {
+  // Create a new stream here. This allows safe multithreading
+  FReadStream s = FReadStream(A2W(GetPackage()->GetDataPath()));
+  s.SetPackage(GetPackage());
+  s.SetLoadSerializedObjects(GetPackage()->GetStream().GetLoadSerializedObjects());
+  Load(s);
+}
+
+void UObject::Load(FStream& s)
+{
   if (Loaded || Loading)
   {
     return;
@@ -181,21 +194,17 @@ void UObject::Load()
         DefaultObject = Class->GetClassDefaultObject();
       }
     }
-    else
-    {
-      LogI("Skip class load for %s", Export->GetFullObjectName().c_str());
-    }
   }
-
-  FStream& s = GetPackage()->GetStream();
+  
   Serialize(s);
+
   Loaded = true;
   Loading = false;
 
   if (s.IsReading())
   {
-    PostLoad();
     //DBreakIf(s.GetPosition() != Export->SerialOffset + Export->SerialSize);
+    PostLoad();
   }
 }
 
@@ -209,10 +218,8 @@ FStream& operator<<(FStream& s, UObject*& obj)
   if (s.IsReading())
   {
     s << idx;
-    // GetObject will try to load the object, so we need to save our current stream position
-    // Loading objects here is actually a bit risky. May end up with a stack overflow
     FILE_OFFSET tmpPos = s.GetPosition();
-    obj = s.GetPackage()->GetObject(idx);
+    obj = s.GetPackage()->GetObject(idx, s.GetLoadSerializedObjects());
     s.SetPosition(tmpPos);
   }
   else

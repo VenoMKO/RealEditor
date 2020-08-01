@@ -12,12 +12,14 @@ public:
   virtual ~FObjectResource()
   {}
 
-  std::string GetObjectName() const
+  inline std::string GetObjectName() const
   {
-    return ObjectName.String();
+    std::string name;
+    ObjectName.GetString(name);
+    return name;
   }
 
-  std::string GetFullObjectName() const
+  inline std::string GetFullObjectName() const
   {
     return GetClassName() + " " + GetObjectPath();
   }
@@ -47,7 +49,9 @@ public:
 
   std::string GetClassName() const override
   {
-    return ClassName.String();
+    std::string name;
+    ClassName.GetString(name);
+    return name;
   }
 
   UObject* GetObject();
@@ -59,7 +63,6 @@ public:
   FName ClassName;
 
   std::vector<FObjectImport*> Inner;
-  bool DontLookUp = false;
 };
 
 class FObjectExport : public FObjectResource {

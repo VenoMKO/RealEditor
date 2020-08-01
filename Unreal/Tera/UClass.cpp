@@ -1,6 +1,8 @@
 #include "UClass.h"
 #include "FStream.h"
 
+#define FUNC_Net 0x00000040
+
 void UTextBuffer::Serialize(FStream& s)
 {
   Super::Serialize(s);
@@ -129,4 +131,29 @@ void UEnum::Serialize(FStream& s)
 {
   Super::Serialize(s);
   s << Names;
+}
+
+void UScriptStruct::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << StructFlags;
+}
+
+void UFunction::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << iNative;
+  s << OperPrecedence;
+  s << FunctionFlags;
+  if (FunctionFlags & FUNC_Net)
+  {
+    s << RepOffset;
+  }
+  s << FriendlyName;
+}
+
+void UConst::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << Value;
 }

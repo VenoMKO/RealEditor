@@ -28,17 +28,34 @@ bool FName::operator<(const FName& n) const
 
 std::string FName::String() const
 {
-  std::string value = Package->GetIndexedName(Index);
+  std::string value;
+  GetString(value);
+  return value;
+}
+
+void FName::GetString(std::string& str) const
+{
+  Package->GetIndexedName(Index, str);
   if (Number)
   {
-    value += "_" + std::to_string(Number);
+    str += "_" + std::to_string(Number);
   }
-  return value;
+}
+
+void FName::SetString(const std::string& str)
+{
+  Index = Package->GetNameIndex(str, true);
+  Number = 0;
+#ifdef _DEBUG
+  Value = String();
+#endif
 }
 
 FStream& operator<<(FStream& s, FName& n)
 {
   SET_PACKAGE(s, n);
+  // Check if name's package does not match stream's one. Thus the Index is invalid.
+  DBreakIf(!s.IsReading() && s.GetPackage() != n.Package);
   s << n.Index;
   s << n.Number;
 #ifdef _DEBUG

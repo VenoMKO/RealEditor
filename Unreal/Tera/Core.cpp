@@ -442,6 +442,18 @@ bool IsAnsi(const std::string& str)
   return true;
 }
 
+bool IsAnsi(const std::wstring& str)
+{
+  for (const wchar& ch : str)
+  {
+    if (ch > 127)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::string Sprintf(const std::string fmt, ...)
 {
   int final_n, n = ((int)fmt.size()) * 2;
@@ -464,6 +476,14 @@ std::string Sprintf(const std::string fmt, ...)
     }
   }
   return std::string(formatted.get());
+}
+
+void memswap(void* a, void* b, size_t size)
+{
+  void* tmp = alloca(size);
+  memcpy(tmp, a, size);
+  memcpy(a, b, size);
+  memcpy(b, tmp, size);
 }
 
 void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)

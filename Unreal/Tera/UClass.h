@@ -62,6 +62,28 @@ class UEnum : public UField {
 public:
   DECL_UOBJ(UEnum, UField);
 
+  int32 FindEnumIndex(FName& inName) const
+  {
+    for (int32 i = 0; i < Names.size(); ++i)
+    {
+      if (Names[i] == inName)
+      {
+        return i;
+      }
+    }
+    return INT32_MAX;
+  }
+
+  int32 NumEnums() const
+  {
+    return (int32)Names.size();
+  }
+
+  FName GetEnum(int32 index) const
+  {
+    return Names.size() > index ? Names[index] : Names.back();
+  }
+
 protected:
   void Serialize(FStream& s) override;
 
@@ -79,8 +101,9 @@ public:
 protected:
   void Serialize(FStream& s);
 
-protected:
+public:
   UStruct* SuperStruct = nullptr;
+protected:
   UTextBuffer* CppText = nullptr;
   UTextBuffer* ScriptText = nullptr;
   UField* Children = nullptr;
@@ -171,4 +194,46 @@ protected:
   uint16 LatentAction = 0;
   std::vector<FPushedState> StateStack;
   int32 Offset = 0;
+};
+
+class UScriptStruct : public UStruct {
+public:
+  DECL_UOBJ(UScriptStruct, UStruct);
+
+protected:
+  void Serialize(FStream& s) override;
+
+public:
+  uint32 StructFlags;
+  uint8* StructDefaults = nullptr;
+  size_t StructDefaultsSize = 0;
+};
+
+class UFunction : public UStruct
+{
+public:
+  DECL_UOBJ(UFunction, UStruct);
+
+protected:
+  void Serialize(FStream& s) override;
+
+public:
+  uint32 FunctionFlags = 0;
+  uint16 iNative = 0;
+  uint16 RepOffset = 0;
+  FName	FriendlyName;
+  uint8	OperPrecedence = 0;
+};
+
+
+class UConst : public UField
+{
+public:
+  DECL_UOBJ(UConst, UField);
+
+protected:
+  void Serialize(FStream& s) override;
+
+public:
+  std::string Value;
 };

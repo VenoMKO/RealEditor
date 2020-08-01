@@ -87,6 +87,8 @@ public:
     return *this;
   }
 
+  FStream& operator<<(FString& s);
+
   FStream& operator<<(std::string& s);
 
   template <typename T>
@@ -196,6 +198,17 @@ public:
     return Package;
   }
 
+  // false = dont call Load() on objects serialized via operator '<<'
+  inline bool GetLoadSerializedObjects() const
+  {
+    return LoadSerializedObjects;
+  }
+
+  inline void SetLoadSerializedObjects(bool flag)
+  {
+    LoadSerializedObjects = flag;
+  }
+
   uint16 GetFV() const;
 
   uint16 GetLV() const;
@@ -203,6 +216,7 @@ public:
 protected:
   bool Reading = false;
   FPackage* Package = nullptr;
+  bool LoadSerializedObjects = true;
 };
 
 class FReadStream : public FStream {

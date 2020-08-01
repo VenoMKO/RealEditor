@@ -36,6 +36,7 @@ public:
   virtual ~UObject();
   // Load the object from its package
   virtual void Load();
+  virtual void Load(FStream& s);
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
 
@@ -49,12 +50,12 @@ public:
 
   uint64 GetObjectFlags() const;
 
-  inline FObjectExport* GetExportObject()
+  inline FObjectExport* GetExportObject() const
   {
     return Export;
   }
 
-  inline FObjectImport* GetImportObject()
+  inline FObjectImport* GetImportObject() const
   {
     return Import;
   }
@@ -83,6 +84,11 @@ public:
       }
     }
     return false;
+  }
+
+  inline bool IsLoaded() const
+  {
+    return Loaded;
   }
 
 private:

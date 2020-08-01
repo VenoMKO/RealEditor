@@ -7,6 +7,7 @@
 #include <atomic>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 class FPackage {
 public:
@@ -45,16 +46,19 @@ public:
 	void Load();
 
 	// Get an object at index
-	UObject* GetObject(PACKAGE_INDEX index);
+	UObject* GetObject(PACKAGE_INDEX index, bool load = true);
 
 	// Import an object from a different package.
 	UObject* GetObject(FObjectImport* imp);
 	
 	// Get an object
 	UObject* GetObject(FObjectExport* exp);
+	UObject* GetObject(FObjectExport* exp) const;
 
 	// Get package index of the object. Accepts imported objects
 	PACKAGE_INDEX GetObjectIndex(UObject* object);
+
+	PACKAGE_INDEX GetNameIndex(const std::string& name, bool insert = false);
 
 	// Get a UClass with name className
 	UClass* LoadClass(const std::string& className);
@@ -88,45 +92,57 @@ public:
 	}
 
 	// Get import object at index
-	FObjectImport* GetImportObject(PACKAGE_INDEX index)
+	inline FObjectImport* GetImportObject(PACKAGE_INDEX index)
 	{
 		const PACKAGE_INDEX i = -index - 1;
 		return Imports[i];
 	}
 
 	// Get export object at index
-	FObjectExport* GetExportObject(PACKAGE_INDEX index)
+	inline FObjectExport* GetExportObject(PACKAGE_INDEX index)
 	{
 		const PACKAGE_INDEX i = index - 1;
 		return Exports[i];
 	}
 
 	// Get package read stream
-	FStream& GetStream()
+	inline FStream& GetStream()
 	{
 		return *Stream;
 	}
 
 	// Get package guid
-	FGuid GetGuid() const
+	inline FGuid GetGuid() const
 	{
 		return Summary.Guid;
 	}
 
 	// Get name at index
-	std::string GetIndexedName(NAME_INDEX index) const
+	inline std::string GetIndexedName(NAME_INDEX index) const
 	{
 		return Names[index].GetString();
 	}
 
+	// Get name at index
+	inline void GetIndexedName(NAME_INDEX index, std::string& output) const
+	{
+		Names[index].GetString(output);
+	}
+
 	// Get package's source path(may differ from a DataPath)
-	std::string GetSourcePath() const
+	inline std::string GetSourcePath() const
 	{
 		return Summary.SourcePath;
 	}
 
+	// Get package's source path(may differ from a DataPath)
+	inline std::string GetDataPath() const
+	{
+		return Summary.DataPath;
+	}
+
 	// Returns true if Load() finished
-	bool IsReady()
+	inline bool IsReady()
 	{
 		return Ready.load();
 	}
@@ -142,12 +158,12 @@ public:
 		return Cancelled.load();
 	}
 
-	uint16 GetFileVersion() const
+	inline uint16 GetFileVersion() const
 	{
 		return Summary.FileVersion;
 	}
 
-	uint16 GetLicenseeVersion() const
+	inline uint16 GetLicenseeVersion() const
 	{
 		return Summary.LicenseeVersion;
 	}
@@ -186,6 +202,7 @@ private:
 	// Name to Object map for faster import lookup
 	std::unordered_map<std::string, std::vector<FObjectExport*>> ObjectNameToExportMap;
 	// List of packages we rely on
+	std::mutex ExternalPackagesMutex;
 	std::vector<std::shared_ptr<FPackage>> ExternalPackages;
 
 	static std::string RootDir;
@@ -196,6 +213,8 @@ private:
 	static std::unordered_map<std::string, std::string> PkgMap;
 	static std::unordered_map<std::string, std::string> ObjectRedirectorMap;
 	static std::unordered_map<std::string, FCompositePackageMapEntry> CompositPackageMap;
+	static std::unordered_map<std::string, UObject*> ClassMap;
+	static std::unordered_set<std::string> MissingClasses;
 
 	static uint16 CoreVersion;
 };

@@ -24,14 +24,13 @@ typedef unsigned long long uint64;
 typedef wchar_t wchar;
 
 #include "FFlags.h"
-typedef enum EPackageFlags EPackageFlags;
-typedef enum EObjectFlags EObjectFlags;
-typedef enum EFExportFlags EFExportFlags;
+#include "UNames.h"
 
 typedef int32 FILE_OFFSET;
 typedef int32 NAME_INDEX;
 typedef int32 PACKAGE_INDEX;
 typedef int32 NET_INDEX;
+typedef unsigned long BITFIELD;
 
 enum { INDEX_NONE = -1 };
 
@@ -39,7 +38,6 @@ enum { INDEX_NONE = -1 };
 #define VER_TERA_CLASSIC 610
 #define VER_TERA_MODERN 897
 
-// Use UTF-8 encoded std::string as internal string storage
 #include <string>
 // Use std::vector instead of TArray
 #include <vector>
@@ -52,22 +50,42 @@ enum { INDEX_NONE = -1 };
 
 class ALog;
 
+class	UObject;
+class		UComponent;
+class		UField;
+class			UConst;
+class			UEnum;
+class			UProperty;
+class				UByteProperty;
+class				UIntProperty;
+class				UBoolProperty;
+class				UFloatProperty;
+class				UObjectProperty;
+class					UComponentProperty;
+class					UClassProperty;
+class					UInterfaceProperty;
+class				UNameProperty;
+class				UStructProperty;
+class               UStrProperty;
+class               UArrayProperty;
+class				UMapProperty;
+class				UDelegateProperty;
+class			UStruct;
+class				UFunction;
+class				UState;
+class					UClass;
+class				UScriptStruct;
+class		UTextBuffer;
+class		UObjectRedirector;
+
+
+class FName;
 class FStream;
 class FPackage;
-class FName;
 class FStateFrame;
 class FObjectResource;
 class FObjectImport;
 class FObjectExport;
-
-
-class UObject;
-class UField;
-class UStruct;
-class UState;
-class UClass;
-class UEnum;
-class UProperty;
 
 // --------------------------------------------------------------------
 // Utils
@@ -85,6 +103,7 @@ void UThrow(const std::string& msg);
 void UThrow(const std::wstring& msg);
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
+bool IsAnsi(const std::wstring& str);
 // Wide string to UTF8
 std::string W2A(const wchar_t* str, int32 len = -1);
 std::string W2A(const std::wstring& str);
@@ -100,6 +119,8 @@ uint64 GetFileTime(const std::wstring& path);
 
 // Format like a C string
 std::string Sprintf(const std::string fmt, ...);
+
+void memswap(void* a, void* b, size_t size);
 
 #define Check(expr) if (!expr) UThrow(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__))
 
@@ -144,3 +165,11 @@ namespace LZO
 #define PERF_START(ID)
 #define PERF_END(ID)
 #endif
+
+#if defined(DUMP_PATH) && _DEBUG
+#define DUMP_OBJECTS 0
+#define DUMP_PACKAGES 0
+#define DUMP_MAPPERS 0
+#endif
+
+#include "FString.h"

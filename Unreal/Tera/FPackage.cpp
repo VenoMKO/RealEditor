@@ -29,6 +29,8 @@ std::vector<std::string> FPackage::DirCache;
 std::unordered_map<std::string, std::string> FPackage::PkgMap;
 std::unordered_map<std::string, std::string> FPackage::ObjectRedirectorMap;
 std::unordered_map<std::string, FCompositePackageMapEntry> FPackage::CompositPackageMap;
+std::unordered_map<std::string, UObject*> FPackage::ClassMap;
+std::unordered_set<std::string> FPackage::MissingClasses;
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
@@ -116,14 +118,12 @@ void DecryptMapper(const std::filesystem::path& path, std::string& decrypted)
   {
     decrypted[offset] ^= Key2[offset % sizeof(Key2)];
   }
-}
 
-void DecryptMapper(const std::filesystem::path& path, std::wstring& decrypted)
-{
-  std::string tmp;
-  DecryptMapper(path, tmp);
-  decrypted.resize(tmp.size() / 2);
-  memcpy_s((void*)decrypted.c_str(), tmp.size(), tmp.c_str(), tmp.size());
+  if ((*(wchar*)decrypted.c_str()) == 0xFEFF)
+  {
+    std::string utfstr = W2A(((wchar*)decrypted.c_str()) + 1);
+    decrypted = utfstr;
+  }
 }
 
 void FPackage::SetRootPath(const std::string& path)
@@ -183,11 +183,94 @@ void FPackage::LoadDefaultClassPackages()
   for (auto package : DefaultClassPackages)
   {
     package->Load();
+    
+    // Allocate all objects
+    package->Stream->SetLoadSerializedObjects(false);
+    std::vector<UObject*> defaults;
+    std::vector<UObject*> classes;
+    for (FObjectExport* exp : package->Exports)
+    {
+      UObject* obj = package->GetObject(exp->ObjectIndex, false);
+      if (!exp->OuterIndex)
+      {
+        if (exp->Object && exp->Object->IsTemplate(RF_ClassDefaultObject))
+        {
+          defaults.push_back(obj);
+        }
+        else
+        {
+          classes.push_back(obj);
+        }
+      }
+      if (exp->GetClassName() == UClass::StaticClassName())
+      {
+        ClassMap[exp->GetObjectName()] = obj;
+      }
+    }
+
+    // Load objects from child to parent to prevent possible stack overflow
+    std::function<void(UObject*, std::vector<UObject*>&)> loader;
+    loader = [&loader](UObject* obj, std::vector<UObject*>& children) {
+      for (const FObjectExport* child : obj->GetExportObject()->Inner)
+      {
+        if (child->Object)
+        {
+          loader(child->Object, children);
+        }
+      }
+      children.push_back(obj);
+    };
+
+    // Serialize classes
+    concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
+      std::vector<UObject*> objects;
+      loader(classes[idx], objects);
+      FReadStream s = FReadStream(A2W(package->GetDataPath()));
+      s.SetPackage(package.get());
+      s.SetLoadSerializedObjects(false);
+      for (UObject* obj : objects)
+      {
+        obj->Load(s);
+      }
+    });
+
+    // Serialize defaults
+    concurrency::parallel_for(size_t(0), size_t(defaults.size()), [&](size_t idx) {
+      UObject* root = defaults[idx];
+      FReadStream s = FReadStream(A2W(package->GetDataPath()));
+      s.SetPackage(package.get());
+      s.SetLoadSerializedObjects(false);
+      if (root->GetExportObject()->Inner.size())
+      {
+        std::vector<UObject*> objects;
+        loader(root, objects);
+        for (UObject* obj : objects)
+        {
+          obj->Load(s);
+        }
+      }
+      else
+      {
+        root->Load(s);
+      }
+    });
+
+#ifdef _DEBUG
+    for (FObjectExport* exp : package->Exports)
+    {
+      UObject* obj = package->GetObject(exp->ObjectIndex, false);
+      DBreakIf(!obj || !obj->IsLoaded());
+    }
+#endif
+
+    package->Stream->SetLoadSerializedObjects(true);
   }
 }
 
 void FPackage::UnloadDefaultClassPackages()
 {
+  ClassMap.clear();
+  MissingClasses.clear();
   for (auto package : DefaultClassPackages)
   {
     UnloadPackage(package);
@@ -245,7 +328,7 @@ void FPackage::LoadPkgMapper()
   ws << fts;
   ws << PkgMap;
 
-#ifdef _DEBUG
+#if DUMP_MAPPERS
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring());
@@ -326,7 +409,7 @@ void FPackage::LoadCompositePackageMapper()
   s << fts;
   s << CompositPackageMap;
 
-#ifdef _DEBUG
+#if DUMP_MAPPERS
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring());
@@ -359,9 +442,9 @@ void FPackage::LoadObjectRedirectorMapper()
     }
   }
 
-  std::wstring buffer;
+  std::string buffer;
   DecryptMapper(encryptedPath, buffer);
-
+  
   size_t pos = 0;
   size_t prevPos = 0;
   while ((pos = buffer.find('|', prevPos)) != std::string::npos)
@@ -371,8 +454,8 @@ void FPackage::LoadObjectRedirectorMapper()
     {
       UThrow(path.filename().string() + " is corrupted!");
     }
-    std::string key = W2A(buffer.substr(prevPos, sepPos - prevPos));
-    std::string value = W2A(buffer.substr(sepPos + 1, pos - sepPos - 1));
+    std::string key = buffer.substr(prevPos, sepPos - prevPos);
+    std::string value = buffer.substr(sepPos + 1, pos - sepPos - 1);
     ObjectRedirectorMap.emplace(key, value);
     pos++;
     std::swap(pos, prevPos);
@@ -383,12 +466,11 @@ void FPackage::LoadObjectRedirectorMapper()
   ws << fts;
   ws << ObjectRedirectorMap;
 
-#ifdef _DEBUG
+#if DUMP_MAPPERS
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring(), std::ios::out | std::ios::binary | std::ios::trunc);
-  const char* tmp = (const char*)buffer.c_str();
-  os.write(tmp, buffer.size() * 2);
+  os.write(&buffer[0], buffer.size());
   os.close();
 #endif
 }
@@ -784,7 +866,7 @@ void FPackage::Load()
     }
   }
 
-#ifdef _DEBUG
+#if DUMP_PACKAGES
   _DebugDump();
 #endif
 
@@ -819,7 +901,7 @@ std::string FPackage::GetPackageName(bool extension) const
   }
 }
 
-UObject* FPackage::GetObject(PACKAGE_INDEX index)
+UObject* FPackage::GetObject(PACKAGE_INDEX index, bool load)
 {
   if (Objects.count(index))
   {
@@ -834,7 +916,10 @@ UObject* FPackage::GetObject(PACKAGE_INDEX index)
     }
     UObject* obj = UObject::Object(exp);
     Objects[index] = obj;
-    obj->Load();
+    if (load)
+    {
+      obj->Load();
+    }
     return obj;
   }
   else if (index < 0)
@@ -851,7 +936,7 @@ UObject* FPackage::GetObject(PACKAGE_INDEX index)
 
 UObject* FPackage::GetObject(FObjectImport* imp)
 {
-  if (imp->Object || imp->DontLookUp)
+  if (imp->Object)
   {
     return imp->Object;
   }
@@ -866,13 +951,13 @@ UObject* FPackage::GetObject(FObjectImport* imp)
         package->Load();
         if (UObject* obj = package->GetObject(imp))
         {
+          std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
           ExternalPackages.push_back(package);
           return obj;
         }
         UnloadPackage(package);
       }
       LogW("%s: Couldn't find import %s(%s)", GetPackageName().c_str(), imp->GetObjectName().c_str(), imp->GetClassName().c_str());
-      imp->DontLookUp = true;
       return nullptr;
     }
   }
@@ -884,7 +969,6 @@ UObject* FPackage::GetObject(FObjectImport* imp)
       return GetObject(exp);
     }
   }
-  imp->DontLookUp = true;
   return nullptr;
 }
 
@@ -895,6 +979,15 @@ UObject* FPackage::GetObject(FObjectExport* exp)
     Objects[exp->ObjectIndex] = UObject::Object(exp);
   }
   return Objects[exp->ObjectIndex];
+}
+
+UObject* FPackage::GetObject(FObjectExport* exp) const
+{
+  if (!Objects.count(exp->ObjectIndex))
+  {
+    return nullptr;
+  }
+  return Objects.at(exp->ObjectIndex);
 }
 
 PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
@@ -914,11 +1007,37 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
   return object->GetExportObject()->ObjectIndex;
 }
 
+PACKAGE_INDEX FPackage::GetNameIndex(const std::string& name, bool insert)
+{
+  for (PACKAGE_INDEX index = 0; index < Names.size(); ++index)
+  {
+    if (Names[index].GetString() == name)
+    {
+      return index;
+    }
+  }
+  if (insert)
+  {
+    Names.push_back(FNameEntry(name));
+    return (PACKAGE_INDEX)Names.size() - 1;
+  }
+  return INDEX_NONE;
+}
+
 UClass* FPackage::LoadClass(const std::string& className)
 {
+  if (ClassMap[className])
+  {
+    return (UClass*)ClassMap[className];
+  }
+  if (MissingClasses.find(className) != MissingClasses.end())
+  {
+    return nullptr;
+  }
+  auto uclassName = UClass::StaticClassName();
   for (FObjectImport* imp : Imports)
   {
-    if (imp->GetObjectName() == className && imp->GetClassName() == "Class")
+    if (imp->GetObjectName() == className && imp->GetClassName() == uclassName)
     {
       if (UObject* obj = imp->GetObject())
       {
@@ -928,12 +1047,17 @@ UClass* FPackage::LoadClass(const std::string& className)
       {
         for (FObjectExport* exp : Exports)
         {
-          if (exp->GetObjectName() == className && exp->GetClassName() == "Class")
+          if (exp->GetObjectName() == className && exp->GetClassName() == uclassName)
           {
             imp->Object = GetObject(exp->ObjectIndex);
+            if (imp->Object)
+            {
+              MissingClasses.insert(className);
+            }
             return (UClass*)imp->Object;
           }
         }
+        MissingClasses.insert(className);
         return nullptr;
       }
       UClass *cls = (UClass*)GetObject(imp);
@@ -941,16 +1065,21 @@ UClass* FPackage::LoadClass(const std::string& className)
       {
         imp->Object = cls;
       }
+      else
+      {
+        MissingClasses.insert(className);
+      }
       return cls;
     }
   }
   for (FObjectExport* exp : Exports)
   {
-    if (exp->GetObjectName() == className && exp->GetClassName() == "Class")
+    if (exp->GetObjectName() == className && exp->GetClassName() == uclassName)
     {
       return (UClass*)GetObject(exp->ObjectIndex);
     }
   }
+  MissingClasses.insert(className);
   return nullptr;
 }
 
@@ -970,7 +1099,7 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const std::string& name)
 
 void FPackage::_DebugDump() const
 {
-#if defined(DUMP_PATH) && defined(_DEBUG)
+#if DUMP_PACKAGES
   std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackageName();
   std::filesystem::create_directories(path);
   path /= "Info.txt";

@@ -38,6 +38,7 @@
     <ClCompile Include="Unreal\Tera\FStructs.cpp" />
     <ClCompile Include="Unreal\Tera\UClass.cpp" />
     <ClCompile Include="Unreal\Tera\UComponent.cpp" />
+    <ClCompile Include="Unreal\Tera\UNames.cpp" />
     <ClCompile Include="Unreal\Tera\UObject.cpp" />
     <ClCompile Include="Unreal\Tera\UObjectFactory.cpp" />
     <ClCompile Include="Unreal\Tera\UObjectRedirector.cpp" />
@@ -63,10 +64,14 @@
     <ClInclude Include="Unreal\Tera\FName.h" />
     <ClInclude Include="Unreal\Tera\FObjectResource.h" />
     <ClInclude Include="Unreal\Tera\FPackage.h" />
+    <ClInclude Include="Unreal\Tera\FPropertyTag.h" />
+    <ClInclude Include="Unreal\Tera\FScriptArray.h" />
     <ClInclude Include="Unreal\Tera\FStream.h" />
+    <ClInclude Include="Unreal\Tera\FString.h" />
     <ClInclude Include="Unreal\Tera\FStructs.h" />
     <ClInclude Include="Unreal\Tera\UComponent.h" />
     <ClInclude Include="Unreal\Tera\UClass.h" />
+    <ClInclude Include="Unreal\Tera\UNames.h" />
     <ClInclude Include="Unreal\Tera\UObject.h" />
     <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
     <ClInclude Include="Unreal\Tera\UProperty.h" />
@@ -190,6 +195,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -209,6 +215,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
