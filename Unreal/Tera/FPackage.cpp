@@ -332,7 +332,7 @@ void FPackage::LoadPkgMapper()
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring());
-  os.write(&buffer[0], buffer.size());
+  os.write(&buffer[0], buffer.Size());
 #endif
 }
 
@@ -413,7 +413,7 @@ void FPackage::LoadCompositePackageMapper()
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring());
-  os.write(&buffer[0], buffer.size());
+  os.write(&buffer[0], buffer.Size());
 #endif
 }
 
@@ -470,7 +470,7 @@ void FPackage::LoadObjectRedirectorMapper()
   std::filesystem::path debugPath = path;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring(), std::ios::out | std::ios::binary | std::ios::trunc);
-  os.write(&buffer[0], buffer.size());
+  os.write(&buffer[0], buffer.Size());
   os.close();
 #endif
 }
@@ -1111,24 +1111,24 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
 void FPackage::_DebugDump() const
 {
 #if DUMP_PACKAGES
-  std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackageName();
+  std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackageName().String();
   std::filesystem::create_directories(path);
   path /= "Info.txt";
   std::ofstream ds(path.wstring());
-  ds << "SourcePath: \"" << Summary.SourcePath << "\"\n";
-  ds << "DataPath: \"" << Summary.DataPath << "\"\n";
-  if (GetFileVersion() > VER_TERA_CLASSIC && CompositeDataPath.size())
+  ds << "SourcePath: \"" << Summary.SourcePath.String() << "\"\n";
+  ds << "DataPath: \"" << Summary.DataPath.String() << "\"\n";
+  if (GetFileVersion() > VER_TERA_CLASSIC && CompositeDataPath.Size())
   {
     ds << "CompositeSourcePath: \"" << W2A(CompositeSourcePath) << "\"\n";
     ds << "CompositeDataPath: \"" << W2A(CompositeDataPath) << "\"\n";
   }
   ds << "Version: " << Summary.FileVersion << "/" << Summary.LicenseeVersion << std::endl;
   ds << "HeaderSize: " << Summary.HeaderSize << std::endl;
-  ds << "FolderName: \"" << Summary.FolderName << "\"\n";
-  ds << "PackageFlags: " << PackageFlagsToString(Summary.PackageFlags) << std::endl;
+  ds << "FolderName: \"" << Summary.FolderName.String() << "\"\n";
+  ds << "PackageFlags: " << PackageFlagsToString(Summary.PackageFlags).String() << std::endl;
   ds << "CompressionFlags: " << Sprintf("0x%08X", Summary.CompressionFlags) << std::endl;
   ds << "PackageSource: " << Sprintf("0x%08X", Summary.PackageSource) << std::endl;
-  ds << "Guid: " << Summary.Guid.String() << std::endl;
+  ds << "Guid: " << Summary.Guid.String().String() << std::endl;
   ds << "EngineVersion: " << Summary.EngineVersion << " ContentVersion: " << Summary.ContentVersion << std::endl;
   ds << "Names Count: " << Summary.NamesCount << " Offset: " << Summary.NamesOffset << std::endl;
   ds << "Exports Count: " << Summary.ExportsCount << " Offset: " << Summary.ExportsOffset << std::endl;
@@ -1150,7 +1150,7 @@ void FPackage::_DebugDump() const
     for (const FTextureAllocations::FTextureType& ttype : Summary.TextureAllocations.TextureTypes)
     {
       ds << "\tSizeX: " << ttype.SizeX << " SizeY: " << ttype.SizeY << " NumMips: " << ttype.NumMips;
-      ds << " Format: " << PixelFormatToString(ttype.Format) << " TexFlags: " << Sprintf("0x%08X", ttype.TexCreateFlags);
+      ds << " Format: " << PixelFormatToString(ttype.Format).String() << " TexFlags: " << Sprintf("0x%08X", ttype.TexCreateFlags);
       ds << " ExportIndices: ";
       for (const int32& idx : ttype.ExportIndices)
       {
@@ -1164,14 +1164,14 @@ void FPackage::_DebugDump() const
     ds << "AdditionalPackagesToCook:\n";
     for (const FString& pkg : Summary.AdditionalPackagesToCook)
     {
-      ds << "\t" << pkg << std::endl;
+      ds << "\t" << pkg.String() << std::endl;
     }
   }
 
   ds << "Names:\n";
   for (int32 index = 0; index < Names.size(); ++index)
   {
-    ds << "\t[" << index << "]" << Names[index].GetString() << "\n";
+    ds << "\t[" << index << "]" << Names[index].GetString().String() << "\n";
   }
   ds << "\n\nExports:\n";
 
@@ -1181,13 +1181,13 @@ void FPackage::_DebugDump() const
     {
       ds << "\t";
     }
-    ds << "[" << exp->ObjectIndex << "]" << exp->GetFullObjectName();
+    ds << "[" << exp->ObjectIndex << "]" << exp->GetFullObjectName().String();
     ds << "(Offset: " << exp->SerialOffset << ", Size: " << exp->SerialSize;
     if (exp->ExportFlags)
     {
-      ds << ", EF: " << ExportFlagsToString(exp->ExportFlags);
+      ds << ", EF: " << ExportFlagsToString(exp->ExportFlags).String();
     }
-    ds << ", OF: " << ObjectFlagsToString(exp->ObjectFlags);
+    ds << ", OF: " << ObjectFlagsToString(exp->ObjectFlags).String();
     ds << ")\n";
     depth++;
     for (FObjectExport* cexp : exp->Inner)
@@ -1206,7 +1206,7 @@ void FPackage::_DebugDump() const
     {
       ds << "\t";
     }
-    ds << "[" << imp->ObjectIndex << "]" << imp->GetFullObjectName() << "\n";
+    ds << "[" << imp->ObjectIndex << "]" << imp->GetFullObjectName().String() << "\n";
     depth++;
     for (FObjectImport* cimp : imp->Inner)
     {

@@ -101,9 +101,9 @@ void UObject::Serialize(FStream& s)
       void* data = malloc(Export->SerialSize);
       s.SerializeBytes(data, Export->SerialSize);
       s.SetPosition(Export->SerialOffset);
-      std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackage()->GetPackageName() / "Objects";
+      std::filesystem::path path = std::filesystem::path(DUMP_PATH) / GetPackage()->GetPackageName().String() / "Objects";
       std::filesystem::create_directories(path);
-      path /= (Export->GetFullObjectName() + ".bin");
+      path /= (Export->GetFullObjectName().String() + ".bin");
       std::ofstream os(path.wstring(), std::ios::out | std::ios::binary);
       os.write((const char*)data, Export->SerialSize);
       free(data);
