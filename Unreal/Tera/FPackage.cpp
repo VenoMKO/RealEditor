@@ -665,6 +665,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
           UThrow("Failed to save composit package %s to %ls", name.C_str(), tmpPath.wstring().c_str());
         }
       }
+      free(rawData);
       std::shared_ptr<FPackage> package = GetPackage(tmpPath.wstring());
       package->CompositeDataPath = tmpPath.wstring();
       package->CompositeSourcePath = packagePath.WString();

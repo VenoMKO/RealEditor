@@ -417,6 +417,21 @@ public:
     return r;
   }
 
+  std::string StringForHash() const
+  {
+    if (!Data.size())
+    {
+      return {};
+    }
+    if (Data.back() != 0)
+    {
+      std::string r = Data;
+      r.resize(r.size() + 1);
+      return r;
+    }
+    return Data;
+  }
+
 private:
   std::string Data;
 };
@@ -448,7 +463,7 @@ namespace std
   {
     std::size_t operator()(const FString& a) const
     {
-      return std::hash<std::string>()(a.String());
+      return std::hash<std::string>()(a.StringForHash());
     }
   };
 }
