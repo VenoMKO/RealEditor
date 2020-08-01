@@ -78,7 +78,7 @@ PackageWindow::~PackageWindow()
 
 wxString PackageWindow::GetPackagePath() const
 {
-  return wxString(Package->GetSourcePath());
+  return wxString(Package->GetSourcePath().String());
 }
 
 
@@ -131,7 +131,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
 		return;
 	}
 	FObjectImport* obj = Package->GetImportObject(index);
-	ObjectTitleLabel->SetLabelText(wxString::Format("%s (%s)", obj->GetObjectName(), obj->GetClassName()));
+	ObjectTitleLabel->SetLabelText(wxString::Format("%ls (%ls)", obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
 	SetPropertiesHidden(true);
 	SetContentHidden(true);
 }
@@ -148,7 +148,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 	}
 	
 	FObjectExport* fobj = Package->GetExportObject(index);
-	ObjectTitleLabel->SetLabelText(wxString::Format("%s (%s)", fobj->GetObjectName(), fobj->GetClassName()));
+	ObjectTitleLabel->SetLabelText(wxString::Format("%ls (%ls)", fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
 	ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialSize));
 	ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialOffset));
 	std::string flags = ObjectFlagsToString(fobj->ObjectFlags);

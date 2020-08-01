@@ -82,6 +82,7 @@ class		UObjectRedirector;
 class FName;
 class FStream;
 class FPackage;
+class FString;
 class FStateFrame;
 class FObjectResource;
 class FObjectImport;
@@ -93,14 +94,13 @@ class FObjectExport;
 
 #define SET_PACKAGE(s, obj) if (s.IsReading() && s.GetPackage()) obj.Package = s.GetPackage()
 
-std::string ObjectFlagsToString(uint64 flags);
-std::string ExportFlagsToString(uint32 flags);
-std::string PixelFormatToString(uint32 pf);
-std::string PackageFlagsToString(uint32 flags);
+FString ObjectFlagsToString(uint64 flags);
+FString ExportFlagsToString(uint32 flags);
+FString PixelFormatToString(uint32 pf);
+FString PackageFlagsToString(uint32 flags);
 
 // Generic runtime error
-void UThrow(const std::string& msg);
-void UThrow(const std::wstring& msg);
+void UThrow(const char* fmt, ...);
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
 bool IsAnsi(const std::wstring& str);
@@ -118,11 +118,12 @@ bool Stricmp(const std::string& a, const std::string& b);
 uint64 GetFileTime(const std::wstring& path);
 
 // Format like a C string
+std::string Sprintf(const char* fmt, ...);
 std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);
 
-#define Check(expr) if (!expr) UThrow(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__))
+#define Check(expr) if (!expr) UThrow(std::string(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__)).c_str())
 
 #ifdef _DEBUG
 inline void DBreak()
@@ -171,5 +172,3 @@ namespace LZO
 #define DUMP_PACKAGES 0
 #define DUMP_MAPPERS 0
 #endif
-
-#include "FString.h"

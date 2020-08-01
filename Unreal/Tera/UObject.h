@@ -40,11 +40,11 @@ public:
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
 
-  std::string GetObjectPath() const;
+  FString GetObjectPath() const;
 
-  std::string GetObjectName() const;
+  FString GetObjectName() const;
 
-  std::string GetClassName() const;
+  FString GetClassName() const;
 
   uint32 GetExportFlags() const;
 

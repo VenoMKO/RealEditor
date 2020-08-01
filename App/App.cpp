@@ -212,11 +212,11 @@ bool App::OnInit()
   {
     Config = cfg.GetConfig();
   }
-  if (Config.RootDir.empty())
+  if (Config.RootDir.Empty())
   {
     Config = cfg.GetDefaultConfig();
     Config.RootDir = RequestRootDir();
-    if (Config.RootDir.empty())
+    if (Config.RootDir.Empty())
     {
       return false;
     }
@@ -288,7 +288,7 @@ void App::LoadCore(ProgressWindow* pWindow)
   {
     SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
     std::mutex errorMutex;
-    std::string error;
+    FString error;
     std::thread pkgMapper([&errorMutex, &error] {
       try
       {
@@ -297,7 +297,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       catch (const std::exception& e)
       {
         std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.empty())
+        if (error.Empty())
         {
           error = e.what();
         }
@@ -312,7 +312,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       catch (const std::exception& e)
       {
         std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.empty())
+        if (error.Empty())
         {
           error = e.what();
         }
@@ -327,7 +327,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       catch (const std::exception& e)
       {
         std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.empty())
+        if (error.Empty())
         {
           error = e.what();
         }
@@ -338,10 +338,10 @@ void App::LoadCore(ProgressWindow* pWindow)
     compositMapper.join();
     objectRedirectorMapper.join();
 
-    if (error.size())
+    if (error.Size())
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, error);
+      SendEvent(this, LOAD_CORE_ERROR, error.String());
       return;
     }
 
@@ -405,7 +405,7 @@ void App::OnLoadError(wxCommandEvent& e)
     return;
   }
   // Retry to load the core with a new path
-  Config.RootDir = rootDir;
+  Config.RootDir = rootDir.ToStdWstring();
   ProgressWindow* progressWindow = new ProgressWindow(nullptr);
   progressWindow->SetActionText(wxS("Loading..."));
   progressWindow->SetCurrentProgress(-1);
@@ -431,7 +431,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
   }
   // If we have no input args, we want to show a Root selector window
   Config.RootDir = RequestRootDir();
-  if (Config.RootDir.size())
+  if (Config.RootDir.Size())
   {
     AConfiguration cfg(W2A(GetConfigPath().ToStdWstring()));
     cfg.SetConfig(Config);

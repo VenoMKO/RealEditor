@@ -12,7 +12,7 @@
 class FPackage {
 public:
 
-	// RootDir architecture
+	// RootDir's Core.u version
 	static uint16 GetCoreVersion();
 	// Load class packages
 	static void LoadDefaultClassPackages();
@@ -25,13 +25,13 @@ public:
 	// Load ObjectReference Map
 	static void LoadObjectRedirectorMapper();
 	// Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
-	static std::shared_ptr<FPackage> GetPackage(const std::string& path);
+	static std::shared_ptr<FPackage> GetPackage(const FString& path);
 	// Load and retain a package by name and guid(if valid). Every GetPackageNamed call must pair a UnloadPackage call
-	static std::shared_ptr<FPackage> GetPackageNamed(const std::string& name, FGuid guid = FGuid());
+	static std::shared_ptr<FPackage> GetPackageNamed(const FString& name, FGuid guid = FGuid());
 	// Release a package. 
 	static void UnloadPackage(std::shared_ptr<FPackage> package);
 	// Find and cache all packages
-	static void SetRootPath(const std::string& path);
+	static void SetRootPath(const FString& path);
 
 private:
 	// Packages must be loaded/created from the static methods
@@ -58,16 +58,16 @@ public:
 	// Get package index of the object. Accepts imported objects
 	PACKAGE_INDEX GetObjectIndex(UObject* object);
 
-	PACKAGE_INDEX GetNameIndex(const std::string& name, bool insert = false);
+	PACKAGE_INDEX GetNameIndex(const FString& name, bool insert = false);
 
 	// Get a UClass with name className
-	UClass* LoadClass(const std::string& className);
+	UClass* LoadClass(const FString& className);
 
 	// Cache UObject with a netIndex to NetIndexMap
 	void AddNetObject(UObject* object);
 
 	// Get all exports that match the name
-	std::vector<FObjectExport*> GetExportObject(const std::string& name);
+	std::vector<FObjectExport*> GetExportObject(const FString& name);
 
 	// Get all root exports
 	inline std::vector<FObjectExport*> GetRootExports()
@@ -118,25 +118,25 @@ public:
 	}
 
 	// Get name at index
-	inline std::string GetIndexedName(NAME_INDEX index) const
+	inline FString GetIndexedName(NAME_INDEX index) const
 	{
 		return Names[index].GetString();
 	}
 
 	// Get name at index
-	inline void GetIndexedName(NAME_INDEX index, std::string& output) const
+	inline void GetIndexedName(NAME_INDEX index, FString& output) const
 	{
 		Names[index].GetString(output);
 	}
 
 	// Get package's source path(may differ from a DataPath)
-	inline std::string GetSourcePath() const
+	inline FString GetSourcePath() const
 	{
 		return Summary.SourcePath;
 	}
 
 	// Get package's source path(may differ from a DataPath)
-	inline std::string GetDataPath() const
+	inline FString GetDataPath() const
 	{
 		return Summary.DataPath;
 	}
@@ -169,7 +169,7 @@ public:
 	}
 
 	// Get package name
-	std::string GetPackageName(bool extension = false) const;
+	FString GetPackageName(bool extension = false) const;
 
 private:
 	void _DebugDump() const;
@@ -189,32 +189,32 @@ private:
 	std::vector<FObjectExport*> Exports;
 	std::vector<FObjectImport*> Imports;
 	std::vector<std::vector<int32>> Depends;
-	std::map<PACKAGE_INDEX, UObject*> Objects;
+	std::unordered_map<PACKAGE_INDEX, UObject*> Objects;
 
 	std::vector<FObjectExport*> RootExports;
 	std::vector<FObjectImport*> RootImports;
 
-	std::wstring CompositeDataPath;
-	std::wstring CompositeSourcePath;
+	FString CompositeDataPath;
+	FString CompositeSourcePath;
 
 	// Cached netIndices for faster netIndex lookup. Containes only loaded objects!
 	std::map<NET_INDEX, UObject*> NetIndexMap;
 	// Name to Object map for faster import lookup
-	std::unordered_map<std::string, std::vector<FObjectExport*>> ObjectNameToExportMap;
+	std::unordered_map<FString, std::vector<FObjectExport*>> ObjectNameToExportMap;
 	// List of packages we rely on
 	std::mutex ExternalPackagesMutex;
 	std::vector<std::shared_ptr<FPackage>> ExternalPackages;
 
-	static std::string RootDir;
+	static FString RootDir;
 	static std::recursive_mutex PackagesMutex;
 	static std::vector<std::shared_ptr<FPackage>> LoadedPackages;
 	static std::vector<std::shared_ptr<FPackage>> DefaultClassPackages;
-	static std::vector<std::string> DirCache;
-	static std::unordered_map<std::string, std::string> PkgMap;
-	static std::unordered_map<std::string, std::string> ObjectRedirectorMap;
-	static std::unordered_map<std::string, FCompositePackageMapEntry> CompositPackageMap;
-	static std::unordered_map<std::string, UObject*> ClassMap;
-	static std::unordered_set<std::string> MissingClasses;
+	static std::vector<FString> DirCache;
+	static std::unordered_map<FString, FString> PkgMap;
+	static std::unordered_map<FString, FString> ObjectRedirectorMap;
+	static std::unordered_map<FString, FCompositePackageMapEntry> CompositPackageMap;
+	static std::unordered_map<FString, UObject*> ClassMap;
+	static std::unordered_set<FString> MissingClasses;
 
 	static uint16 CoreVersion;
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdarg.h>
 
 // Wrapper to keep track of '\0'
 class FString {
@@ -38,6 +39,11 @@ public:
   inline size_t Length() const
   {
     return Data.size();
+  }
+
+  inline bool Empty() const
+  {
+    return Data.empty();
   }
 
   inline const char* C_str() const
@@ -104,6 +110,58 @@ public:
     return *this == std::string(a);
   }
 
+  inline std::wstring FilenameW(bool extension = true) const
+  {
+    if (extension)
+    {
+      size_t idx = 0;
+      if ((idx = Data.find_last_of('\\')) != std::string::npos)
+      {
+        return A2W(Data.substr(idx + 1));
+      }
+    }
+    else
+    {
+      size_t idx = Data.find_last_of('\\');
+      if (idx != std::string::npos)
+      {
+        idx++;
+        size_t end = Data.find_last_of('.', idx);
+        if (end != std::string::npos)
+        {
+          return A2W(Data.substr(idx, end - idx));
+        }
+      }
+    }
+    return A2W(Data);
+  }
+
+  inline std::string Filename(bool extension = true) const
+  {
+    if (extension)
+    {
+      size_t idx = 0;
+      if ((idx = Data.find_last_of('\\')) != std::string::npos)
+      {
+        return Data.substr(idx + 1);
+      }
+    }
+    else
+    {
+      size_t idx = Data.find_last_of('\\');
+      if (idx != std::string::npos)
+      {
+        idx++;
+        size_t end = Data.find_last_of('.', idx);
+        if (end != std::string::npos)
+        {
+          return Data.substr(idx, end - idx);
+        }
+      }
+    }
+    return Data;
+  }
+
   inline bool operator==(const FString& a) const
   {
     if (Data.empty())
@@ -146,6 +204,21 @@ public:
       return a.substr(0, a.size() - 1) == Data;
     }
     return Data == a;
+  }
+
+  inline bool operator!=(const char* a) const
+  {
+    return (*this) != std::string(a);
+  }
+
+  inline bool operator!=(const FString& a) const
+  {
+    return !(*this == a);
+  }
+
+  inline bool operator!=(const std::string& a) const
+  {
+    return !(*this == a);
   }
 
   inline operator std::string() const
@@ -251,7 +324,7 @@ public:
 
   inline std::wstring WString() const
   {
-    return A2W(Data);
+    return A2W(Data.c_str());
   }
 
   inline FString Substr(const size_t offset = 0, const size_t count = std::string::npos) const
@@ -296,6 +369,86 @@ public:
     return true;
   }
 
+  int Compare(size_t off, size_t count, const char* str) const
+  {
+    return Data.compare(off, count, str);
+  }
+
+  int Compare(size_t off, size_t count, const FString& str) const
+  {
+    return Data.compare(off, count, str.Data.c_str());
+  }
+
+  size_t FindFirstOf(char ch, size_t off)
+  {
+    return Data.find_first_of(ch, off);
+  }
+
+  static FString Sprintf(const char* fmt, ...)
+  {
+    int final_n, n = ((int)strlen(fmt)) * 2;
+    char* formatted = nullptr;
+    va_list ap;
+    while (1)
+    {
+      if (formatted)
+      {
+        free(formatted);
+      }
+      formatted = (char*)malloc(n);
+      strcpy(&formatted[0], fmt);
+      va_start(ap, fmt);
+      final_n = vsnprintf(&formatted[0], n, fmt, ap);
+      va_end(ap);
+      if (final_n < 0 || final_n >= n)
+      {
+        n += abs(final_n - n + 1);
+      }
+      else
+      {
+        break;
+      }
+    }
+    FString r(formatted);
+    if (formatted)
+    {
+      free(formatted);
+    }
+    return r;
+  }
+
 private:
   std::string Data;
 };
+
+inline FString operator+(const char* a, const FString& b)
+{
+  return FString(a) += b;
+}
+
+inline FString operator+(const wchar* a, const FString& b)
+{
+  return FString(a) += b;
+}
+
+inline FString operator+(const std::string& a, const FString& b)
+{
+  return FString(a) += b;
+}
+
+inline FString operator+(const std::wstring& a, const FString& b)
+{
+  return FString(a) += b;
+}
+
+namespace std 
+{
+  template <>
+  struct hash<FString>
+  {
+    std::size_t operator()(const FString& a) const
+    {
+      return std::hash<std::string>()(a.String());
+    }
+  };
+}

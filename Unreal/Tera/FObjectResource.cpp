@@ -34,7 +34,7 @@ FStream& operator<<(FStream& s, FObjectExport& e)
   return s;
 }
 
-std::string FObjectExport::GetClassName() const
+FString FObjectExport::GetClassName() const
 {
   return ClassIndex ? Package->GetResourceObject(ClassIndex)->GetObjectName() : "Class";
 }
@@ -57,7 +57,7 @@ UObject* FObjectImport::GetObject()
   return Object;
 }
 
-std::string FObjectImport::GetPackageName() const
+FString FObjectImport::GetPackageName() const
 {
   PACKAGE_INDEX outerIndex = OuterIndex;
   FObjectResource* outer = nullptr;
@@ -75,7 +75,7 @@ std::string FObjectImport::GetPackageName() const
       outerIndex = 0;
     }
   }
-  return outer ? outer->GetObjectName() : nullptr;
+  return outer ? outer->GetObjectName() : FString();
 }
 
 FObjectResource* FObjectResource::GetOuter() const
@@ -87,9 +87,9 @@ FObjectResource* FObjectResource::GetOuter() const
   return nullptr;
 }
 
-std::string FObjectResource::GetObjectPath() const
+FString FObjectResource::GetObjectPath() const
 {
-  std::string path = Package->GetPackageName();
+  FString path = Package->GetPackageName();
   FObjectResource* outer = GetOuter();
   while (outer)
   {

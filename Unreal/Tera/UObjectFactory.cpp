@@ -18,7 +18,7 @@ UObject* UObject::Object(FObjectExport* exp)
     return exp->Object;
   }
   UObject* result = nullptr;
-  const std::string c = exp->GetClassName();
+  const FString c = exp->GetClassName();
   if (c == UClass::StaticClassName())
   {
     result = new UClass(exp);
@@ -114,8 +114,8 @@ UObject* UObject::Object(FObjectExport* exp)
   else
   {
     // Fallback for unimplemented components. *Component => UComponent
-    const std::string compName = UComponent::StaticClassName();
-    if (compName.size() <= c.size() && !c.compare(c.length() - compName.length(), compName.length(), compName))
+    const FString compName = UComponent::StaticClassName();
+    if (compName.Size() <= c.Size() && !c.Compare(c.Length() - compName.Length(), compName.Length(), compName))
     {
       result = new UComponent(exp);
     }

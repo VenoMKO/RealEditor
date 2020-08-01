@@ -14,26 +14,24 @@ bool FName::operator==(const FName& n) const
   return Wstricmp(String(), n.String());
 }
 
-bool FName::operator==(const std::string& s) const
+bool FName::operator==(const FString& s) const
 {
-  return Wstricmp(String(), s);
+  return Wstricmp(String(), s.String());
 }
 
 bool FName::operator<(const FName& n) const
 {
-  std::wstring a = A2W(String());
-  std::wstring b = A2W(n.String());
-  return a < b;
+  return String() < n.String();
 }
 
-std::string FName::String() const
+FString FName::String() const
 {
-  std::string value;
+  FString value;
   GetString(value);
   return value;
 }
 
-void FName::GetString(std::string& str) const
+void FName::GetString(FString& str) const
 {
   Package->GetIndexedName(Index, str);
   if (Number)
@@ -42,7 +40,7 @@ void FName::GetString(std::string& str) const
   }
 }
 
-void FName::SetString(const std::string& str)
+void FName::SetString(const FString& str)
 {
   Index = Package->GetNameIndex(str, true);
   Number = 0;

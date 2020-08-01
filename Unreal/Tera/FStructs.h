@@ -1,5 +1,6 @@
 #pragma once
 #include "Core.h"
+#include "FString.h"
 
 struct FGuid
 {
@@ -61,9 +62,9 @@ public:
 
 	friend FStream& operator<<(FStream& s, FGuid& g);
 
-	std::string String() const
+	FString String() const
 	{
-		return Sprintf("%08X%08X%08X%08X", A, B, C, D);
+		return FString::Sprintf("%08X%08X%08X%08X", A, B, C, D);
 	}
 
 private:
@@ -109,8 +110,8 @@ struct FTextureAllocations {
 };
 
 struct FCompositePackageMapEntry {
-	std::string ObjectPath;
-	std::string FileName;
+	FString ObjectPath;
+	FString FileName;
 	FILE_OFFSET Offset = 0;
 	FILE_OFFSET Size = 0;
 
@@ -136,7 +137,7 @@ struct FPackageSummary {
 	uint16 FileVersion = 610;
 	uint16 LicenseeVersion = 14;
 	int32 HeaderSize = 0;
-	std::string FolderName = "None";
+	FString FolderName = "None";
 	uint32 PackageFlags = 0;
 	uint32 NamesCount = 0;
 	FILE_OFFSET NamesOffset = 0;
@@ -156,15 +157,15 @@ struct FPackageSummary {
 	uint32 CompressionFlags = 0;
 	uint32 PackageSource = 0;
 	std::vector<FCompressedChunk> CompressedChunks;
-	std::vector<std::string> AdditionalPackagesToCook;
+	std::vector<FString> AdditionalPackagesToCook;
 	FTextureAllocations TextureAllocations;
 
 	// Path to the package
-	std::string SourcePath;
+	FString SourcePath;
 	// Path to the decompressed package. Equals to the SourcePath if a package is not compressed
-	std::string DataPath;
+	FString DataPath;
 
-	std::string PackageName = "Untitled.gpk";
+	FString PackageName = "Untitled.gpk";
 
 	friend FStream& operator<<(FStream& s, FPackageSummary& sum);
 };

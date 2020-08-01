@@ -19,22 +19,22 @@ const char* PackageListName = "DirCache.re";
 const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
 const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
 
-const std::vector<std::string> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
+const std::vector<FString> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
 
-std::string FPackage::RootDir;
+FString FPackage::RootDir;
 std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
-std::vector<std::string> FPackage::DirCache;
-std::unordered_map<std::string, std::string> FPackage::PkgMap;
-std::unordered_map<std::string, std::string> FPackage::ObjectRedirectorMap;
-std::unordered_map<std::string, FCompositePackageMapEntry> FPackage::CompositPackageMap;
-std::unordered_map<std::string, UObject*> FPackage::ClassMap;
-std::unordered_set<std::string> FPackage::MissingClasses;
+std::vector<FString> FPackage::DirCache;
+std::unordered_map<FString, FString> FPackage::PkgMap;
+std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
+std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
+std::unordered_map<FString, UObject*> FPackage::ClassMap;
+std::unordered_set<FString> FPackage::MissingClasses;
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
-void BuildPackageList(const std::string& path, std::vector<std::string>& dirCache)
+void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
 {
   std::filesystem::path fspath(A2W(path));
   dirCache.resize(0);
@@ -46,7 +46,7 @@ void BuildPackageList(const std::string& path, std::vector<std::string>& dirCach
       continue;
     }
     std::filesystem::path itemPath = p.path();
-    std::string ext = itemPath.extension().string();
+    FString ext = itemPath.extension().string();
     if (Stricmp(ext, ".gpk") || Stricmp(ext, ".gmp") || Stricmp(ext, ".upk") || Stricmp(ext, ".u"))
     {
       tmpPaths.push_back(itemPath);
@@ -63,15 +63,15 @@ void BuildPackageList(const std::string& path, std::vector<std::string>& dirCach
   std::ofstream s(listPath.wstring());
   for (const auto& path : tmpPaths)
   {
-    s << dirCache.emplace_back(W2A(path.wstring())) << std::endl;
+    s << dirCache.emplace_back(W2A(path.wstring())).String() << std::endl;
   }
 }
 
-void DecryptMapper(const std::filesystem::path& path, std::string& decrypted)
+void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
 {
   if (!std::filesystem::exists(path))
   {
-    UThrow(L"File \"" + path.wstring() + L"\" does not exist!");
+    UThrow("File \"%ls\" does not exist!", path.wstring().c_str());
   }
   std::vector<char> encrypted;
   size_t size = 0;
@@ -80,13 +80,13 @@ void DecryptMapper(const std::filesystem::path& path, std::string& decrypted)
     std::ifstream s(path.wstring(), std::ios::binary | std::ios::ate);
     if (!s.is_open())
     {
-      UThrow(L"Can't open \"" + path.wstring() + L"\"!");
+      UThrow("Can't open \"%s\"!", path.wstring().c_str());
     }
     s.seekg(0, std::ios_base::end);
     size = s.tellg();
     s.seekg(0, std::ios_base::beg);
     encrypted.resize(size);
-    decrypted.resize(size);
+    decrypted.Resize(size);
     s.read(&encrypted[0], size);
   }
   
@@ -119,14 +119,14 @@ void DecryptMapper(const std::filesystem::path& path, std::string& decrypted)
     decrypted[offset] ^= Key2[offset % sizeof(Key2)];
   }
 
-  if ((*(wchar*)decrypted.c_str()) == 0xFEFF)
+  if ((*(wchar*)decrypted.C_str()) == 0xFEFF)
   {
-    std::string utfstr = W2A(((wchar*)decrypted.c_str()) + 1);
+    FString utfstr = ((wchar*)decrypted.C_str()) + 1;
     decrypted = utfstr;
   }
 }
 
-void FPackage::SetRootPath(const std::string& path)
+void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
   std::filesystem::path listPath = std::filesystem::path(A2W(path)) / PackageListName;
@@ -137,16 +137,16 @@ void FPackage::SetRootPath(const std::string& path)
     buffer << s.rdbuf();
     size_t pos = 0;
     size_t prevPos = 0;
-    std::string str = buffer.str();
-    while ((pos = str.find('\n', prevPos)) != std::string::npos)
+    FString str = buffer.str();
+    while ((pos = str.Find('\n', prevPos)) != std::string::npos)
     {
-      DirCache.push_back(str.substr(prevPos, pos - prevPos));
+      DirCache.push_back(str.Substr(prevPos, pos - prevPos));
       pos++;
       std::swap(pos, prevPos);
     }
     return;
   }
-  LogI("Building directory cache: \"%s\"", path.c_str());
+  LogI("Building directory cache: \"%s\"", path.C_str());
   BuildPackageList(path, DirCache);
   LogI("Done. Found %ld packages", DirCache.size());
 }
@@ -172,12 +172,12 @@ void FPackage::LoadDefaultClassPackages()
       }
       else if (package->GetFileVersion() != CoreVersion)
       {
-        UThrow("Package " + name + " has different version " + std::to_string(package->GetFileVersion()) + "/" + std::to_string(package->GetLicenseeVersion()));
+        UThrow("Package %s has different version %d/%d ", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
       }
     }
     else
     {
-      UThrow("Failed to load " + name + " package");
+      UThrow("Failed to load %s package", name.C_str());
     }
   }
   for (auto package : DefaultClassPackages)
@@ -225,7 +225,7 @@ void FPackage::LoadDefaultClassPackages()
     concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
       std::vector<UObject*> objects;
       loader(classes[idx], objects);
-      FReadStream s = FReadStream(A2W(package->GetDataPath()));
+      FReadStream s = FReadStream(package->GetDataPath());
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
       for (UObject* obj : objects)
@@ -237,7 +237,7 @@ void FPackage::LoadDefaultClassPackages()
     // Serialize defaults
     concurrency::parallel_for(size_t(0), size_t(defaults.size()), [&](size_t idx) {
       UObject* root = defaults[idx];
-      FReadStream s = FReadStream(A2W(package->GetDataPath()));
+      FReadStream s = FReadStream(package->GetDataPath());
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
       if (root->GetExportObject()->Inner.size())
@@ -304,20 +304,20 @@ void FPackage::LoadPkgMapper()
     }
   }
 
-  std::string buffer;
+  FString buffer;
   DecryptMapper(encryptedPath, buffer);
 
   size_t pos = 0;
   size_t prevPos = 0;
-  while ((pos = buffer.find('|', prevPos)) != std::string::npos)
+  while ((pos = buffer.Find('|', prevPos)) != std::string::npos)
   {
-    size_t sepPos = buffer.find(',', prevPos);
+    size_t sepPos = buffer.Find(',', prevPos);
     if (sepPos == std::string::npos || sepPos > pos)
     {
-      UThrow(path.filename().string() + " is corrupted!");
+      UThrow("%s is corrupted!", path.filename().c_str());
     }
-    std::string key = buffer.substr(prevPos, sepPos - prevPos);
-    std::string value = buffer.substr(sepPos + 1, pos - sepPos - 1);
+    FString key = buffer.Substr(prevPos, sepPos - prevPos);
+    FString value = buffer.Substr(sepPos + 1, pos - sepPos - 1);
     PkgMap.emplace(key, value);
     pos++;
     std::swap(pos, prevPos);
@@ -362,16 +362,16 @@ void FPackage::LoadCompositePackageMapper()
     }
   }
 
-  std::string buffer;
+  FString buffer;
   DecryptMapper(encryptedPath, buffer);
 
   size_t pos = 0;
   size_t posEnd = 0;
-  std::vector<std::string> packages;
-  while ((pos = buffer.find('?', posEnd)) != std::string::npos)
+  std::vector<FString> packages;
+  while ((pos = buffer.Find('?', posEnd)) != std::string::npos)
   {
-    std::string fileName = buffer.substr(posEnd + 1, pos - posEnd - 1);
-    posEnd = buffer.find('!', pos);
+    FString fileName = buffer.Substr(posEnd + 1, pos - posEnd - 1);
+    posEnd = buffer.Find('!', pos);
     
     do
     {
@@ -379,29 +379,29 @@ void FPackage::LoadCompositePackageMapper()
       FCompositePackageMapEntry entry;
       entry.FileName = fileName;
 
-      size_t elementEnd = buffer.find(',', pos);
-      entry.ObjectPath = buffer.substr(pos, elementEnd - pos);
+      size_t elementEnd = buffer.Find(',', pos);
+      entry.ObjectPath = buffer.Substr(pos, elementEnd - pos);
       std::swap(pos, elementEnd);
       pos++;
 
-      elementEnd = buffer.find(',', pos);
-      std::string packageName = buffer.substr(pos, elementEnd - pos);
+      elementEnd = buffer.Find(',', pos);
+      FString packageName = buffer.Substr(pos, elementEnd - pos);
       std::swap(pos, elementEnd);
       pos++;
 
-      elementEnd = buffer.find(',', pos);
-      entry.Offset = (FILE_OFFSET)std::stoul(buffer.substr(pos, elementEnd - pos));
+      elementEnd = buffer.Find(',', pos);
+      entry.Offset = (FILE_OFFSET)std::stoul(buffer.Substr(pos, elementEnd - pos).String());
       std::swap(pos, elementEnd);
       pos++;
 
-      elementEnd = buffer.find(',', pos);
-      entry.Size = (FILE_OFFSET)std::stoul(buffer.substr(pos, elementEnd - pos));
+      elementEnd = buffer.Find(',', pos);
+      entry.Size = (FILE_OFFSET)std::stoul(buffer.Substr(pos, elementEnd - pos).String());
       std::swap(pos, elementEnd);
       pos++;
 
       DBreakIf(CompositPackageMap.count(packageName));
       CompositPackageMap[packageName] = entry;
-    } while (buffer.find('|', pos) < posEnd - 1);
+    } while (buffer.Find('|', pos) < posEnd - 1);
   }
 
   LogI("Saving %s storage", path.filename().string().c_str());
@@ -442,20 +442,20 @@ void FPackage::LoadObjectRedirectorMapper()
     }
   }
 
-  std::string buffer;
+  FString buffer;
   DecryptMapper(encryptedPath, buffer);
   
   size_t pos = 0;
   size_t prevPos = 0;
-  while ((pos = buffer.find('|', prevPos)) != std::string::npos)
+  while ((pos = buffer.Find('|', prevPos)) != std::string::npos)
   {
-    size_t sepPos = buffer.find(',', prevPos);
+    size_t sepPos = buffer.Find(',', prevPos);
     if (sepPos == std::string::npos || sepPos > pos)
     {
-      UThrow(path.filename().string() + " is corrupted!");
+      UThrow("%s is corrupted!", path.filename().c_str());
     }
-    std::string key = buffer.substr(prevPos, sepPos - prevPos);
-    std::string value = buffer.substr(sepPos + 1, pos - sepPos - 1);
+    FString key = buffer.Substr(prevPos, sepPos - prevPos);
+    FString value = buffer.Substr(sepPos + 1, pos - sepPos - 1);
     ObjectRedirectorMap.emplace(key, value);
     pos++;
     std::swap(pos, prevPos);
@@ -475,7 +475,7 @@ void FPackage::LoadObjectRedirectorMapper()
 #endif
 }
 
-std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
+std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
 {
   std::shared_ptr<FPackage> found = nullptr;
   {
@@ -495,7 +495,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
     }
   }
   
-  LogI("Opening package: %ls", A2W(path).c_str());
+  LogI("Opening package: %ls", path.WString().c_str());
   FStream *stream = new FReadStream(path);
   if (!stream->IsGood())
   {
@@ -504,7 +504,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
   FPackageSummary sum;
   sum.SourcePath = path;
   sum.DataPath = path;
-  sum.PackageName = W2A(std::filesystem::path(path).filename().wstring());
+  sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   (*stream) << sum;
   if (sum.CompressedChunks.size())
   {
@@ -530,8 +530,8 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
 
     std::filesystem::path decompressedPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
     sum.DataPath = W2A(decompressedPath.wstring());
-    LogI("Decompressing package %s to %ls", sum.PackageName.c_str(), decompressedPath.wstring().c_str());
-    FStream* tempStream = new FWriteStream(sum.DataPath);
+    LogI("Decompressing package %s to %ls", sum.PackageName.C_str(), decompressedPath.wstring().c_str());
+    FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
     std::vector<FCompressedChunk> tmpChunks;
     std::swap(sum.CompressedChunks, tmpChunks);
@@ -580,7 +580,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
       delete stream;
       throw e;
     }
-    sum.PackageName = W2A(std::filesystem::path(path).filename().wstring());
+    sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   }
   
   delete stream;
@@ -593,7 +593,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const std::string& path)
   return result;
 }
 
-std::shared_ptr<FPackage> FPackage::GetPackageNamed(const std::string& name, FGuid guid)
+std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid guid)
 {
   std::shared_ptr<FPackage> found = nullptr;
   {
@@ -627,23 +627,24 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const std::string& name, FGu
   if (CoreVersion > VER_TERA_CLASSIC && CompositPackageMap.count(name))
   {
     const FCompositePackageMapEntry& entry = CompositPackageMap[name];
-    std::string packagePath;
-    for (std::string& path : DirCache)
+    FString packagePath;
+    for (FString& path : DirCache)
     {
-      std::wstring filename = std::filesystem::path(A2W(path)).filename().wstring();
-      if (filename.size() < entry.FileName.size())
+      std::wstring filename = path.FilenameW();
+      if (filename.size() < entry.FileName.Size())
       {
         continue;
       }
-      if (std::mismatch(entry.FileName.begin(), entry.FileName.end(), filename.begin()).first == entry.FileName.end())
+      std::wstring tmp = entry.FileName.WString();
+      if (std::mismatch(tmp.begin(), tmp.end(), filename.begin()).first == tmp.end())
       {
         packagePath = path;
         break;
       }
     }
-    if (packagePath.size())
+    if (packagePath.Size())
     {
-      LogI("Reading composite package %s from %s...", name.c_str(), entry.FileName.c_str());
+      LogI("Reading composite package %s from %s...", name.C_str(), entry.FileName.C_str());
       void* rawData = malloc(entry.Size);
       {
         FReadStream rs(packagePath);
@@ -651,31 +652,31 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const std::string& name, FGu
         rs.SerializeBytes(rawData, entry.Size);
         if (!rs.IsGood())
         {
-          UThrow("Failed to read " + name);
+          UThrow("Failed to read %s", name.C_str());
         }
       }
       std::filesystem::path tmpPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
-      LogI("Writing composite package %s to %ls...", name.c_str(), tmpPath.wstring().c_str());
+      LogI("Writing composite package %s to %ls...", name.C_str(), tmpPath.wstring().c_str());
       {
         FWriteStream ws(tmpPath);
         ws.SerializeBytes(rawData, entry.Size);
         if (!ws.IsGood())
         {
-          UThrow("Failed to save composit package " + name + " to " + W2A(tmpPath.wstring()));
+          UThrow("Failed to save composit package %s to %ls", name.C_str(), tmpPath.wstring().c_str());
         }
       }
-      std::shared_ptr<FPackage> package = GetPackage(W2A(tmpPath.wstring()));
+      std::shared_ptr<FPackage> package = GetPackage(tmpPath.wstring());
       package->CompositeDataPath = tmpPath.wstring();
-      package->CompositeSourcePath = A2W(packagePath);
+      package->CompositeSourcePath = packagePath.WString();
       package->Summary.PackageName = name;
       return package;
     }
   }
 
-  std::wstring wname = A2W(name);
-  for (std::string& path : DirCache)
+  std::wstring wname = name.WString();
+  for (FString& path : DirCache)
   {
-    std::wstring filename = std::filesystem::path(A2W(path)).filename().wstring();
+    std::wstring filename = path.FilenameW();
     if (filename.size() < wname.size())
     {
       continue;
@@ -725,7 +726,7 @@ void FPackage::UnloadPackage(std::shared_ptr<FPackage> package)
   }
   if (lastPackageRef)
   {
-    LogI("Package %s unloaded", package->GetPackageName().c_str());
+    LogI("Package %s unloaded", package->GetPackageName().C_str());
   }
 }
 
@@ -756,7 +757,7 @@ FPackage::~FPackage()
   {
     std::filesystem::remove(std::filesystem::path(A2W(Summary.DataPath)));
   }
-  if (CompositeDataPath.size())
+  if (CompositeDataPath.Size())
   {
     std::filesystem::remove(std::filesystem::path(CompositeDataPath));
   }
@@ -874,7 +875,7 @@ void FPackage::Load()
   Loading.store(false);
 }
 
-std::string FPackage::GetPackageName(bool extension) const
+FString FPackage::GetPackageName(bool extension) const
 {
   if (extension)
   {
@@ -882,19 +883,19 @@ std::string FPackage::GetPackageName(bool extension) const
   }
   else
   {
-    std::string name = Summary.PackageName;
-    if (name.length())
+    FString name = Summary.PackageName;
+    if (name.Length())
     {
       size_t start = 0;
-      size_t idx = name.find_first_of(".", start);
+      size_t idx = name.FindFirstOf('.', start);
       while (idx == 0)
       {
         start++;
-        idx = name.find_first_of(".", start);
+        idx = name.FindFirstOf('.', start);
       }
       if (idx != std::string::npos)
       {
-        name = name.substr(start, idx);
+        name = name.Substr(start, idx);
       }
     }
     return name;
@@ -942,22 +943,32 @@ UObject* FPackage::GetObject(FObjectImport* imp)
   }
   if (imp->Package == this)
   {
-    std::string impPkgName = imp->GetPackageName();
+    FString impPkgName = imp->GetPackageName();
 
-    if (impPkgName != GetPackageName())
+    if (impPkgName != GetPackageName(false))
     {
-      if (auto package = GetPackageNamed(imp->GetPackageName()))
+      {
+        std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
+        for (std::shared_ptr<FPackage>& external : ExternalPackages)
+        {
+          if (impPkgName == external->GetPackageName(false))
+          {
+            return external->GetObject(imp);
+          }
+        }
+      }
+      if (auto package = GetPackageNamed(impPkgName))
       {
         package->Load();
         if (UObject* obj = package->GetObject(imp))
         {
           std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
-          ExternalPackages.push_back(package);
+          ExternalPackages.emplace_back(package);
           return obj;
         }
         UnloadPackage(package);
       }
-      LogW("%s: Couldn't find import %s(%s)", GetPackageName().c_str(), imp->GetObjectName().c_str(), imp->GetClassName().c_str());
+      LogW("%s: Couldn't find import %s(%s)", GetPackageName().C_str(), imp->GetObjectName().C_str(), imp->GetClassName().C_str());
       return nullptr;
     }
   }
@@ -1000,14 +1011,14 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
   {
     if (!object->GetImportObject())
     {
-      UThrow(GetPackageName() + " does not have import object for " + object->GetObjectName());
+      UThrow("%s does not have import object for %ls", GetPackageName().C_str(), object->GetObjectName().WString().c_str());
     }
     return object->GetImportObject()->ObjectIndex;
   }
   return object->GetExportObject()->ObjectIndex;
 }
 
-PACKAGE_INDEX FPackage::GetNameIndex(const std::string& name, bool insert)
+PACKAGE_INDEX FPackage::GetNameIndex(const FString& name, bool insert)
 {
   for (PACKAGE_INDEX index = 0; index < Names.size(); ++index)
   {
@@ -1024,7 +1035,7 @@ PACKAGE_INDEX FPackage::GetNameIndex(const std::string& name, bool insert)
   return INDEX_NONE;
 }
 
-UClass* FPackage::LoadClass(const std::string& className)
+UClass* FPackage::LoadClass(const FString& className)
 {
   if (ClassMap[className])
   {
@@ -1050,7 +1061,7 @@ UClass* FPackage::LoadClass(const std::string& className)
           if (exp->GetObjectName() == className && exp->GetClassName() == uclassName)
           {
             imp->Object = GetObject(exp->ObjectIndex);
-            if (imp->Object)
+            if (!imp->Object)
             {
               MissingClasses.insert(className);
             }
@@ -1088,7 +1099,7 @@ void FPackage::AddNetObject(UObject* object)
   NetIndexMap[object->GetNetIndex()] = object;
 }
 
-std::vector<FObjectExport*> FPackage::GetExportObject(const std::string& name)
+std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
 {
   if (ObjectNameToExportMap.count(name))
   {
@@ -1151,7 +1162,7 @@ void FPackage::_DebugDump() const
   if (Summary.AdditionalPackagesToCook.size())
   {
     ds << "AdditionalPackagesToCook:\n";
-    for (const std::string& pkg : Summary.AdditionalPackagesToCook)
+    for (const FString& pkg : Summary.AdditionalPackagesToCook)
     {
       ds << "\t" << pkg << std::endl;
     }

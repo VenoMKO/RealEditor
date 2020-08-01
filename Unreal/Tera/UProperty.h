@@ -15,7 +15,7 @@ union UPropertyValue
 	UClass* ClassValue;
 
 	FName* NameValue;
-	std::string* StringValue;
+	FString* StringValue;
 	FScriptArray* ArrayValue;
 };
 
@@ -24,7 +24,7 @@ public:
   DECL_UOBJ(UProperty, UField);
 
 	void Serialize(FStream& s) override;
-	virtual std::string GetID() = 0;
+	virtual FString GetID() = 0;
 
 	virtual void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const = 0;
 
@@ -43,7 +43,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_ByteProperty;
 	}
@@ -57,7 +57,7 @@ public:
 	DECL_UOBJ(UIntProperty, UProperty);
 
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_IntProperty;
 	}
@@ -68,7 +68,7 @@ public:
 	DECL_UOBJ(UBoolProperty, UProperty);
 
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_BoolProperty;
 	}
@@ -82,7 +82,7 @@ public:
 	DECL_UOBJ(UFloatProperty, UProperty);
 
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_FloatProperty;
 	}
@@ -95,7 +95,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_ObjectProperty;
 	}
@@ -115,7 +115,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_ClassProperty;
 	}
@@ -131,7 +131,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_InterfaceProperty;
 	}
@@ -146,7 +146,7 @@ public:
 
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_NameProperty;
 	}
@@ -158,7 +158,7 @@ public:
 
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_StrProperty;
 	}
@@ -171,7 +171,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_ArrayProperty;
 	}
@@ -187,7 +187,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_MapProperty;
 	}
@@ -201,7 +201,7 @@ class UStructProperty : public UProperty {
 public:
 	DECL_UOBJ(UStructProperty, UProperty);
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_StructProperty;
 	}
@@ -220,7 +220,7 @@ public:
 	void Serialize(FStream& s) override;
 	void SerializeItem(FStream& s, void* value, int32 maxReadBytes = 0, void* defaults = nullptr) const override;
 
-	std::string GetID() override
+	FString GetID() override
 	{
 		return NAME_DelegateProperty;
 	}

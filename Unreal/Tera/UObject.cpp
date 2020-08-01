@@ -55,9 +55,9 @@ void UObject::SerializeScriptProperties(FStream& s) const
   //DBreakIf(nonePropertyName.String() != "None");
 }
 
-std::string UObject::GetObjectPath() const
+FString UObject::GetObjectPath() const
 {
-  std::string path = GetPackage()->GetPackageName();
+  FString path = GetPackage()->GetPackageName();
   FObjectResource* outer = Export->GetOuter();
   while (outer)
   {
@@ -68,12 +68,12 @@ std::string UObject::GetObjectPath() const
   return path;
 }
 
-std::string UObject::GetObjectName() const
+FString UObject::GetObjectName() const
 {
   return Export->GetObjectName();
 }
 
-std::string UObject::GetClassName() const
+FString UObject::GetClassName() const
 {
   return Export->GetClassName();
 }

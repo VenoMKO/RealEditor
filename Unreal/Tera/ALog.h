@@ -5,7 +5,6 @@
 #include <ctime>
 
 #include "AConfiguration.h"
-#include "FStructs.h"
 
 struct ALogEntry {
   enum class Type

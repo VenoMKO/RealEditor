@@ -158,5 +158,5 @@ void UNameProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, v
 
 void UStrProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
 {
-  s << *(std::string*)value;
+  s << *(FString*)value;
 }

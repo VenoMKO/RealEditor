@@ -1,12 +1,13 @@
 #pragma once
 #include "Core.h"
+#include "FString.h"
 
 class FNameEntry {
 public:
   FNameEntry()
   {}
 
-  FNameEntry(const std::string& value)
+  FNameEntry(const FString& value)
     : String(value)
   {}
 
@@ -15,17 +16,17 @@ public:
     return Flags;
   }
 
-  std::string GetString() const
+  FString GetString() const
   {
     return String;
   }
 
-  void GetString(std::string& output) const
+  void GetString(FString& output) const
   {
     output += String;
   }
 
-  void SetString(const std::string& string)
+  void SetString(const FString& string)
   {
     String = string;
   }
@@ -33,7 +34,7 @@ public:
   friend FStream& operator<<(FStream& s, FNameEntry& e);
 
 private:
-  std::string String;
+  FString String;
   uint64 Flags = 0;
 };
 
@@ -46,7 +47,7 @@ public:
     : Package(package)
   {}
 
-  FName(FPackage* package, const std::string& value)
+  FName(FPackage* package, const FString& value)
     : Package(package)
   {
     SetString(value);
@@ -63,14 +64,14 @@ public:
   }
 
   bool operator==(const FName& n) const;
-  bool operator==(const std::string& s) const;
+  bool operator==(const FString& s) const;
   bool operator<(const FName& n) const;
 
   friend FStream& operator<<(FStream& s, FName& n);
 
-  std::string String() const;
-  void GetString(std::string& output) const;
-  void SetString(const std::string& str);
+  FString String() const;
+  void GetString(FString& output) const;
+  void SetString(const FString& str);
 private:
   NAME_INDEX Index = 0;
   int32 Number = 0;

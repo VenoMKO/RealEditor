@@ -33,7 +33,7 @@ protected:
 protected:
   int32 Pos = 0;
   int32 Top = 0;
-  std::string Text;
+  FString Text;
 };
 
 class UField : public UObject {
@@ -167,7 +167,7 @@ protected:
   std::vector<FName> AutoCollapseCategories;
   std::vector<FName> DontSortCategories;
   std::vector<FName> ClassGroupNames;
-  std::string ClassHeaderFilename;
+  FString ClassHeaderFilename;
   FName DLLBindName;
   UObject* ClassDefaultObject = nullptr;
 };
@@ -235,5 +235,5 @@ protected:
   void Serialize(FStream& s) override;
 
 public:
-  std::string Value;
+  FString Value;
 };

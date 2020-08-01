@@ -52,7 +52,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.FileVersion << sum.LicenseeVersion;
   if (s.IsReading() && (sum.FileVersion != 610 && sum.FileVersion != 897))
   {
-    UThrow("Package version \"" + std::to_string(sum.FileVersion) + "/" + std::to_string(sum.LicenseeVersion) + "\" is not supported.");
+    UThrow("Package version \"%d/%d\" is not supported.", sum.FileVersion, sum.LicenseeVersion);
   }
 
   s << sum.HeaderSize;

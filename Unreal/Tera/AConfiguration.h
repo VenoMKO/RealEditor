@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.h"
 #include "FStructs.h"
+
 #include <fstream>
 
 // Logger config
@@ -37,7 +38,7 @@ struct FAppConfig
   uint32 Size = 0;
   
   // CFG_RootDir: CookedPC path(UTF8)
-  std::string RootDir;
+  FString RootDir;
   // CFG_LogBegin: Logger config
   FLogConfig LogConfig;
 

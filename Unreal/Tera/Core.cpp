@@ -110,9 +110,9 @@ uint64 GetFileTime(const std::wstring& path)
   return 0;
 }
 
-std::string ObjectFlagsToString(uint64 expFlag)
+FString ObjectFlagsToString(uint64 expFlag)
 {
-  std::string s;
+  FString s;
   if (expFlag & RF_InSingularFunc)
     s += "InSingularFunc, ";
   if (expFlag & RF_StateChanged)
@@ -221,16 +221,16 @@ std::string ObjectFlagsToString(uint64 expFlag)
     s += "NotForEdit, ";
   if (expFlag & RF_PendingKill)
     s += "PendingKill, ";
-  if (s.length())
+  if (s.Size())
   {
-    s = s.substr(0, s.length() - 2);
+    s = s.Substr(0, s.Size() - 2);
   }
   return s;
 }
 
-std::string ExportFlagsToString(uint32 flags)
+FString ExportFlagsToString(uint32 flags)
 {
-  std::string s;
+  FString s;
   if (flags & EF_ForcedExport)
   {
     s += "ForcedExport, ";
@@ -243,14 +243,14 @@ std::string ExportFlagsToString(uint32 flags)
   {
     s += "MemberFieldPatchPending, ";
   }
-  if (s.length())
+  if (s.Size())
   {
-    s = s.substr(0, s.length() - 2);
+    s = s.Substr(0, s.Size() - 2);
   }
   return s;
 }
 
-std::string PixelFormatToString(uint32 pf)
+FString PixelFormatToString(uint32 pf)
 {
   if (pf == PF_DXT1)
   {
@@ -363,9 +363,9 @@ std::string PixelFormatToString(uint32 pf)
   return "PF_Unknown";
 }
 
-std::string PackageFlagsToString(uint32 flags)
+FString PackageFlagsToString(uint32 flags)
 {
-  std::string s;
+  FString s;
   if (flags & PKG_AllowDownload)
     s += "AllowDownload, ";
   if (flags & PKG_ClientOptional)
@@ -410,23 +410,21 @@ std::string PackageFlagsToString(uint32 flags)
     s += "NoExportAllowed, ";
   if (flags & PKG_NoExportAllowed)
     s += "StrippedSource, ";
-  if (s.size())
+  if (s.Size())
   {
-    s = s.substr(0, s.size() - 2);
+    s = s.Substr(0, s.Size() - 2);
   }
   return s;
 }
 
-void UThrow(const std::string& msg)
+void UThrow(const char* fmt, ...)
 {
+  va_list ap;
+  va_start(ap, fmt);
+  std::string msg = Sprintf(fmt, ap);
+  va_end(ap);
   LogE(msg);
   throw std::runtime_error(msg);
-}
-
-void UThrow(const std::wstring& msg)
-{
-  LogE(W2A(msg));
-  throw std::runtime_error(W2A(msg));
 }
 
 bool IsAnsi(const std::string& str)
@@ -454,17 +452,17 @@ bool IsAnsi(const std::wstring& str)
   return true;
 }
 
-std::string Sprintf(const std::string fmt, ...)
+std::string Sprintf(const char* fmt, ...)
 {
-  int final_n, n = ((int)fmt.size()) * 2;
+  int final_n, n = ((int)strlen(fmt)) * 2;
   std::unique_ptr<char[]> formatted;
   va_list ap;
   while (1)
   {
     formatted.reset(new char[n]);
-    strcpy(&formatted[0], fmt.c_str());
+    strcpy(&formatted[0], fmt);
     va_start(ap, fmt);
-    final_n = vsnprintf(&formatted[0], n, fmt.c_str(), ap);
+    final_n = vsnprintf(&formatted[0], n, fmt, ap);
     va_end(ap);
     if (final_n < 0 || final_n >= n)
     {
@@ -478,12 +476,26 @@ std::string Sprintf(const std::string fmt, ...)
   return std::string(formatted.get());
 }
 
+std::string Sprintf(const std::string fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  std::string msg = Sprintf(fmt.c_str(), ap);
+  va_end(ap);
+  return msg;
+}
+
 void memswap(void* a, void* b, size_t size)
 {
-  void* tmp = alloca(size);
+  if (!size)
+  {
+    return;
+  }
+  void* tmp = malloc(size);
   memcpy(tmp, a, size);
   memcpy(a, b, size);
   memcpy(b, tmp, size);
+  free(tmp);
 }
 
 void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
@@ -538,7 +550,7 @@ void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstS
       int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
       if (e != LZO_E_OK)
       {
-        UThrow("Corrupted compression block. Code: " + std::to_string(e));
+        UThrow("Corrupted compression block. Code: %d", e);
       }
     });
   }
@@ -550,7 +562,7 @@ void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstS
       int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
       if (e != LZO_E_OK)
       {
-        UThrow("Corrupted compression block. Code: " + std::to_string(e));
+        UThrow("Corrupted compression block. Code: %d", e);
       }
     }
   }

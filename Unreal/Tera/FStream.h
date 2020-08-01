@@ -1,5 +1,7 @@
 #pragma once
 #include "Core.h"
+#include "FString.h"
+
 #include <fstream>
 #include <functional>
 #include <algorithm>
@@ -88,8 +90,6 @@ public:
   }
 
   FStream& operator<<(FString& s);
-
-  FStream& operator<<(std::string& s);
 
   template <typename T>
   inline FStream& operator<<(std::vector<T>& arr)
@@ -237,10 +237,18 @@ public:
     Reading = true;
   }
 
+  FReadStream(const FString& path)
+    : FStream()
+    , Path(path)
+    , Stream(path.WString(), std::ios::binary)
+  {
+    Reading = true;
+  }
+
   FReadStream(const FReadStream& s)
     : FStream()
     , Path(s.Path)
-    , Stream(A2W(s.Path), std::ios::in | std::ios::binary)
+    , Stream(s.Path.WString(), std::ios::in | std::ios::binary)
   {
     Reading = true;
   }
@@ -301,16 +309,16 @@ public:
   }
 
 protected:
-  std::string Path;
+  FString Path;
   std::ifstream Stream;
 };
 
 class FWriteStream : public FStream {
 public:
-  FWriteStream(const std::string& path, bool trunk = true)
+  FWriteStream(const FString& path, bool trunk = true)
     : FStream()
     , Path(path)
-    , Stream(A2W(path), trunk ? (std::ios::out | std::ios::trunc | std::ios::binary) : (std::ios::out | std::ios::binary))
+    , Stream(path.WString(), trunk ? (std::ios::out | std::ios::trunc | std::ios::binary) : (std::ios::out | std::ios::binary))
   {
     Reading = false;
   }
@@ -370,6 +378,6 @@ public:
   }
 
 protected:
-  std::string Path;
+  FString Path;
   std::ofstream Stream;
 };

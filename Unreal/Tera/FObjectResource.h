@@ -12,23 +12,23 @@ public:
   virtual ~FObjectResource()
   {}
 
-  inline std::string GetObjectName() const
+  inline FString GetObjectName() const
   {
-    std::string name;
+    FString name;
     ObjectName.GetString(name);
     return name;
   }
 
-  inline std::string GetFullObjectName() const
+  inline FString GetFullObjectName() const
   {
     return GetClassName() + " " + GetObjectPath();
   }
 
-  virtual std::string GetClassName() const = 0;
+  virtual FString GetClassName() const = 0;
 
   FObjectResource* GetOuter() const;
 
-  std::string GetObjectPath() const;
+  FString GetObjectPath() const;
 
   FName ObjectName;
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
@@ -37,7 +37,7 @@ public:
   UObject* Object = nullptr;
   FPackage* Package = nullptr;
 #ifdef _DEBUG
-  std::string Path;
+  FString Path;
 #endif
 };
 
@@ -47,15 +47,15 @@ public:
     : FObjectResource(p)
   {}
 
-  std::string GetClassName() const override
+  FString GetClassName() const override
   {
-    std::string name;
+    FString name;
     ClassName.GetString(name);
     return name;
   }
 
   UObject* GetObject();
-  std::string GetPackageName() const;
+  FString GetPackageName() const;
 
   friend FStream& operator<<(FStream& s, FObjectImport& i);
 
@@ -73,7 +73,7 @@ public:
 
   friend FStream& operator<<(FStream& s, FObjectExport& e);
 
-  std::string GetClassName() const override;
+  FString GetClassName() const override;
   UObject* GetObject();
 
   PACKAGE_INDEX ClassIndex = 0;

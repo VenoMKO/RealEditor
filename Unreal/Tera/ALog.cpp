@@ -1,8 +1,6 @@
 #include "../../App/LogWindow.h"
 #include "../../App/App.h"
 #include "ALog.h"
-#include "FStream.h"
-
 
 ALog* SharedLogger = nullptr;
 
