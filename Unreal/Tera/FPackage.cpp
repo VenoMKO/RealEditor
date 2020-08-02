@@ -30,13 +30,15 @@ std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
 std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
 std::unordered_map<FString, UObject*> FPackage::ClassMap;
-std::unordered_set<FString> FPackage::MissingClasses;
+std::unordered_set<FString> FPackage::MissingClasses = { NAME_Package, NAME_ObjectRedirector, NAME_StaticMesh, NAME_Property, NAME_ObjectProperty, NAME_ArrayProperty, NAME_StructProperty, NAME_IntProperty,
+NAME_StrProperty, NAME_FloatProperty, NAME_BoolProperty, NAME_ComponentProperty, NAME_ClassProperty, NAME_ByteProperty, NAME_DelegateProperty, NAME_InterfaceProperty, 
+NAME_Enum, NAME_Function, NAME_ScriptStruct, NAME_State, NAME_Const, NAME_TextBuffer, NAME_MetaData };
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
 void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
 {
-  std::filesystem::path fspath(A2W(path));
+  std::filesystem::path fspath(path.WString());
   dirCache.resize(0);
   std::vector<std::filesystem::path> tmpPaths;
   for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
@@ -129,7 +131,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
 void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
-  std::filesystem::path listPath = std::filesystem::path(A2W(path)) / PackageListName;
+  std::filesystem::path listPath = std::filesystem::path(path.WString()) / PackageListName;
   std::ifstream s(listPath.wstring());
   if (s.is_open())
   {
@@ -280,7 +282,7 @@ void FPackage::UnloadDefaultClassPackages()
 
 void FPackage::LoadPkgMapper()
 {
-  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / PackageMapperName;
+  std::filesystem::path path = std::filesystem::path(RootDir.WString()) / PackageMapperName;
   std::filesystem::path storagePath = path;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = path;
@@ -338,7 +340,7 @@ void FPackage::LoadPkgMapper()
 
 void FPackage::LoadCompositePackageMapper()
 {
-  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / CompositePackageMapperName;
+  std::filesystem::path path = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
   std::filesystem::path storagePath = path;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = path;
@@ -419,7 +421,7 @@ void FPackage::LoadCompositePackageMapper()
 
 void FPackage::LoadObjectRedirectorMapper()
 {
-  std::filesystem::path path = std::filesystem::path(A2W(RootDir)) / ObjectRedirectorMapperName;
+  std::filesystem::path path = std::filesystem::path(RootDir.WString()) / ObjectRedirectorMapperName;
   std::filesystem::path storagePath = path;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = path;
@@ -756,11 +758,11 @@ FPackage::~FPackage()
   ExternalPackages.clear();
   if (Summary.DataPath != Summary.SourcePath)
   {
-    std::filesystem::remove(std::filesystem::path(A2W(Summary.DataPath)));
+    std::filesystem::remove(std::filesystem::path(Summary.DataPath.WString()));
   }
   if (CompositeDataPath.Size())
   {
-    std::filesystem::remove(std::filesystem::path(CompositeDataPath));
+    std::filesystem::remove(std::filesystem::path(CompositeDataPath.WString()));
   }
 }
 
@@ -1116,20 +1118,20 @@ void FPackage::_DebugDump() const
   std::filesystem::create_directories(path);
   path /= "Info.txt";
   std::ofstream ds(path.wstring());
-  ds << "SourcePath: \"" << Summary.SourcePath.String() << "\"\n";
-  ds << "DataPath: \"" << Summary.DataPath.String() << "\"\n";
+  ds << "SourcePath: \"" << Summary.SourcePath.UTF8() << "\"\n";
+  ds << "DataPath: \"" << Summary.DataPath.UTF8() << "\"\n";
   if (GetFileVersion() > VER_TERA_CLASSIC && CompositeDataPath.Size())
   {
-    ds << "CompositeSourcePath: \"" << W2A(CompositeSourcePath) << "\"\n";
-    ds << "CompositeDataPath: \"" << W2A(CompositeDataPath) << "\"\n";
+    ds << "CompositeSourcePath: \"" << CompositeSourcePath.UTF8() << "\"\n";
+    ds << "CompositeDataPath: \"" << CompositeDataPath.UTF8() << "\"\n";
   }
   ds << "Version: " << Summary.FileVersion << "/" << Summary.LicenseeVersion << std::endl;
   ds << "HeaderSize: " << Summary.HeaderSize << std::endl;
-  ds << "FolderName: \"" << Summary.FolderName.String() << "\"\n";
-  ds << "PackageFlags: " << PackageFlagsToString(Summary.PackageFlags).String() << std::endl;
+  ds << "FolderName: \"" << Summary.FolderName.UTF8() << "\"\n";
+  ds << "PackageFlags: " << PackageFlagsToString(Summary.PackageFlags).UTF8() << std::endl;
   ds << "CompressionFlags: " << Sprintf("0x%08X", Summary.CompressionFlags) << std::endl;
   ds << "PackageSource: " << Sprintf("0x%08X", Summary.PackageSource) << std::endl;
-  ds << "Guid: " << Summary.Guid.String().String() << std::endl;
+  ds << "Guid: " << Summary.Guid.String().UTF8() << std::endl;
   ds << "EngineVersion: " << Summary.EngineVersion << " ContentVersion: " << Summary.ContentVersion << std::endl;
   ds << "Names Count: " << Summary.NamesCount << " Offset: " << Summary.NamesOffset << std::endl;
   ds << "Exports Count: " << Summary.ExportsCount << " Offset: " << Summary.ExportsOffset << std::endl;
@@ -1151,7 +1153,7 @@ void FPackage::_DebugDump() const
     for (const FTextureAllocations::FTextureType& ttype : Summary.TextureAllocations.TextureTypes)
     {
       ds << "\tSizeX: " << ttype.SizeX << " SizeY: " << ttype.SizeY << " NumMips: " << ttype.NumMips;
-      ds << " Format: " << PixelFormatToString(ttype.Format).String() << " TexFlags: " << Sprintf("0x%08X", ttype.TexCreateFlags);
+      ds << " Format: " << PixelFormatToString(ttype.Format).UTF8() << " TexFlags: " << Sprintf("0x%08X", ttype.TexCreateFlags);
       ds << " ExportIndices: ";
       for (const int32& idx : ttype.ExportIndices)
       {
@@ -1165,14 +1167,14 @@ void FPackage::_DebugDump() const
     ds << "AdditionalPackagesToCook:\n";
     for (const FString& pkg : Summary.AdditionalPackagesToCook)
     {
-      ds << "\t" << pkg.String() << std::endl;
+      ds << "\t" << pkg.UTF8() << std::endl;
     }
   }
 
   ds << "Names:\n";
   for (int32 index = 0; index < Names.size(); ++index)
   {
-    ds << "\t[" << index << "]" << Names[index].GetString().String() << "\n";
+    ds << "\t[" << index << "]" << Names[index].GetString().UTF8() << "\n";
   }
   ds << "\n\nExports:\n";
 
@@ -1182,13 +1184,13 @@ void FPackage::_DebugDump() const
     {
       ds << "\t";
     }
-    ds << "[" << exp->ObjectIndex << "]" << exp->GetFullObjectName().String();
+    ds << "[" << exp->ObjectIndex << "]" << exp->GetFullObjectName().UTF8();
     ds << "(Offset: " << exp->SerialOffset << ", Size: " << exp->SerialSize;
     if (exp->ExportFlags)
     {
-      ds << ", EF: " << ExportFlagsToString(exp->ExportFlags).String();
+      ds << ", EF: " << ExportFlagsToString(exp->ExportFlags).UTF8();
     }
-    ds << ", OF: " << ObjectFlagsToString(exp->ObjectFlags).String();
+    ds << ", OF: " << ObjectFlagsToString(exp->ObjectFlags).UTF8();
     ds << ")\n";
     depth++;
     for (FObjectExport* cexp : exp->Inner)
@@ -1207,7 +1209,7 @@ void FPackage::_DebugDump() const
     {
       ds << "\t";
     }
-    ds << "[" << imp->ObjectIndex << "]" << imp->GetFullObjectName().String() << "\n";
+    ds << "[" << imp->ObjectIndex << "]" << imp->GetFullObjectName().UTF8() << "\n";
     depth++;
     for (FObjectImport* cimp : imp->Inner)
     {

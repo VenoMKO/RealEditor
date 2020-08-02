@@ -417,7 +417,7 @@ public:
     return r;
   }
 
-  std::string StringForHash() const
+  inline std::string StringForHash() const
   {
     if (!Data.size())
     {
@@ -430,6 +430,20 @@ public:
       return r;
     }
     return Data;
+  }
+
+  // Returns valid UTF8 by triming '\0'
+  inline std::string UTF8() const
+  {
+    if (!Data.size())
+    {
+      return {};
+    }
+    if (Data.back() != 0)
+    {
+      return Data;
+    }
+    return Data.substr(0, Data.size() - 1);
   }
 
 private:
