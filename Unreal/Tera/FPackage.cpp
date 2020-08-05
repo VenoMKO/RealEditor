@@ -4,6 +4,7 @@
 #include "FObjectResource.h"
 #include "UObject.h"
 #include "UClass.h" 
+#include "Cast.h"
 
 #include <iostream>
 #include <sstream>
@@ -29,10 +30,9 @@ std::vector<FString> FPackage::DirCache;
 std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
 std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
+std::mutex FPackage::ClassMapMutex;
 std::unordered_map<FString, UObject*> FPackage::ClassMap;
-std::unordered_set<FString> FPackage::MissingClasses = { NAME_Package, NAME_ObjectRedirector, NAME_StaticMesh, NAME_Property, NAME_ObjectProperty, NAME_ArrayProperty, NAME_StructProperty, NAME_IntProperty,
-NAME_StrProperty, NAME_FloatProperty, NAME_BoolProperty, NAME_ComponentProperty, NAME_ClassProperty, NAME_ByteProperty, NAME_DelegateProperty, NAME_InterfaceProperty, 
-NAME_Enum, NAME_Function, NAME_ScriptStruct, NAME_State, NAME_Const, NAME_TextBuffer, NAME_MetaData };
+std::unordered_set<FString> FPackage::MissingClasses;
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
@@ -48,8 +48,8 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
       continue;
     }
     std::filesystem::path itemPath = p.path();
-    FString ext = itemPath.extension().string();
-    if (Stricmp(ext, ".gpk") || Stricmp(ext, ".gmp") || Stricmp(ext, ".upk") || Stricmp(ext, ".u"))
+    std::string ext = itemPath.extension().string();
+    if (_stricmp(ext.c_str(), ".gpk") || _stricmp(ext.c_str(), ".gmp") || _stricmp(ext.c_str(), ".upk") || _stricmp(ext.c_str(), ".u"))
     {
       tmpPaths.push_back(itemPath);
     }
@@ -185,11 +185,28 @@ void FPackage::LoadDefaultClassPackages()
   for (auto package : DefaultClassPackages)
   {
     package->Load();
-    
-    // Allocate all objects
+
+    UClass::CreateBuiltInClasses(package.get());
+
+    // Load package in memory and create a stream
+    FILE_OFFSET packageSize = package->Stream->GetSize();
+    void* rawPackageData = malloc(packageSize);
+    package->Stream->SerializeBytesAt(rawPackageData, 0, packageSize);
+
+    MReadStream packageStream(rawPackageData, true, packageSize);
+    packageStream.SetPackage(package.get());
+
+    // Don't load referenced objects
+    packageStream.SetLoadSerializedObjects(false);
     package->Stream->SetLoadSerializedObjects(false);
-    std::vector<UObject*> defaults;
+    
+    // List of root classes
     std::vector<UObject*> classes;
+    // List of root defaults\templates
+    std::vector<UObject*> defaults;
+    // Leftovers
+    std::vector<UObject*> other;
+    // Allocate all objects
     for (FObjectExport* exp : package->Exports)
     {
       UObject* obj = package->GetObject(exp->ObjectIndex, false);
@@ -199,13 +216,18 @@ void FPackage::LoadDefaultClassPackages()
         {
           defaults.push_back(obj);
         }
-        else
+        else if (exp->GetClassName() == NAME_Class)
         {
           classes.push_back(obj);
+        }
+        else
+        {
+          other.push_back(obj);
         }
       }
       if (exp->GetClassName() == UClass::StaticClassName())
       {
+        std::scoped_lock<std::mutex> l(ClassMapMutex);
         ClassMap[exp->GetObjectName()] = obj;
       }
     }
@@ -224,22 +246,50 @@ void FPackage::LoadDefaultClassPackages()
     };
 
     // Serialize classes
+#if MULTITHREADED_CLASS_SERIALIZATION
     concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
+#else
+    for (size_t idx = 0; idx < classes.size(); ++idx) {
+#endif
       std::vector<UObject*> objects;
       loader(classes[idx], objects);
-      FReadStream s = FReadStream(package->GetDataPath());
+      MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
       for (UObject* obj : objects)
       {
         obj->Load(s);
       }
+#if MULTITHREADED_CLASS_SERIALIZATION
     });
+#else
+    }
+#endif
+
+    // Link fields
+#if MULTITHREADED_CLASS_SERIALIZATION
+    concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
+#else
+    for (size_t idx = 0; idx < classes.size(); ++idx) {
+#endif
+      if (UClass* cls = Cast<UClass>(classes[idx]))
+      {
+        cls->Link();
+      }
+#if MULTITHREADED_CLASS_SERIALIZATION
+    });
+#else
+    }
+#endif
 
     // Serialize defaults
+#if MULTITHREADED_CLASS_SERIALIZATION
     concurrency::parallel_for(size_t(0), size_t(defaults.size()), [&](size_t idx) {
+#else
+    for (size_t idx = 0; idx < defaults.size(); ++idx) {
+#endif
       UObject* root = defaults[idx];
-      FReadStream s = FReadStream(package->GetDataPath());
+      MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
       if (root->GetExportObject()->Inner.size())
@@ -255,17 +305,54 @@ void FPackage::LoadDefaultClassPackages()
       {
         root->Load(s);
       }
+#if MULTITHREADED_CLASS_SERIALIZATION
     });
+#else
+  }
+#endif
+
+    // It's safe to load references now
+    package->Stream->SetLoadSerializedObjects(true);
+    packageStream.SetLoadSerializedObjects(true);
+    
+#if MULTITHREADED_CLASS_SERIALIZATION
+    concurrency::parallel_for(size_t(0), size_t(other.size()), [&](size_t idx) {
+#else
+    for (size_t idx = 0; idx < other.size(); ++idx) {
+#endif
+      UObject* root = other[idx];
+      MReadStream s(packageStream.GetAllocation(), false, packageSize);
+      s.SetPackage(package.get());
+      s.SetLoadSerializedObjects(false);
+      if (root->GetExportObject()->Inner.size())
+      {
+        std::vector<UObject*> objects;
+        loader(root, objects);
+        for (UObject* obj : objects)
+        {
+          obj->Load(s);
+        }
+      }
+      else
+      {
+        root->Load(s);
+      }
+#if MULTITHREADED_CLASS_SERIALIZATION
+    });
+#else
+    }
+#endif
+
+    // TODO: link the metadata to properties here for future use
 
 #ifdef _DEBUG
     for (FObjectExport* exp : package->Exports)
     {
       UObject* obj = package->GetObject(exp->ObjectIndex, false);
       DBreakIf(!obj || !obj->IsLoaded());
+      int x = 1;
     }
 #endif
-
-    package->Stream->SetLoadSerializedObjects(true);
   }
 }
 
@@ -602,7 +689,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
     for (auto package : LoadedPackages)
     {
-      if (Wstricmp(package->GetPackageName(), name))
+      if (package->GetPackageName() == name)
       {
         if (guid.IsValid())
         {
@@ -747,6 +834,10 @@ FPackage::~FPackage()
   {
     delete imp;
   }
+  for (VObjectExport* exp : VExports)
+  {
+    delete exp;
+  }
   for (auto& obj : Objects)
   {
     delete obj.second;
@@ -878,6 +969,13 @@ void FPackage::Load()
   Loading.store(false);
 }
 
+VObjectExport* FPackage::CreateVirtualExport(const char* objName, const char* clsName)
+{
+  VObjectExport* exp = new VObjectExport(this, objName, clsName);
+  VExports.push_back(exp);
+  return exp;
+}
+
 FString FPackage::GetPackageName(bool extension) const
 {
   if (extension)
@@ -975,6 +1073,13 @@ UObject* FPackage::GetObject(FObjectImport* imp)
       return nullptr;
     }
   }
+  for (VObjectExport* vexp : VExports)
+  {
+    if (vexp->GetObjectName() == imp->GetObjectName() && vexp->GetClassName() == imp->GetClassName())
+    {
+      return vexp->Object;
+    }
+  }
   std::vector<FObjectExport*> exps = GetExportObject(imp->GetObjectName());
   for (FObjectExport* exp : exps)
   {
@@ -990,6 +1095,13 @@ UObject* FPackage::GetObject(FObjectExport* exp)
 {
   if (!Objects.count(exp->ObjectIndex))
   {
+    for (VObjectExport* vexp : VExports)
+    {
+      if (vexp == exp)
+      {
+        return vexp->Object;
+      }
+    }
     Objects[exp->ObjectIndex] = UObject::Object(exp);
   }
   return Objects[exp->ObjectIndex];
@@ -999,12 +1111,19 @@ UObject* FPackage::GetObject(FObjectExport* exp) const
 {
   if (!Objects.count(exp->ObjectIndex))
   {
+    for (VObjectExport* vexp : VExports)
+    {
+      if (vexp == exp)
+      {
+        return vexp->Object;
+      }
+    }
     return nullptr;
   }
   return Objects.at(exp->ObjectIndex);
 }
 
-PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
+PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
 {
   if (!object)
   {
@@ -1012,11 +1131,14 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object)
   }
   if (object->GetPackage() != this)
   {
-    if (!object->GetImportObject())
+    for (FObjectImport* imp : Imports)
     {
-      UThrow("%s does not have import object for %ls", GetPackageName().C_str(), object->GetObjectName().WString().c_str());
+      if (imp->Object == object)
+      {
+        return imp->ObjectIndex;
+      }
     }
-    return object->GetImportObject()->ObjectIndex;
+    UThrow("%s does not have import object for %ls", GetPackageName().C_str(), object->GetObjectName().WString().c_str());
   }
   return object->GetExportObject()->ObjectIndex;
 }
@@ -1038,62 +1160,91 @@ PACKAGE_INDEX FPackage::GetNameIndex(const FString& name, bool insert)
   return INDEX_NONE;
 }
 
-UClass* FPackage::LoadClass(const FString& className)
+UClass* FPackage::LoadClass(PACKAGE_INDEX index)
 {
-  if (ClassMap[className])
-  {
-    return (UClass*)ClassMap[className];
-  }
-  if (MissingClasses.find(className) != MissingClasses.end())
+  if (!index)
   {
     return nullptr;
   }
-  auto uclassName = UClass::StaticClassName();
-  for (FObjectImport* imp : Imports)
+  if (index > 0)
   {
-    if (imp->GetObjectName() == className && imp->GetClassName() == uclassName)
+    UObject* obj = GetObject(index);
+    FString objName = obj->GetObjectName();
     {
-      if (UObject* obj = imp->GetObject())
+      std::scoped_lock<std::mutex> l(ClassMapMutex);
+      if (!ClassMap.count(objName))
       {
+        ClassMap[objName] = obj;
+      }
+    }
+    return (UClass*)obj;
+  }
+  FObjectImport* imp = GetImportObject(index);
+  FString name = imp->GetObjectName();
+  if (imp->Object)
+  {
+    return (UClass*)imp->Object;
+  }
+  else 
+  {
+    {
+      std::scoped_lock<std::mutex> l(ClassMapMutex);
+      if (ClassMap.count(name))
+      {
+        UObject* obj = ClassMap[name];
+        imp->Object = obj;
         return (UClass*)obj;
       }
-      if (imp->GetPackageName() == GetPackageName())
-      {
-        for (FObjectExport* exp : Exports)
-        {
-          if (exp->GetObjectName() == className && exp->GetClassName() == uclassName)
-          {
-            imp->Object = GetObject(exp->ObjectIndex);
-            if (!imp->Object)
-            {
-              MissingClasses.insert(className);
-            }
-            return (UClass*)imp->Object;
-          }
-        }
-        MissingClasses.insert(className);
-        return nullptr;
-      }
-      UClass *cls = (UClass*)GetObject(imp);
-      if (cls)
-      {
-        imp->Object = cls;
-      }
-      else
-      {
-        MissingClasses.insert(className);
-      }
-      return cls;
     }
-  }
-  for (FObjectExport* exp : Exports)
-  {
-    if (exp->GetObjectName() == className && exp->GetClassName() == uclassName)
+    FString pkgName = imp->GetPackageName();
+    if (pkgName == GetPackageName())
     {
-      return (UClass*)GetObject(exp->ObjectIndex);
+      UObject* obj = GetObject(imp);
+      if (obj)
+      {
+        std::scoped_lock<std::mutex> l(ClassMapMutex);
+        ClassMap[name] = obj;
+        return (UClass*)obj;
+      }
+    }
+    {
+      std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+      for (auto pkg : ExternalPackages)
+      {
+        if (pkg->GetPackageName() == pkgName)
+        {
+          UObject* obj = pkg->GetObject(imp);
+          if (obj)
+          {
+            std::scoped_lock<std::mutex> l(ClassMapMutex);
+            ClassMap[name] = obj;
+            ExternalPackages.push_back(pkg);
+            return (UClass*)obj;
+          }
+          break;
+        }
+      }
+    }
+    if (auto pkg = GetPackageNamed(pkgName))
+    {
+      UObject* obj = pkg->GetObject(imp);
+      if (obj)
+      {
+        std::scoped_lock<std::mutex> l(ClassMapMutex);
+        ClassMap[name] = obj;
+        std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
+        ExternalPackages.push_back(pkg);
+        return (UClass*)obj;
+      }
+      FPackage::UnloadPackage(pkg);
     }
   }
-  MissingClasses.insert(className);
+  
+  if (!MissingClasses.count(name))
+  {
+    LogE("Failed to load class %s", name.C_str());
+    MissingClasses.insert(name);
+  }
   return nullptr;
 }
 
@@ -1108,7 +1259,26 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
   {
     return ObjectNameToExportMap[name];
   }
+  for (VObjectExport* vexp : VExports)
+  {
+    if (vexp->GetObjectName() == name)
+    {
+      return { vexp };
+    }
+  }
   return std::vector<FObjectExport*>();
+}
+
+FObjectImport* FPackage::GetImportObject(const FString& objectName, const FString& className) const
+{
+  for (FObjectImport* imp : Imports)
+  {
+    if (imp->GetObjectName() == objectName && imp->GetClassName() == className)
+    {
+      return imp;
+    }
+  }
+  return nullptr;
 }
 
 void FPackage::_DebugDump() const

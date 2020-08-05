@@ -65,6 +65,10 @@ public:
 
   bool operator==(const FName& n) const;
   bool operator==(const FString& s) const;
+  bool operator==(const char* s) const;
+  bool operator!=(const FName& n) const;
+  bool operator!=(const FString& s) const;
+  bool operator!=(const char* s) const;
   bool operator<(const FName& n) const;
 
   friend FStream& operator<<(FStream& s, FName& n);

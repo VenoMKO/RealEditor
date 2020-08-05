@@ -1,5 +1,6 @@
 #include "FStructs.h"
 #include "FStream.h"
+#include "UObject.h"
 
 FStream& operator<<(FStream& s, FGuid& g)
 {
@@ -100,4 +101,19 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
 FStream& operator<<(FStream& s, FVector2D& v)
 {
   return s << v.X << v.Y;
+}
+
+inline FString FScriptDelegate::ToString(const UObject* OwnerObject) const
+{
+  const UObject* DelegateObject = Object;
+  if (DelegateObject == NULL)
+  {
+    DelegateObject = OwnerObject;
+  }
+  return DelegateObject->GetObjectPath() + "." + FunctionName.String();
+}
+
+FStream& operator<<(FStream& s, FScriptDelegate& d)
+{
+  return s << d.Object << d.FunctionName;
 }

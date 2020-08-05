@@ -12,7 +12,7 @@ public:
   virtual ~FObjectResource()
   {}
 
-  inline FString GetObjectName() const
+  virtual FString GetObjectName() const
   {
     FString name;
     ObjectName.GetString(name);
@@ -28,9 +28,9 @@ public:
 
   FObjectResource* GetOuter() const;
 
-  FString GetObjectPath() const;
+  virtual FString GetObjectPath() const;
 
-  FName ObjectName;
+  
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
   PACKAGE_INDEX ObjectIndex = 0;
 
@@ -39,6 +39,8 @@ public:
 #ifdef _DEBUG
   FString Path;
 #endif
+protected:
+  FName ObjectName;
 };
 
 class FObjectImport : public FObjectResource {
@@ -92,4 +94,27 @@ public:
 #ifdef _DEBUG
   std::string ClassNameValue;
 #endif
+};
+
+class VObjectExport : public FObjectExport {
+public:
+  VObjectExport(FPackage* package, const char* objName, const char* className);
+
+  FString GetObjectName() const override
+  {
+    return VObjectName;
+  }
+
+  FString GetClassName() const override
+  {
+    return VObjectClassName;
+  }
+
+  FString GetObjectPath() const override;
+
+  ~VObjectExport() override;
+
+private:
+  FString VObjectName;
+  FString VObjectClassName;
 };

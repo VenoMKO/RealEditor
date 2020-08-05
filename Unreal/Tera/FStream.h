@@ -172,6 +172,7 @@ public:
   }
 
   virtual void SerializeBytes(void* ptr, FILE_OFFSET size) = 0;
+  virtual void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) = 0;
 
   virtual void SetPosition(FILE_OFFSET offset) = 0;
 
@@ -275,6 +276,14 @@ public:
     }
   }
 
+  void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) override
+  {
+    auto pos = Stream.tellg();
+    Stream.seekg(offset);
+    Stream.read((char*)ptr, size);
+    Stream.seekg(pos);
+  }
+
   FILE_OFFSET GetPosition() override
   {
     return (FILE_OFFSET)Stream.tellg();
@@ -344,6 +353,14 @@ public:
     }
   }
 
+  void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) override
+  {
+    auto pos = Stream.tellp();
+    Stream.seekp(offset);
+    Stream.write((char*)ptr, size);
+    Stream.seekp(pos);
+  }
+
   FILE_OFFSET GetPosition() override
   {
     return (FILE_OFFSET)Stream.tellp();
@@ -380,4 +397,94 @@ public:
 protected:
   FString Path;
   std::ofstream Stream;
+};
+
+// Stream to read from memory. fakeOffset emulates position in file for Get/SetPosition
+class MReadStream : public FStream {
+public:
+  MReadStream(void* data, bool takerOwnership, size_t size, size_t fakeOffset = 0)
+    : OwnesMemory(takerOwnership)
+    , Data((uint8*)data)
+    , Offset(fakeOffset)
+    , Size(size)
+  {
+    Reading = true;
+    Good = size;
+  }
+
+  ~MReadStream()
+  {
+    if (Data && OwnesMemory)
+    {
+      free(Data);
+    }
+  }
+
+  void SerializeBytes(void* ptr, FILE_OFFSET size) override
+  {
+    if (!ptr || !size)
+    {
+      return;
+    }
+    if (!Good || Position + size > Offset + Size)
+    {
+      Good = false;
+      return;
+    }
+    memcpy(ptr, Data + Position, size);
+    Position += size;
+  }
+
+  void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) override
+  {
+    if (!Good || offset < Offset || (Offset && Offset > offset) || offset + size > Offset + Size)
+    {
+      Good = false;
+    }
+    memcpy(ptr, Data + Offset + offset, size);
+  }
+
+  void SetPosition(FILE_OFFSET offset) override
+  {
+    if (!Good || (Offset && offset < Offset) || (offset - Offset) > Offset + Size)
+    {
+      int x = 1;
+      Good = false;
+      return;
+    }
+    Position = (offset - Offset);
+  }
+
+  FILE_OFFSET GetPosition() override
+  {
+    return (FILE_OFFSET)(Position + Offset);
+  }
+
+  FILE_OFFSET GetSize() override
+  {
+    return (FILE_OFFSET)Size;
+  }
+
+  bool IsGood() const override
+  {
+    return Good;
+  }
+
+  void Close() override
+  {
+    Good = false;
+  }
+
+  void* GetAllocation()
+  {
+    return Data;
+  }
+
+protected:
+  bool Good = false;
+  bool OwnesMemory = false;
+  uint8* Data = nullptr;
+  size_t Position = 0;
+  size_t Offset = 0;
+  size_t Size = 0;
 };

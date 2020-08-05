@@ -10,6 +10,7 @@
 
 // Objects
 #include "UObjectRedirector.h"
+#include "UMaterial.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -75,6 +76,14 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UObjectProperty(exp);
   }
+  else if (c == UClassProperty::StaticClassName())
+  {
+    result = new UClassProperty(exp);
+  }
+  else if (c == UComponentProperty::StaticClassName())
+  {
+    result = new UComponentProperty(exp);
+  }
   else if (c == UNameProperty::StaticClassName())
   {
     result = new UNameProperty(exp);
@@ -107,15 +116,27 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UObjectRedirector(exp);
   }
+  else if (c == UMaterialExpressionComponentMask::StaticClassName())
+  {
+    result = new UMaterialExpressionComponentMask(exp);
+  }
   else if (c == UComponent::StaticClassName())
   {
     result = new UComponent(exp);
   }
+  else if (c == UDominantDirectionalLightComponent::StaticClassName())
+  {
+    result = new UDominantDirectionalLightComponent(exp);
+  }
+  else if (c == UDominantSpotLightComponent::StaticClassName())
+  {
+    result = new UDominantSpotLightComponent(exp);
+  }
   else
   {
     // Fallback for unimplemented components. *Component => UComponent
-    const FString compName = UComponent::StaticClassName();
-    if (compName.Size() <= c.Size() && !c.Compare(c.Length() - compName.Length(), compName.Length(), compName))
+    if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
+        (c.Find("Distribution") != std::string::npos))
     {
       result = new UComponent(exp);
     }

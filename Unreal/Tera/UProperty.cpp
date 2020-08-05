@@ -1,7 +1,11 @@
 #include "UProperty.h"
 #include "FStream.h"
+#include "FPropertyTag.h"
+#include "FStructs.h"
 
 #define CPF_Net 0x0000000000000020
+#define STRUCT_Immutable 0x00000020
+#define STRUCT_ImmutableWhenCooked 0x00000080
 
 void UProperty::Serialize(FStream& s)
 {
@@ -22,11 +26,6 @@ void UObjectProperty::Serialize(FStream& s)
   s << PropertyClass;
 }
 
-void UObjectProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-  s << *(UObject**)value;
-}
-
 void UClassProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
@@ -39,18 +38,10 @@ void UInterfaceProperty::Serialize(FStream& s)
   s << InterfaceClass;
 }
 
-void UInterfaceProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-}
-
 void UArrayProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
   s << Inner;
-}
-
-void UArrayProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
 }
 
 void UMapProperty::Serialize(FStream& s)
@@ -60,20 +51,10 @@ void UMapProperty::Serialize(FStream& s)
   s << Value;
 }
 
-void UMapProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-}
-
 void UStructProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
   s << Struct;
-}
-
-void UStructProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-  //bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) != 0
-  Struct->SerializeTaggedProperties(s, (UObject*)value, Struct, defaults);
 }
 
 void UByteProperty::Serialize(FStream& s)
@@ -82,28 +63,39 @@ void UByteProperty::Serialize(FStream& s)
   s << Enum;
 }
 
-void UByteProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
+void UInterfaceProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
 {
-  const bool bUseBinarySerialization = (Enum == NULL);
+  DBreak();
+}
+
+void UMapProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  DBreak();
+}
+
+void UByteProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  const bool bUseBinarySerialization = (Enum == nullptr);
+  uint8 value = 0;
   if (bUseBinarySerialization)
   {
-    s << *(uint8*)value;
+    s << value;
   }
   else if (s.IsReading())
   {
     FName EnumValueName;
     s << EnumValueName;
 
-    *(uint8*)value = Enum->FindEnumIndex(EnumValueName);
-    if (Enum->NumEnums() < *(uint8*)value)
+    value = Enum->FindEnumIndex(EnumValueName);
+    if (Enum->NumEnums() < value)
     {
-      *(uint8*)value = Enum->NumEnums() - 1;
+      value = Enum->NumEnums() - 1;
     }
   }
   else
   {
     FName EnumValueName(s.GetPackage());
-    uint8 ByteValue = *(uint8*)value;
+    uint8 ByteValue = value;
 
     if (ByteValue < Enum->NumEnums() - 1)
     {
@@ -123,40 +115,67 @@ void UDelegateProperty::Serialize(FStream& s)
   s << Function << SourceDelegate;
 }
 
-void UDelegateProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
+void UDelegateProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
 {
+  FScriptDelegate delegate;
+  s << delegate;
 }
 
-void UIntProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
+void UIntProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
 {
-  s << *(int32*)value;
+  int32 value;
+  s << value;
 }
 
-void UBoolProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
+void UBoolProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
 {
-  uint8 b = (*(BITFIELD*)value & BitMask) ? 1 : 0;
+  uint8 b = tag->BoolVal;
   s << b;
-  if (b)
+}
+
+void UFloatProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  float v;
+  s << v;
+}
+
+void UNameProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  FName name;
+  s << name;
+}
+
+void UStrProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  FString value;
+  s << value;
+}
+
+void UArrayProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  int32 elementSize = 0;
+  int32 elementCount = 0;
+  s << elementCount;
+  for (int32 idx = 0; idx < elementCount; ++idx)
   {
-    *(BITFIELD*)value |= BitMask;
+    Inner->SerializeItem(s, tag, object, defaults);
+  }
+}
+void UStructProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+{
+  bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) || (Struct->StructFlags & STRUCT_Immutable);
+  if (bUseBinarySerialization)
+  {
+    Struct->SerializeBin(s, tag, object);
   }
   else
   {
-    *(BITFIELD*)value &= ~BitMask;
+    Struct->SerializeTaggedProperties(s, object, Struct, defaults);
   }
 }
 
-void UFloatProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
+void UObjectProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
 {
-  s << *(float*)value;
-}
-
-void UNameProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-  s << *(FName*)value;
-}
-
-void UStrProperty::SerializeItem(FStream& s, void* value, int32 maxReadBytes, void* defaults) const
-{
-  s << *(FString*)value;
+  UObject* obj = nullptr;
+  s << obj;
 }

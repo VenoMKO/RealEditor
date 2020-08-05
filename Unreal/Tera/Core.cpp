@@ -78,28 +78,6 @@ std::wstring A2W(const std::string& str)
   return A2W(&str[0], (int32)str.length());
 }
 
-inline bool CaseInsCharCompare(char a, char b)
-{
-  return (towupper(a) == towupper(b));
-}
-
-inline bool CaseInsCharCompareW(wchar_t a, wchar_t b)
-{
-  return (towupper(a) == towupper(b));
-}
-
-bool Wstricmp(const std::string& a, const std::string& b)
-{
-  std::wstring wA = A2W(a);
-  std::wstring wB = A2W(b);
-  return (wA.size() == wB.size()) && (std::equal(wA.begin(), wA.end(), wB.begin(), CaseInsCharCompareW));
-}
-
-bool Stricmp(const std::string& a, const std::string& b)
-{
-  return (a.size() == b.size()) && (std::equal(a.begin(), a.end(), b.begin(), CaseInsCharCompare));
-}
-
 uint64 GetFileTime(const std::wstring& path)
 {
   struct _stat64 fileInfo;
@@ -109,6 +87,160 @@ uint64 GetFileTime(const std::wstring& path)
   }
   return 0;
 }
+
+void UThrow(const char* fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  std::string msg = Sprintf(fmt, ap);
+  va_end(ap);
+  LogE(msg);
+  throw std::runtime_error(msg);
+}
+
+bool IsAnsi(const std::string& str)
+{
+  std::wstring wstr = A2W(str);
+  for (const wchar& ch : wstr)
+  {
+    if (ch > 127)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool IsAnsi(const std::wstring& str)
+{
+  for (const wchar& ch : str)
+  {
+    if (ch > 127)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::string Sprintf(const char* fmt, ...)
+{
+  int final_n, n = ((int)strlen(fmt)) * 2;
+  std::unique_ptr<char[]> formatted;
+  va_list ap;
+  while (1)
+  {
+    formatted.reset(new char[n]);
+    strcpy(&formatted[0], fmt);
+    va_start(ap, fmt);
+    final_n = vsnprintf(&formatted[0], n, fmt, ap);
+    va_end(ap);
+    if (final_n < 0 || final_n >= n)
+    {
+      n += abs(final_n - n + 1);
+    }
+    else
+    {
+      break;
+    }
+  }
+  return std::string(formatted.get());
+}
+
+std::string Sprintf(const std::string fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  std::string msg = Sprintf(fmt.c_str(), ap);
+  va_end(ap);
+  return msg;
+}
+
+void memswap(void* a, void* b, size_t size)
+{
+  if (!size)
+  {
+    return;
+  }
+  void* tmp = malloc(size);
+  memcpy(tmp, a, size);
+  memcpy(a, b, size);
+  memcpy(b, tmp, size);
+  free(tmp);
+}
+
+void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+{
+  lzo_bytep ptr = (lzo_bytep)src;
+  lzo_bytep start = ptr;
+  lzo_bytep dstStart = (lzo_bytep)dst;
+  if (*(int*)ptr != COMPRESSED_BLOCK_MAGIC)
+  {
+    UThrow("Invalid or corrupted compression block!");
+  }
+  ptr += 4;
+  uint32 blockSize = *(uint32*)ptr; ptr += 4;
+  uint32 totalCompressedSize = *(uint32*)ptr; ptr += 4;
+  uint32 totalDecompressedSize = *(uint32*)ptr; ptr += 4;
+  int32 totalBlocks = (int32)ceilf((float)totalDecompressedSize / (float)blockSize);
+
+  static bool err = (LZO_E_OK != lzo_init());
+
+  if (err)
+  {
+    UThrow("Failed to initialize LZO!");
+  }
+
+  struct CompressionBlock {
+    uint32 srcOffset = 0;
+    uint32 srcSize = 0;
+    uint32 dstOffset = 0;
+    uint32 dstSize = 0;
+  };
+
+  const uint32 chunkHeaderSize = 16;
+  const uint32 blockHeaderSize = 8;
+  uint32 compressedOffset = 0;
+  uint32 decompressedOffset = 0;
+
+  CompressionBlock* compressionInfo = new CompressionBlock[totalBlocks];
+  for (int i = 0; i < totalBlocks; i++)
+  {
+    compressionInfo[i].srcOffset = chunkHeaderSize + compressedOffset + totalBlocks * blockHeaderSize;
+    compressionInfo[i].srcSize = *(uint32*)ptr; ptr += 4;
+    compressionInfo[i].dstSize = *(uint32*)ptr; ptr += 4;
+    compressionInfo[i].dstOffset = decompressedOffset;
+    compressedOffset += compressionInfo[i].srcSize;
+    decompressedOffset += compressionInfo[i].dstSize;
+  }
+
+  if (concurrent)
+  {
+    concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
+      lzo_uint decompressedSize = compressionInfo[i].dstSize;
+      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+      if (e != LZO_E_OK)
+      {
+        UThrow("Corrupted compression block. Code: %d", e);
+      }
+    });
+  }
+  else
+  {
+    for (int32 i = 0; i < totalBlocks; ++i)
+    {
+      lzo_uint decompressedSize = compressionInfo[i].dstSize;
+      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+      if (e != LZO_E_OK)
+      {
+        UThrow("Corrupted compression block. Code: %d", e);
+      }
+    }
+  }
+
+  delete[] compressionInfo;
+}
+
 
 FString ObjectFlagsToString(uint64 expFlag)
 {
@@ -415,157 +547,4 @@ FString PackageFlagsToString(uint32 flags)
     s = s.Substr(0, s.Size() - 2);
   }
   return s;
-}
-
-void UThrow(const char* fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  std::string msg = Sprintf(fmt, ap);
-  va_end(ap);
-  LogE(msg);
-  throw std::runtime_error(msg);
-}
-
-bool IsAnsi(const std::string& str)
-{
-  std::wstring wstr = A2W(str);
-  for (const wchar& ch : wstr)
-  {
-    if (ch > 127)
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool IsAnsi(const std::wstring& str)
-{
-  for (const wchar& ch : str)
-  {
-    if (ch > 127)
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-std::string Sprintf(const char* fmt, ...)
-{
-  int final_n, n = ((int)strlen(fmt)) * 2;
-  std::unique_ptr<char[]> formatted;
-  va_list ap;
-  while (1)
-  {
-    formatted.reset(new char[n]);
-    strcpy(&formatted[0], fmt);
-    va_start(ap, fmt);
-    final_n = vsnprintf(&formatted[0], n, fmt, ap);
-    va_end(ap);
-    if (final_n < 0 || final_n >= n)
-    {
-      n += abs(final_n - n + 1);
-    }
-    else
-    {
-      break;
-    }
-  }
-  return std::string(formatted.get());
-}
-
-std::string Sprintf(const std::string fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  std::string msg = Sprintf(fmt.c_str(), ap);
-  va_end(ap);
-  return msg;
-}
-
-void memswap(void* a, void* b, size_t size)
-{
-  if (!size)
-  {
-    return;
-  }
-  void* tmp = malloc(size);
-  memcpy(tmp, a, size);
-  memcpy(a, b, size);
-  memcpy(b, tmp, size);
-  free(tmp);
-}
-
-void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
-{
-  lzo_bytep ptr = (lzo_bytep)src;
-  lzo_bytep start = ptr;
-  lzo_bytep dstStart = (lzo_bytep)dst;
-  if (*(int*)ptr != COMPRESSED_BLOCK_MAGIC)
-  {
-    UThrow("Invalid or corrupted compression block!");
-  }
-  ptr += 4;
-  uint32 blockSize = *(uint32*)ptr; ptr += 4;
-  uint32 totalCompressedSize = *(uint32*)ptr; ptr += 4;
-  uint32 totalDecompressedSize = *(uint32*)ptr; ptr += 4;
-  int32 totalBlocks = (int32)ceilf((float)totalDecompressedSize / (float)blockSize);
-
-  static bool err = (LZO_E_OK != lzo_init());
-
-  if (err)
-  {
-    UThrow("Failed to initialize LZO!");
-  }
-
-  struct CompressionBlock {
-    uint32 srcOffset = 0;
-    uint32 srcSize = 0;
-    uint32 dstOffset = 0;
-    uint32 dstSize = 0;
-  };
-
-  const uint32 chunkHeaderSize = 16;
-  const uint32 blockHeaderSize = 8;
-  uint32 compressedOffset = 0;
-  uint32 decompressedOffset = 0;
-
-  CompressionBlock* compressionInfo = new CompressionBlock[totalBlocks];
-  for (int i = 0; i < totalBlocks; i++)
-  {
-    compressionInfo[i].srcOffset = chunkHeaderSize + compressedOffset + totalBlocks * blockHeaderSize;
-    compressionInfo[i].srcSize = *(uint32*)ptr; ptr += 4;
-    compressionInfo[i].dstSize = *(uint32*)ptr; ptr += 4;
-    compressionInfo[i].dstOffset = decompressedOffset;
-    compressedOffset += compressionInfo[i].srcSize;
-    decompressedOffset += compressionInfo[i].dstSize;
-  }
-
-  if (concurrent)
-  {
-    concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
-      lzo_uint decompressedSize = compressionInfo[i].dstSize;
-      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
-      if (e != LZO_E_OK)
-      {
-        UThrow("Corrupted compression block. Code: %d", e);
-      }
-    });
-  }
-  else
-  {
-    for (int32 i = 0; i < totalBlocks; ++i)
-    {
-      lzo_uint decompressedSize = compressionInfo[i].dstSize;
-      int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
-      if (e != LZO_E_OK)
-      {
-        UThrow("Corrupted compression block. Code: %d", e);
-      }
-    }
-  }
-
-  delete[] compressionInfo;
 }

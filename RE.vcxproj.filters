@@ -86,6 +86,9 @@
     <ClCompile Include="Unreal\Tera\UNames.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unreal\Tera\UStaticMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -130,5 +133,8 @@
     <ClInclude Include="Unreal\Tera\UNames.h" />
     <ClInclude Include="Unreal\Tera\FScriptArray.h" />
     <ClInclude Include="Unreal\Tera\FString.h" />
+    <ClInclude Include="Unreal\Tera\Cast.h" />
+    <ClInclude Include="Unreal\Tera\UMaterial.h" />
+    <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
   </ItemGroup>
 </Project>

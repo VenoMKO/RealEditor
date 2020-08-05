@@ -49,12 +49,12 @@ ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectImport* imp)
 
 wxString ObjectTreeNode::GetObjectName() const
 {
-	return Resource ? A2W(Resource->GetObjectName()) : Name;
+	return Resource ? Resource->GetObjectName().WString() : Name;
 }
 
 wxString ObjectTreeNode::GetClassName() const
 {
-	return Resource ? A2W(Resource->GetClassName()) : Name;
+	return Resource ? Resource->GetClassName().WString() : Name;
 }
 
 PACKAGE_INDEX ObjectTreeNode::GetObjectIndex() const
@@ -83,7 +83,7 @@ void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, u
 {
 	ObjectTreeNode* node = (ObjectTreeNode*)item.GetID();
 	wxDataViewIconText value = wxDataViewIconText(node->GetObjectName());
-	if (!node->GetParent() || node->GetClassName() == "Package")
+	if (!node->GetParent() || node->GetClassName() == wxS("Package"))
 	{
 		value.SetIcon(IconList->GetIcon(0));
 	}

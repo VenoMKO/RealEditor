@@ -56,12 +56,12 @@ public:
 	UObject* GetObject(FObjectExport* exp) const;
 
 	// Get package index of the object. Accepts imported objects
-	PACKAGE_INDEX GetObjectIndex(UObject* object);
+	PACKAGE_INDEX GetObjectIndex(UObject* object) const;
 
 	PACKAGE_INDEX GetNameIndex(const FString& name, bool insert = false);
 
-	// Get a UClass with name className
-	UClass* LoadClass(const FString& className);
+	// Get a UClass with idx;
+	UClass* LoadClass(PACKAGE_INDEX index);
 
 	// Cache UObject with a netIndex to NetIndexMap
 	void AddNetObject(UObject* object);
@@ -70,19 +70,19 @@ public:
 	std::vector<FObjectExport*> GetExportObject(const FString& name);
 
 	// Get all root exports
-	inline std::vector<FObjectExport*> GetRootExports()
+	inline std::vector<FObjectExport*> GetRootExports() const
 	{
 		return RootExports;
 	}
 
 	// Get all root imports
-	inline std::vector<FObjectImport*> GetRootImports()
+	inline std::vector<FObjectImport*> GetRootImports() const
 	{
 		return RootImports;
 	}
 
 	// Get import/export object at index
-	inline FObjectResource* GetResourceObject(PACKAGE_INDEX index)
+	inline FObjectResource* GetResourceObject(PACKAGE_INDEX index) const
 	{
 		if (index < 0)
 		{
@@ -92,14 +92,16 @@ public:
 	}
 
 	// Get import object at index
-	inline FObjectImport* GetImportObject(PACKAGE_INDEX index)
+	inline FObjectImport* GetImportObject(PACKAGE_INDEX index) const
 	{
 		const PACKAGE_INDEX i = -index - 1;
 		return Imports[i];
 	}
 
+	FObjectImport* GetImportObject(const FString& objectName, const FString& className) const;
+
 	// Get export object at index
-	inline FObjectExport* GetExportObject(PACKAGE_INDEX index)
+	inline FObjectExport* GetExportObject(PACKAGE_INDEX index) const
 	{
 		const PACKAGE_INDEX i = index - 1;
 		return Exports[i];
@@ -142,7 +144,7 @@ public:
 	}
 
 	// Returns true if Load() finished
-	inline bool IsReady()
+	inline bool IsReady() const
 	{
 		return Ready.load();
 	}
@@ -153,7 +155,7 @@ public:
 		Cancelled.store(true);
 	}
 
-	bool IsOperationCancelled()
+	bool IsOperationCancelled() const
 	{
 		return Cancelled.load();
 	}
@@ -167,6 +169,9 @@ public:
 	{
 		return Summary.LicenseeVersion;
 	}
+	
+	// Used to create builtin classes
+	VObjectExport* CreateVirtualExport(const char* objName, const char* clsName);
 
 	// Get package name
 	FString GetPackageName(bool extension = false) const;
@@ -187,6 +192,7 @@ private:
 
 	std::vector<FNameEntry> Names;
 	std::vector<FObjectExport*> Exports;
+	std::vector<VObjectExport*> VExports;
 	std::vector<FObjectImport*> Imports;
 	std::vector<std::vector<int32>> Depends;
 	std::unordered_map<PACKAGE_INDEX, UObject*> Objects;
@@ -213,6 +219,7 @@ private:
 	static std::unordered_map<FString, FString> PkgMap;
 	static std::unordered_map<FString, FString> ObjectRedirectorMap;
 	static std::unordered_map<FString, FCompositePackageMapEntry> CompositPackageMap;
+	static std::mutex ClassMapMutex;
 	static std::unordered_map<FString, UObject*> ClassMap;
 	static std::unordered_set<FString> MissingClasses;
 

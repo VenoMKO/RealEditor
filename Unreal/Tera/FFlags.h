@@ -83,6 +83,7 @@ enum EObjectFlags : uint64
   RF_Marked = 0x0800000000000000,		// Marked (for debugging).
   RF_ErrorShutdown = 0x1000000000000000,		// ShutdownAfterError called.
   RF_PendingKill = 0x2000000000000000,		// Objects that are pending destruction (invalid for gameplay but valid objects)
+  RF_AllFlags = 0xFFFFFFFFFFFFFFFF
 };
 
 enum EFExportFlags : uint32
@@ -125,4 +126,86 @@ enum EPixelFormat : uint32
   PF_A1 = 26,
   PF_FloatR11G11B10 = 27,
   PF_Max = 28
+};
+
+enum EClassCastFlag : uint32
+{
+  CASTCLASS_None = 0x00000000,
+  CASTCLASS_UField = 0x00000001,
+  CASTCLASS_UConst = 0x00000002,
+  CASTCLASS_UEnum = 0x00000004,
+  CASTCLASS_UStruct = 0x00000008,
+  CASTCLASS_UScriptStruct = 0x00000010,
+  CASTCLASS_UClass = 0x00000020,
+  CASTCLASS_UByteProperty = 0x00000040,
+  CASTCLASS_UIntProperty = 0x00000080,
+  CASTCLASS_UFloatProperty = 0x00000100,
+  CASTCLASS_UComponentProperty = 0x00000200,
+  CASTCLASS_UClassProperty = 0x00000400,
+  CASTCLASS_UInterfaceProperty = 0x00001000,
+  CASTCLASS_UNameProperty = 0x00002000,
+  CASTCLASS_UStrProperty = 0x00004000,
+  CASTCLASS_UProperty = 0x00008000,
+  CASTCLASS_UObjectProperty = 0x00010000,
+  CASTCLASS_UBoolProperty = 0x00020000,
+  CASTCLASS_UState = 0x00040000,
+  CASTCLASS_UFunction = 0x00080000,
+  CASTCLASS_UStructProperty = 0x00100000,
+  CASTCLASS_UArrayProperty = 0x00200000,
+  CASTCLASS_UMapProperty = 0x00400000,
+  CASTCLASS_UDelegateProperty = 0x00800000,
+  CASTCLASS_UComponent = 0x01000000,
+  CASTCLASS_AllFlags = 0xFFFFFFFF,
+};
+
+enum : uint64 {
+  CPF_Edit = 0x0000000000000001,
+  CPF_Const = 0x0000000000000002,
+  CPF_Input = 0x0000000000000004,
+  CPF_ExportObject = 0x0000000000000008,
+  CPF_OptionalParm = 0x0000000000000010,
+  CPF_Net = 0x0000000000000020,
+  CPF_EditFixedSize = 0x0000000000000040,
+  CPF_Parm = 0x0000000000000080,
+  CPF_OutParm = 0x0000000000000100,
+  CPF_SkipParm = 0x0000000000000200,
+  CPF_ReturnParm = 0x0000000000000400,
+  CPF_CoerceParm = 0x0000000000000800,
+  CPF_Native = 0x0000000000001000,
+  CPF_Transient = 0x0000000000002000,
+  CPF_Config = 0x0000000000004000,
+  CPF_Localized = 0x0000000000008000,
+
+  CPF_EditConst = 0x0000000000020000,
+  CPF_GlobalConfig = 0x0000000000040000,
+  CPF_Component = 0x0000000000080000,
+  CPF_AlwaysInit = 0x0000000000100000,
+  CPF_DuplicateTransient = 0x0000000000200000,
+  CPF_NeedCtorLink = 0x0000000000400000,
+  CPF_NoExport = 0x0000000000800000,
+  CPF_NoImport = 0x0000000001000000,
+  CPF_NoClear = 0x0000000002000000,
+  CPF_EditInline = 0x0000000004000000,
+
+  CPF_EditInlineUse = 0x0000000010000000,
+  CPF_Deprecated = 0x0000000020000000,
+  CPF_DataBinding = 0x0000000040000000,
+  CPF_SerializeText = 0x0000000080000000,
+
+  CPF_RepNotify = 0x0000000100000000,
+  CPF_Interp = 0x0000000200000000,
+  CPF_NonTransactional = 0x0000000400000000,
+
+  CPF_EditorOnly = 0x0000000800000000,
+  CPF_NotForConsole = 0x0000001000000000,
+  CPF_RepRetry = 0x0000002000000000,
+  CPF_PrivateWrite = 0x0000004000000000,
+  CPF_ProtectedWrite = 0x0000008000000000,
+  CPF_ArchetypeProperty = 0x0000010000000000,
+
+  CPF_EditHide = 0x0000020000000000,
+  CPF_EditTextBox = 0x0000040000000000,
+
+  CPF_CrossLevelPassive = 0x0000100000000000,
+  CPF_CrossLevelActive = 0x0000200000000000,
 };

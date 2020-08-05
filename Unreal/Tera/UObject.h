@@ -10,10 +10,17 @@ public:\
   typedef TSuper Super;\
   static const char* StaticClassName() { return ((char*)#TClass) + 1; }\
   const char* GetStaticClassName() const override { return ThisClass::StaticClassName(); }\
+  std::string GetStaticClassChain() const override { return Super::GetStaticClassChain() + "." + ThisClass::StaticClassName(); }\
   using TSuper::TSuper
 
 class UObject {
 public:
+  enum { StaticClassCastFlags = CASTCLASS_None };
+  virtual uint32 GetStaticClassCastFlags() const
+  {
+    return StaticClassCastFlags;
+  }
+
   // Object factory
   static UObject* Object(FObjectExport* exp);
 
@@ -29,6 +36,11 @@ public:
 
   // Get cpp class name from an instance
   virtual const char* GetStaticClassName() const
+  {
+    return StaticClassName();
+  }
+
+  virtual std::string GetStaticClassChain() const
   {
     return StaticClassName();
   }
@@ -55,11 +67,6 @@ public:
     return Export;
   }
 
-  inline FObjectImport* GetImportObject() const
-  {
-    return Import;
-  }
-
   inline NET_INDEX GetNetIndex() const
   {
     return NetIndex;
@@ -72,13 +79,15 @@ public:
     return false;
   }
 
+  inline bool HasAnyFlags(uint64 flags) const;
+
   UObject* GetOuter() const;
 
   bool IsTemplate(uint64 templateTypes = (RF_ArchetypeObject | RF_ClassDefaultObject)) const
   {
     for (const UObject* outer = this; outer; outer = outer->GetOuter())
     {
-      if (outer->GetObjectFlags() & templateTypes)
+      if (outer->HasAnyFlags((EObjectFlags)templateTypes))
       {
         return true;
       }
@@ -86,9 +95,30 @@ public:
     return false;
   }
 
+  template<typename T>
+  T* GetTypedOuter() const
+  {
+    T* result = NULL;
+    for (UObject* nextOuter = Outer; result == NULL && nextOuter != NULL; nextOuter = nextOuter->GetOuter())
+    {
+      if (nextOuter->IsA(T::StaticClassName()))
+      {
+        result = (T*)nextOuter;
+      }
+    }
+    return result;
+  }
+
+  bool IsA(const char* base) const;
+
   inline bool IsLoaded() const
   {
     return Loaded;
+  }
+
+  inline UClass* GetClass() const
+  {
+    return Class;
   }
 
 private:
@@ -100,10 +130,11 @@ protected:
   // Handle object initializtion for derrived classes
   virtual void PostLoad();
 
+  void  SerializeDefaultObject(FStream& s);
+
 protected:
   bool Loaded = false;
   FObjectExport* Export = nullptr;
-  FObjectImport* Import = nullptr;
   FStateFrame* StateFrame = nullptr;
   NET_INDEX NetIndex = INDEX_NONE;
 

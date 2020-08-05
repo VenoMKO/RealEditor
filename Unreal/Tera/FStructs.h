@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.h"
 #include "FString.h"
+#include "FName.h"
 
 struct FGuid
 {
@@ -188,4 +189,16 @@ struct FVector2D {
 	float Y = 0;
 
 	friend FStream& operator<<(FStream& s, FVector2D& v);
+};
+
+/*-----------------------------------------------------------------------------
+	FScriptDelegate.
+-----------------------------------------------------------------------------*/
+struct FScriptDelegate
+{
+	UObject* Object = nullptr;
+	FName FunctionName;
+
+	inline FString ToString(const UObject* OwnerObject) const;
+	friend FStream& operator<<(FStream& s, FScriptDelegate& d);
 };

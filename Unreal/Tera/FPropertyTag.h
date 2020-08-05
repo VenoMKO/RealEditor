@@ -58,26 +58,11 @@ struct FPropertyTag
 		return s;
 	}
 
-	void SerializeTaggedProperty(FStream& s, UProperty* property, uint8* Value, int32 MaxReadBytes, int32* Defaults)
+	void SerializeTaggedProperty(FStream& s, UProperty* property, UObject* Value, UStruct* Defaults)
 	{
-		if (property->GetStaticClassName() == UBoolProperty::StaticClassName())
+		if (property->GetStaticClassName() != UBoolProperty::StaticClassName())
 		{
-			UBoolProperty* Bool = (UBoolProperty*)property;
-			if (s.IsReading())
-			{
-				if (BoolVal)
-				{
-					*(BITFIELD*)Value |= Bool->BitMask;
-				}
-				else
-				{
-					*(BITFIELD*)Value &= ~Bool->BitMask;
-				}
-			}
-		}
-		else
-		{
-			property->SerializeItem(s, Value, MaxReadBytes, Defaults);
+			property->SerializeItem(s, this, Value, Defaults);
 		}
 	}
 };

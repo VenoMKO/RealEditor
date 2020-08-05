@@ -64,5 +64,7 @@ DEF_NAME(PlayerInput);
 DEF_NAME(Actor);
 DEF_NAME(ObjectRedirector);
 DEF_NAME(ObjectArchetype);
+DEF_NAME(Component);
 DEF_NAME(MetaData);
 DEF_NAME(StaticMesh);
+DEF_NAME(Class);

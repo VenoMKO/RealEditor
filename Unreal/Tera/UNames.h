@@ -65,5 +65,7 @@ DECL_NAME(PlayerInput);
 DECL_NAME(Actor);
 DECL_NAME(ObjectRedirector);
 DECL_NAME(ObjectArchetype);
+DECL_NAME(Component);
 DECL_NAME(MetaData);
 DECL_NAME(StaticMesh);
+DECL_NAME(Class);

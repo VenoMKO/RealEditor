@@ -376,6 +376,20 @@ public:
 
   int Compare(size_t off, size_t count, const FString& str) const
   {
+    if (Data.size() && str.Data.size())
+    {
+      if (Data.back() == 0 && str.Data.back() != 0)
+      {
+        if (off > 0)
+        {
+          off--;
+        }
+      }
+      else if (Data.back() != 0 && str.Data.back() == 0)
+      {
+        count--;
+      }
+    }
     return Data.compare(off, count, str.Data.c_str());
   }
 

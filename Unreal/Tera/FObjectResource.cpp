@@ -1,6 +1,7 @@
 #include "FObjectResource.h"
 #include "FStream.h"
 #include "FPackage.h"
+#include "UObject.h"
 
 FStream& operator<<(FStream& s, FObjectImport& i)
 {
@@ -98,4 +99,25 @@ FString FObjectResource::GetObjectPath() const
   }
   path += "." + GetObjectName();
   return path;
+}
+
+VObjectExport::VObjectExport(FPackage* pkg, const char* objName, const char* className)
+  : FObjectExport(pkg)
+{
+  VObjectName = objName;
+  VObjectClassName = className;
+  ObjectIndex = 0x80000;
+}
+
+FString VObjectExport::GetObjectPath() const
+{
+  return Package->GetPackageName() + "." + GetObjectName();
+}
+
+VObjectExport::~VObjectExport()
+{
+  if (Object)
+  {
+    delete Object;
+  }
 }

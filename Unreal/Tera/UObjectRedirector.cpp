@@ -7,11 +7,3 @@ void UObjectRedirector::Serialize(FStream& s)
   Super::Serialize(s);
   s << Object;
 }
-
-void UObjectRedirector::PostLoad()
-{
-  if (Object)
-  {
-    Object->Load();
-  }
-}

@@ -6,6 +6,24 @@
 #endif
 
 // --------------------------------------------------------------------
+// Build configuration
+// --------------------------------------------------------------------
+
+#if _DEBUG
+// DUMP_PATH should be set to the ENV
+#if defined(DUMP_PATH)
+#define DUMP_OBJECTS 0
+#define DUMP_PACKAGES 0
+#define DUMP_MAPPERS 0
+#endif
+#define MULTITHREADED_CLASS_SERIALIZATION 0
+#define SERIALIZE_PROPERTIES 1
+#else
+#define MULTITHREADED_CLASS_SERIALIZATION 1
+#define SERIALIZE_PROPERTIES 1
+#endif
+
+// --------------------------------------------------------------------
 // Types
 // --------------------------------------------------------------------
 
@@ -20,6 +38,8 @@ typedef unsigned int uint32;
 
 typedef signed long long int64;
 typedef unsigned long long uint64;
+
+typedef uint32 ubool;
 
 typedef wchar_t wchar;
 
@@ -48,37 +68,6 @@ enum { INDEX_NONE = -1 };
 // Forward
 // --------------------------------------------------------------------
 
-class ALog;
-
-class	UObject;
-class		UComponent;
-class		UField;
-class			UConst;
-class			UEnum;
-class			UProperty;
-class				UByteProperty;
-class				UIntProperty;
-class				UBoolProperty;
-class				UFloatProperty;
-class				UObjectProperty;
-class					UComponentProperty;
-class					UClassProperty;
-class					UInterfaceProperty;
-class				UNameProperty;
-class				UStructProperty;
-class               UStrProperty;
-class               UArrayProperty;
-class				UMapProperty;
-class				UDelegateProperty;
-class			UStruct;
-class				UFunction;
-class				UState;
-class					UClass;
-class				UScriptStruct;
-class		UTextBuffer;
-class		UObjectRedirector;
-
-
 class FName;
 class FStream;
 class FPackage;
@@ -87,6 +76,35 @@ class FStateFrame;
 class FObjectResource;
 class FObjectImport;
 class FObjectExport;
+class VObjectExport;
+
+class	UObject;
+class UComponent;
+class UField;
+class UConst;
+class UEnum;
+class UProperty;
+class UByteProperty;
+class UIntProperty;
+class UBoolProperty;
+class UFloatProperty;
+class UObjectProperty;
+class UComponentProperty;
+class UClassProperty;
+class UInterfaceProperty;
+class UNameProperty;
+class UStructProperty;
+class UStrProperty;
+class UArrayProperty;
+class UMapProperty;
+class UDelegateProperty;
+class UStruct;
+class UFunction;
+class UState;
+class UClass;
+class UScriptStruct;
+class UTextBuffer;
+class UObjectRedirector;
 
 // --------------------------------------------------------------------
 // Utils
@@ -110,10 +128,6 @@ std::string W2A(const std::wstring& str);
 // UTF8 string to wide
 std::wstring A2W(const char* str, int32 len = -1);
 std::wstring A2W(const std::string& str);
-// Case-insensitive UTF8 string comparison
-bool Wstricmp(const std::string& a, const std::string& b);
-// Case-insensitive string comparison
-bool Stricmp(const std::string& a, const std::string& b);
 // Get file's last modification date
 uint64 GetFileTime(const std::wstring& path);
 
@@ -125,7 +139,7 @@ void memswap(void* a, void* b, size_t size);
 
 #define Check(expr) if (!expr) UThrow(std::string(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__)).c_str())
 
-#ifdef _DEBUG
+#if _DEBUG
 inline void DBreak()
 {
   // BP here
@@ -159,16 +173,11 @@ namespace LZO
 // Misc
 // --------------------------------------------------------------------
 
-#ifdef _DEBUG
+// Performance measure
+#if _DEBUG
 #define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
-#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
+#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::miliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
 #else
 #define PERF_START(ID)
 #define PERF_END(ID)
-#endif
-
-#if defined(DUMP_PATH) && _DEBUG
-#define DUMP_OBJECTS 0
-#define DUMP_PACKAGES 0
-#define DUMP_MAPPERS 0
 #endif

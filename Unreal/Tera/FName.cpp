@@ -11,12 +11,32 @@ FStream& operator<<(FStream& s, FNameEntry& e)
 
 bool FName::operator==(const FName& n) const
 {
-  return Wstricmp(String(), n.String());
+  return String() == n.String();
 }
 
 bool FName::operator==(const FString& s) const
 {
-  return Wstricmp(String(), s.String());
+  return String() == s.String();
+}
+
+bool FName::operator==(const char* s) const
+{
+  return String() == s;
+}
+
+bool FName::operator!=(const FName& n) const
+{
+  return String() != n.String();
+}
+
+bool FName::operator!=(const FString& s) const
+{
+  return String() != s.String();
+}
+
+bool FName::operator!=(const char* s) const
+{
+  return String() != s;
 }
 
 bool FName::operator<(const FName& n) const
