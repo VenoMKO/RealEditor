@@ -89,7 +89,14 @@ public:
     return *this;
   }
 
+  inline FStream& operator<<(double& v)
+  {
+    SerializeBytes(&v, 8);
+    return *this;
+  }
+
   FStream& operator<<(FString& s);
+  FStream& operator<<(FStringRef& r);
 
   template <typename T>
   inline FStream& operator<<(std::vector<T>& arr)
@@ -99,6 +106,7 @@ public:
     if (Reading)
     {
       arr.clear();
+      arr.reserve(cnt);
       for (uint32 idx = 0; idx < cnt; ++idx)
       {
         T& item = arr.emplace_back(T());
@@ -151,6 +159,7 @@ public:
     if (Reading)
     {
       map.clear();
+      map.reserve(cnt);
       for (uint32 idx = 0; idx < cnt; ++idx)
       {
         Tk k; Tv v;
@@ -410,6 +419,7 @@ public:
   {
     Reading = true;
     Good = size;
+    Position = Offset;
   }
 
   ~MReadStream()
@@ -440,6 +450,7 @@ public:
     if (!Good || offset < Offset || (Offset && Offset > offset) || offset + size > Offset + Size)
     {
       Good = false;
+      return;
     }
     memcpy(ptr, Data + Offset + offset, size);
   }
@@ -448,7 +459,6 @@ public:
   {
     if (!Good || (Offset && offset < Offset) || (offset - Offset) > Offset + Size)
     {
-      int x = 1;
       Good = false;
       return;
     }
@@ -486,5 +496,104 @@ protected:
   uint8* Data = nullptr;
   size_t Position = 0;
   size_t Offset = 0;
+  size_t Size = 0;
+};
+
+class MWrightStream : public FStream {
+public:
+  MWrightStream(void* data, size_t size)
+    : Size(size)
+  {
+    if (data && size)
+    {
+      Data = (uint8*)malloc(size);
+      memcpy_s(Data, size, data, size);
+    }
+    Reading = false;
+    Good = true;
+  }
+
+  ~MWrightStream()
+  {
+    if (Data)
+    {
+      delete Data;
+    }
+  }
+
+  void SerializeBytes(void* ptr, FILE_OFFSET size) override
+  {
+    if (!ptr || !size || !Good)
+    {
+      return;
+    }
+    if (Position + size > Size)
+    {
+      size_t newSize = Size + (Position + size) - Size;
+      if (Data)
+      {
+        if (void* newData = realloc(Data, newSize))
+        {
+          Data = (uint8*)newData;
+        }
+        else
+        {
+          if (Data)
+          {
+            free(Data);
+            Data = nullptr;
+          }
+          Good = false;
+          return;
+        }
+      }
+      else
+      {
+        Data = (uint8*)malloc(newSize);
+      }
+      Size = newSize;
+    }
+    memcpy(Data + Position, ptr, size);
+    Position += size;
+  }
+
+  void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) override
+  {
+  }
+
+  void SetPosition(FILE_OFFSET offset) override
+  {
+    Position = offset > Size ? Size : offset < 0 ? 0 : offset;
+  }
+
+  FILE_OFFSET GetPosition() override
+  {
+    return (FILE_OFFSET)Position;
+  }
+
+  FILE_OFFSET GetSize() override
+  {
+    return (FILE_OFFSET)Size;
+  }
+
+  bool IsGood() const override
+  {
+    return Good;
+  }
+
+  void Close() override
+  {
+    Good = false;
+  }
+
+  void* GetAllocation()
+  {
+    return Data;
+  }
+
+protected:
+  bool Good = false;
+  uint8* Data = nullptr;
+  size_t Position = 0;
   size_t Size = 0;
 };

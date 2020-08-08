@@ -14,8 +14,10 @@ public:
 
 	// RootDir's Core.u version
 	static uint16 GetCoreVersion();
+	// Load Cooked Persistent Data
+	static void LoadPersistentData();
 	// Load class packages
-	static void LoadDefaultClassPackages();
+	static void LoadClassPackage(const FString& name);
 	// Unload class packages
 	static void UnloadDefaultClassPackages();
 	// Load Package Map
@@ -162,12 +164,12 @@ public:
 
 	inline uint16 GetFileVersion() const
 	{
-		return Summary.FileVersion;
+		return Summary.GetFileVersion();
 	}
 
 	inline uint16 GetLicenseeVersion() const
 	{
-		return Summary.LicenseeVersion;
+		return Summary.GetLicenseeVersion();
 	}
 	
 	// Used to create builtin classes
@@ -219,6 +221,8 @@ private:
 	static std::unordered_map<FString, FString> PkgMap;
 	static std::unordered_map<FString, FString> ObjectRedirectorMap;
 	static std::unordered_map<FString, FCompositePackageMapEntry> CompositPackageMap;
+	static std::unordered_map<FString, FBulkDataInfo> BulkDataMap;
+	static std::unordered_map<FString, FTextureFileCacheInfo> TextureCacheMap;
 	static std::mutex ClassMapMutex;
 	static std::unordered_map<FString, UObject*> ClassMap;
 	static std::unordered_set<FString> MissingClasses;

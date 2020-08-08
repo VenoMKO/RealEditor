@@ -68,4 +68,5 @@ DECL_NAME(ObjectArchetype);
 DECL_NAME(Component);
 DECL_NAME(MetaData);
 DECL_NAME(StaticMesh);
+DECL_NAME(PersistentCookerData);
 DECL_NAME(Class);

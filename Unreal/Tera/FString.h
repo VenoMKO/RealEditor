@@ -1,5 +1,6 @@
 #pragma once
 #include <stdarg.h>
+#include "Core.h"
 
 // Wrapper to keep track of '\0'
 class FString {
@@ -357,6 +358,11 @@ public:
     Data.resize(size);
   }
 
+  inline void Reserve(size_t size)
+  {
+    Data.reserve(size);
+  }
+
   inline bool IsAnsi() const
   {
     for (const char& ch : Data)
@@ -495,3 +501,26 @@ namespace std
     }
   };
 }
+
+class FStringRef {
+public:
+  FStringRef()
+  {}
+
+  ~FStringRef()
+  {
+    if (Cached)
+    {
+      delete Cached;
+    }
+  }
+
+  FString GetString();
+
+  FString GetString(FStream& s);
+
+  FString* Cached = nullptr;
+  FILE_OFFSET Size = -1;
+  FILE_OFFSET Offset = -1;
+  FPackage* Package = nullptr;
+};

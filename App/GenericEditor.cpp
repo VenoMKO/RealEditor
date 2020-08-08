@@ -1,5 +1,8 @@
 #include "PackageWindow.h"
 
+#include <Tera/ALog.h>
+#include <Tera/UObject.h>
+
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, UObject* object)
 {
   GenericEditor* editor = new GenericEditor(parent);
@@ -15,4 +18,11 @@ GenericEditor::GenericEditor(wxPanel* parent)
 
 void GenericEditor::LoadObject()
 {
+  if (!Object->IsLoaded())
+  {
+    // TODO: Load in background
+    PERF_START(UI_LOAD_OBJECT);
+    Object->Load();
+    PERF_END(UI_LOAD_OBJECT);
+  }
 }

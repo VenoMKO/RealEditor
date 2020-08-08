@@ -4,6 +4,7 @@
 #include "FObjectResource.h"
 #include "UObject.h"
 #include "UClass.h" 
+#include "UPersistentCookerData.h"
 #include "Cast.h"
 
 #include <iostream>
@@ -16,6 +17,7 @@ const char* PackageMapperName = "PkgMapper";
 const char* CompositePackageMapperName = "CompositePackageMapper";
 const char* ObjectRedirectorMapperName = "ObjectRedirectorMapper";
 const char* PackageListName = "DirCache.re";
+const char* PersistentDataName = "GlobalPersistentCookerData";
 
 const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
 const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
@@ -30,6 +32,8 @@ std::vector<FString> FPackage::DirCache;
 std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
 std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
+std::unordered_map<FString, FBulkDataInfo> FPackage::BulkDataMap;
+std::unordered_map<FString, FTextureFileCacheInfo> FPackage::TextureCacheMap;
 std::mutex FPackage::ClassMapMutex;
 std::unordered_map<FString, UObject*> FPackage::ClassMap;
 std::unordered_set<FString> FPackage::MissingClasses;
@@ -158,33 +162,42 @@ uint16 FPackage::GetCoreVersion()
   return CoreVersion;
 }
 
-void FPackage::LoadDefaultClassPackages()
+void FPackage::LoadPersistentData()
 {
-  LogI("Loading default class packages...");
-  for (const auto& name : DefaultClassPackageNames)
-  {
-    if (auto package = GetPackageNamed(name))
-    {
-      package->Load();
-      DefaultClassPackages.push_back(package);
-      if (name == DefaultClassPackageNames[0])
-      {
-        CoreVersion = package->GetFileVersion();
-        LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
-      }
-      else if (package->GetFileVersion() != CoreVersion)
-      {
-        UThrow("Package %s has different version %d/%d ", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
-      }
-    }
-    else
-    {
-      UThrow("Failed to load %s package", name.C_str());
-    }
-  }
-  for (auto package : DefaultClassPackages)
+  if (std::shared_ptr<FPackage> package = GetPackageNamed(PersistentDataName))
   {
     package->Load();
+    for (FObjectExport* exp : package->Exports)
+    {
+      if (exp->GetClassName() == UPersistentCookerData::StaticClassName())
+      {
+        if (UPersistentCookerData* data = Cast<UPersistentCookerData>(package->GetObject(exp->ObjectIndex, false)))
+        {
+          data->GetPersistentData(BulkDataMap, TextureCacheMap);
+          break;
+        }
+      }
+    }
+    UnloadPackage(package);
+  }
+}
+
+void FPackage::LoadClassPackage(const FString& name)
+{
+  LogI("Loading %s", name.C_str());
+  if (auto package = GetPackageNamed(name))
+  {
+    package->Load();
+    DefaultClassPackages.push_back(package);
+    if (name == "Core.u")
+    {
+      CoreVersion = package->GetFileVersion();
+      LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
+    }
+    else if (package->GetFileVersion() != CoreVersion)
+    {
+      UThrow("Package %s has different version %d/%d ", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
+    }
 
     UClass::CreateBuiltInClasses(package.get());
 
@@ -199,7 +212,7 @@ void FPackage::LoadDefaultClassPackages()
     // Don't load referenced objects
     packageStream.SetLoadSerializedObjects(false);
     package->Stream->SetLoadSerializedObjects(false);
-    
+
     // List of root classes
     std::vector<UObject*> classes;
     // List of root defaults\templates
@@ -308,13 +321,13 @@ void FPackage::LoadDefaultClassPackages()
 #if MULTITHREADED_CLASS_SERIALIZATION
     });
 #else
-  }
+    }
 #endif
 
     // It's safe to load references now
     package->Stream->SetLoadSerializedObjects(true);
     packageStream.SetLoadSerializedObjects(true);
-    
+
 #if MULTITHREADED_CLASS_SERIALIZATION
     concurrency::parallel_for(size_t(0), size_t(other.size()), [&](size_t idx) {
 #else
@@ -350,7 +363,6 @@ void FPackage::LoadDefaultClassPackages()
     {
       UObject* obj = package->GetObject(exp->ObjectIndex, false);
       DBreakIf(!obj || !obj->IsLoaded());
-      int x = 1;
     }
 #endif
   }

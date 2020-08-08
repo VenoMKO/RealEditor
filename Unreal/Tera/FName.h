@@ -76,6 +76,37 @@ public:
   FString String() const;
   void GetString(FString& output) const;
   void SetString(const FString& str);
+
+  void SetIndex(NAME_INDEX index)
+  {
+    Index = index;
+  }
+
+  void SetNumber(int32 number)
+  {
+    Number = number;
+  }
+
+  NAME_INDEX GetIndex() const
+  {
+    return Index;
+  }
+
+  int32 GetNumber() const
+  {
+    return Number;
+  }
+
+  FPackage* GetPackage() const
+  {
+    return Package;
+  }
+
+  void SetPackage(FPackage* package)
+  {
+    Package = package;
+  }
+
 private:
   NAME_INDEX Index = 0;
   int32 Number = 0;

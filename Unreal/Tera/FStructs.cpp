@@ -49,18 +49,19 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   {
     UThrow("File is not a valid package.");
   }
-
-  s << sum.FileVersion << sum.LicenseeVersion;
-  if (s.IsReading() && (sum.FileVersion != 610 && sum.FileVersion != 897))
+  s << sum.FileVersion;
+  const uint16 fv = sum.GetFileVersion();
+  const uint16 lv = sum.GetLicenseeVersion();
+  if (s.IsReading() && (fv != 610 && fv != 897))
   {
-    UThrow("Package version \"%d/%d\" is not supported.", sum.FileVersion, sum.LicenseeVersion);
+    UThrow("Package version \"%d/%d\" is not supported.", fv, lv);
   }
 
   s << sum.HeaderSize;
   s << sum.FolderName;
   s << sum.PackageFlags;
 
-  if (sum.LicenseeVersion == 14)
+  if (fv == 610 && lv == 14)
   {
     if (!s.IsReading())
     {
@@ -77,7 +78,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.ExportsCount << sum.ExportsOffset;
   s << sum.ImportsCount << sum.ImportsOffset;
   s << sum.DependsOffset;
-  if (sum.FileVersion == 897)
+  if (fv == 897)
   {
     s << sum.ImportExportGuidsOffset;
     s << sum.ImportGuidsCount;
@@ -91,7 +92,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.CompressedChunks;
   s << sum.PackageSource;
   s << sum.AdditionalPackagesToCook;
-  if (sum.FileVersion == 897)
+  if (fv == 897)
   {
     s << sum.TextureAllocations;
   }
@@ -116,4 +117,51 @@ inline FString FScriptDelegate::ToString(const UObject* OwnerObject) const
 FStream& operator<<(FStream& s, FScriptDelegate& d)
 {
   return s << d.Object << d.FunctionName;
+}
+
+FStream& operator<<(FStream& s, FPacakgeTreeEntry& e)
+{
+  s << e.FullObjectName;
+  s << e.ClassName;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCookedBulkDataInfo& i)
+{
+  s << i.SavedBulkDataFlags;
+  s << i.SavedElementCount;
+  s << i.SavedBulkDataOffsetInFile;
+  s << i.SavedBulkDataSizeOnDisk;
+  s << i.TextureFileCacheName;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCookedTextureFileCacheInfo& i)
+{
+  s << i.TextureFileCacheGuid;
+  s << i.TextureFileCacheName;
+  s << i.LastSaved;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCookedTextureUsageInfo& i)
+{
+  s << i.PackageNames;
+  s << i.Format;
+  s << i.LODGroup;
+  s << i.SizeX << i.SizeY;
+  s << i.StoredOnceMipSize;
+  s << i.DuplicatedMipSize;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FForceCookedInfo& i)
+{
+  return s << i.CookedContentList;
+}
+
+FStream& operator<<(FStream& s, FSHA& i)
+{
+  s.SerializeBytes(i.Bytes, 20);
+  return s;
 }

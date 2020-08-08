@@ -67,4 +67,5 @@ DEF_NAME(ObjectArchetype);
 DEF_NAME(Component);
 DEF_NAME(MetaData);
 DEF_NAME(StaticMesh);
+DEF_NAME(PersistentCookerData);
 DEF_NAME(Class);

@@ -123,20 +123,8 @@ struct FPackageSummary {
 	FPackageSummary()
 	{}
 
-	FPackageSummary(bool modern)
-	{
-		if (modern)
-		{
-			FileVersion = 897;
-			LicenseeVersion = 17;
-			EngineVersion = 13249;
-			ContentVersion = 142;
-		}
-	}
-
 	uint32 Magic = PACKAGE_MAGIC;
-	uint16 FileVersion = 610;
-	uint16 LicenseeVersion = 14;
+	uint32 FileVersion = 0;
 	int32 HeaderSize = 0;
 	FString FolderName = "None";
 	uint32 PackageFlags = 0;
@@ -161,6 +149,20 @@ struct FPackageSummary {
 	std::vector<FString> AdditionalPackagesToCook;
 	FTextureAllocations TextureAllocations;
 
+	uint16 GetFileVersion() const
+	{
+		return (FileVersion & 0xFFFF);
+	}
+
+	uint16 GetLicenseeVersion() const
+	{
+		return ((FileVersion >> 16) & 0xFFFF);
+	}
+
+	void SetFileVersion(uint16 engine, uint16 licensee)
+	{
+		FileVersion = ((licensee << 16) | engine);;
+	}
 	// Path to the package
 	FString SourcePath;
 	// Path to the decompressed package. Equals to the SourcePath if a package is not compressed
@@ -201,4 +203,106 @@ struct FScriptDelegate
 
 	inline FString ToString(const UObject* OwnerObject) const;
 	friend FStream& operator<<(FStream& s, FScriptDelegate& d);
+};
+
+struct FPacakgeTreeEntry
+{
+	FStringRef FullObjectName;
+	FStringRef ClassName;
+
+	friend FStream& operator<<(FStream& s, FPacakgeTreeEntry& e);
+};
+
+struct FCookedBulkDataInfo
+{
+	uint32 SavedBulkDataFlags = 0;
+	uint32 SavedElementCount = 0;
+	uint32 SavedBulkDataOffsetInFile = 0;
+	uint32 SavedBulkDataSizeOnDisk = 0;
+	FName	TextureFileCacheName;
+
+	friend FStream& operator<<(FStream& s, FCookedBulkDataInfo& i);
+};
+
+struct FBulkDataInfo
+{
+	FBulkDataInfo()
+	{}
+
+	FBulkDataInfo(const FCookedBulkDataInfo& v)
+		: SavedBulkDataFlags(v.SavedBulkDataFlags)
+		, SavedElementCount(v.SavedElementCount)
+		, SavedBulkDataOffsetInFile(v.SavedBulkDataOffsetInFile)
+		, SavedBulkDataSizeOnDisk(v.SavedBulkDataSizeOnDisk)
+		, TextureFileCacheName(v.TextureFileCacheName.String())
+	{}
+
+	uint32 SavedBulkDataFlags = 0;
+	uint32 SavedElementCount = 0;
+	uint32 SavedBulkDataOffsetInFile = 0;
+	uint32 SavedBulkDataSizeOnDisk = 0;
+	FString	TextureFileCacheName;
+};
+
+struct FCookedTextureFileCacheInfo
+{
+	FGuid TextureFileCacheGuid;
+	FName TextureFileCacheName;
+	double LastSaved = 0;
+
+	friend FStream& operator<<(FStream& s, FCookedTextureFileCacheInfo& i);
+};
+
+struct FTextureFileCacheInfo
+{
+	FTextureFileCacheInfo()
+	{}
+
+	FTextureFileCacheInfo(const FCookedTextureFileCacheInfo& i)
+		: TextureFileCacheGuid(i.TextureFileCacheGuid)
+		, TextureFileCacheName(i.TextureFileCacheName.String())
+		, LastSaved(i.LastSaved)
+	{}
+
+	FGuid TextureFileCacheGuid;
+	FString TextureFileCacheName;
+	double LastSaved = 0;
+};
+
+struct FCookedTextureUsageInfo
+{
+	std::vector<FStringRef>	PackageNames;
+	uint8 Format = 0xFF;
+	uint8 LODGroup = 0xFF;
+	int32 SizeX = 0;
+	int32 SizeY = 0;
+	int32 StoredOnceMipSize = 0;
+	int32 DuplicatedMipSize = 0;
+
+	friend FStream& operator<<(FStream& s, FCookedTextureUsageInfo& i);
+};
+
+struct FForceCookedInfo
+{
+	std::map<FString, bool> CookedContentList;
+
+	friend FStream& operator<<(FStream& s, FForceCookedInfo& i);
+};
+
+struct FSHA
+{
+	uint8* GetBytes()
+	{
+		return Bytes;
+	}
+
+	const uint8* GetBytes() const
+	{
+		return Bytes;
+	}
+
+	friend FStream& operator<<(FStream& s, FSHA& i);
+
+protected:
+	uint8 Bytes[20];
 };

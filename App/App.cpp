@@ -256,8 +256,11 @@ int App::OnRun()
 
 void App::LoadCore(ProgressWindow* pWindow)
 {
+  PERF_START(AppLoad);
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating root folder...");
+  PERF_START(DirCacheLoad);
   FPackage::SetRootPath(Config.RootDir);
+  PERF_END(DirCacheLoad);
 
   if (pWindow->IsCancelled())
   {
@@ -265,11 +268,37 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
-  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading class packages...");
+  const std::vector<FString> classPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u", "UnrealEd.u"};
+  PERF_START(ClassPackagesLoad);
+  for (const FString& name : classPackageNames)
+  {
+    wxString desc = wxS("Loading ");
+    desc += name.String() + "...";
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, desc);
+    try
+    {
+      FPackage::LoadClassPackage(name);
+    }
+    catch (const std::exception& e)
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, e.what());
+      return;
+    }
+    if (pWindow->IsCancelled())
+    {
+      wxQueueEvent(this, new wxCloseEvent());
+      return;
+    }
+  }
+  PERF_END(ClassPackagesLoad);
 
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading persistent data...");
   try
   {
-    FPackage::LoadDefaultClassPackages();
+    PERF_START(PersistentStorageLoad);
+    FPackage::LoadPersistentData();
+    PERF_END(PersistentStorageLoad);
   }
   catch (const std::exception& e)
   {
@@ -292,7 +321,9 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread pkgMapper([&errorMutex, &error] {
       try
       {
+        PERF_START(PkgMapperLoad);
         FPackage::LoadPkgMapper();
+        PERF_END(PkgMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -307,7 +338,9 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread compositMapper([&errorMutex, &error] {
       try
       {
+        PERF_START(CompositeMapperLoad);
         FPackage::LoadCompositePackageMapper();
+        PERF_END(CompositeMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -322,7 +355,9 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread objectRedirectorMapper([&errorMutex, &error] {
       try
       {
+        PERF_START(RedirectorMapperLoad);
         FPackage::LoadObjectRedirectorMapper();
+        PERF_END(RedirectorMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -350,6 +385,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       wxQueueEvent(this, new wxCloseEvent());
       return;
     }
+    PERF_END(AppLoad);
   }
   
 

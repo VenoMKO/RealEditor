@@ -6,7 +6,6 @@
 
 struct FPropertyTag
 {
-	// Variables.
 	FName Type;
 	uint8 BoolVal = 0;
 	FName Name;
@@ -58,11 +57,11 @@ struct FPropertyTag
 		return s;
 	}
 
-	void SerializeTaggedProperty(FStream& s, UProperty* property, UObject* Value, UStruct* Defaults)
+	void SerializeTaggedProperty(FStream& s, UProperty* property, UObject* object, UStruct* defaults)
 	{
 		if (property->GetStaticClassName() != UBoolProperty::StaticClassName())
 		{
-			property->SerializeItem(s, this, Value, Defaults);
+			property->SerializeItem(s, this, object, defaults);
 		}
 	}
 };

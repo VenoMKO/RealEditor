@@ -11,6 +11,7 @@
 // Objects
 #include "UObjectRedirector.h"
 #include "UMaterial.h"
+#include "UPersistentCookerData.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -115,6 +116,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UObjectRedirector::StaticClassName())
   {
     result = new UObjectRedirector(exp);
+  }
+  else if (c == UPersistentCookerData::StaticClassName())
+  {
+    result = new UPersistentCookerData(exp);
   }
   else if (c == UMaterialExpressionComponentMask::StaticClassName())
   {

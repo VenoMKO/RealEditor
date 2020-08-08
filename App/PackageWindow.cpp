@@ -169,7 +169,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 			UObject* object = fobj->Object;
 			if (!object)
 			{
-				Package->GetObject(index);
+				Package->GetObject(index, false);
 				object = fobj->Object;
 			}
 			GenericEditor* e = GenericEditor::CreateEditor(EditorContainer, object);

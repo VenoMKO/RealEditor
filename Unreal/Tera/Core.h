@@ -9,14 +9,16 @@
 // Build configuration
 // --------------------------------------------------------------------
 
+#define ENABLE_PERF_SAMPLE 1
+
 #if _DEBUG
 // DUMP_PATH should be set to the ENV
 #if defined(DUMP_PATH)
 #define DUMP_OBJECTS 0
 #define DUMP_PACKAGES 0
-#define DUMP_MAPPERS 0
+#define DUMP_MAPPERS 1
 #endif
-#define MULTITHREADED_CLASS_SERIALIZATION 0
+#define MULTITHREADED_CLASS_SERIALIZATION 1
 #define SERIALIZE_PROPERTIES 1
 #else
 #define MULTITHREADED_CLASS_SERIALIZATION 1
@@ -63,6 +65,8 @@ enum { INDEX_NONE = -1 };
 #include <vector>
 // Use std::map instead of TMap
 #include <map>
+
+#include <chrono>
 
 // --------------------------------------------------------------------
 // Forward
@@ -174,9 +178,9 @@ namespace LZO
 // --------------------------------------------------------------------
 
 // Performance measure
-#if _DEBUG
+#if ENABLE_PERF_SAMPLE
 #define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
-#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::miliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
+#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
 #else
 #define PERF_START(ID)
 #define PERF_END(ID)

@@ -209,3 +209,11 @@ enum : uint64 {
   CPF_CrossLevelPassive = 0x0000100000000000,
   CPF_CrossLevelActive = 0x0000200000000000,
 };
+
+enum ECompressionFlags
+{
+  COMPRESS_None = 0x00,
+  COMPRESS_ZLIB = 0x01,
+  COMPRESS_LZO = 0x02,
+  COMPRESS_LZX = 0x04
+};

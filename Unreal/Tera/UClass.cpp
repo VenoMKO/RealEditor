@@ -44,10 +44,6 @@ UStruct::~UStruct()
 
 void UStruct::Link()
 {
-  if (GetObjectName() == "SkeletalMesh")
-  {
-    int x = 1;
-  }
   for (TFieldIterator<UStruct> it(this); it; ++it)
   {
     it->Link();
@@ -71,6 +67,10 @@ void UStruct::Serialize(FStream& s)
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s << SuperStruct;
+  }
+  else
+  {
+    SuperStruct = (UStruct*)Superfield;
   }
 
   s << ScriptText;
@@ -113,16 +113,21 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, UStruct* de
   if (s.IsReading())
   {
     bool advance = false;
-    UProperty* last = nullptr;
+    
     UProperty* property = PropertyLink;
     int32 remainingDim = property ? property->ArrayDim : 0;
+#if _DEBUG
+    UProperty* last = nullptr;
     static int32 GIteration = -1;
     int32 iterations = 0;
+#endif
     while (1)
     {
+#if _DEBUG
       GIteration++;
       iterations++;
       last = property;
+#endif
       FPropertyTag tag;
       s << tag;
 
@@ -176,107 +181,39 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, UStruct* de
       }
       else if (tag.ArrayIndex >= property->ArrayDim || tag.ArrayIndex < 0)
       {
-        LogW("Array bounds in %s of %s: %i/%i for package:  %s", tagName.c_str(), object->GetObjectName().WString().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
+        LogE("Array bounds in %s of %s: %i/%i for package:  %s", tagName.c_str(), object->GetObjectName().WString().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
+        DBreak();
       }
       else if (tagType == NAME_StrProperty && Cast<UNameProperty>(property) != nullptr)
       {
-        FString str;
-        s << str;
-        //*(FName*)(Data + PropertyLink->Offset + Tag.ArrayIndex * PropertyLink->ElementSize) = FName(*str);
-        advance = true;
-        continue;
-      }
-      else if (tagType == NAME_ByteProperty && property->GetID() == NAME_IntProperty)
-      {
-        uint8 previousValue;
-        FString enumName = tag.EnumName.String();
-        if (enumName.Size() && enumName != NAME_None)
-        {
-          FName enumValue;
-          s << enumValue;
-          UEnum* enumObj = FindField<UEnum>(defaultsClass ? defaultsClass : defaultsStruct->GetTypedOuter<UClass>(), enumName);
-          if (!enumObj)
-          {
-            // TODO: Look for the enum on other packages
-          }
-          if (!enumObj)
-          {
-            LogW("Failed to find enum '%s' when converting property '%s' to int during property loading", enumName.UTF8().c_str(), tagName.c_str());
-            previousValue = 0;
-          }
-          else
-          {
-            previousValue = enumObj->FindEnumIndex(enumValue);
-            if (enumObj->NumEnums() < previousValue)
-            {
-              previousValue = enumObj->NumEnums() - 1;
-            }
-          }
-        }
-        else
-        {
-          s << previousValue;
-        }
-
-        //*(INT*)(Data + PropertyLink->Offset + Tag.ArrayIndex * PropertyLink->ElementSize) = PreviousValue;
-        advance = true;
-        continue;
+        LogE("Property type mismatch in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        DBreak();
       }
       else if (property->GetID() != tagType)
       {
         LogE("Property type mismatch in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        DBreak();
       }
       else if (tagType == NAME_StructProperty && tag.StructName.String() != CastChecked<UStructProperty>(property)->Struct->GetObjectName())
       {
         LogE("Property %s of %s struct type mismatch %s/%s", tagName.c_str(), object->GetObjectName().UTF8(), tag.StructName.String().UTF8().c_str(), CastChecked<UStructProperty>(property)->Struct->GetObjectName().UTF8().c_str());
+        DBreak();
       }
-      else if (tagType == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
+      else if (tagType == NAME_ByteProperty && 
+              ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || 
+                (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
       {
-        uint8 previousValue = 0;
-        if (tag.EnumName == NAME_None)
-        {
-          // simply pretend the property still doesn't have an enum and serialize the single byte
-          s << previousValue;
-        }
-        else
-        {
-          // attempt to find the old enum and get the byte value from the serialized enum name
-          FName enumValue;
-          s << enumValue;
-          UEnum* enumObj = FindField<UEnum>(defaultsClass ? defaultsClass : defaultsStruct->GetTypedOuter<UClass>(), tag.EnumName.String());
-          if (!enumObj)
-          {
-            // TODO: find enum in other packages
-          }
-          if (!enumObj)
-          {
-            LogW("Failed to find enum '%s' when converting property '%s' to byte during property loading", tag.EnumName.String().UTF8().c_str(), tag.Name.String().UTF8().c_str());
-            previousValue = 0;
-          }
-          else
-          {
-            previousValue = enumObj->FindEnumIndex(enumValue);
-            if (enumObj->NumEnums() < previousValue)
-            {
-              previousValue = enumObj->NumEnums() - 1;
-            }
-          }
-        }
-
-        // now copy the value into the object's address space
-        //*(BYTE*)(Data + Property->Offset + Tag.ArrayIndex * Property->ElementSize) = previousValue;
-        advance = true;
-        continue;
+        LogE("Property coversion required in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        DBreak();
       }
       else
       {
-        //s.SetPosition(s.GetPosition() + tag.Size);
         tag.SerializeTaggedProperty(s, property, object, defaultsStruct);
         advance = true;
         continue;
       }
-      LogE("Skipping property %s of %ls in %s package", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
       s.SetPosition(s.GetPosition() + tag.Size);
+      LogW("Skipping property %s of %ls in %s package", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
     }
   }
 }
@@ -343,6 +280,10 @@ void UClass::CreateBuiltInClasses(FPackage* package)
   {
     MAKE_CLASS(NAME_StaticMesh);
     UStaticMesh::ConfigureClassObject(obj);
+  }
+  else if (pkgName == "UnrealEd")
+  {
+    MAKE_CLASS(NAME_PersistentCookerData);
   }
 }
 

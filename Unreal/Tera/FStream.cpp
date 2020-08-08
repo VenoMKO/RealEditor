@@ -50,3 +50,23 @@ uint16 FStream::GetLV() const
 {
   return Package ? Package->GetLicenseeVersion() : 0;
 }
+
+FStream& FStream::operator<<(FStringRef& r)
+{
+  if (IsReading())
+  {
+    r.Package = GetPackage();
+    r.Offset = GetPosition();
+    (*this) << r.Size;
+    SetPosition(r.Offset + sizeof(FILE_OFFSET) + r.Size);
+  }
+  else
+  {
+    if (r.Cached->Empty())
+    {
+      r.GetString();
+    }
+    (*this) << *r.Cached;
+  }
+  return *this;
+}

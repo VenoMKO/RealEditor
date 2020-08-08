@@ -27,6 +27,7 @@
     <ClCompile Include="Unreal\Tera\FObjectResource.cpp" />
     <ClCompile Include="Unreal\Tera\FPackage.cpp" />
     <ClCompile Include="Unreal\Tera\FStream.cpp" />
+    <ClCompile Include="Unreal\Tera\FString.cpp" />
     <ClCompile Include="Unreal\Tera\FStructs.cpp" />
     <ClCompile Include="Unreal\Tera\UClass.cpp" />
     <ClCompile Include="Unreal\Tera\UComponent.cpp" />
@@ -34,6 +35,7 @@
     <ClCompile Include="Unreal\Tera\UObject.cpp" />
     <ClCompile Include="Unreal\Tera\UObjectFactory.cpp" />
     <ClCompile Include="Unreal\Tera\UObjectRedirector.cpp" />
+    <ClCompile Include="Unreal\Tera\UPersistentCookerData.cpp" />
     <ClCompile Include="Unreal\Tera\UProperty.cpp" />
     <ClCompile Include="Unreal\Tera\UStaticMesh.cpp" />
   </ItemGroup>
@@ -69,6 +71,7 @@
     <ClInclude Include="Unreal\Tera\UNames.h" />
     <ClInclude Include="Unreal\Tera\UObject.h" />
     <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
+    <ClInclude Include="Unreal\Tera\UPersistentCookerData.h" />
     <ClInclude Include="Unreal\Tera\UProperty.h" />
     <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
   </ItemGroup>
