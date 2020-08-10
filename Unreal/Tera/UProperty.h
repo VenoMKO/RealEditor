@@ -3,23 +3,9 @@
 #include "UClass.h"
 #include "FScriptArray.h"
 
-union UPropertyValue
-{
-	uint8 ByteValue;
-	int32 IntValue;
-	bool BoolValue;
-	float FloatValue;
-
-	UObject* ObjectValue;
-	UComponent* ComponentValue;
-	UClass* ClassValue;
-
-	FName* NameValue;
-	FString* StringValue;
-	FScriptArray* ArrayValue;
-};
 
 struct FPropertyTag;
+struct FPropertyValue;
 class UProperty : public UField {
 public:
   DECL_UOBJ(UProperty, UField);
@@ -29,7 +15,7 @@ public:
 
 	virtual FString GetID() = 0;
 
-	virtual void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const = 0;
+	virtual void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const = 0;
 
 	int32 ArrayDim = 1;
 	uint64 PropertyFlags = 0;
@@ -46,7 +32,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -62,7 +48,7 @@ public:
 	DECL_UOBJ(UIntProperty, UProperty);
 	DECL_CLASS_INERIT(UIntProperty);
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -75,7 +61,7 @@ public:
 	DECL_UOBJ(UBoolProperty, UProperty);
 	DECL_CLASS_INERIT(UBoolProperty);
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -91,7 +77,7 @@ public:
 	DECL_UOBJ(UFloatProperty, UProperty);
 	DECL_CLASS_INERIT(UFloatProperty);
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -106,7 +92,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -141,7 +127,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -157,7 +143,7 @@ public:
 	DECL_UOBJ(UNameProperty, UProperty);
 	DECL_CLASS_INERIT(UNameProperty);
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -170,7 +156,7 @@ public:
 	DECL_UOBJ(UStrProperty, UProperty);
 	DECL_CLASS_INERIT(UStrProperty);
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -185,7 +171,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -203,7 +189,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -226,7 +212,7 @@ public:
 	}
 
 	void Serialize(FStream& s) override;
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 public:
 	UScriptStruct* Struct = nullptr;
@@ -239,7 +225,7 @@ public:
 
 	void Serialize(FStream& s) override;
 
-	void SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults = nullptr) const override;
+	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 	FString GetID() override
 	{
@@ -247,6 +233,6 @@ public:
 	}
 
 public:
-	UObject* Function;
-	UObject* SourceDelegate;
+	UObject* Function = nullptr;
+	UObject* SourceDelegate = nullptr;
 };

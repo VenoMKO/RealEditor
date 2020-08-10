@@ -193,9 +193,6 @@ struct FVector2D {
 	friend FStream& operator<<(FStream& s, FVector2D& v);
 };
 
-/*-----------------------------------------------------------------------------
-	FScriptDelegate.
------------------------------------------------------------------------------*/
 struct FScriptDelegate
 {
 	UObject* Object = nullptr;

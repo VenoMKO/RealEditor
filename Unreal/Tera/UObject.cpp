@@ -58,7 +58,7 @@ void UObject::SerializeScriptProperties(FStream& s) const
   }
   if (Class)
   {
-    Class->SerializeTaggedProperties(s, (UObject*)this, HasAnyFlags(RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
+    Class->SerializeTaggedProperties(s, (UObject*)this, nullptr, HasAnyFlags(RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
     return;
   }
   FName noneProp;
@@ -100,6 +100,11 @@ UObject::~UObject()
   {
     delete[] RawData;
   }
+  for (FPropertyTag* tag : Properties)
+  {
+    delete tag;
+  }
+  Properties.clear();
 }
 
 void UObject::Serialize(FStream& s)

@@ -26,6 +26,7 @@
     <ClCompile Include="Unreal\Tera\FName.cpp" />
     <ClCompile Include="Unreal\Tera\FObjectResource.cpp" />
     <ClCompile Include="Unreal\Tera\FPackage.cpp" />
+    <ClCompile Include="Unreal\Tera\FPropertyTag.cpp" />
     <ClCompile Include="Unreal\Tera\FStream.cpp" />
     <ClCompile Include="Unreal\Tera\FString.cpp" />
     <ClCompile Include="Unreal\Tera\FStructs.cpp" />

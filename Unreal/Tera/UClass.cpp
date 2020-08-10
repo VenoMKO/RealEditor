@@ -106,13 +106,18 @@ void UState::Serialize(FStream& s)
   s << FuncMap;
 }
 
-void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, UStruct* defaultsStruct, void* defaults, int32 defaultsCount) const
+void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultsStruct, void* defaults, int32 defaultsCount) const
 {
   UClass* defaultsClass = (UClass*)defaultsStruct;
 
   if (s.IsReading())
   {
     bool advance = false;
+
+    if (value && !value->Data)
+    {
+      value->Data = new std::vector<FPropertyValue*>;
+    }
     
     UProperty* property = PropertyLink;
     int32 remainingDim = property ? property->ArrayDim : 0;
@@ -128,7 +133,22 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, UStruct* de
       iterations++;
       last = property;
 #endif
-      FPropertyTag tag;
+      FPropertyTag* tagPtr = nullptr;
+      if (value)
+      {
+        FPropertyValue* v = new FPropertyValue(value->Property);
+        v->Type = FPropertyValue::VID::Property;
+        v->Data = new FPropertyTag(object);
+        tagPtr = v->GetPropertyTagPtr();
+        value->GetArray().push_back(v);
+      }
+      else
+      {
+        tagPtr = new FPropertyTag(object);
+        object->AddProperty(tagPtr);
+      }
+
+      FPropertyTag& tag = *tagPtr;
       s << tag;
 
       std::string tagName = tag.Name.String().UTF8();
@@ -208,37 +228,63 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, UStruct* de
       }
       else
       {
-        tag.SerializeTaggedProperty(s, property, object, defaultsStruct);
+        if (property->GetStaticClassName() == UBoolProperty::StaticClassName())
+        {
+          tag.Value->Data = new bool;
+          tag.Value->Type = FPropertyValue::VID::Bool;
+          tag.Value->GetBool() = tag.BoolVal;
+        }
+        else
+        {
+          property->SerializeItem(s, tag.Value, object, defaultsStruct);
+        }
         advance = true;
         continue;
       }
-      s.SetPosition(s.GetPosition() + tag.Size);
+
+      tag.Value->Data = new uint8[tag.Size];
+      tag.Value->Type = FPropertyValue::VID::Unk;
+      s.SerializeBytes(tag.GetValueData(), tag.Size);
       LogW("Skipping property %s of %ls in %s package", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
     }
   }
 }
 
-void UStruct::SerializeBin(FStream& s, FPropertyTag* tag, UObject* object) const
+void UStruct::SerializeBin(FStream& s, FPropertyValue* value, UObject* object) const
 {
-  for (UProperty* property = PropertyLink; property; property = property->PropertyLinkNext)
+  int32 idx = 0;
+  for (UProperty* property = PropertyLink; property; property = property->PropertyLinkNext, ++idx)
   {
-    SerializeBinProperty(property, tag, s, object);
+    if (s.IsReading())
+    {
+      value->GetArray().push_back(new FPropertyValue(value->Property));
+    }
+    SerializeBinProperty(property, value->GetArray()[idx], s, object);
   }
 }
 
-void UStruct::SerializeBinEx(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const
+void UStruct::SerializeBinEx(FStream& s, FPropertyValue* value, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const
 {
   if (!defaults || !defaultsCount)
   {
-    SerializeBin(s, tag, object);
+    SerializeBin(s, value, object);
   }
 }
 
-void UStruct::SerializeBinProperty(UProperty* property, FPropertyTag* tag, FStream& s, UObject* object) const
+void UStruct::SerializeBinProperty(UProperty* property, FPropertyValue* value, FStream& s, UObject* object) const
 {
-  for (int32 Idx = 0; Idx < property->ArrayDim; Idx++)
+  if (s.IsReading())
   {
-    property->SerializeItem(s, tag, object);
+    value->Data = new std::vector<FPropertyValue*>;
+    value->Type = FPropertyValue::VID::Struct;
+  }
+  for (int32 idx = 0; idx < property->ArrayDim; idx++)
+  {
+    if (s.IsReading())
+    {
+      value->GetArray().push_back(new FPropertyValue(value->Property));
+    }
+    property->SerializeItem(s, value->GetArray()[idx], object);
   }
 }
 

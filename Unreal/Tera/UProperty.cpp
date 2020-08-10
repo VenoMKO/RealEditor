@@ -2,6 +2,7 @@
 #include "FStream.h"
 #include "FPropertyTag.h"
 #include "FStructs.h"
+#include "FString.h"
 
 #define CPF_Net 0x0000000000000020
 #define STRUCT_Immutable 0x00000020
@@ -63,119 +64,176 @@ void UByteProperty::Serialize(FStream& s)
   s << Enum;
 }
 
-void UInterfaceProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  DBreak();
-}
-
-void UMapProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  DBreak();
-}
-
-void UByteProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  const bool bUseBinarySerialization = (Enum == nullptr);
-  uint8 value = 0;
-  if (bUseBinarySerialization)
-  {
-    s << value;
-  }
-  else if (s.IsReading())
-  {
-    FName EnumValueName;
-    s << EnumValueName;
-
-    value = Enum->FindEnumIndex(EnumValueName);
-    if (Enum->NumEnums() < value)
-    {
-      value = Enum->NumEnums() - 1;
-    }
-  }
-  else
-  {
-    FName EnumValueName(s.GetPackage());
-    uint8 ByteValue = value;
-
-    if (ByteValue < Enum->NumEnums() - 1)
-    {
-      EnumValueName = Enum->GetEnum(ByteValue);
-    }
-    else
-    {
-      EnumValueName.SetString(NAME_None);
-    }
-    s << EnumValueName;
-  }
-}
-
 void UDelegateProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
   s << Function << SourceDelegate;
 }
 
-void UDelegateProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+void UInterfaceProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  FScriptDelegate delegate;
-  s << delegate;
+  DBreak();
 }
 
-void UIntProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+void UMapProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  int32 value;
-  s << value;
+  DBreak();
 }
 
-void UBoolProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+void UByteProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  uint8 b = tag->BoolVal;
-  s << b;
-}
-
-void UFloatProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  float v;
-  s << v;
-}
-
-void UNameProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  FName name;
-  s << name;
-}
-
-void UStrProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  FString value;
-  s << value;
-}
-
-void UArrayProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  int32 elementSize = 0;
-  int32 elementCount = 0;
-  s << elementCount;
-  for (int32 idx = 0; idx < elementCount; ++idx)
+  const bool bUseBinarySerialization = !Enum;
+  if (s.IsReading())
   {
-    Inner->SerializeItem(s, tag, object, defaults);
+    valuePtr->Type = FPropertyValue::VID::Byte;
+    valuePtr->Data = new uint8;
   }
-}
-void UStructProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
-{
-  bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) || (Struct->StructFlags & STRUCT_Immutable);
   if (bUseBinarySerialization)
   {
-    Struct->SerializeBin(s, tag, object);
+    s << valuePtr->GetByte();
+  }
+  else if (s.IsReading())
+  {
+    FName eValue;
+    s << eValue;
+    valuePtr->Enum = Enum;
+    valuePtr->GetByte() = Enum->FindEnumIndex(eValue);
+    if (Enum->NumEnums() < valuePtr->GetByte())
+    {
+      valuePtr->GetByte() = Enum->NumEnums() - 1;
+    }
   }
   else
   {
-    Struct->SerializeTaggedProperties(s, object, Struct, defaults);
+    FName eValue(s.GetPackage());
+    // TODO: maybe a bug during writing. Names table might not have eValue's string
+    if (valuePtr->GetByte() < Enum->NumEnums() - 1)
+    {
+      eValue = Enum->GetEnum(valuePtr->GetByte());
+    }
+    else
+    {
+      eValue.SetString(NAME_None);
+    }
+    s << eValue;
   }
 }
 
-void UObjectProperty::SerializeItem(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaults) const
+void UDelegateProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  UObject* obj = nullptr;
-  s << obj;
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Delegate;
+    valuePtr->Data = new FScriptDelegate;
+  }
+  s << valuePtr->GetScriptDelegate();
+}
+
+void UIntProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Int;
+    valuePtr->Data = new int;
+  }
+  s << valuePtr->GetInt();
+}
+
+void UBoolProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Bool;
+    valuePtr->Data = new bool;
+  }
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    uint8 tmp = valuePtr->GetBool();
+    s << tmp;
+    valuePtr->GetBool() = tmp;
+  }
+  else
+  {
+    s << valuePtr->GetBool();
+  }
+}
+
+void UFloatProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Float;
+    valuePtr->Data = new float;
+  }
+  s << valuePtr->GetFloat();
+}
+
+void UNameProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Name;
+    valuePtr->Data = new FName;
+  }
+  s << valuePtr->GetName();
+}
+
+void UStrProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::String;
+    valuePtr->Data = new FString;
+  }
+  s << valuePtr->GetString();
+}
+
+void UArrayProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  // TODO: this is super inefficient for RawData properties. Each byte has its own allocation. Refactor needed.
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Array;
+    valuePtr->Data = new std::vector<FPropertyValue*>;
+  }
+  int32 elementCount = (int32)valuePtr->GetArray().size();
+  s << elementCount;
+
+  for (int32 idx = 0; idx < elementCount; ++idx)
+  {
+    if (s.IsReading())
+    {
+      valuePtr->GetArray().push_back(new FPropertyValue(valuePtr->Property));
+    }
+    Inner->SerializeItem(s, valuePtr->GetArray()[idx], object, defaults);
+  }
+}
+
+void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) || (Struct->StructFlags & STRUCT_Immutable);
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Struct;
+    valuePtr->Data = new std::vector<FPropertyValue*>;
+  }
+  
+  if (bUseBinarySerialization)
+  {
+    Struct->SerializeBin(s, valuePtr, object);
+  }
+  else
+  {
+    Struct->SerializeTaggedProperties(s, object, valuePtr, Struct, defaults);
+  }
+}
+
+void UObjectProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
+{
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Object;
+    valuePtr->Data = new UObject*;
+  }
+  s << valuePtr->GetObject();
 }

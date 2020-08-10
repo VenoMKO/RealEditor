@@ -111,6 +111,24 @@ public:
     return *this == std::string(a);
   }
 
+  inline std::wstring AppendPath(const FString& path)
+  {
+    if (Empty())
+    {
+      return path.WString();
+    }
+    else if (path.Empty())
+    {
+      return WString();
+    }
+
+    if (Data.back() == '\\')
+    {
+      return A2W(Data + path.String());
+    }
+    return A2W(Data + '\\' + path.String());
+  }
+
   inline std::wstring FilenameW(bool extension = true) const
   {
     if (extension)

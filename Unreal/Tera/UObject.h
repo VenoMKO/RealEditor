@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.h"
 #include "FStream.h"
+#include "FPropertyTag.h"
 
 // Common UObject subclass declarations
 #define DECL_UOBJ(TClass, TSuper)\
@@ -121,6 +122,16 @@ public:
     return Class;
   }
 
+  std::vector<FPropertyTag*> GetProperties() const
+  {
+    return Properties;
+  }
+
+  void AddProperty(FPropertyTag* property)
+  {
+    Properties.push_back(property);
+  }
+
 private:
   virtual void SerializeScriptProperties(FStream& s) const;
 
@@ -142,6 +153,8 @@ protected:
   UObject* DefaultObject = nullptr;
 
   UObject* Outer = nullptr;
+
+  std::vector<FPropertyTag*> Properties;
 
   FILE_OFFSET RawDataOffset = 0;
   FILE_OFFSET RawDataSize = 0;

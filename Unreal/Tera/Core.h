@@ -16,9 +16,9 @@
 #if defined(DUMP_PATH)
 #define DUMP_OBJECTS 0
 #define DUMP_PACKAGES 0
-#define DUMP_MAPPERS 1
+#define DUMP_MAPPERS 0
 #endif
-#define MULTITHREADED_CLASS_SERIALIZATION 1
+#define MULTITHREADED_CLASS_SERIALIZATION 0
 #define SERIALIZE_PROPERTIES 1
 #else
 #define MULTITHREADED_CLASS_SERIALIZATION 1
@@ -137,6 +137,7 @@ uint64 GetFileTime(const std::wstring& path);
 
 // Format like a C string
 std::string Sprintf(const char* fmt, ...);
+std::wstring Sprintf(const wchar* fmt, ...);
 std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);

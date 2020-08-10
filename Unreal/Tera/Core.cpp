@@ -147,6 +147,30 @@ std::string Sprintf(const char* fmt, ...)
   return std::string(formatted.get());
 }
 
+std::wstring Sprintf(const wchar* fmt, ...)
+{
+  int final_n, n = ((int)wcslen(fmt)) * 2;
+  std::unique_ptr<wchar[]> formatted;
+  va_list ap;
+  while (1)
+  {
+    formatted.reset(new wchar[n]);
+    wcscpy(&formatted[0], fmt);
+    va_start(ap, fmt);
+    final_n = _vsnwprintf(&formatted[0], n, fmt, ap);
+    va_end(ap);
+    if (final_n < 0 || final_n >= n)
+    {
+      n += abs(final_n - n + 1);
+    }
+    else
+    {
+      break;
+    }
+  }
+  return std::wstring(formatted.get());
+}
+
 std::string Sprintf(const std::string fmt, ...)
 {
   va_list ap;

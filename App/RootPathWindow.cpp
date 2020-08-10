@@ -4,7 +4,8 @@
 
 namespace 
 {
-  const wxString PanelTitle = wxS("Provide the CookedPC folder path");
+  const wxString RoorDir = wxS("S1Game");
+  const wxString PanelTitle = wxS("Provide the \"") + RoorDir + wxS("\" folder path");
   const wxString PanelDescription = wxS("This path will be used to load dependencies. You may need to run the program as an Administrator if Tera is in a priveleged folder (e.g. Program Files).");
   const wxString SelectTitle = wxS("Select...");
   const wxString ContinueTitle = wxS("Continue");
@@ -16,7 +17,7 @@ namespace
 
   bool IsS1Folder(const wxString& path)
   {
-    return path.EndsWith(wxFILE_SEP_PATH + wxString(L"CookedPC")) || path.EndsWith(wxFILE_SEP_PATH + wxString(L"CookedPC") + wxFILE_SEP_PATH);
+    return path.EndsWith(wxFILE_SEP_PATH + RoorDir) || path.EndsWith(wxFILE_SEP_PATH + RoorDir + wxFILE_SEP_PATH);
   }
 }
 
@@ -59,7 +60,7 @@ void RootPathWindow::OnPathChanged(wxCommandEvent& e)
 
 void RootPathWindow::OnSelectClicked(wxCommandEvent& e)
 {
-  wxDirDialog *openPanel = new wxDirDialog(this, wxS("Select S1Game folder"), PathTextfield->GetLabelText());
+  wxDirDialog *openPanel = new wxDirDialog(this, wxS("Select \"") + RoorDir + wxS("\" folder"), PathTextfield->GetLabelText());
   openPanel->Center();
   if (openPanel->ShowModal() == wxID_OK)
   {
@@ -70,7 +71,7 @@ void RootPathWindow::OnSelectClicked(wxCommandEvent& e)
     }
     else
     {
-      wxMessageBox(wxS("Folder must be called S1Game"), wxS("Error: Invalid path!"), wxICON_ERROR);
+      wxMessageBox(wxS("Folder must be called \"") + RoorDir + wxS("\""), wxS("Error: Invalid path!"), wxICON_ERROR);
     }
   }
   openPanel->Destroy();
@@ -85,7 +86,7 @@ void RootPathWindow::OnContinueClicked(wxCommandEvent& e)
   wxDir s1Dir(PathTextfield->GetValue());
   if (!s1Dir.IsOpened())
   {
-    wxMessageBox(wxS("Make sure you entered a correct path and have enough privileges to access it."), wxS("Error: Failed to open CookedPC folder!"), wxICON_ERROR);
+    wxMessageBox(wxS("Make sure you entered a correct path and have enough privileges to access it."), wxS("Error: Failed to open \"") + RoorDir + wxS("\" folder!"), wxICON_ERROR);
     return;
   }
   ContinuePressed = true;

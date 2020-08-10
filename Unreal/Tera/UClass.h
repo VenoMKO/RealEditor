@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "UObject.h"
 #include "FName.h"
+#include "FPropertyTag.h"
 
 #include <mutex>
 
@@ -119,10 +120,10 @@ public:
 
   ~UStruct();
 
-  void SerializeTaggedProperties(FStream& s, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount = 0) const;
-  void SerializeBin(FStream& s, FPropertyTag* tag, UObject* object) const;
-  void SerializeBinEx(FStream& s, FPropertyTag* tag, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const;
-  void SerializeBinProperty(UProperty* property, FPropertyTag* tag, FStream& s, UObject* object) const;
+  void SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultStruct, void* defaults, int32 defaultsCount = 0) const;
+  void SerializeBin(FStream& s, FPropertyValue* value, UObject* object) const;
+  void SerializeBinEx(FStream& s, FPropertyValue* value, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const;
+  void SerializeBinProperty(UProperty* property, FPropertyValue* value, FStream& s, UObject* object) const;
 
   virtual UStruct* GetInheritanceSuper() const
   {
