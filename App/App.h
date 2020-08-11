@@ -37,6 +37,7 @@ inline void SendEvent(wxEvtHandler* obj, wxEventType type, const wxString& msg, 
 wxDECLARE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDECLARE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 wxDECLARE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
+wxDECLARE_EVENT(OBJECT_LOADED, wxCommandEvent);
 
 class ProgressWindow;
 class App : public wxApp {
@@ -64,6 +65,7 @@ private:
   void OnInitCmdLine(wxCmdLineParser& parser);
   void OnLoadError(wxCommandEvent& e);
   bool OnCmdLineParsed(wxCmdLineParser& parser);
+  void OnObjectLoaded(wxCommandEvent& e);
 
   // Build DirCache and load class packages
   void LoadCore(ProgressWindow*);

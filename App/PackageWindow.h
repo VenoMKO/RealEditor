@@ -19,7 +19,13 @@ class PackageWindow : public wxFrame {
 public:
   PackageWindow(std::shared_ptr<FPackage>& package, App* application);
 	~PackageWindow();
+	std::shared_ptr<FPackage> GetPackage() const
+	{
+		return Package;
+	}
   wxString GetPackagePath() const;
+
+	bool OnObjectLoaded(const std::string& id);
 
 private:
 
@@ -83,6 +89,7 @@ private:
 	wxStatusBar* StatusBar = nullptr;
 
 	std::map<PACKAGE_INDEX, GenericEditor*> Editors;
+	GenericEditor* ActiveEditor = nullptr;
 
 	wxObjectDataPtr<ObjectTreeModel> DataModel;
 	bool ContentHidden = false;

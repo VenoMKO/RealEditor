@@ -81,6 +81,22 @@ wxString PackageWindow::GetPackagePath() const
   return wxString(Package->GetSourcePath().String());
 }
 
+bool PackageWindow::OnObjectLoaded(const std::string& id)
+{
+	for (const auto p : Editors)
+	{
+		if (p.second->GetEditorId() == id)
+		{
+			if (ActiveEditor == p.second)
+			{
+				// TODO: Show properties
+			}
+			p.second->OnObjectLoaded();
+			return true;
+		}
+	}
+	return false;
+}
 
 void PackageWindow::LoadObjectTree()
 {
@@ -172,7 +188,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 				Package->GetObject(index, false);
 				object = fobj->Object;
 			}
-			GenericEditor* e = GenericEditor::CreateEditor(EditorContainer, object);
+			GenericEditor* e = GenericEditor::CreateEditor(EditorContainer, this, object);
 			ShowEditor(e);
 			e->LoadObject();
 		}

@@ -372,4 +372,5 @@ void PackageWindow::ShowEditor(GenericEditor* editor)
 		MainPanel->GetSizer()->Layout();
 		editor->Show();
 	}
+	ActiveEditor = editor;
 }

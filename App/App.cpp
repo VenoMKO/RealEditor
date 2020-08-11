@@ -16,6 +16,7 @@ wxIMPLEMENT_APP(App);
 wxDEFINE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDEFINE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 wxDEFINE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
+wxDEFINE_EVENT(OBJECT_LOADED, wxCommandEvent);
 
 wxString GetConfigPath()
 {
@@ -476,8 +477,21 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
   return false;
 }
 
+void App::OnObjectLoaded(wxCommandEvent& e)
+{
+  std::string id = e.GetString().ToStdString();
+  for (PackageWindow* win : PackageWindows)
+  {
+    if (win->OnObjectLoaded(id))
+    {
+      return;
+    }
+  }
+}
+
 wxBEGIN_EVENT_TABLE(App, wxApp)
 EVT_COMMAND(wxID_ANY, DELAY_LOAD, DelayLoad)
 EVT_COMMAND(wxID_ANY, OPEN_PACKAGE, OnOpenPackage)
 EVT_COMMAND(wxID_ANY, LOAD_CORE_ERROR, OnLoadError)
+EVT_COMMAND(wxID_ANY, OBJECT_LOADED, OnObjectLoaded)
 wxEND_EVENT_TABLE()

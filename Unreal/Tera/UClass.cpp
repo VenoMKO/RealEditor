@@ -238,6 +238,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         {
           property->SerializeItem(s, tag.Value, object, defaultsStruct);
         }
+        object->RegisterProperty(tagPtr);
         advance = true;
         continue;
       }

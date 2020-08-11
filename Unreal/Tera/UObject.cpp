@@ -67,6 +67,10 @@ void UObject::SerializeScriptProperties(FStream& s) const
   //DBreakIf(nonePropertyName.String() != "None");
 }
 
+void UObject::RegisterProperty(FPropertyTag* property)
+{
+}
+
 FString UObject::GetObjectPath() const
 {
   FString path = GetPackage()->GetPackageName();

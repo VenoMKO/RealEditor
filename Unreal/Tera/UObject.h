@@ -47,11 +47,15 @@ public:
   }
 
   virtual ~UObject();
+
   // Load the object from its package
   virtual void Load();
   virtual void Load(FStream& s);
+
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
+
+  virtual void RegisterProperty(FPropertyTag* property);
 
   FString GetObjectPath() const;
 
