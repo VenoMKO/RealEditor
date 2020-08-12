@@ -4,6 +4,7 @@
 
 #include "UClass.h"
 #include "UProperty.h"
+#include "UMetaData.h"
 
 // Components
 #include "UComponent.h"
@@ -112,6 +113,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UDelegateProperty::StaticClassName())
   {
     result = new UDelegateProperty(exp);
+  }
+  else if (c == UMetaData::StaticClassName())
+  {
+    result = new UMetaData(exp);
   }
   else if (c == UObjectRedirector::StaticClassName())
   {

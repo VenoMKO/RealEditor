@@ -56,3 +56,8 @@ std::string GenericEditor::GetEditorId() const
 {
   return std::to_string((uint64)std::addressof(*this)) + "." + std::to_string((uint64)std::addressof(Object));
 }
+
+std::vector<FPropertyTag*> GenericEditor::GetObjectProperties()
+{
+  return Object->GetProperties();
+}

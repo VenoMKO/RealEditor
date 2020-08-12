@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\ObjectProperties.cpp" />
     <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp" />
     <ClCompile Include="App\ProgressWindow.cpp" />
     <ClCompile Include="Unreal\Tera\ALog.cpp" />
@@ -32,6 +33,7 @@
     <ClCompile Include="Unreal\Tera\FStructs.cpp" />
     <ClCompile Include="Unreal\Tera\UClass.cpp" />
     <ClCompile Include="Unreal\Tera\UComponent.cpp" />
+    <ClCompile Include="Unreal\Tera\UMetaData.cpp" />
     <ClCompile Include="Unreal\Tera\UNames.cpp" />
     <ClCompile Include="Unreal\Tera\UObject.cpp" />
     <ClCompile Include="Unreal\Tera\UObjectFactory.cpp" />
@@ -42,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\ObjectProperties.h" />
     <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
     <ClInclude Include="App\ProgressWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
@@ -69,6 +72,7 @@
     <ClInclude Include="Unreal\Tera\UMaterial.h" />
     <ClInclude Include="Unreal\Tera\UComponent.h" />
     <ClInclude Include="Unreal\Tera\UClass.h" />
+    <ClInclude Include="Unreal\Tera\UMetaData.h" />
     <ClInclude Include="Unreal\Tera\UNames.h" />
     <ClInclude Include="Unreal\Tera\UObject.h" />
     <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
@@ -118,11 +122,13 @@
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
     <TargetName>Real Editor</TargetName>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

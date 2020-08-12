@@ -1,4 +1,6 @@
 #pragma once
+#include <Tera/FPropertyTag.h>
+
 class UObject;
 class PackageWindow;
 class GenericEditor : public wxPanel
@@ -22,6 +24,8 @@ public:
   {
     return Loading;
   }
+
+  virtual std::vector<FPropertyTag*> GetObjectProperties();
 
 private:
   UObject* Object = nullptr;

@@ -83,6 +83,16 @@ public:
 		return RootImports;
 	}
 
+	inline std::vector<FObjectExport*> GetAllExports() const
+	{
+		return Exports;
+	}
+
+	inline std::vector<FObjectImport*> GetAllImports() const
+	{
+		return Imports;
+	}
+
 	// Get import/export object at index
 	inline FObjectResource* GetResourceObject(PACKAGE_INDEX index) const
 	{

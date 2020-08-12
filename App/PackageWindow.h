@@ -8,6 +8,7 @@
 #include "ObjectTreeDataViewCtrl.h"
 
 #include <map>
+#include <vector>
 
 wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
 wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
@@ -60,6 +61,7 @@ private:
 	void SetContentHidden(bool hidden);
 
 	void ShowEditor(GenericEditor* editor);
+	void UpdateProperties(UObject* object, std::vector<FPropertyTag*> properties);
 
 	wxDECLARE_EVENT_TABLE();
 
@@ -76,6 +78,7 @@ private:
 	wxTextCtrl* ExportFlagsTextfield = nullptr;
 	wxToolBar* Toolbar = nullptr;
 	wxPropertyGridManager* PropertiesCtrl = nullptr;
+	wxPropertyCategory* PropertyRootCategory = nullptr;
 	wxStaticText* ObjectTitleLabel = nullptr;
 	wxSplitterWindow* ContentSplitter = nullptr;
 	wxSplitterWindow* SidebarSplitter = nullptr;

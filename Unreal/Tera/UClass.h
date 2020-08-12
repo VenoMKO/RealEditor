@@ -71,12 +71,24 @@ public:
     Next = field;
   }
 
+  inline void SetToolTip(const FString& tooltip)
+  {
+    ToolTip = tooltip;
+  }
+
+  inline FString GetToolTip() const
+  {
+    return ToolTip;
+  }
+
 protected:
   void Serialize(FStream& s) override;
 
 protected:
   UField* Superfield = nullptr;
   UField* Next = nullptr;
+
+  FString ToolTip;
 };
 
 class UEnum : public UField {
@@ -120,9 +132,8 @@ public:
 
   ~UStruct();
 
-  void SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultStruct, void* defaults, int32 defaultsCount = 0) const;
+  void SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultStruct, void* defaults) const;
   void SerializeBin(FStream& s, FPropertyValue* value, UObject* object) const;
-  void SerializeBinEx(FStream& s, FPropertyValue* value, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const;
   void SerializeBinProperty(UProperty* property, FPropertyValue* value, FStream& s, UObject* object) const;
 
   virtual UStruct* GetInheritanceSuper() const

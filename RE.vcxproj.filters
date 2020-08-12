@@ -98,6 +98,12 @@
     <ClCompile Include="Unreal\Tera\FPropertyTag.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\ObjectProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Unreal\Tera\UMetaData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -146,5 +152,7 @@
     <ClInclude Include="Unreal\Tera\UMaterial.h" />
     <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
     <ClInclude Include="Unreal\Tera\UPersistentCookerData.h" />
+    <ClInclude Include="App\ObjectProperties.h" />
+    <ClInclude Include="Unreal\Tera\UMetaData.h" />
   </ItemGroup>
 </Project>

@@ -67,6 +67,8 @@ public:
 
   uint64 GetObjectFlags() const;
 
+  FString GetFullObjectName() const;
+
   inline FObjectExport* GetExportObject() const
   {
     return Export;

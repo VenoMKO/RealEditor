@@ -3,7 +3,8 @@
 #include "FStream.h"
 #include "FObjectResource.h"
 #include "UObject.h"
-#include "UClass.h" 
+#include "UClass.h"
+#include "UMetaData.h"
 #include "UPersistentCookerData.h"
 #include "Cast.h"
 
@@ -361,7 +362,34 @@ void FPackage::LoadClassPackage(const FString& name)
     }
 #endif
 
-    // TODO: link the metadata to properties here for future use
+    if (package->ObjectNameToExportMap.count(NAME_MetaData))
+    {
+      std::vector<FObjectExport*> expList = package->ObjectNameToExportMap[NAME_MetaData];
+      while (expList.size())
+      {
+        UObject* tmp = package->GetObject(expList.back());
+        expList.pop_back();
+        if (UMetaData* meta = Cast<UMetaData>(tmp))
+        {
+          const auto& objMap = meta->GetObjectMetaDataMap();
+          for (const auto& pair : objMap)
+          {
+            if (UField* field = Cast<UField>(pair.first))
+            {
+              for (const auto& info : pair.second)
+              {
+                if (info.first == "ToolTip")
+                {
+                  field->SetToolTip(info.second);
+                  break;
+                }
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
 
 #ifdef _DEBUG
     for (FObjectExport* exp : package->Exports)
@@ -618,7 +646,6 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   {
     FILE_OFFSET startOffset = INT_MAX;
     FILE_OFFSET totalDecompressedSize = 0;
-    FILE_OFFSET streamSize = stream->GetSize();
     void** compressedChunksData = new void*[sum.CompressedChunks.size()];
     {
       uint32 idx = 0;
@@ -649,7 +676,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
     {
-      concurrency::parallel_for(size_t(0), size_t(sum.CompressedChunks.size()), [sum, stream, compressedChunksData, decompressedData, startOffset](size_t idx) {
+      concurrency::parallel_for(size_t(0), size_t(sum.CompressedChunks.size()), [sum, compressedChunksData, decompressedData, startOffset](size_t idx) {
         const FCompressedChunk& chunk = sum.CompressedChunks[idx];
         uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
         LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);

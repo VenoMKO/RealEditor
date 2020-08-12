@@ -142,13 +142,11 @@ std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);
 
-#define Check(expr) if (!expr) UThrow(std::string(std::string(strrchr("\\" __FILE__, '\\') + 1) + ":" + std::to_string(__LINE__)).c_str())
-
 #if _DEBUG
 inline void DBreak()
 {
   // BP here
-  int test = 1;
+  int stop = 1;
 }
 
 inline void DBreakIf(bool test) { if (test) DBreak(); }

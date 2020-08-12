@@ -216,6 +216,7 @@ void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObjec
   {
     valuePtr->Type = FPropertyValue::VID::Struct;
     valuePtr->Data = new std::vector<FPropertyValue*>;
+    valuePtr->Struct = Struct;
   }
   
   if (bUseBinarySerialization)
@@ -233,7 +234,7 @@ void UObjectProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObjec
   if (s.IsReading())
   {
     valuePtr->Type = FPropertyValue::VID::Object;
-    valuePtr->Data = new UObject*;
+    valuePtr->Data = new PACKAGE_INDEX;
   }
-  s << valuePtr->GetObject();
+  s << valuePtr->GetObjectIndex();
 }

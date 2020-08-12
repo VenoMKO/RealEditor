@@ -33,6 +33,7 @@ FPropertyValue::~FPropertyValue()
 		case VID::String:
 			delete GetStringPtr();
 			break;
+		case VID::Field:
 		case VID::Struct:
 		case VID::Array:
 			for (FPropertyValue* v : GetArray())

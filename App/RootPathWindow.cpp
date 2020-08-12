@@ -105,9 +105,9 @@ void RootPathWindow::OnClose(wxCloseEvent& e)
 }
 
 wxBEGIN_EVENT_TABLE(RootPathWindow, wxDialog)
-EVT_BUTTON(ControlElementId::Select, OnSelectClicked)
-EVT_BUTTON(ControlElementId::Continue, OnContinueClicked)
-EVT_TEXT(ControlElementId::Path, OnPathChanged)
-EVT_TEXT_ENTER(ControlElementId::Path, OnContinueClicked)
+EVT_BUTTON(ControlElementId::Select, RootPathWindow::OnSelectClicked)
+EVT_BUTTON(ControlElementId::Continue, RootPathWindow::OnContinueClicked)
+EVT_TEXT(ControlElementId::Path, RootPathWindow::OnPathChanged)
+EVT_TEXT_ENTER(ControlElementId::Path, RootPathWindow::OnContinueClicked)
 EVT_CLOSE(OnClose)
 wxEND_EVENT_TABLE()

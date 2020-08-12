@@ -66,7 +66,7 @@ void ALog::_GetConfig(FLogConfig& cfg)
 
 void ALog::_SetConfig(const FLogConfig& cfg)
 {
-  ALog* l = ALog::SharedLog();
+  ALog::SharedLog();
   std::scoped_lock<std::recursive_mutex> locker(WLocker);
   LastPosition = cfg.LogPosition;
   LastSize = cfg.LogSize;

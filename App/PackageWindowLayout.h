@@ -1,3 +1,4 @@
+#include "PackageWindow.h"
 #pragma once
 
 // Moved this to a separate file to make PackageWindow.cpp more clean
@@ -278,8 +279,8 @@ void PackageWindow::InitLayout()
 	stProperties->Wrap(-1);
 	propertiesSizer->Add(stProperties, 0, wxALL, 3);
 
-	PropertiesCtrl = new wxPropertyGridManager(PropertiesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE);
-	PropertiesCtrl->SetExtraStyle(wxPG_EX_ENABLE_TLP_TRACKING | wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
+	PropertiesCtrl = new wxPropertyGridManager(PropertiesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE | wxPG_SPLITTER_AUTO_CENTER | wxPG_TOOLTIPS);
+	PropertiesCtrl->SetExtraStyle(wxPG_EX_ENABLE_TLP_TRACKING | wxPG_EX_HELP_AS_TOOLTIPS | wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
 	PropertiesCtrl->SetMinSize(wxSize(230, 600));
 
 	propertiesSizer->Add(PropertiesCtrl, 1, wxALL | wxEXPAND, 4);

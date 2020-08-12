@@ -29,6 +29,11 @@ uint64 UObject::GetObjectFlags() const
   return Export->ObjectFlags;
 }
 
+FString UObject::GetFullObjectName() const
+{
+  return Export->GetFullObjectName();
+}
+
 FPackage* UObject::GetPackage() const
 {
   return Export->Package;

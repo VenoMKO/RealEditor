@@ -1,5 +1,7 @@
 #include "PackageWindow.h"
+#include "ObjectProperties.h"
 #include "App.h"
+
 #include <wx/menu.h>
 #include <wx/sizer.h>
 #include <wx/statline.h>
@@ -9,6 +11,7 @@
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
+#include <Tera/UClass.h>
 
 #define FAKE_IMPORT_ROOT MININT
 #define FAKE_EXPORT_ROOT MAXINT
@@ -58,6 +61,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 		SetPosition(pos);
 		Application->SetLastWindowPosition(pos);
 	}
+	OnNoneObjectSelected();
 }
 
 void PackageWindow::OnCloseWindow(wxCloseEvent& event)
@@ -89,7 +93,7 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
 		{
 			if (ActiveEditor == p.second)
 			{
-				// TODO: Show properties
+				UpdateProperties(ActiveEditor->GetObject() ,ActiveEditor->GetObjectProperties());
 			}
 			p.second->OnObjectLoaded();
 			return true;
@@ -179,6 +183,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 		if (it != Editors.end())
 		{
 			ShowEditor(it->second);
+			it->second->LoadObject();
 		}
 		else
 		{
@@ -193,6 +198,27 @@ void PackageWindow::OnExportObjectSelected(INT index)
 			e->LoadObject();
 		}
 	}
+}
+
+void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*> properties)
+{
+	if (!PropertyRootCategory)
+	{
+		PropertyRootCategory = new wxPropertyCategory(object->GetObjectName().WString());
+		PropertyRootCategory->SetValue(object->GetClassName().String());
+		PropertiesCtrl->Append(PropertyRootCategory);
+	}
+	else
+	{
+		PropertyRootCategory->DeleteChildren();
+		PropertyRootCategory->SetLabel(object->GetObjectName().WString());
+		PropertyRootCategory->SetValue(object->GetClassName().String());
+	}
+
+	CreateProperty(PropertiesCtrl, PropertyRootCategory, properties);
+
+	PropertiesCtrl->RefreshGrid();
+	PropertyRootCategory->RefreshChildren();
 }
 
 void PackageWindow::OnNoneObjectSelected()
@@ -288,19 +314,19 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 }
 
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
-EVT_MENU(ControlElementId::New, OnNewClicked)
-EVT_MENU(ControlElementId::Open, OnOpenClicked)
-EVT_MENU(ControlElementId::Save, OnSaveClicked)
-EVT_MENU(ControlElementId::SaveAs, OnSaveAsClicked)
-EVT_MENU(ControlElementId::Close, OnCloseClicked)
-EVT_MENU(ControlElementId::Exit, OnExitClicked)
-EVT_MENU(ControlElementId::LogWin, OnToggleLogClicked)
-EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, OnObjectTreeStartEdit)
-EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, OnObjectTreeSelectItem)
-EVT_MOVE_END(OnMoveEnd)
-EVT_MAXIMIZE(OnMaximized)
-EVT_CLOSE(OnCloseWindow)
-EVT_COMMAND(wxID_ANY, PACKAGE_READY, OnPackageReady)
-EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, OnPackageError)
-EVT_IDLE(OnIdle)
+EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
+EVT_MENU(ControlElementId::Open, PackageWindow::OnOpenClicked)
+EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
+EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
+EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
+EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
+EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
+EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
+EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
+EVT_MOVE_END(PackageWindow::OnMoveEnd)
+EVT_MAXIMIZE(PackageWindow::OnMaximized)
+EVT_CLOSE(PackageWindow::OnCloseWindow)
+EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
+EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
+EVT_IDLE(PackageWindow::OnIdle)
 wxEND_EVENT_TABLE()

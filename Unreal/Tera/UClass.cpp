@@ -106,10 +106,8 @@ void UState::Serialize(FStream& s)
   s << FuncMap;
 }
 
-void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultsStruct, void* defaults, int32 defaultsCount) const
+void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyValue* value, UStruct* defaultsStruct, void* defaults) const
 {
-  UClass* defaultsClass = (UClass*)defaultsStruct;
-
   if (s.IsReading())
   {
     bool advance = false;
@@ -121,6 +119,8 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
     
     UProperty* property = PropertyLink;
     int32 remainingDim = property ? property->ArrayDim : 0;
+    FPropertyTag* tagPtr = nullptr;
+    FPropertyTag* prevTagPtr = nullptr;
 #if _DEBUG
     UProperty* last = nullptr;
     static int32 GIteration = -1;
@@ -133,14 +133,15 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       iterations++;
       last = property;
 #endif
-      FPropertyTag* tagPtr = nullptr;
+      
+      FPropertyValue* newValue = nullptr;
       if (value)
       {
-        FPropertyValue* v = new FPropertyValue(value->Property);
-        v->Type = FPropertyValue::VID::Property;
-        v->Data = new FPropertyTag(object);
-        tagPtr = v->GetPropertyTagPtr();
-        value->GetArray().push_back(v);
+        newValue = new FPropertyValue(value->Property);
+        newValue->Type = FPropertyValue::VID::Property;
+        newValue->Data = new FPropertyTag(object);
+        tagPtr = newValue->GetPropertyTagPtr();
+        value->GetArray().push_back(newValue);
       }
       else
       {
@@ -150,7 +151,6 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
 
       FPropertyTag& tag = *tagPtr;
       s << tag;
-
       std::string tagName = tag.Name.String().UTF8();
 
       if (tagName == NAME_None)
@@ -165,6 +165,15 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         property = property->PropertyLinkNext;
         advance = false;
         remainingDim = property ? property->ArrayDim : 0;
+      }
+      else if (prevTagPtr)
+      {
+        prevTagPtr->StaticArrayNext = tagPtr;
+      }
+
+      if (newValue)
+      {
+        newValue->Field = property;
       }
 
       if (!property || tag.Name.String() != property->GetObjectName())
@@ -228,6 +237,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       }
       else
       {
+        tag.ArrayDim = property->ArrayDim;
         if (property->GetStaticClassName() == UBoolProperty::StaticClassName())
         {
           tag.Value->Data = new bool;
@@ -240,11 +250,13 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         }
         object->RegisterProperty(tagPtr);
         advance = true;
+        prevTagPtr = tagPtr;
         continue;
       }
 
       tag.Value->Data = new uint8[tag.Size];
       tag.Value->Type = FPropertyValue::VID::Unk;
+      prevTagPtr = tagPtr;
       s.SerializeBytes(tag.GetValueData(), tag.Size);
       LogW("Skipping property %s of %ls in %s package", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
     }
@@ -258,17 +270,10 @@ void UStruct::SerializeBin(FStream& s, FPropertyValue* value, UObject* object) c
   {
     if (s.IsReading())
     {
-      value->GetArray().push_back(new FPropertyValue(value->Property));
+      value->GetArray().push_back(new FPropertyValue(value->Property, property));
+      value->GetArray()[idx]->Field = property;
     }
     SerializeBinProperty(property, value->GetArray()[idx], s, object);
-  }
-}
-
-void UStruct::SerializeBinEx(FStream& s, FPropertyValue* value, UObject* object, UStruct* defaultStruct, void* defaults, int32 defaultsCount) const
-{
-  if (!defaults || !defaultsCount)
-  {
-    SerializeBin(s, value, object);
   }
 }
 
@@ -276,14 +281,15 @@ void UStruct::SerializeBinProperty(UProperty* property, FPropertyValue* value, F
 {
   if (s.IsReading())
   {
-    value->Data = new std::vector<FPropertyValue*>;
-    value->Type = FPropertyValue::VID::Struct;
+    value->Data = new std::vector<FPropertyValue*>(property->ArrayDim);
+    value->Type = FPropertyValue::VID::Field;
   }
   for (int32 idx = 0; idx < property->ArrayDim; idx++)
   {
     if (s.IsReading())
     {
-      value->GetArray().push_back(new FPropertyValue(value->Property));
+      value->GetArray()[idx] = new FPropertyValue(value->Property);
+      value->GetArray()[idx]->Field = property;
     }
     property->SerializeItem(s, value->GetArray()[idx], object);
   }

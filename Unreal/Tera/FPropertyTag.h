@@ -7,6 +7,7 @@
 #include "FName.h"
 
 struct FPropertyTag;
+class UField;
 struct FPropertyValue {
 
 	FPropertyValue()
@@ -14,6 +15,11 @@ struct FPropertyValue {
 
 	FPropertyValue(FPropertyTag* property)
 		: Property(property)
+	{}
+
+	FPropertyValue(FPropertyTag* property, UField* field)
+		: Property(property)
+		, Field(field)
 	{}
 
 	enum class VID
@@ -30,6 +36,7 @@ struct FPropertyValue {
 		Name,
 		String,
 		Struct,
+		Field,
 		Array,
 	};
 
@@ -63,9 +70,9 @@ struct FPropertyValue {
 		return (FString*)Data;
 	}
 
-	inline UObject* GetObjectPtr()
+	inline PACKAGE_INDEX* GetObjectIdxPtr()
 	{
-		return (UObject*)Data;
+		return (PACKAGE_INDEX*)Data;
 	}
 
 	inline FScriptDelegate* GetScriptDelegatePtr()
@@ -113,9 +120,9 @@ struct FPropertyValue {
 		return *(FString*)Data;
 	}
 
-	inline UObject*& GetObject()
+	inline PACKAGE_INDEX& GetObjectIndex()
 	{
-		return *(UObject**)Data;
+		return *(PACKAGE_INDEX*)Data;
 	}
 
 	inline FScriptDelegate& GetScriptDelegate()
@@ -138,6 +145,8 @@ struct FPropertyValue {
 	VID Type = VID::None;
 	void* Data = nullptr;
 	UEnum* Enum = nullptr;
+	UField* Field = nullptr;
+	UStruct* Struct = nullptr;
 	FPropertyTag* Property = nullptr;
 };
 
@@ -149,10 +158,12 @@ struct FPropertyTag {
 	FName EnumName;
 	int32 Size = 0;
 	int32 ArrayIndex = 0;
+	int32 ArrayDim = 1;
 	int32 SizeOffset = 0;
 	
 	UObject* Owner = nullptr;
 	FPropertyValue* Value = nullptr;
+	FPropertyTag* StaticArrayNext = nullptr;
 
 	FPropertyTag()
 	{

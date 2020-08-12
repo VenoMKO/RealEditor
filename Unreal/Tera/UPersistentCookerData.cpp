@@ -99,13 +99,13 @@ void UPersistentCookerData::GetPersistentData(std::unordered_map<FString, FBulkD
   {
     outputBulk.clear();
     outputBulk.reserve(CookedBulkDataInfoMap.size());
-    for (const auto pair : CookedBulkDataInfoMap)
+    for (const auto& pair : CookedBulkDataInfoMap)
     {
       outputBulk.emplace(pair.first, FBulkDataInfo(pair.second));
     }
     outputTFC.clear();
     outputTFC.reserve(CookedTextureFileCacheInfoMap.size());
-    for (const auto pair : CookedTextureFileCacheInfoMap)
+    for (const auto& pair : CookedTextureFileCacheInfoMap)
     {
       outputTFC.emplace(pair.first, FTextureFileCacheInfo(pair.second));
     }
