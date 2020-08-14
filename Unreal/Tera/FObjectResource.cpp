@@ -40,24 +40,6 @@ FString FObjectExport::GetClassName() const
   return ClassIndex ? Package->GetResourceObject(ClassIndex)->GetObjectName() : "Class";
 }
 
-UObject* FObjectExport::GetObject()
-{
-  if (!Object)
-  {
-    Object = Package->GetObject(this);
-  }
-  return Object;
-}
-
-UObject* FObjectImport::GetObject()
-{
-  if (!Object)
-  {
-    Object = Package->GetObject(this);
-  }
-  return Object;
-}
-
 FString FObjectImport::GetPackageName() const
 {
   PACKAGE_INDEX outerIndex = OuterIndex;
@@ -106,7 +88,7 @@ VObjectExport::VObjectExport(FPackage* pkg, const char* objName, const char* cla
 {
   VObjectName = objName;
   VObjectClassName = className;
-  ObjectIndex = 0x80000;
+  ObjectIndex = VEXP_INDEX;
 }
 
 FString VObjectExport::GetObjectPath() const
@@ -116,8 +98,8 @@ FString VObjectExport::GetObjectPath() const
 
 VObjectExport::~VObjectExport()
 {
-  if (Object)
+  if (VObject)
   {
-    delete Object;
+    delete VObject;
   }
 }

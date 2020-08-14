@@ -3,6 +3,8 @@
 #include "FStructs.h"
 #include "FName.h"
 
+#define VEXP_INDEX 0x80000
+
 class FObjectResource {
 public:
   FObjectResource(FPackage* package)
@@ -33,8 +35,6 @@ public:
   
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
   PACKAGE_INDEX ObjectIndex = 0;
-
-  UObject* Object = nullptr;
   FPackage* Package = nullptr;
 #ifdef _DEBUG
   FString Path;
@@ -56,7 +56,6 @@ public:
     return name;
   }
 
-  UObject* GetObject();
   FString GetPackageName() const;
 
   friend FStream& operator<<(FStream& s, FObjectImport& i);
@@ -76,7 +75,6 @@ public:
   friend FStream& operator<<(FStream& s, FObjectExport& e);
 
   FString GetClassName() const override;
-  UObject* GetObject();
 
   PACKAGE_INDEX ClassIndex = 0;
   PACKAGE_INDEX SuperIndex = 0;
@@ -89,6 +87,7 @@ public:
   FGuid PackageGuid;
   uint32 PackageFlags = 0;
 
+  FObjectExport* Outer = nullptr;
   std::vector<FObjectExport*> Inner;
 
 #ifdef _DEBUG
@@ -100,21 +99,33 @@ class VObjectExport : public FObjectExport {
 public:
   VObjectExport(FPackage* package, const char* objName, const char* className);
 
-  FString GetObjectName() const override
+  inline FString GetObjectName() const override
   {
     return VObjectName;
   }
 
-  FString GetClassName() const override
+  inline FString GetClassName() const override
   {
     return VObjectClassName;
   }
 
   FString GetObjectPath() const override;
 
+  inline UObject* GetObject() const
+  {
+    return VObject;
+  }
+
+  inline void SetObject(UObject* obj)
+  {
+    DBreakIf(VObject);
+    VObject = obj;
+  }
+
   ~VObjectExport() override;
 
 private:
   FString VObjectName;
   FString VObjectClassName;
+  UObject* VObject = nullptr;
 };

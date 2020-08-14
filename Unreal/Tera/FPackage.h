@@ -51,11 +51,10 @@ public:
 	UObject* GetObject(PACKAGE_INDEX index, bool load = true);
 
 	// Import an object from a different package.
-	UObject* GetObject(FObjectImport* imp);
+	UObject* GetObject(FObjectImport* imp, bool load = true);
 	
 	// Get an object
-	UObject* GetObject(FObjectExport* exp);
-	UObject* GetObject(FObjectExport* exp) const;
+	UObject* GetObject(FObjectExport* exp, bool load = true);
 
 	// Get package index of the object. Accepts imported objects
 	PACKAGE_INDEX GetObjectIndex(UObject* object) const;
@@ -67,6 +66,9 @@ public:
 
 	// Cache UObject with a netIndex to NetIndexMap
 	void AddNetObject(UObject* object);
+
+	// Get an object by net index and name
+	UObject* GetObject(NET_INDEX netIndex, const FString& name, const FString& className);
 
 	// Get all exports that match the name
 	std::vector<FObjectExport*> GetExportObject(const FString& name);
@@ -191,6 +193,16 @@ public:
 private:
 	void _DebugDump() const;
 
+	UObject* GetCachedExportObject(PACKAGE_INDEX index) const;
+	UObject* GetCachedForcedObject(PACKAGE_INDEX index) const;
+	UObject* GetCachedImportObject(PACKAGE_INDEX index) const;
+
+	UObject* SetCachedExportObject(PACKAGE_INDEX index, UObject* obj);
+	UObject* SetCachedForcedObject(PACKAGE_INDEX index, UObject* obj);
+	UObject* SetCachedImportObject(PACKAGE_INDEX index, UObject* obj);
+
+	UObject* GetForcedExport(FObjectExport* exp);
+
 private:
 	FPackageSummary Summary;
 	FStream* Stream = nullptr;
@@ -207,7 +219,13 @@ private:
 	std::vector<VObjectExport*> VExports;
 	std::vector<FObjectImport*> Imports;
 	std::vector<std::vector<int32>> Depends;
-	std::unordered_map<PACKAGE_INDEX, UObject*> Objects;
+	
+	mutable std::mutex ExportObjectsMutex;
+	std::unordered_map<PACKAGE_INDEX, UObject*> ExportObjects;
+	mutable std::mutex ForcedObjectsMutex;
+	std::unordered_map<PACKAGE_INDEX, UObject*> ForcedObjects;
+	mutable std::mutex ImportObjectsMutex;
+	std::unordered_map<PACKAGE_INDEX, UObject*> ImportObjects;
 
 	std::vector<FObjectExport*> RootExports;
 	std::vector<FObjectImport*> RootImports;
@@ -236,6 +254,8 @@ private:
 	static std::mutex ClassMapMutex;
 	static std::unordered_map<FString, UObject*> ClassMap;
 	static std::unordered_set<FString> MissingClasses;
+	static std::mutex MissingPackagesMutex;
+	static std::vector<FString> MissingPackages;
 
 	static uint16 CoreVersion;
 };

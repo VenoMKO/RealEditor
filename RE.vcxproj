@@ -41,6 +41,7 @@
     <ClCompile Include="Unreal\Tera\UPersistentCookerData.cpp" />
     <ClCompile Include="Unreal\Tera\UProperty.cpp" />
     <ClCompile Include="Unreal\Tera\UStaticMesh.cpp" />
+    <ClCompile Include="Unreal\Tera\UTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
@@ -79,6 +80,7 @@
     <ClInclude Include="Unreal\Tera\UPersistentCookerData.h" />
     <ClInclude Include="Unreal\Tera\UProperty.h" />
     <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
+    <ClInclude Include="Unreal\Tera\UTexture.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

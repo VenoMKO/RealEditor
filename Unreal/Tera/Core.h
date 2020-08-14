@@ -159,10 +159,16 @@ inline void DBreakIf(bool test) { if (test) DBreak(); }
 // Compression
 // --------------------------------------------------------------------
 
+#define COMPRESSED_BLOCK_SIZE 0x20000
+
+// Legacy macOS's RE decompression. src must contain chunks.
 namespace LZO
 {
-  void Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent = true);
+  void Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent = true);
 }
+
+// New decompression. compressedBuffer must point directly to a compressed data block
+bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 decompressedSize, const void* compressedBuffer, int32 compressedSize);
 
 // --------------------------------------------------------------------
 // Logging

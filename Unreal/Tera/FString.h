@@ -111,7 +111,7 @@ public:
     return *this == std::string(a);
   }
 
-  inline std::wstring AppendPath(const FString& path)
+  inline std::wstring FStringByAppendingPath(const FString& path)
   {
     if (Empty())
     {
@@ -129,7 +129,7 @@ public:
     return A2W(Data + '\\' + path.String());
   }
 
-  inline std::wstring FilenameW(bool extension = true) const
+  inline std::wstring FilenameWString(bool extension = true) const
   {
     if (extension)
     {
@@ -145,7 +145,7 @@ public:
       if (idx != std::string::npos)
       {
         idx++;
-        size_t end = Data.find_last_of('.', idx);
+        size_t end = Data.find_last_of('.');
         if (end != std::string::npos)
         {
           return A2W(Data.substr(idx, end - idx));
@@ -155,7 +155,7 @@ public:
     return A2W(Data);
   }
 
-  inline std::string Filename(bool extension = true) const
+  inline std::string FilenameString(bool extension = true) const
   {
     if (extension)
     {
@@ -171,7 +171,7 @@ public:
       if (idx != std::string::npos)
       {
         idx++;
-        size_t end = Data.find_last_of('.', idx);
+        size_t end = Data.find_last_of('.');
         if (end != std::string::npos)
         {
           return Data.substr(idx, end - idx);
@@ -179,6 +179,11 @@ public:
       }
     }
     return Data;
+  }
+
+  inline FString Filename(bool extension = true) const
+  {
+    return FString(FilenameString(extension));
   }
 
   inline bool operator==(const FString& a) const
@@ -391,6 +396,22 @@ public:
       }
     }
     return true;
+  }
+
+  inline bool StartWith(const FString& s) const
+  {
+    if (Data.size() && s.Size())
+    {
+      if (Data.back() && !s.Back())
+      {
+        return Data._Starts_with(s.Data.substr(0, s.Data.size() - 1));
+      }
+      else if (!Data.back() && s.Back())
+      {
+        return Data.substr(0, Data.size() - 1)._Starts_with(s.Data);
+      }
+    }
+    return Data._Starts_with(s.Data);
   }
 
   int Compare(size_t off, size_t count, const char* str) const

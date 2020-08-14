@@ -42,6 +42,11 @@ FStream& operator<<(FStream& s, FCompositePackageMapEntry& e)
   return s;
 }
 
+FStream& operator<<(FStream& s, FCompressedChunkInfo& c)
+{
+  return s << c.CompressedSize << c.DecompressedSize;
+}
+
 FStream& operator<<(FStream& s, FPackageSummary& sum)
 {
   s << sum.Magic;
@@ -54,7 +59,11 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   const uint16 lv = sum.GetLicenseeVersion();
   if (s.IsReading() && (fv != 610 && fv != 897))
   {
-    UThrow("Package version \"%d/%d\" is not supported.", fv, lv);
+#if _DEBUG
+    // UDK
+    if (fv != 868)
+#endif
+    UThrow("Package version \"%hu/%hu\" is not supported.", fv, lv);
   }
 
   s << sum.HeaderSize;
@@ -78,7 +87,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.ExportsCount << sum.ExportsOffset;
   s << sum.ImportsCount << sum.ImportsOffset;
   s << sum.DependsOffset;
-  if (fv == 897)
+  if (fv > VER_TERA_CLASSIC)
   {
     s << sum.ImportExportGuidsOffset;
     s << sum.ImportGuidsCount;
@@ -92,7 +101,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.CompressedChunks;
   s << sum.PackageSource;
   s << sum.AdditionalPackagesToCook;
-  if (fv == 897)
+  if (fv > VER_TERA_CLASSIC)
   {
     s << sum.TextureAllocations;
   }
@@ -164,4 +173,142 @@ FStream& operator<<(FStream& s, FSHA& i)
 {
   s.SerializeBytes(i.Bytes, 20);
   return s;
+}
+
+void FUntypedBulkData::SerializeBulkData(FStream& s, void* data)
+{
+  if (BulkDataFlags & BULKDATA_Unused)
+  {
+    return;
+  }
+
+  bool bSerializeInBulk = true;
+  if (RequiresSingleElementSerialization(s) || (BulkDataFlags & BULKDATA_ForceSingleElementSerialization) || (!s.IsReading() && (GetElementSize() > 1)))
+  {
+    bSerializeInBulk = false;
+  }
+
+  if (bSerializeInBulk)
+  {
+    if (BulkDataFlags & BULKDATA_SerializeCompressed)
+    {
+      s.SerializeCompressed(data, GetBulkDataSize(), GetDecompressionFlags());
+    }
+    else
+    {
+      s.SerializeBytes(data, GetBulkDataSize());
+    }
+  }
+  else
+  {
+    if (BulkDataFlags & BULKDATA_SerializeCompressed)
+    {
+      uint8* serializedData = nullptr;
+      if (s.IsReading())
+      {
+        OwnsMemory = true;
+        serializedData = (uint8*)malloc(GetBulkDataSize());
+        s.SerializeCompressed(serializedData, GetBulkDataSize(), GetDecompressionFlags());
+
+        MReadStream memStream(serializedData, true, GetBulkDataSize());
+
+        // Serialize each element individually via memory reader.				
+        for (int32 idx = 0; idx < ElementCount; ++idx)
+        {
+          SerializeElement(memStream, data, idx);
+        }
+      }
+      else
+      {
+        // TODO: compression
+      }
+    }
+    else
+    {
+      // We can use the passed in archive if we're not compressing the data.
+      for (int32 idx = 0; idx < ElementCount; ++idx)
+      {
+        SerializeElement(s, data, idx);
+      }
+    }
+  }
+}
+
+bool FUntypedBulkData::RequiresSingleElementSerialization(FStream& s)
+{
+  return false;
+}
+
+void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
+{
+  s << BulkDataFlags;
+  s << ElementCount;
+  if (s.IsReading())
+  {
+    s << BulkDataSizeOnDisk;
+    s << BulkDataOffsetInFile;
+
+    if (!(BulkDataFlags & BULKDATA_StoreInSeparateFile))
+    {
+      OwnsMemory = true;
+      BulkData = malloc(GetBulkDataSize());
+      SerializeBulkData(s, BulkData);
+    }
+  }
+  else
+  {
+    // TODO: compression
+  }
+}
+
+FUntypedBulkData::~FUntypedBulkData()
+{
+  if (BulkData)
+  {
+    free(BulkData);
+  }
+}
+
+int32 FUntypedBulkData::GetElementCount() const
+{
+  return ElementCount;
+}
+
+int32 FUntypedBulkData::GetBulkDataSize() const
+{
+  return GetElementCount() * GetElementSize();
+}
+
+int32 FUntypedBulkData::GetBulkDataSizeOnDisk() const
+{
+  return BulkDataSizeOnDisk;
+}
+
+int32 FUntypedBulkData::GetBulkDataOffsetInFile() const
+{
+  return BulkDataOffsetInFile;
+}
+
+bool FUntypedBulkData::IsStoredCompressedOnDisk() const
+{
+  return BulkDataFlags & BULKDATA_SerializeCompressed;
+}
+
+ECompressionFlags FUntypedBulkData::GetDecompressionFlags() const
+{
+  return (BulkDataFlags & BULKDATA_SerializeCompressedZLIB) ? COMPRESS_ZLIB :
+         (BulkDataFlags & BULKDATA_SerializeCompressedLZX) ? COMPRESS_LZX :
+         (BulkDataFlags & BULKDATA_SerializeCompressedLZO) ? COMPRESS_LZO :
+         COMPRESS_None;
+}
+
+int32 FByteBulkData::GetElementSize() const
+{
+  return 1;
+}
+
+void FByteBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
+{
+  uint8& b = *((uint8*)data + elementIndex);
+  s << b;
 }

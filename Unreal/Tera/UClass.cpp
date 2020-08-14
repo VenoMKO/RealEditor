@@ -297,7 +297,7 @@ void UStruct::SerializeBinProperty(UProperty* property, FPropertyValue* value, F
 
 void UClass::CreateBuiltInClasses(FPackage* package)
 {
-#define MAKE_CLASS(NAME) exp = package->CreateVirtualExport(##NAME, NAME_Class); exp->Object = UObject::Object(exp); obj = (UClass*)exp->Object
+#define MAKE_CLASS(NAME) exp = package->CreateVirtualExport(##NAME, NAME_Class); exp->SetObject(UObject::Object(exp)); obj = (UClass*)exp->GetObject(); obj->Loaded = true
   const auto pkgName = package->GetPackageName();
   VObjectExport* exp = nullptr;
   UClass* obj = nullptr;

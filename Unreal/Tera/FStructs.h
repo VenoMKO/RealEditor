@@ -119,6 +119,13 @@ struct FCompositePackageMapEntry {
 	friend FStream& operator<<(FStream& s, FCompositePackageMapEntry& e);
 };
 
+struct FCompressedChunkInfo {
+	int32 CompressedSize = 0;
+	int32 DecompressedSize = 0;
+
+	friend FStream& operator<<(FStream& s, FCompressedChunkInfo& c);
+};
+
 struct FPackageSummary {
 	FPackageSummary()
 	{}
@@ -302,4 +309,60 @@ struct FSHA
 
 protected:
 	uint8 Bytes[20];
+};
+
+struct FUntypedBulkData
+{
+	FUntypedBulkData()
+	{}
+
+	virtual ~FUntypedBulkData();
+
+	int32 GetElementCount() const;
+
+	int32 GetBulkDataSize() const;
+
+	int32 GetBulkDataSizeOnDisk() const;
+
+	int32 GetBulkDataOffsetInFile() const;
+
+	bool IsStoredCompressedOnDisk() const;
+
+	ECompressionFlags GetDecompressionFlags() const;
+
+	void Serialize(FStream& s, UObject* owner, int32 idx = INDEX_NONE);
+
+	void SerializeBulkData(FStream& s, void* data);
+
+	virtual bool RequiresSingleElementSerialization(FStream& s);
+
+	virtual void* GetBulkDataResourceMemory(UObject* Owner, int32 idx)
+	{
+		return nullptr;
+	}
+
+	virtual int32 GetElementSize() const = 0;
+
+	virtual void SerializeElement(FStream& s, void* data, int32 elementIndex) = 0;
+
+protected:
+	uint32 BulkDataFlags = BULKDATA_None;
+	int32 ElementCount = 0;
+	int32 BulkDataOffsetInFile = INDEX_NONE;
+	int32 BulkDataSizeOnDisk = INDEX_NONE;
+
+	uint32 SavedBulkDataFlags = BULKDATA_None;
+	int32 SavedElementCount = 0;
+	int32 SavedBulkDataOffsetInFile = INDEX_NONE;
+	int32 SavedBulkDataSizeOnDisk = INDEX_NONE;
+
+	bool OwnsMemory = false;
+	void* BulkData = nullptr;
+	FPackage* Package = nullptr;
+};
+
+struct FByteBulkData : public FUntypedBulkData
+{
+	int32 GetElementSize() const override;
+	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
 };

@@ -104,6 +104,9 @@
     <ClCompile Include="Unreal\Tera\UMetaData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unreal\Tera\UTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -154,5 +157,6 @@
     <ClInclude Include="Unreal\Tera\UPersistentCookerData.h" />
     <ClInclude Include="App\ObjectProperties.h" />
     <ClInclude Include="Unreal\Tera\UMetaData.h" />
+    <ClInclude Include="Unreal\Tera\UTexture.h" />
   </ItemGroup>
 </Project>

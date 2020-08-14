@@ -15,7 +15,7 @@ UObject::UObject(FObjectExport* exp)
   : Export(exp)
 {
 #ifdef _DEBUG
-  Description = Export->GetFullObjectName();
+  Description = Export->GetObjectName();
 #endif
 }
 
@@ -42,15 +42,6 @@ FPackage* UObject::GetPackage() const
 inline bool UObject::HasAnyFlags(uint64 flags) const
 {
   return (GetObjectFlags() & flags) != 0 || flags == RF_AllFlags;
-}
-
-UObject* UObject::GetOuter() const
-{
-  if (!Export->GetOuter())
-  {
-    return false;
-  }
-  return GetPackage()->GetObject((FObjectExport*)Export->GetOuter());
 }
 
 void UObject::SerializeScriptProperties(FStream& s) const

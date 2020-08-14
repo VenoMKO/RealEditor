@@ -35,14 +35,16 @@
 
 #include <ppl.h>
 
-#include "../MiniLZO/minilzo.h"
+#include <MiniLZO/minilzo.h>
 
 #include "ALog.h"
 
 #define HEAP_ALLOC(var,size) lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
 static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
-#define COMPRESSED_BLOCK_SIZE 0x20000
+
 #define COMPRESSED_BLOCK_MAGIC PACKAGE_MAGIC
+#define COMPRESSION_FLAGS_TYPE_MASK		0x0F
+#define COMPRESSION_FLAGS_OPTIONS_MASK	0xF0
 
 std::string W2A(const wchar_t* str, int32 len)
 {
@@ -193,7 +195,7 @@ void memswap(void* a, void* b, size_t size)
   free(tmp);
 }
 
-void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
 {
   lzo_bytep ptr = (lzo_bytep)src;
   lzo_bytep start = ptr;
@@ -265,6 +267,40 @@ void LZO::Decompress(void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstS
   delete[] compressionInfo;
 }
 
+bool Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+{
+  lzo_uint finalSize = dstSize;
+  int e = lzo1x_decompress_safe((lzo_bytep)src, srcSize, (lzo_bytep)dst, &finalSize, NULL);
+  if (e != LZO_E_OK)
+  {
+    LogE("Corrupted compression block. Code: %d", e);
+    return false;
+  }
+  return true;
+}
+
+bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 decompressedSize, const void* compressedBuffer, int32 compressedSize)
+{
+  bool ok = false;
+  switch (flags & COMPRESSION_FLAGS_TYPE_MASK)
+  {
+  case COMPRESS_ZLIB:
+    // TODO: implement zlib
+    DBreak();
+    break;
+  case COMPRESS_LZO:
+    ok = Decompress(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
+    break;
+  case COMPRESS_LZX:
+    // TODO: implement lzx
+    DBreak();
+    break;
+  default:
+    LogE("Unknown compression format: %d", flags & COMPRESSION_FLAGS_TYPE_MASK);
+    ok = false;
+  }
+  return ok;
+}
 
 FString ObjectFlagsToString(uint64 expFlag)
 {

@@ -13,18 +13,19 @@
 #include "UObjectRedirector.h"
 #include "UMaterial.h"
 #include "UPersistentCookerData.h"
+#include "UTexture.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
-  if (exp->Object)
-  {
-    return exp->Object;
-  }
   UObject* result = nullptr;
   const FString c = exp->GetClassName();
   if (c == UClass::StaticClassName())
   {
     result = new UClass(exp);
+  }
+  else if (c == UTexture2D::StaticClassName())
+  {
+    result = new UTexture2D(exp);
   }
   else if (c == UField::StaticClassName())
   {
@@ -155,6 +156,5 @@ UObject* UObject::Object(FObjectExport* exp)
       result = new UObject(exp);
     }
   }
-  exp->Object = result;
   return result;
 }

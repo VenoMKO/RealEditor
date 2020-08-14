@@ -1,6 +1,8 @@
 #include "FStream.h"
 #include "FPackage.h"
 
+#include <ppl.h>
+
 FStream& FStream::operator<<(FString& s)
 {
   if (IsReading())
@@ -69,4 +71,96 @@ FStream& FStream::operator<<(FStringRef& r)
     (*this) << *r.Cached;
   }
   return *this;
+}
+
+void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags, bool concurrent)
+{
+  if (IsReading())
+  {
+    FCompressedChunkInfo packageFileTag;
+    *this << packageFileTag;
+    FCompressedChunkInfo summary;
+    *this << summary;
+
+    DBreakIf(packageFileTag.CompressedSize != PACKAGE_MAGIC);
+
+    int32 loadingCompressionChunkSize = packageFileTag.DecompressedSize;
+    if (loadingCompressionChunkSize == PACKAGE_MAGIC)
+    {
+      loadingCompressionChunkSize = COMPRESSED_BLOCK_SIZE;
+    }
+
+    int32	totalChunkCount = (summary.DecompressedSize + loadingCompressionChunkSize - 1) / loadingCompressionChunkSize;
+    FCompressedChunkInfo* chunkInfo = new FCompressedChunkInfo[totalChunkCount];
+
+    if (concurrent)
+    {
+      void** compressedDataChunks = new void*[totalChunkCount];
+      for (int32 idx = 0; idx < totalChunkCount; ++idx)
+      {
+        *this << chunkInfo[idx];
+        compressedDataChunks[idx] = malloc(chunkInfo[idx].CompressedSize);
+        SerializeBytes(compressedDataChunks[idx], chunkInfo[idx].CompressedSize);
+      }
+
+      uint8* dest = (uint8*)v;
+      std::atomic_bool err = {false};
+      concurrency::parallel_for(int32(0), totalChunkCount, [&](int32 idx) {
+        const FCompressedChunkInfo& chunk = chunkInfo[idx];
+        if (err.load())
+        {
+          return;
+        }
+        if (!DecompressMemory(flags, dest, chunk.DecompressedSize, compressedDataChunks[idx], chunk.CompressedSize))
+        {
+          err.store(true);
+        }
+      });
+
+      for (int32 idx = 0; idx < totalChunkCount; ++idx)
+      {
+        free(compressedDataChunks[idx]);
+      }
+
+      delete[] chunkInfo;
+      delete[] compressedDataChunks;
+
+      if (err.load())
+      {
+        UThrow("Failed to decompress data!");
+      }
+    }
+    else
+    {
+      int32 maxCompressedSize = 0;
+      for (int32 idx = 0; idx < totalChunkCount; ++idx)
+      {
+        *this << chunkInfo[idx];
+        maxCompressedSize = std::max(chunkInfo[idx].CompressedSize, maxCompressedSize);
+      }
+
+      uint8* dest = (uint8*)v;
+      void* compressedBuffer = malloc(maxCompressedSize);
+      bool err = false;
+      for (int32 idx = 0; idx < totalChunkCount; ++idx)
+      {
+        const FCompressedChunkInfo& chunk = chunkInfo[idx];
+        SerializeBytes(compressedBuffer, chunk.CompressedSize);
+        if (!DecompressMemory(flags, dest, chunk.DecompressedSize, compressedBuffer, chunk.CompressedSize))
+        {
+          err = true;
+          break;
+        }
+        dest += chunk.DecompressedSize;
+      }
+
+      free(compressedBuffer);
+      delete[] chunkInfo;
+
+      if (err)
+      {
+        UThrow("Failed to decompress data!");
+      }
+    }
+  }
 }

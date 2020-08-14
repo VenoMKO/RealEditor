@@ -217,3 +217,17 @@ enum ECompressionFlags
   COMPRESS_LZO = 0x02,
   COMPRESS_LZX = 0x04
 };
+
+enum EBulkDataFlags
+{
+  BULKDATA_None = 0,
+  BULKDATA_StoreInSeparateFile = 1 << 0,
+  BULKDATA_SerializeCompressedZLIB = 1 << 1,
+  BULKDATA_ForceSingleElementSerialization = 1 << 2,
+  BULKDATA_SingleUse = 1 << 3,
+  BULKDATA_SerializeCompressedLZO = 1 << 4,
+  BULKDATA_Unused = 1 << 5,
+  BULKDATA_StoreOnlyPayload = 1 << 6,
+  BULKDATA_SerializeCompressedLZX = 1 << 7,
+  BULKDATA_SerializeCompressed = (BULKDATA_SerializeCompressedZLIB | BULKDATA_SerializeCompressedLZO | BULKDATA_SerializeCompressedLZX),
+};

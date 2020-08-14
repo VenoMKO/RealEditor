@@ -10,7 +10,7 @@ UProperty* CreateProperty(const char* name, const  char* className, UStruct* par
   VObjectExport* exp = parent->GetPackage()->CreateVirtualExport(name, className);
   parent->GetExportObject()->Inner.push_back(exp);
   UProperty* prop = (UProperty*)UObject::Object(exp);
-  exp->Object = prop;
+  exp->SetObject(prop);
   if (UField* field = parent->GetChildren())
   {
     for (; field->GetNext(); field = field->GetNext());

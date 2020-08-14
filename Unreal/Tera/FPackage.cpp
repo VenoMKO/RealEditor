@@ -38,6 +38,8 @@ std::unordered_map<FString, FTextureFileCacheInfo> FPackage::TextureCacheMap;
 std::mutex FPackage::ClassMapMutex;
 std::unordered_map<FString, UObject*> FPackage::ClassMap;
 std::unordered_set<FString> FPackage::MissingClasses;
+std::mutex FPackage::MissingPackagesMutex;
+std::vector<FString> FPackage::MissingPackages;
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
@@ -225,41 +227,44 @@ void FPackage::LoadClassPackage(const FString& name)
     std::vector<UObject*> defaults;
     // Leftovers
     std::vector<UObject*> other;
-    // Allocate all objects
-    for (FObjectExport* exp : package->Exports)
+
+    // Prepare object lists
+    UMetaData* meta = nullptr;
+    for (auto p : package->ExportObjects)
     {
-      UObject* obj = package->GetObject(exp->ObjectIndex, false);
-      if (!exp->OuterIndex)
+      if (!p.second)
       {
-        if (exp->Object && exp->Object->IsTemplate(RF_ClassDefaultObject))
-        {
-          defaults.push_back(obj);
-        }
-        else if (exp->GetClassName() == NAME_Class)
-        {
-          classes.push_back(obj);
-        }
-        else
-        {
-          other.push_back(obj);
-        }
+        continue;
       }
-      if (exp->GetClassName() == UClass::StaticClassName())
+      UObject* obj = p.second;
+      
+      if (obj->IsTemplate(RF_ClassDefaultObject))
       {
+        defaults.push_back(obj);
+      }
+      else if (obj->GetClassName() == NAME_Class)
+      {
+        classes.push_back(obj);
         std::scoped_lock<std::mutex> l(ClassMapMutex);
-        ClassMap[exp->GetObjectName()] = obj;
+        ClassMap[obj->GetObjectName()] = obj;
+      }
+      else if (obj->IsA(UMetaData::StaticClassName()))
+      {
+        meta = (UMetaData*)obj;
+      }
+      else
+      {
+        other.push_back(obj);
       }
     }
 
     // Load objects from child to parent to prevent possible stack overflow
     std::function<void(UObject*, std::vector<UObject*>&)> loader;
     loader = [&loader](UObject* obj, std::vector<UObject*>& children) {
-      for (const FObjectExport* child : obj->GetExportObject()->Inner)
+      auto tmp = obj->GetInner();
+      for (UObject* child : tmp)
       {
-        if (child->Object)
-        {
-          loader(child->Object, children);
-        }
+        loader(child, children);
       }
       children.push_back(obj);
     };
@@ -311,7 +316,7 @@ void FPackage::LoadClassPackage(const FString& name)
       MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
-      if (root->GetExportObject()->Inner.size())
+      if (root->GetInner().size())
       {
         std::vector<UObject*> objects;
         loader(root, objects);
@@ -343,7 +348,7 @@ void FPackage::LoadClassPackage(const FString& name)
       MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
       s.SetLoadSerializedObjects(false);
-      if (root->GetExportObject()->Inner.size())
+      if (root->GetInner().size())
       {
         std::vector<UObject*> objects;
         loader(root, objects);
@@ -362,31 +367,22 @@ void FPackage::LoadClassPackage(const FString& name)
     }
 #endif
 
-    if (package->ObjectNameToExportMap.count(NAME_MetaData))
+    if (meta)
     {
-      std::vector<FObjectExport*> expList = package->ObjectNameToExportMap[NAME_MetaData];
-      while (expList.size())
+      meta->Load();
+      const auto& objMap = meta->GetObjectMetaDataMap();
+      for (const auto& pair : objMap)
       {
-        UObject* tmp = package->GetObject(expList.back());
-        expList.pop_back();
-        if (UMetaData* meta = Cast<UMetaData>(tmp))
+        if (UField* field = Cast<UField>(pair.first))
         {
-          const auto& objMap = meta->GetObjectMetaDataMap();
-          for (const auto& pair : objMap)
+          for (const auto& info : pair.second)
           {
-            if (UField* field = Cast<UField>(pair.first))
+            if (info.first == "ToolTip")
             {
-              for (const auto& info : pair.second)
-              {
-                if (info.first == "ToolTip")
-                {
-                  field->SetToolTip(info.second);
-                  break;
-                }
-              }
+              field->SetToolTip(info.second);
+              break;
             }
           }
-          break;
         }
       }
     }
@@ -636,6 +632,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   if (!stream->IsGood())
   {
     UThrow("Couldn't open the file!");
+    delete stream;
   }
   FPackageSummary sum;
   sum.SourcePath = path;
@@ -730,6 +727,15 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
 
 std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid guid)
 {
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    if (std::find(MissingPackages.begin(), MissingPackages.end(), name) != MissingPackages.end())
+    {
+      return nullptr;
+    }
+  }
+
+  bool anyPackageFound = false;
   std::shared_ptr<FPackage> found = nullptr;
   {
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
@@ -737,6 +743,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     {
       if (package->GetPackageName() == name)
       {
+        anyPackageFound = true;
         if (guid.IsValid())
         {
           if (package->GetGuid() == guid)
@@ -765,7 +772,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     FString packagePath;
     for (FString& path : DirCache)
     {
-      std::wstring filename = path.FilenameW();
+      std::wstring filename = path.FilenameWString();
       if (filename.size() < entry.FileName.Size())
       {
         continue;
@@ -773,7 +780,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
       std::wstring tmp = entry.FileName.WString();
       if (std::mismatch(tmp.begin(), tmp.end(), filename.begin()).first == tmp.end())
       {
-        packagePath = RootDir.AppendPath(path);
+        packagePath = RootDir.FStringByAppendingPath(path);
         break;
       }
     }
@@ -812,15 +819,16 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
   std::wstring wname = name.WString();
   for (FString& path : DirCache)
   {
-    std::wstring filename = path.FilenameW();
+    std::wstring filename = path.FilenameWString();
     if (filename.size() < wname.size())
     {
       continue;
     }
     if (std::mismatch(wname.begin(), wname.end(), filename.begin()).first == wname.end())
     {
-      if (auto package = GetPackage(RootDir.AppendPath(path)))
+      if (auto package = GetPackage(RootDir.FStringByAppendingPath(path)))
       {
+        anyPackageFound = true;
         if (!guid.IsValid() || guid == package->GetGuid())
         {
           return package;
@@ -828,6 +836,13 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
         UnloadPackage(package);
       }
     }
+  }
+
+  // If we have not found any packages with similar name regardless guid
+  if (!anyPackageFound)
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    MissingPackages.push_back(name);
   }
   return nullptr;
 }
@@ -872,7 +887,7 @@ FPackage::~FPackage()
   {
     delete Stream;
   }
-  for (auto& obj : Objects)
+  for (auto& obj : ExportObjects)
   {
     delete obj.second;
   }
@@ -950,10 +965,15 @@ void FPackage::Load()
     FObjectExport* exp = Exports.emplace_back(new FObjectExport(this));
     exp->ObjectIndex = (PACKAGE_INDEX)idx + 1;
     s << *exp;
+    CheckCancel();
 #ifdef _DEBUG
     exp->ClassNameValue = exp->GetClassName();
 #endif
-    CheckCancel();
+  }
+  
+  for (FObjectExport* exp : Exports)
+  {
+    ExportObjects[exp->ObjectIndex] = UObject::Object(exp);
   }
 
   if (Summary.DependsOffset != s.GetPosition())
@@ -976,8 +996,12 @@ void FPackage::Load()
 #endif
     if (exp->OuterIndex)
     {
+      ExportObjects[exp->ObjectIndex]->SetOuter(ExportObjects[exp->OuterIndex]);
+      ExportObjects[exp->OuterIndex]->AddInner(ExportObjects[exp->ObjectIndex]);
+
       FObjectExport* outer = GetExportObject(exp->OuterIndex);
       outer->Inner.push_back(exp);
+      exp->Outer = outer;
     }
     else
     {
@@ -1007,6 +1031,17 @@ void FPackage::Load()
       RootImports.push_back(imp);
     }
   }
+
+#if _DEBUG
+  for (FObjectExport* exp : Exports)
+  {
+    if (exp->ExportFlags & EF_ScriptPatcherExport)
+    {
+      // If here: probably need to apply stack frames, patch the export table and fix net count
+      DBreak();
+    }
+  }
+#endif
 
 #if DUMP_PACKAGES
   _DebugDump();
@@ -1052,66 +1087,55 @@ FString FPackage::GetPackageName(bool extension) const
 
 UObject* FPackage::GetObject(PACKAGE_INDEX index, bool load)
 {
-  if (Objects.count(index))
-  {
-    return Objects[index];
-  }
   if (index > 0)
   {
-    FObjectExport* exp = GetExportObject(index);
-    if (exp->Object)
-    {
-      return exp->Object;
-    }
-    UObject* obj = UObject::Object(exp);
-    Objects[index] = obj;
-    if (load)
-    {
-      obj->Load();
-    }
-    return obj;
+    return GetObject(GetExportObject(index), load);
   }
   else if (index < 0)
   {
-    FObjectImport* imp = GetImportObject(index);
-    if (UObject* obj = GetObject(imp))
-    {
-      imp->Object = obj;
-      return obj;
-    }
+    return GetObject(GetImportObject(index), load);
   }
   return nullptr;
 }
 
-UObject* FPackage::GetObject(FObjectImport* imp)
+UObject* FPackage::GetObject(FObjectImport* imp, bool load)
 {
-  if (imp->Object)
-  {
-    return imp->Object;
-  }
   if (imp->Package == this)
   {
+    if (UObject* obj = GetCachedImportObject(imp->ObjectIndex))
+    {
+      if (load)
+      {
+        obj->Load();
+      }
+      return obj;
+    }
     FString impPkgName = imp->GetPackageName();
 
     if (impPkgName != GetPackageName(false))
     {
+      // Check already loaded packages
       {
         std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
         for (std::shared_ptr<FPackage>& external : ExternalPackages)
         {
           if (impPkgName == external->GetPackageName(false))
           {
-            return external->GetObject(imp);
+            UObject* obj = external->GetObject(imp, load);
+            ImportObjects[imp->ObjectIndex] = obj;
+            return obj;
           }
         }
       }
+      // Load external package
       if (auto package = GetPackageNamed(impPkgName))
       {
         package->Load();
-        if (UObject* obj = package->GetObject(imp))
+        if (UObject* obj = package->GetObject(imp, load))
         {
           std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
           ExternalPackages.emplace_back(package);
+          ImportObjects[imp->ObjectIndex] = obj;
           return obj;
         }
         UnloadPackage(package);
@@ -1124,13 +1148,14 @@ UObject* FPackage::GetObject(FObjectImport* imp)
   {
     if (vexp->GetObjectName() == imp->GetObjectName() && vexp->GetClassName() == imp->GetClassName())
     {
-      return vexp->Object;
+      return vexp->GetObject();
     }
   }
   std::vector<FObjectExport*> exps = GetExportObject(imp->GetObjectName());
+  FString className = imp->GetClassName();
   for (FObjectExport* exp : exps)
   {
-    if (exp->GetClassName() == imp->GetClassName())
+    if (exp->GetClassName() == className)
     {
       return GetObject(exp);
     }
@@ -1138,36 +1163,141 @@ UObject* FPackage::GetObject(FObjectImport* imp)
   return nullptr;
 }
 
-UObject* FPackage::GetObject(FObjectExport* exp)
+UObject* FPackage::GetObject(FObjectExport* exp, bool load)
 {
-  if (!Objects.count(exp->ObjectIndex))
+  if (exp->ObjectIndex == VEXP_INDEX)
   {
     for (VObjectExport* vexp : VExports)
     {
       if (vexp == exp)
       {
-        return vexp->Object;
+        return vexp->GetObject();
       }
     }
-    Objects[exp->ObjectIndex] = UObject::Object(exp);
   }
-  return Objects[exp->ObjectIndex];
+
+  UObject* obj = GetCachedExportObject(exp->ObjectIndex);
+  if (obj && load)
+  {
+    obj->Load();
+  }
+  if (obj && exp->ExportFlags & EF_ForcedExport)
+  {
+    // Don't load packages or inner objects
+    if (obj->GetClassName() != NAME_Package && obj->GetOuter() && obj->GetOuter()->GetClassName() == NAME_Package)
+    {
+      if (UObject* ext = GetCachedForcedObject(exp->ObjectIndex))
+      {
+        if (load)
+        {
+          ext->Load();
+        }
+        return ext;
+      }
+      else if (ext = SetCachedForcedObject(exp->ObjectIndex, GetForcedExport(exp)))
+      {
+        if (load)
+        {
+          ext->Load();
+        }
+        return ext;
+      }
+      else
+      {
+        LogW("Failed to find external: \"%s\"", obj->GetFullObjectName().C_str());
+      }
+    }
+  }
+  return obj;
 }
 
-UObject* FPackage::GetObject(FObjectExport* exp) const
+UObject* FPackage::GetForcedExport(FObjectExport* exp)
 {
-  if (!Objects.count(exp->ObjectIndex))
+  FObjectExport* outer = nullptr;
+  for (outer = exp->Outer; outer && outer->Outer; outer = outer->Outer);
+  if (!outer)
   {
-    for (VObjectExport* vexp : VExports)
-    {
-      if (vexp == exp)
-      {
-        return vexp->Object;
-      }
-    }
     return nullptr;
   }
-  return Objects.at(exp->ObjectIndex);
+  FString outerName = outer->GetObjectName();
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    if (std::find(MissingPackages.begin(), MissingPackages.end(), outerName) != MissingPackages.end())
+    {
+      return nullptr;
+    }
+  }
+
+  UObject* incomplete = GetCachedExportObject(exp->ObjectIndex);
+  incomplete->Load();
+
+  UObject* result = nullptr;
+  {
+    std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+    for (auto& p : ExternalPackages)
+    {
+      if (outer->PackageGuid.IsValid())
+      {
+        if (outer->PackageGuid == p->GetGuid())
+        {
+          result = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName());
+          break;
+        }
+      }
+      else
+      {
+        FString fname = p->GetPackageName().Filename(false);
+        if (fname.StartWith(outerName))
+        {
+          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+          {
+            result = object;
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (result)
+  {
+    return result;
+  }
+
+  bool packageNotFound = true;
+  for (const FString& path : DirCache)
+  {
+    if (path.Filename(false).StartWith(outerName))
+    {
+      packageNotFound = false;
+      std::shared_ptr<FPackage> p = nullptr;
+      FString completePath(RootDir);
+      completePath = completePath.FStringByAppendingPath(path);
+      if ((p = FPackage::GetPackage(completePath)))
+      {
+        if (!outer->PackageGuid.IsValid() || outer->PackageGuid == p->GetGuid())
+        {
+          p->Load();
+          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+          {
+            {
+              std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+              ExternalPackages.push_back(p);
+            }
+            return object;
+          }
+        }
+      }
+      FPackage::UnloadPackage(p);
+    }
+  }
+
+  if (packageNotFound)
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    MissingPackages.push_back(outer->GetObjectName());
+  }
+
+  return nullptr;
 }
 
 PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
@@ -1178,11 +1308,12 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
   }
   if (object->GetPackage() != this)
   {
-    for (FObjectImport* imp : Imports)
+    std::scoped_lock<std::mutex> l(ImportObjectsMutex);
+    for (const auto& p : ImportObjects)
     {
-      if (imp->Object == object)
+      if (p.second == object)
       {
-        return imp->ObjectIndex;
+        return p.first;
       }
     }
     UThrow("%s does not have import object for %ls", GetPackageName().C_str(), object->GetObjectName().WString().c_str());
@@ -1213,6 +1344,8 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
   {
     return nullptr;
   }
+
+  // Speedup class load during class packages load
   if (index > 0)
   {
     UObject* obj = GetObject(index);
@@ -1226,65 +1359,64 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
     }
     return (UClass*)obj;
   }
+
+  if (UObject* obj = GetCachedImportObject(index))
+  {
+    return (UClass*)obj;
+  }
+
   FObjectImport* imp = GetImportObject(index);
   FString name = imp->GetObjectName();
-  if (imp->Object)
   {
-    return (UClass*)imp->Object;
+    std::scoped_lock<std::mutex> l(ClassMapMutex);
+    if (ClassMap.count(name))
+    {
+      UObject* obj = ClassMap[name];
+      SetCachedImportObject(index, obj);
+      return (UClass*)obj;
+    }
   }
-  else 
+  FString pkgName = imp->GetPackageName();
+  if (pkgName == GetPackageName())
   {
+    UObject* obj = GetObject(imp);
+    if (obj)
     {
       std::scoped_lock<std::mutex> l(ClassMapMutex);
-      if (ClassMap.count(name))
-      {
-        UObject* obj = ClassMap[name];
-        imp->Object = obj;
-        return (UClass*)obj;
-      }
+      ClassMap[name] = obj;
+      return (UClass*)obj;
     }
-    FString pkgName = imp->GetPackageName();
-    if (pkgName == GetPackageName())
+  }
+  {
+    std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+    for (auto pkg : ExternalPackages)
     {
-      UObject* obj = GetObject(imp);
-      if (obj)
+      if (pkg->GetPackageName() == pkgName)
       {
-        std::scoped_lock<std::mutex> l(ClassMapMutex);
-        ClassMap[name] = obj;
-        return (UClass*)obj;
-      }
-    }
-    {
-      std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
-      for (auto pkg : ExternalPackages)
-      {
-        if (pkg->GetPackageName() == pkgName)
+        UObject* obj = pkg->GetObject(imp);
+        if (obj)
         {
-          UObject* obj = pkg->GetObject(imp);
-          if (obj)
-          {
-            std::scoped_lock<std::mutex> l(ClassMapMutex);
-            ClassMap[name] = obj;
-            ExternalPackages.push_back(pkg);
-            return (UClass*)obj;
-          }
-          break;
+          std::scoped_lock<std::mutex> l(ClassMapMutex);
+          ClassMap[name] = obj;
+          ExternalPackages.push_back(pkg);
+          return (UClass*)obj;
         }
+        break;
       }
     }
-    if (auto pkg = GetPackageNamed(pkgName))
+  }
+  if (auto pkg = GetPackageNamed(pkgName))
+  {
+    UObject* obj = pkg->GetObject(imp);
+    if (obj)
     {
-      UObject* obj = pkg->GetObject(imp);
-      if (obj)
-      {
-        std::scoped_lock<std::mutex> l(ClassMapMutex);
-        ClassMap[name] = obj;
-        std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
-        ExternalPackages.push_back(pkg);
-        return (UClass*)obj;
-      }
-      FPackage::UnloadPackage(pkg);
+      std::scoped_lock<std::mutex> l(ClassMapMutex);
+      ClassMap[name] = obj;
+      std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
+      ExternalPackages.push_back(pkg);
+      return (UClass*)obj;
     }
+    FPackage::UnloadPackage(pkg);
   }
   
   if (!MissingClasses.count(name))
@@ -1298,6 +1430,41 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
 void FPackage::AddNetObject(UObject* object)
 {
   NetIndexMap[object->GetNetIndex()] = object;
+}
+
+UObject* FPackage::GetObject(NET_INDEX netIndex, const FString& name, const FString& className)
+{
+  UObject* result = nullptr;
+  if (netIndex != INDEX_NONE && NetIndexMap.count(netIndex))
+  {
+    result = NetIndexMap[netIndex];
+  }
+  else
+  {
+    std::vector<FObjectExport*> exps = GetExportObject(name);
+    UObject* obj = nullptr;
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetClassName() == className)
+      {
+        if (netIndex != INDEX_NONE)
+        {
+          obj = GetObject(exp);
+          if (obj->GetNetIndex() == netIndex)
+          {
+            result = obj;
+            break;
+          }
+        }
+        else if (obj = GetObject(exp))
+        {
+          result = obj;
+          break;
+        }
+      }
+    }
+  }
+  return result;
 }
 
 std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
@@ -1438,4 +1605,55 @@ void FPackage::_DebugDump() const
     printImp(i, 1);
   }
 #endif
+}
+
+UObject* FPackage::GetCachedExportObject(PACKAGE_INDEX index) const
+{
+  std::scoped_lock<std::mutex> l(ExportObjectsMutex);
+  if (ExportObjects.count(index))
+  {
+    return ExportObjects.at(index);
+  }
+  return nullptr;
+}
+
+UObject* FPackage::GetCachedForcedObject(PACKAGE_INDEX index) const
+{
+  std::scoped_lock<std::mutex> l(ForcedObjectsMutex);
+  if (ForcedObjects.count(index))
+  {
+    return ForcedObjects.at(index);
+  }
+  return nullptr;
+}
+
+UObject* FPackage::GetCachedImportObject(PACKAGE_INDEX index) const
+{
+  std::scoped_lock<std::mutex> l(ImportObjectsMutex);
+  if (ImportObjects.count(index))
+  {
+    return ImportObjects.at(index);
+  }
+  return nullptr;
+}
+
+UObject* FPackage::SetCachedExportObject(PACKAGE_INDEX index, UObject* obj)
+{
+  std::scoped_lock<std::mutex> l(ExportObjectsMutex);
+  ExportObjects[index] = obj;
+  return obj;
+}
+
+UObject* FPackage::SetCachedForcedObject(PACKAGE_INDEX index, UObject* obj)
+{
+  std::scoped_lock<std::mutex> l(ForcedObjectsMutex);
+  ForcedObjects[index] = obj;
+  return obj;
+}
+
+UObject* FPackage::SetCachedImportObject(PACKAGE_INDEX index, UObject* obj)
+{
+  std::scoped_lock<std::mutex> l(ImportObjectsMutex);
+  ImportObjects[index] = obj;
+  return obj;
 }

@@ -187,15 +187,9 @@ void PackageWindow::OnExportObjectSelected(INT index)
 		}
 		else
 		{
-			UObject* object = fobj->Object;
-			if (!object)
-			{
-				Package->GetObject(index, false);
-				object = fobj->Object;
-			}
-			GenericEditor* e = GenericEditor::CreateEditor(EditorContainer, this, object);
-			ShowEditor(e);
-			e->LoadObject();
+			GenericEditor* editor = GenericEditor::CreateEditor(EditorContainer, this, Package->GetObject(index, false));
+			ShowEditor(editor);
+			editor->LoadObject();
 		}
 	}
 }

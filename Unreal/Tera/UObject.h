@@ -14,6 +14,9 @@ public:\
   std::string GetStaticClassChain() const override { return Super::GetStaticClassChain() + "." + ThisClass::StaticClassName(); }\
   using TSuper::TSuper
 
+#define UPROP(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName
+#define PROP_IS(prop, TName) (prop->Name == P_##TName)
+
 class UObject {
 public:
   enum { StaticClassCastFlags = CASTCLASS_None };
@@ -88,7 +91,15 @@ public:
 
   inline bool HasAnyFlags(uint64 flags) const;
 
-  UObject* GetOuter() const;
+  UObject* GetOuter() const
+  {
+    return Outer;
+  }
+
+  std::vector<UObject*> GetInner() const
+  {
+    return Inner;
+  }
 
   bool IsTemplate(uint64 templateTypes = (RF_ArchetypeObject | RF_ClassDefaultObject)) const
   {
@@ -137,6 +148,18 @@ public:
   {
     Properties.push_back(property);
   }
+  
+  // Object initialization. Wont modify package's object tree!
+  void SetOuter(UObject* outer)
+  {
+    Outer = outer;
+  }
+
+  // Object initialization. Wont modify package's object tree!
+  void AddInner(UObject* inner)
+  {
+    Inner.push_back(inner);
+  }
 
 private:
   virtual void SerializeScriptProperties(FStream& s) const;
@@ -159,6 +182,7 @@ protected:
   UObject* DefaultObject = nullptr;
 
   UObject* Outer = nullptr;
+  std::vector<UObject*> Inner;
 
   std::vector<FPropertyTag*> Properties;
 

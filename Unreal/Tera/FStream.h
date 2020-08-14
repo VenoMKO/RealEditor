@@ -180,6 +180,32 @@ public:
     return *this;
   }
 
+  void SerializeCompressed(void* v, int32 length, ECompressionFlags flags, bool concurrent = true);
+  
+  template <typename T>
+  void SerializeUntypeBulkDataArray(std::vector<T*>& v, UObject* owner)
+  {
+    int32 cnt = (int32)v.size();
+    *this << cnt;
+    if (IsReading())
+    {
+      for (int32 idx = 0; idx < cnt; ++idx)
+      {
+        T* e = new T();
+        e->Serialize(*this, owner, idx);
+        v.push_back(e);
+      }
+    }
+    else
+    {
+      for (int32 idx = 0; idx < cnt; ++idx)
+      {
+        T* e = v[idx];
+        e->Serialize(*this, owner, idx);
+      }
+    }
+  }
+
   virtual void SerializeBytes(void* ptr, FILE_OFFSET size) = 0;
   virtual void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) = 0;
 
