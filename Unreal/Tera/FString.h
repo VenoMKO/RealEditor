@@ -2,6 +2,8 @@
 #include <stdarg.h>
 #include "Core.h"
 
+#include <algorithm>
+
 // Wrapper to keep track of '\0'
 class FString {
 public:
@@ -179,6 +181,15 @@ public:
       }
     }
     return Data;
+  }
+
+  inline FString ToUpper() const
+  {
+    std::string result = Data;
+    std::for_each(result.begin(), result.end(), [](char& c) {
+      c = ::toupper(c);
+    });
+    return result;
   }
 
   inline FString Filename(bool extension = true) const

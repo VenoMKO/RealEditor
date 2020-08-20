@@ -1,54 +1,55 @@
 #pragma once
 #include "UObject.h"
 
+#include <GL/glew.h>
+#include <osg/Image>
+
 class UTexture : public UObject {
 public:
   DECL_UOBJ(UTexture, UObject);
 
   UPROP(bool, SRGB, true);
 
-  void RegisterProperty(FPropertyTag* property) override;
+  bool RegisterProperty(FPropertyTag* property) override;
 
 protected:
   void Serialize(FStream& s) override;
-  void PostLoad() override;
 
 protected:
-  
   FByteBulkData SourceArt;
-
 };
 
-struct FTexture2DMipMap
-{
-  FByteBulkData Data;
-  int32 DataSize = 0;
-	int32 SizeX = 0;
-	int32 SizeY = 0;
-
-	void Serialize(FStream& s, UObject* owner, int32 mipIdx);
-};
 
 class UTexture2D : public UTexture {
 public:
+
+  static EPixelFormat GetEffectivePixelFormat(const EPixelFormat format, bool bSRGB);
+
   DECL_UOBJ(UTexture2D, UTexture);
 
   ~UTexture2D() override;
 
-  void RegisterProperty(FPropertyTag* property) override;
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  UPROP(EPixelFormat, Format, PF_Unknown);
+  UPROP(int32, SizeX, 0);
+  UPROP(int32, SizeY, 0);
+  UPROP(TextureAddress, AddressX, TA_Wrap);
+  UPROP(TextureAddress, AddressY, TA_Wrap);
+  UPROP(TextureGroup, LODGroup, TEXTUREGROUP_World);
+  UPROP(int32, MipTailBaseIdx, -1);
+  UPROP(bool, bNoTiling, false);
+
+  osg::ref_ptr<osg::Image> GetTextureResource();
 
 protected:
   void Serialize(FStream& s) override;
   void PostLoad() override;
 
-protected:
-  
-  UPROP(EPixelFormat, Format, PF_Unknown);
-  UPROP(int32, SizeX, 0);
-  UPROP(int32, SizeY, 0);
-
-  FString SourceFilePath;
+public:
   std::vector<FTexture2DMipMap*> Mips;
+protected:
+  FString SourceFilePath;
   std::vector<FTexture2DMipMap*> CachedMips;
   std::vector<FTexture2DMipMap*> CachedAtiMips;
   FByteBulkData CachedFlashMip;
@@ -56,4 +57,6 @@ protected:
   FGuid TextureFileCacheGuid;
   int32 FirstResourceMemMip = 0;
   int32 MaxCachedResolution = 0;
+
+  osg::ref_ptr<osg::Image> TextureResource = nullptr;
 };

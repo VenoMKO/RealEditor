@@ -267,7 +267,7 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
   delete[] compressionInfo;
 }
 
-bool Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
 {
   lzo_uint finalSize = dstSize;
   int e = lzo1x_decompress_safe((lzo_bytep)src, srcSize, (lzo_bytep)dst, &finalSize, NULL);
@@ -289,7 +289,7 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
     DBreak();
     break;
   case COMPRESS_LZO:
-    ok = Decompress(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
+    ok = DecompressLZO(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
     break;
   case COMPRESS_LZX:
     // TODO: implement lzx
@@ -608,3 +608,16 @@ FString PackageFlagsToString(uint32 flags)
   }
   return s;
 }
+
+#if _DEBUG
+void DumpData(void* data, int size, const char* path)
+{
+  std::string p = std::string(DUMP_PATH) + "\\" + path;
+  if (FILE* f = fopen(p.c_str(), "w"))
+  {
+
+    fwrite(data, 1, size, f);
+    fclose(f);
+  }
+}
+#endif

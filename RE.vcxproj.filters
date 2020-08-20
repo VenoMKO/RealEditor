@@ -17,9 +17,6 @@
     <ClCompile Include="App\App.cpp">
       <Filter>Source Files\App</Filter>
     </ClCompile>
-    <ClCompile Include="App\GenericEditor.cpp">
-      <Filter>Source Files\App</Filter>
-    </ClCompile>
     <ClCompile Include="App\PackageWindow.cpp">
       <Filter>Source Files\App</Filter>
     </ClCompile>
@@ -71,9 +68,6 @@
     <ClCompile Include="App\ProgressWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Unreal\Tera\UObjectRedirector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -107,12 +101,24 @@
     <ClCompile Include="Unreal\Tera\UTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\GenericEditor.cpp">
+      <Filter>Source Files\App</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\ObjectTreeModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\TextureEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\OSGWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
-      <Filter>Source Files\App</Filter>
-    </ClInclude>
-    <ClInclude Include="App\GenericEditor.h">
       <Filter>Source Files\App</Filter>
     </ClInclude>
     <ClInclude Include="App\PackageWindow.h">
@@ -144,7 +150,6 @@
     <ClInclude Include="App\LogWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\ProgressWindow.h" />
-    <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
     <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
     <ClInclude Include="Unreal\Tera\UComponent.h" />
     <ClInclude Include="Unreal\Tera\FPropertyTag.h" />
@@ -158,5 +163,12 @@
     <ClInclude Include="App\ObjectProperties.h" />
     <ClInclude Include="Unreal\Tera\UMetaData.h" />
     <ClInclude Include="Unreal\Tera\UTexture.h" />
+    <ClInclude Include="App\Editors\GenericEditor.h">
+      <Filter>Source Files\App</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
+    <ClInclude Include="App\ObjectTreeModel.h" />
+    <ClInclude Include="App\Editors\TextureEditor.h" />
+    <ClInclude Include="App\Editors\OSGWindow.h" />
   </ItemGroup>
 </Project>

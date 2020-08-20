@@ -1,13 +1,29 @@
-#include "PackageWindow.h"
-#include "App.h"
+#include "GenericEditor.h"
+#include "../PackageWindow.h"
+#include "../App.h"
 
 #include <Tera/ALog.h>
 #include <Tera/UObject.h>
 
+#include "ObjectRedirectorEditor.h"
+#include "TextureEditor.h"
+
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
-  GenericEditor* editor = new GenericEditor(parent, window);
-  editor->Object = object;
+  GenericEditor* editor = nullptr;
+  if (object->GetClassName() == UObjectRedirector::StaticClassName())
+  {
+    editor = new ObjectRedirectorEditor(parent, window);
+  }
+  else if (object->GetClassName() == UTexture2D::StaticClassName())
+  {
+    editor = new TextureEditor(parent, window);
+  }
+  else
+  {
+    editor = new GenericEditor(parent, window);
+  }
+  editor->SetObject(object);
   return editor;
 }
 
@@ -24,10 +40,10 @@ void GenericEditor::LoadObject()
   {
     return;
   }
-  Loading = true;
   std::string id = GetEditorId();
   if (!Object->IsLoaded())
   {
+    Loading = true;
     UObject* obj = Object;
     std::weak_ptr<FPackage> wpackage = Window->GetPackage();
     std::thread([obj, id, wpackage] {

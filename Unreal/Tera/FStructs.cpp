@@ -239,6 +239,25 @@ bool FUntypedBulkData::RequiresSingleElementSerialization(FStream& s)
   return false;
 }
 
+void FUntypedBulkData::GetCopy(void** dest) const
+{
+  if (*dest)
+  {
+    if (BulkData)
+    {
+      memcpy(*dest, BulkData, GetBulkDataSize());
+    }
+  }
+  else
+  {
+    if (BulkData)
+    {
+      *dest = malloc(GetBulkDataSize());
+      memcpy(*dest, BulkData, GetBulkDataSize());
+    }
+  }
+}
+
 void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
 {
   s << BulkDataFlags;
@@ -258,6 +277,22 @@ void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
   else
   {
     // TODO: compression
+  }
+}
+
+void FUntypedBulkData::SerializeSeparate(FStream& s, UObject* owner, int32 idx)
+{
+  bool hasFlag = BulkDataFlags & BULKDATA_StoreInSeparateFile;
+  if (hasFlag)
+  {
+    BulkDataFlags &= ~BULKDATA_StoreInSeparateFile;
+  }
+  OwnsMemory = true;
+  BulkData = malloc(GetBulkDataSize());
+  SerializeBulkData(s, BulkData);
+  if (hasFlag)
+  {
+    BulkDataFlags |= BULKDATA_StoreInSeparateFile;
   }
 }
 
@@ -294,6 +329,11 @@ bool FUntypedBulkData::IsStoredCompressedOnDisk() const
   return BulkDataFlags & BULKDATA_SerializeCompressed;
 }
 
+bool FUntypedBulkData::IsStoredInSeparateFile() const
+{
+  return BulkDataFlags & BULKDATA_StoreInSeparateFile;
+}
+
 ECompressionFlags FUntypedBulkData::GetDecompressionFlags() const
 {
   return (BulkDataFlags & BULKDATA_SerializeCompressedZLIB) ? COMPRESS_ZLIB :
@@ -311,4 +351,10 @@ void FByteBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
 {
   uint8& b = *((uint8*)data + elementIndex);
   s << b;
+}
+
+void FTexture2DMipMap::Serialize(FStream& s, UObject* owner, int32 mipIdx)
+{
+  Data.Serialize(s, owner, mipIdx);
+  s << SizeX << SizeY;
 }

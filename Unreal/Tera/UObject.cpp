@@ -44,6 +44,26 @@ inline bool UObject::HasAnyFlags(uint64 flags) const
   return (GetObjectFlags() & flags) != 0 || flags == RF_AllFlags;
 }
 
+FILE_OFFSET UObject::GetSerialOffset() const
+{
+  return Export ? Export->SerialOffset : -1;
+}
+
+FILE_OFFSET UObject::GetSerialSize() const
+{
+  return Export ? Export->SerialSize : -1;
+}
+
+FILE_OFFSET UObject::GetPropertiesSize() const
+{
+  return RawDataOffset ? RawDataOffset - GetSerialOffset() : -1;
+}
+
+FILE_OFFSET UObject::GetDataSize() const
+{
+  return RawDataOffset ? (GetSerialOffset() + GetSerialSize() - RawDataOffset) : -1;
+}
+
 void UObject::SerializeScriptProperties(FStream& s) const
 {
   // TODO: add a way to serialize object with a different package version
@@ -63,8 +83,9 @@ void UObject::SerializeScriptProperties(FStream& s) const
   //DBreakIf(nonePropertyName.String() != "None");
 }
 
-void UObject::RegisterProperty(FPropertyTag* property)
+bool UObject::RegisterProperty(FPropertyTag* property)
 {
+  return false;
 }
 
 FString UObject::GetObjectPath() const

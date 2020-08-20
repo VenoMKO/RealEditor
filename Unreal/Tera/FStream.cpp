@@ -93,12 +93,19 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
     int32	totalChunkCount = (summary.DecompressedSize + loadingCompressionChunkSize - 1) / loadingCompressionChunkSize;
     FCompressedChunkInfo* chunkInfo = new FCompressedChunkInfo[totalChunkCount];
 
-    if (concurrent)
+    if (concurrent && totalChunkCount > 1)
     {
       void** compressedDataChunks = new void*[totalChunkCount];
       for (int32 idx = 0; idx < totalChunkCount; ++idx)
       {
         *this << chunkInfo[idx];
+        if (idx)
+        {
+          chunkInfo[idx].DecompressedOffset = chunkInfo[idx - 1].DecompressedOffset + chunkInfo[idx - 1].DecompressedSize;
+        }
+      }
+      for (int32 idx = 0; idx < totalChunkCount; ++idx)
+      {
         compressedDataChunks[idx] = malloc(chunkInfo[idx].CompressedSize);
         SerializeBytes(compressedDataChunks[idx], chunkInfo[idx].CompressedSize);
       }
@@ -111,7 +118,7 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
         {
           return;
         }
-        if (!DecompressMemory(flags, dest, chunk.DecompressedSize, compressedDataChunks[idx], chunk.CompressedSize))
+        if (!DecompressMemory(flags, dest + chunk.DecompressedOffset, chunk.DecompressedSize, compressedDataChunks[idx], chunk.CompressedSize))
         {
           err.store(true);
         }

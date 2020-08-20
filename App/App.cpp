@@ -47,7 +47,6 @@ void RegisterMimeTypes(const wxString& appPath)
   RegisterFileType(".gpk", "Tera Package", appPath, man);
   RegisterFileType(".gmp", "Tera Map Package", appPath, man);
   RegisterFileType(".u", "Tera Script Package", appPath, man);
-  RegisterFileType(".tfc", "Texture File Cache", appPath, man);
   RegisterFileType(".upk", "Unreal Package", appPath, man);
   RegisterFileType(".umap", "Unreal Map", appPath, man);
   delete man;
@@ -69,7 +68,6 @@ void UnregisterMimeTypes()
   UnegisterFileType(".gpk", man);
   UnegisterFileType(".gmp", man);
   UnegisterFileType(".u", man);
-  UnegisterFileType(".tfc", man);
   UnegisterFileType(".upk", man);
   UnegisterFileType(".umap", man);
   delete man;
@@ -112,7 +110,7 @@ App::~App()
 
 bool App::ShowOpenDialog(const wxString& rootDir)
 {
-  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.tfc; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.tfc;*.upk");
+  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk");
   wxString packagePath = wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
   if (packagePath.size())
   {

@@ -87,7 +87,8 @@ void UPersistentCookerData::GetPersistentData(std::unordered_map<FString, FBulkD
       {
         bulkDataStream << key;
         bulkDataStream << tmp;
-        outputBulk.emplace(key, FBulkDataInfo(tmp));
+
+        outputBulk.emplace(key.ToUpper(), FBulkDataInfo(tmp));
       }
       DBreakIf(!bulkDataStream.IsGood());
     });

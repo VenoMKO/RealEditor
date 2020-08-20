@@ -58,7 +58,7 @@ public:
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
 
-  virtual void RegisterProperty(FPropertyTag* property);
+  virtual bool RegisterProperty(FPropertyTag* property);
 
   FString GetObjectPath() const;
 
@@ -100,6 +100,14 @@ public:
   {
     return Inner;
   }
+
+  FILE_OFFSET GetSerialOffset() const;
+  
+  FILE_OFFSET GetSerialSize() const;
+
+  FILE_OFFSET GetPropertiesSize() const;
+
+  FILE_OFFSET GetDataSize() const;
 
   bool IsTemplate(uint64 templateTypes = (RF_ArchetypeObject | RF_ClassDefaultObject)) const
   {

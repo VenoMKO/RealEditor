@@ -122,6 +122,7 @@ struct FCompositePackageMapEntry {
 struct FCompressedChunkInfo {
 	int32 CompressedSize = 0;
 	int32 DecompressedSize = 0;
+	int32 DecompressedOffset = 0;
 
 	friend FStream& operator<<(FStream& s, FCompressedChunkInfo& c);
 };
@@ -194,10 +195,41 @@ struct FVector2D {
 		, Y(y)
 	{}
 
+	bool operator==(const FVector2D& v) const
+	{
+		return X == v.X && Y == v.Y;
+	}
+
 	float X = 0;
 	float Y = 0;
 
 	friend FStream& operator<<(FStream& s, FVector2D& v);
+};
+
+struct FVector {
+	FVector()
+	{}
+
+	FVector(float a)
+		: X(a)
+		, Y(a)
+		, Z(a)
+	{}
+
+	FVector(float x, float y, float z)
+		: X(x)
+		, Y(y)
+		, Z(z)
+	{}
+
+	bool operator==(const FVector& v) const
+	{
+		return X == v.X && Y == v.Y && Z == v.Z;
+	}
+
+	float X = 0;
+	float Y = 0;
+	float Z = 0;
 };
 
 struct FScriptDelegate
@@ -318,6 +350,16 @@ struct FUntypedBulkData
 
 	virtual ~FUntypedBulkData();
 
+	void* GetAllocation()
+	{
+		return BulkData;
+	}
+
+	const void* GetAllocation() const
+	{
+		return BulkData;
+	}
+
 	int32 GetElementCount() const;
 
 	int32 GetBulkDataSize() const;
@@ -328,18 +370,19 @@ struct FUntypedBulkData
 
 	bool IsStoredCompressedOnDisk() const;
 
+	bool IsStoredInSeparateFile() const;
+
 	ECompressionFlags GetDecompressionFlags() const;
 
 	void Serialize(FStream& s, UObject* owner, int32 idx = INDEX_NONE);
+
+	void SerializeSeparate(FStream& s, UObject* owner, int32 idx = INDEX_NONE);
 
 	void SerializeBulkData(FStream& s, void* data);
 
 	virtual bool RequiresSingleElementSerialization(FStream& s);
 
-	virtual void* GetBulkDataResourceMemory(UObject* Owner, int32 idx)
-	{
-		return nullptr;
-	}
+	void GetCopy(void** dest) const;
 
 	virtual int32 GetElementSize() const = 0;
 
@@ -365,4 +408,76 @@ struct FByteBulkData : public FUntypedBulkData
 {
 	int32 GetElementSize() const override;
 	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
+};
+
+struct FIntPoint {
+	int32 X = 0;
+	int32 Y = 0;
+};
+
+class FColor {
+public:
+	FColor()
+	{}
+
+	FColor(uint8 r, uint8 g, uint8 b, uint8 a)
+		: B(b)
+		, G(g)
+		, R(r)
+		, A(a)
+	{}
+
+	bool operator==(const FColor& v) const
+	{
+		return R == v.R && G == v.G && B == v.B && A == v.A;
+	}
+
+	uint8 B = 0;
+	uint8 G = 0;
+	uint8 R = 0;
+	uint8 A = 0;
+};
+
+class FLinearColor {
+public:
+	FLinearColor()
+	{}
+
+	FLinearColor(float r, float g, float b, float a)
+		: R(r)
+		, G(g)
+		, B(b)
+		, A(a)
+	{}
+
+	bool operator==(const FLinearColor& v) const
+	{
+		return R == v.R && G == v.G && B == v.B && A == v.A;
+	}
+
+	bool operator!=(const FLinearColor& v) const
+	{
+		return R != v.R || G != v.G || B != v.B || A != v.A;
+	}
+
+	float R = 0;
+	float G = 0;
+	float B = 0;
+	float A = 0;
+};
+
+struct FTexture2DMipMap
+{
+	FByteBulkData Data;
+	int32 DataSize = 0;
+	int32 SizeX = 0;
+	int32 SizeY = 0;
+
+	void Serialize(FStream& s, UObject* owner, int32 mipIdx);
+};
+
+struct FIntRect
+{
+	FIntPoint Min;
+	FIntPoint Max;
 };

@@ -1,4 +1,4 @@
-#include "ObjectTreeDataViewCtrl.h"
+#include "ObjectTreeModel.h"
 #include <wx/artprov.h>
 
 #include <Tera/FObjectResource.h>

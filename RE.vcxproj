@@ -11,12 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
+    <ClCompile Include="App\Editors\OSGWindow.cpp" />
+    <ClCompile Include="App\Editors\TextureEditor.cpp" />
     <ClCompile Include="App\ObjectProperties.cpp" />
-    <ClCompile Include="App\ObjectTreeDataViewCtrl.cpp" />
+    <ClCompile Include="App\ObjectTreeModel.cpp" />
     <ClCompile Include="App\ProgressWindow.cpp" />
     <ClCompile Include="Unreal\Tera\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
-    <ClCompile Include="App\GenericEditor.cpp" />
+    <ClCompile Include="App\Editors\GenericEditor.cpp" />
     <ClCompile Include="App\LogWindow.cpp" />
     <ClCompile Include="App\PackageWindow.cpp" />
     <ClCompile Include="App\RootPathWindow.cpp" />
@@ -45,11 +48,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
+    <ClInclude Include="App\Editors\OSGWindow.h" />
+    <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\ObjectProperties.h" />
-    <ClInclude Include="App\ObjectTreeDataViewCtrl.h" />
+    <ClInclude Include="App\ObjectTreeModel.h" />
     <ClInclude Include="App\ProgressWindow.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
-    <ClInclude Include="App\GenericEditor.h" />
+    <ClInclude Include="App\Editors\GenericEditor.h" />
     <ClInclude Include="App\LogWindow.h" />
     <ClInclude Include="App\PackageWindow.h" />
     <ClInclude Include="App\PackageWindowLayout.h" />
@@ -136,17 +142,18 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;DUMP_PATH="C:\\Users\\VenoMKO\\Desktop\\ReDumps";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OSG_LIBRARY_STATIC;_CRTDBG_MAP_ALLOC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;GLEW_STATIC;DUMP_PATH="C:\\Users\\VenoMKO\\Desktop\\ReDumps";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(WXWIN)\include\msvc;$(WXWIN)\include;$(SolutionDir)Unreal;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WXWIN)\include\msvc;$(WXWIN)\include;$(SolutionDir)Unreal;$(GLEWWIN)\include;C:\Dev\osg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OSGWIN)\lib\debug\;$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -156,19 +163,21 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OSG_LIBRARY_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;GLEW_STATIC;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Unreal;$(WXWIN)\include\msvc;$(WXWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WXWIN)\include\msvc;$(WXWIN)\include;$(SolutionDir)Unreal;$(GLEWWIN)\include;C:\Dev\osg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OSGWIN)\lib\release\;$(WXWIN)\lib\vc_x64_lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>4194304</StackReserveSize>
+      <AdditionalDependencies>zlib.lib;OpenThreads.lib;osg.lib;osgAnimation.lib;osgDB.lib;osgFX.lib;osgGA.lib;osgManipulator.lib;osgParticle.lib;osgPresentation.lib;osgShadow.lib;osgSim.lib;osgTerrain.lib;osgText.lib;osgUI.lib;osgUtil.lib;osgViewer.lib;osgVolume.lib;osgWidget.lib;freetype.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2.lib;libpng16.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

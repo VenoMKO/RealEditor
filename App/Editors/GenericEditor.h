@@ -1,5 +1,7 @@
 #pragma once
+#include <wx/wx.h>
 #include <Tera/FPropertyTag.h>
+
 
 class UObject;
 class PackageWindow;
@@ -25,9 +27,25 @@ public:
     return Loading;
   }
 
+  virtual void OnTick()
+  {}
+
   virtual std::vector<FPropertyTag*> GetObjectProperties();
 
-private:
+protected:
+  virtual void OnObjectSet()
+  {
+  }
+
+  void SetObject(UObject* object)
+  {
+    if ((Object = object))
+    {
+      OnObjectSet();
+    }
+  }
+
+protected:
   UObject* Object = nullptr;
   PackageWindow* Window = nullptr;
   bool Loading = false;

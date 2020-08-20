@@ -34,6 +34,10 @@ public:
 	static void UnloadPackage(std::shared_ptr<FPackage> package);
 	// Find and cache all packages
 	static void SetRootPath(const FString& path);
+	// Get bulk data info
+	static FBulkDataInfo* GetBulkDataInfo(const FString& bulkDataName);
+	// Get texture file cache path with name
+	static FString GetTextureFileCachePath(const FString& tfcName);
 
 private:
 	// Packages must be loaded/created from the static methods
@@ -246,6 +250,7 @@ private:
 	static std::vector<std::shared_ptr<FPackage>> LoadedPackages;
 	static std::vector<std::shared_ptr<FPackage>> DefaultClassPackages;
 	static std::vector<FString> DirCache;
+	static std::unordered_map<FString, FString> TfcCache;
 	static std::unordered_map<FString, FString> PkgMap;
 	static std::unordered_map<FString, FString> ObjectRedirectorMap;
 	static std::unordered_map<FString, FCompositePackageMapEntry> CompositPackageMap;

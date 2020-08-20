@@ -25,7 +25,8 @@ enum ControlElementId {
 	Exit,
 	LogWin,
 	Back,
-	Forward
+	Forward,
+	HeartBeat
 };
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
@@ -62,6 +63,8 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 		Application->SetLastWindowPosition(pos);
 	}
 	OnNoneObjectSelected();
+	HeartBeat.Bind(wxEVT_TIMER, &PackageWindow::OnTick, this);
+	HeartBeat.Start(1);
 }
 
 void PackageWindow::OnCloseWindow(wxCloseEvent& event)
@@ -87,15 +90,22 @@ wxString PackageWindow::GetPackagePath() const
 
 bool PackageWindow::OnObjectLoaded(const std::string& id)
 {
-	for (const auto p : Editors)
+	auto editors = Editors;
+	auto active = ActiveEditor;
+	for (const auto p : editors)
 	{
 		if (p.second->GetEditorId() == id)
 		{
-			if (ActiveEditor == p.second)
-			{
-				UpdateProperties(ActiveEditor->GetObject() ,ActiveEditor->GetObjectProperties());
-			}
 			p.second->OnObjectLoaded();
+			if (active == p.second)
+			{
+				UObject* obj = active->GetObject();
+				ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialSize()));
+				ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialOffset()));
+				ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetPropertiesSize()));
+				ObjectDataSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetDataSize()));
+				UpdateProperties(obj, active->GetObjectProperties());
+			}
 			return true;
 		}
 	}
@@ -109,6 +119,14 @@ void PackageWindow::LoadObjectTree()
 	wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
 	ObjectTreeCtrl->AppendColumn(col);
 	col->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
+}
+
+void PackageWindow::OnTick(wxTimerEvent& e)
+{
+	if (ActiveEditor && !IsIconized())
+	{
+		ActiveEditor->OnTick();
+	}
 }
 
 void PackageWindow::OnIdle(wxIdleEvent& e)
@@ -169,8 +187,10 @@ void PackageWindow::OnExportObjectSelected(INT index)
 	
 	FObjectExport* fobj = Package->GetExportObject(index);
 	ObjectTitleLabel->SetLabelText(wxString::Format("%ls (%ls)", fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
-	ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialSize));
-	ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", fobj->SerialOffset));
+	ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
+	ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", -1));
+	ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
+	ObjectDataSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
 	std::string flags = ObjectFlagsToString(fobj->ObjectFlags);
 	ObjectFlagsTextfield->SetLabelText(flags);
 	flags = ExportFlagsToString(fobj->ExportFlags);
@@ -200,6 +220,7 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 	{
 		PropertyRootCategory = new wxPropertyCategory(object->GetObjectName().WString());
 		PropertyRootCategory->SetValue(object->GetClassName().String());
+		PropertyRootCategory->SetHelpString(L"Object: " + object->GetObjectPath().WString()  + L"\nClass: " + object->GetClassName().WString());
 		PropertiesCtrl->Append(PropertyRootCategory);
 	}
 	else
@@ -323,4 +344,5 @@ EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
 EVT_IDLE(PackageWindow::OnIdle)
+EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 wxEND_EVENT_TABLE()

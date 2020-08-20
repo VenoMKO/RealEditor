@@ -30,6 +30,7 @@ std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<FString> FPackage::DirCache;
+std::unordered_map<FString, FString> FPackage::TfcCache;
 std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
 std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
@@ -43,11 +44,12 @@ std::vector<FString> FPackage::MissingPackages;
 
 uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
 
-void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
+void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::unordered_map<FString, FString>& tfcCache)
 {
   std::filesystem::path fspath(path.WString());
   dirCache.resize(0);
   std::vector<std::filesystem::path> tmpPaths;
+  std::unordered_map<std::string, std::filesystem::path> tmpTfcPaths;
   for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
   {
     if (!p.is_regular_file() || !p.file_size())
@@ -56,13 +58,23 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
     }
     std::filesystem::path itemPath = p.path();
     std::string ext = itemPath.extension().string();
-    if (_stricmp(ext.c_str(), ".gpk") || _stricmp(ext.c_str(), ".gmp") || _stricmp(ext.c_str(), ".upk") || _stricmp(ext.c_str(), ".u"))
+    if (!_stricmp(ext.c_str(), ".gpk") || !_stricmp(ext.c_str(), ".gmp") || !_stricmp(ext.c_str(), ".upk") || !_stricmp(ext.c_str(), ".u"))
     {
+      DBreakIf(ext == ".tfc");
       std::error_code err;
       std::filesystem::path rel = std::filesystem::relative(itemPath, fspath, err);
       if (!err)
       {
         tmpPaths.push_back(rel);
+      }
+    }
+    else if (!_stricmp(ext.c_str(), ".tfc"))
+    {
+      std::error_code err;
+      std::filesystem::path rel = std::filesystem::relative(itemPath, fspath, err);
+      if (!err)
+      {
+        tmpTfcPaths[itemPath.filename().replace_extension().string()] = rel;
       }
     }
   }
@@ -73,12 +85,19 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache)
     return tA.wstring() < tB.wstring();
   });
 
-  std::filesystem::path listPath = fspath / PackageListName;
-  std::ofstream s(listPath.wstring());
+  
   for (const auto& path : tmpPaths)
   {
-    s << dirCache.emplace_back(W2A(path.wstring())).String() << std::endl;
+    dirCache.emplace_back(W2A(path.wstring()));
   }
+  for (const auto& item : tmpTfcPaths)
+  {
+    tfcCache[item.first] = W2A(item.second.wstring());
+  }
+  std::filesystem::path listPath = fspath / PackageListName;
+  FWriteStream s(listPath.wstring());
+  s << dirCache;
+  s << tfcCache;
 }
 
 void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
@@ -144,25 +163,34 @@ void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
   std::filesystem::path listPath = std::filesystem::path(path.WString()) / PackageListName;
-  std::ifstream s(listPath.wstring());
-  if (s.is_open())
+  FReadStream s(listPath.wstring());
+  if (s.IsGood())
   {
-    std::stringstream buffer;
-    buffer << s.rdbuf();
-    size_t pos = 0;
-    size_t prevPos = 0;
-    FString str = buffer.str();
-    while ((pos = str.Find('\n', prevPos)) != std::string::npos)
-    {
-      DirCache.push_back(str.Substr(prevPos, pos - prevPos));
-      pos++;
-      std::swap(pos, prevPos);
-    }
+    s << DirCache;
+    s << TfcCache;
     return;
   }
   LogI("Building directory cache: \"%s\"", path.C_str());
-  BuildPackageList(path, DirCache);
+  BuildPackageList(path, DirCache, TfcCache);
   LogI("Done. Found %ld packages", DirCache.size());
+}
+
+FBulkDataInfo* FPackage::GetBulkDataInfo(const FString& bulkDataName)
+{
+  if (BulkDataMap.count(bulkDataName))
+  {
+    return &BulkDataMap[bulkDataName];
+  }
+  return nullptr;
+}
+
+FString FPackage::GetTextureFileCachePath(const FString& tfcName)
+{
+  if (TfcCache.count(tfcName))
+  {
+    return RootDir.FStringByAppendingPath(TfcCache[tfcName]);
+  }
+  return FString();
 }
 
 uint16 FPackage::GetCoreVersion()
@@ -270,11 +298,8 @@ void FPackage::LoadClassPackage(const FString& name)
     };
 
     // Serialize classes
-#if MULTITHREADED_CLASS_SERIALIZATION
-    concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
-#else
-    for (size_t idx = 0; idx < classes.size(); ++idx) {
-#endif
+    for (size_t idx = 0; idx < classes.size(); ++idx)
+    {
       std::vector<UObject*> objects;
       loader(classes[idx], objects);
       MReadStream s(packageStream.GetAllocation(), false, packageSize);
@@ -284,34 +309,20 @@ void FPackage::LoadClassPackage(const FString& name)
       {
         obj->Load(s);
       }
-#if MULTITHREADED_CLASS_SERIALIZATION
-    });
-#else
     }
-#endif
 
     // Link fields
-#if MULTITHREADED_CLASS_SERIALIZATION
-    concurrency::parallel_for(size_t(0), size_t(classes.size()), [&](size_t idx) {
-#else
-    for (size_t idx = 0; idx < classes.size(); ++idx) {
-#endif
+    for (size_t idx = 0; idx < classes.size(); ++idx)
+    {
       if (UClass* cls = Cast<UClass>(classes[idx]))
       {
         cls->Link();
       }
-#if MULTITHREADED_CLASS_SERIALIZATION
-    });
-#else
     }
-#endif
 
     // Serialize defaults
-#if MULTITHREADED_CLASS_SERIALIZATION
-    concurrency::parallel_for(size_t(0), size_t(defaults.size()), [&](size_t idx) {
-#else
-    for (size_t idx = 0; idx < defaults.size(); ++idx) {
-#endif
+    for (size_t idx = 0; idx < defaults.size(); ++idx)
+    {
       UObject* root = defaults[idx];
       MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
@@ -329,21 +340,14 @@ void FPackage::LoadClassPackage(const FString& name)
       {
         root->Load(s);
       }
-#if MULTITHREADED_CLASS_SERIALIZATION
-    });
-#else
     }
-#endif
 
     // It's safe to load references now
     package->Stream->SetLoadSerializedObjects(true);
     packageStream.SetLoadSerializedObjects(true);
 
-#if MULTITHREADED_CLASS_SERIALIZATION
-    concurrency::parallel_for(size_t(0), size_t(other.size()), [&](size_t idx) {
-#else
-    for (size_t idx = 0; idx < other.size(); ++idx) {
-#endif
+    for (size_t idx = 0; idx < other.size(); ++idx)
+    {
       UObject* root = other[idx];
       MReadStream s(packageStream.GetAllocation(), false, packageSize);
       s.SetPackage(package.get());
@@ -361,11 +365,7 @@ void FPackage::LoadClassPackage(const FString& name)
       {
         root->Load(s);
       }
-#if MULTITHREADED_CLASS_SERIALIZATION
-    });
-#else
     }
-#endif
 
     if (meta)
     {

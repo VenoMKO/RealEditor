@@ -163,6 +163,10 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     else
     {
       wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
+      if (idx >= 0)
+      {
+        ncat->SetHelpString(value->Property->Name.String().WString() + wxString::Format("[%d]", idx));
+      }
       mgr->AppendIn(cat, ncat);
       if (value->Field && value->Field->GetToolTip().Size())
       {
@@ -183,18 +187,24 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   {
     wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
     mgr->AppendIn(cat, ncat);
-
+    bool hasDesc = false;
     if (value->Struct)
     {
       ncat->SetValue(value->Struct->GetObjectName().String());
       if (value->Struct->GetToolTip().Size())
       {
+        hasDesc = true;
         ncat->SetHelpString(value->Struct->GetToolTip().WString());
       }
     }
     if (value->Field && value->Field->GetToolTip().Size())
     {
+      hasDesc = true;
       ncat->SetHelpString(value->Field->GetToolTip().WString());
+    }
+    if (idx >= 0 && !hasDesc)
+    {
+      ncat->SetHelpString(value->Property->Name.String().WString() + wxString::Format("[%d]", idx));
     }
     std::vector<FPropertyValue*> arr = value->GetArray();
 

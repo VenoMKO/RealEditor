@@ -209,13 +209,13 @@ void PackageWindow::InitLayout()
 	wxBoxSizer* bSizer3811;
 	bSizer3811 = new wxBoxSizer(wxVERTICAL);
 
-	PropertiesSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
-	PropertiesSizeLabel->Wrap(-1);
-	bSizer3811->Add(PropertiesSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
+	ObjectPropertiesSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+	ObjectPropertiesSizeLabel->Wrap(-1);
+	bSizer3811->Add(ObjectPropertiesSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
-	DataSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
-	DataSizeLabel->Wrap(-1);
-	bSizer3811->Add(DataSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
+	ObjectDataSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+	ObjectDataSizeLabel->Wrap(-1);
+	bSizer3811->Add(ObjectDataSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
 
 	bSizer47->Add(bSizer3811, 0, wxEXPAND, 5);
@@ -279,7 +279,7 @@ void PackageWindow::InitLayout()
 	stProperties->Wrap(-1);
 	propertiesSizer->Add(stProperties, 0, wxALL, 3);
 
-	PropertiesCtrl = new wxPropertyGridManager(PropertiesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE | wxPG_SPLITTER_AUTO_CENTER | wxPG_TOOLTIPS);
+	PropertiesCtrl = new wxPropertyGridManager(PropertiesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE | wxPG_DESCRIPTION | wxPG_SPLITTER_AUTO_CENTER | wxPG_TOOLTIPS);
 	PropertiesCtrl->SetExtraStyle(wxPG_EX_ENABLE_TLP_TRACKING | wxPG_EX_HELP_AS_TOOLTIPS | wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
 	PropertiesCtrl->SetMinSize(wxSize(230, 600));
 
@@ -308,7 +308,7 @@ void PackageWindow::InitLayout()
 
 	// Reduce flickering on resizing
 	std::vector<wxWindow*> flickeringWindows = { menuBar, stExpFlags , stObjFlags, stOffset, stSize, stPropSize, stDataSize, stProperties, EditorContainer, contentSplitterPanel, sidebarPanel,
-		PropertiesPanel, MainPanel, Toolbar, ObjectOffsetLabel, ObjectSizeLabel, ObjectTitleLabel, PropertiesSizeLabel, DataSizeLabel, SidebarSplitter, ContentSplitter, PropertiesCtrl };
+		PropertiesPanel, MainPanel, Toolbar, ObjectOffsetLabel, ObjectSizeLabel, ObjectTitleLabel, ObjectPropertiesSizeLabel, ObjectDataSizeLabel, SidebarSplitter, ContentSplitter, PropertiesCtrl };
 	for (wxWindow* window : flickeringWindows)
 	{
 		window->SetDoubleBuffered(true);

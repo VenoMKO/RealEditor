@@ -4,8 +4,8 @@
 #include <wx/toolbar.h>
 #include <wx/propgrid/manager.h>
 
-#include "GenericEditor.h"
-#include "ObjectTreeDataViewCtrl.h"
+#include "Editors/GenericEditor.h"
+#include "ObjectTreeModel.h"
 
 #include <map>
 #include <vector>
@@ -32,6 +32,7 @@ private:
 
 	void InitLayout();
 	void LoadObjectTree();
+	void OnTick(wxTimerEvent& e);
 	void OnIdle(wxIdleEvent& e);
 
 	// Menu
@@ -73,8 +74,8 @@ private:
 	wxTextCtrl* ObjectFlagsTextfield = nullptr;
 	wxStaticText* ObjectOffsetLabel = nullptr;
 	wxStaticText* ObjectSizeLabel = nullptr;
-	wxStaticText* PropertiesSizeLabel = nullptr;
-	wxStaticText* DataSizeLabel = nullptr;
+	wxStaticText* ObjectPropertiesSizeLabel = nullptr;
+	wxStaticText* ObjectDataSizeLabel = nullptr;
 	wxTextCtrl* ExportFlagsTextfield = nullptr;
 	wxToolBar* Toolbar = nullptr;
 	wxPropertyGridManager* PropertiesCtrl = nullptr;
@@ -93,6 +94,7 @@ private:
 
 	std::map<PACKAGE_INDEX, GenericEditor*> Editors;
 	GenericEditor* ActiveEditor = nullptr;
+	wxTimer HeartBeat;
 
 	wxObjectDataPtr<ObjectTreeModel> DataModel;
 	bool ContentHidden = false;
