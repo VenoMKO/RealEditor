@@ -105,6 +105,8 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
 				ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetPropertiesSize()));
 				ObjectDataSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetDataSize()));
 				UpdateProperties(obj, active->GetObjectProperties());
+				active->PopulateToolBar(Toolbar);
+				Toolbar->Realize();
 			}
 			return true;
 		}
@@ -202,11 +204,17 @@ void PackageWindow::OnExportObjectSelected(INT index)
 		auto it = Editors.find(index);
 		if (it != Editors.end())
 		{
+			if (it->second == ActiveEditor)
+			{
+				return;
+			}
+			Toolbar->ClearTools();
 			ShowEditor(it->second);
 			it->second->LoadObject();
 		}
 		else
 		{
+			Toolbar->ClearTools();
 			GenericEditor* editor = GenericEditor::CreateEditor(EditorContainer, this, Package->GetObject(index, false));
 			ShowEditor(editor);
 			editor->LoadObject();

@@ -54,6 +54,7 @@
     <ClInclude Include="App\ObjectProperties.h" />
     <ClInclude Include="App\ObjectTreeModel.h" />
     <ClInclude Include="App\ProgressWindow.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Unreal\Tera\ALog.h" />
     <ClInclude Include="App\Editors\GenericEditor.h" />
     <ClInclude Include="App\LogWindow.h" />
@@ -87,6 +88,17 @@
     <ClInclude Include="Unreal\Tera\UProperty.h" />
     <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
     <ClInclude Include="Unreal\Tera\UTexture.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Btn_Export.png" />
+    <Image Include="Resources\Btn_Import.png" />
+    <Image Include="Resources\Btn_Texture2D_Alpha.png" />
+    <Image Include="Resources\Btn_Texture2D_Blue.png" />
+    <Image Include="Resources\Btn_Texture2D_Green.png" />
+    <Image Include="Resources\Btn_Texture2D_Red.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

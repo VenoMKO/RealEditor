@@ -8,6 +8,7 @@
 class TextureEditor : public GenericEditor {
 public:
   using GenericEditor::GenericEditor;
+  TextureEditor(wxPanel* parent, PackageWindow* window);
 
   ~TextureEditor() override;
 
@@ -15,14 +16,15 @@ public:
 
   void OnTick() override;
 
+  void PopulateToolBar(wxToolBar* toolbar) override;
+
+  void OnToolBarEvent(wxCommandEvent& event) override;
+
+  void OnImportClicked(wxCommandEvent& e) override;
+
 protected:
-  void OnObjectSet() override
-  {
-    if (!Renderer)
-    {
-      CreateRenderer();
-    }
-  }
+  void OnAlphaMaskChange();
+
   // Create OpenGL context
   void CreateRenderer();
 
@@ -31,6 +33,8 @@ protected:
 
 private:
   UTexture2D* Texture = nullptr;
+  osg::ref_ptr<osg::Geode> Root = nullptr;
+  osg::ref_ptr<osg::ColorMask> Mask = nullptr;
   OSGCanvas* Canvas = nullptr;
   OSGWindow* OSGProxy = nullptr;
   osgViewer::Viewer* Renderer = nullptr;

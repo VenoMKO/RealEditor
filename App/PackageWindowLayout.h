@@ -249,7 +249,8 @@ void PackageWindow::InitLayout()
 	bSizer13->Fit(ObjectInfoPanel);
 	bSizer27->Add(ObjectInfoPanel, 0, wxALL | wxEXPAND, 0);
 
-	Toolbar = new wxToolBar(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORZ_TEXT | wxTB_NODIVIDER | wxTB_NOICONS);
+	Toolbar = new wxToolBar(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORZ_TEXT | wxBORDER_NONE | wxTB_NODIVIDER | wxTB_TEXT);
+	Toolbar->SetMinSize(wxSize(-1, 32));
 	Toolbar->Realize();
 
 	bSizer27->Add(Toolbar, 0, wxEXPAND, 5);
@@ -352,6 +353,10 @@ void PackageWindow::SetContentHidden(bool hidden)
 
 void PackageWindow::ShowEditor(GenericEditor* editor)
 {
+	if (ActiveEditor && ActiveEditor != editor)
+	{
+		Toolbar->Unbind(wxEVT_TOOL, &GenericEditor::OnToolBarEvent, ActiveEditor);
+	}
 	bool shown = false;
 	for (std::pair<const INT, GenericEditor*>& item : Editors)
 	{
@@ -373,5 +378,8 @@ void PackageWindow::ShowEditor(GenericEditor* editor)
 		MainPanel->GetSizer()->Layout();
 		editor->Show();
 	}
-	ActiveEditor = editor;
+	if ((ActiveEditor = editor))
+	{
+		Toolbar->Bind(wxEVT_TOOL, &GenericEditor::OnToolBarEvent, ActiveEditor);
+	}
 }

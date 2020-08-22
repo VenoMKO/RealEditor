@@ -49,9 +49,7 @@ void GenericEditor::LoadObject()
     std::thread([obj, id, wpackage] {
       if (auto l = wpackage.lock())
       {
-        PERF_START(UI_LOAD_OBJECT);
         obj->Load();
-        PERF_END(UI_LOAD_OBJECT);
         SendEvent(wxTheApp, OBJECT_LOADED, id);
       }
     }).detach();
@@ -76,4 +74,39 @@ std::string GenericEditor::GetEditorId() const
 std::vector<FPropertyTag*> GenericEditor::GetObjectProperties()
 {
   return Object->GetProperties();
+}
+
+void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  if (Object->GetDataSize())
+  {
+    toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
+    toolbar->AddTool(eID_Import, "Import", wxBitmap("#113", wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
+  }
+}
+
+void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
+{
+  if (e.GetId() == eID_Export)
+  {
+    OnExportClicked(e);
+    e.Skip(true);
+  }
+  else if (e.GetId() == eID_Import)
+  {
+    OnImportClicked(e);
+    e.Skip(true);
+  }
+}
+
+void GenericEditor::OnExportClicked(wxCommandEvent& e)
+{
+  wxString path = wxSaveFileSelector("raw object data", ".*", Object->GetObjectName().WString(), Window);
+
+}
+
+void GenericEditor::OnImportClicked(wxCommandEvent& e)
+{
+  wxString path = wxLoadFileSelector("raw object data", ".*", wxEmptyString, Window);
+  // TODO: import data
 }

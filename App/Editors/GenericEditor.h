@@ -2,6 +2,14 @@
 #include <wx/wx.h>
 #include <Tera/FPropertyTag.h>
 
+enum ToolEventID : int {
+  eID_Export = 0,
+  eID_Import,
+  eID_Texture2D_Channel_R,
+  eID_Texture2D_Channel_G,
+  eID_Texture2D_Channel_B,
+  eID_Texture2D_Channel_A
+};
 
 class UObject;
 class PackageWindow;
@@ -31,6 +39,14 @@ public:
   {}
 
   virtual std::vector<FPropertyTag*> GetObjectProperties();
+
+  virtual void PopulateToolBar(wxToolBar* toolbar);
+  
+  virtual void OnToolBarEvent(wxCommandEvent& e);
+
+  virtual void OnExportClicked(wxCommandEvent& e);
+
+  virtual void OnImportClicked(wxCommandEvent& e);
 
 protected:
   virtual void OnObjectSet()

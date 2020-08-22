@@ -48,7 +48,6 @@ void UStruct::Link()
   {
     it->Link();
   }
-  std::scoped_lock<std::mutex> lock(LinkMutex);
   if (!PropertyLink)
   {
     UProperty** propertyLinkPtr = &PropertyLink;

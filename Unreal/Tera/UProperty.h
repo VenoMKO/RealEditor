@@ -9,7 +9,7 @@ struct FPropertyValue;
 class UProperty : public UField {
 public:
   DECL_UOBJ(UProperty, UField);
-	DECL_CLASS_INERIT(UProperty);
+	DECL_CLASS_CAST(UProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -28,7 +28,7 @@ public:
 class UByteProperty : public UProperty {
 public:
 	DECL_UOBJ(UByteProperty, UProperty);
-	DECL_CLASS_INERIT(UByteProperty);
+	DECL_CLASS_CAST(UByteProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -46,7 +46,7 @@ public:
 class UIntProperty : public UProperty {
 public:
 	DECL_UOBJ(UIntProperty, UProperty);
-	DECL_CLASS_INERIT(UIntProperty);
+	DECL_CLASS_CAST(UIntProperty);
 
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
@@ -59,7 +59,7 @@ public:
 class UBoolProperty : public UProperty {
 public:
 	DECL_UOBJ(UBoolProperty, UProperty);
-	DECL_CLASS_INERIT(UBoolProperty);
+	DECL_CLASS_CAST(UBoolProperty);
 
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
@@ -75,7 +75,7 @@ public:
 class UFloatProperty : public UProperty {
 public:
 	DECL_UOBJ(UFloatProperty, UProperty);
-	DECL_CLASS_INERIT(UFloatProperty);
+	DECL_CLASS_CAST(UFloatProperty);
 
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
@@ -88,7 +88,7 @@ public:
 class UObjectProperty : public UProperty {
 public:
 	DECL_UOBJ(UObjectProperty, UProperty);
-	DECL_CLASS_INERIT(UObjectProperty);
+	DECL_CLASS_CAST(UObjectProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -106,13 +106,13 @@ public:
 class UComponentProperty : public UObjectProperty {
 public:
 	DECL_UOBJ(UComponentProperty, UObjectProperty);
-	DECL_CLASS_INERIT(UComponentProperty);
+	DECL_CLASS_CAST(UComponentProperty);
 };
 
 class UClassProperty : public UObjectProperty {
 public:
 	DECL_UOBJ(UClassProperty, UObjectProperty);
-	DECL_CLASS_INERIT(UClassProperty);
+	DECL_CLASS_CAST(UClassProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -123,7 +123,7 @@ public:
 class UInterfaceProperty : public UProperty {
 public:
 	DECL_UOBJ(UInterfaceProperty, UProperty);
-	DECL_CLASS_INERIT(UInterfaceProperty);
+	DECL_CLASS_CAST(UInterfaceProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -141,7 +141,7 @@ public:
 class UNameProperty : public UProperty {
 public:
 	DECL_UOBJ(UNameProperty, UProperty);
-	DECL_CLASS_INERIT(UNameProperty);
+	DECL_CLASS_CAST(UNameProperty);
 
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
@@ -154,7 +154,7 @@ public:
 class UStrProperty : public UProperty {
 public:
 	DECL_UOBJ(UStrProperty, UProperty);
-	DECL_CLASS_INERIT(UStrProperty);
+	DECL_CLASS_CAST(UStrProperty);
 
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
@@ -167,7 +167,7 @@ public:
 class UArrayProperty : public UProperty {
 public:
 	DECL_UOBJ(UArrayProperty, UProperty);
-	DECL_CLASS_INERIT(UArrayProperty);
+	DECL_CLASS_CAST(UArrayProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -185,7 +185,7 @@ public:
 class UMapProperty : public UProperty {
 public:
 	DECL_UOBJ(UMapProperty, UProperty);
-	DECL_CLASS_INERIT(UMapProperty);
+	DECL_CLASS_CAST(UMapProperty);
 
 	void Serialize(FStream& s) override;
 
@@ -204,7 +204,7 @@ public:
 class UStructProperty : public UProperty {
 public:
 	DECL_UOBJ(UStructProperty, UProperty);
-	DECL_CLASS_INERIT(UStructProperty);
+	DECL_CLASS_CAST(UStructProperty);
 
 	FString GetID() override
 	{
@@ -221,7 +221,7 @@ public:
 class UDelegateProperty : public UProperty {
 public:
 	DECL_UOBJ(UDelegateProperty, UProperty);
-	DECL_CLASS_INERIT(UDelegateProperty);
+	DECL_CLASS_CAST(UDelegateProperty);
 
 	void Serialize(FStream& s) override;
 

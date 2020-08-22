@@ -58,8 +58,7 @@ inline bool FindInternalFormatAndType(uint32 pixelFormat, GLenum& outFormat, GLe
     outType = GL_UNSIGNED_INT_8_8_8_8_REV;
     return true;
   case PF_DXT1:
-    // DXT1 may have alpha, but we expect it don't
-    outFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+    outFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
     outType = GL_UNSIGNED_BYTE;
     return true;
   case PF_DXT3:

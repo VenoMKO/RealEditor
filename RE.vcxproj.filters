@@ -170,5 +170,31 @@
     <ClInclude Include="App\ObjectTreeModel.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Editors\OSGWindow.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Btn_Texture2D_Alpha.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Texture2D_Blue.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Texture2D_Green.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Texture2D_Red.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Import.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Export.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

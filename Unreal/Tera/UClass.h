@@ -4,11 +4,9 @@
 #include "FName.h"
 #include "FPropertyTag.h"
 
-#include <mutex>
-
 struct FPropertyTag;
 
-#define DECL_CLASS_INERIT(Class)\
+#define DECL_CLASS_CAST(Class)\
   enum { StaticClassCastFlags = CASTCLASS_##Class};\
   uint32 GetStaticClassCastFlags() const override\
   { return StaticClassCastFlags | Super::GetStaticClassCastFlags(); }\
@@ -49,7 +47,7 @@ protected:
 class UField : public UObject {
 public:
   DECL_UOBJ(UField, UObject);
-  DECL_CLASS_INERIT(UField);
+  DECL_CLASS_CAST(UField);
 
   inline UField* GetSuperfield() const
   {
@@ -94,7 +92,7 @@ protected:
 class UEnum : public UField {
 public:
   DECL_UOBJ(UEnum, UField);
-  DECL_CLASS_INERIT(UEnum);
+  DECL_CLASS_CAST(UEnum);
 
   int32 FindEnumIndex(FName& inName) const
   {
@@ -128,7 +126,7 @@ protected:
 class UStruct : public UField {
 public:
   DECL_UOBJ(UStruct, UField);
-  DECL_CLASS_INERIT(UStruct);
+  DECL_CLASS_CAST(UStruct);
 
   ~UStruct();
 
@@ -189,14 +187,13 @@ protected:
   uint32 ScriptStorageSize = 0;
   void* ScriptData = nullptr;
   void* ScriptStorage = nullptr;
-  std::mutex LinkMutex;
   UProperty* PropertyLink = nullptr;
 };
 
 class UState : public UStruct {
 public:
   DECL_UOBJ(UState, UStruct);
-  DECL_CLASS_INERIT(UState);
+  DECL_CLASS_CAST(UState);
 
   UState* GetSuperState() const
   {
@@ -222,7 +219,7 @@ protected:
 class UClass : public UState {
 public:
   DECL_UOBJ(UClass, UState);
-  DECL_CLASS_INERIT(UClass);
+  DECL_CLASS_CAST(UClass);
 
   static void CreateBuiltInClasses(FPackage* package);
 
@@ -285,7 +282,7 @@ protected:
 class UScriptStruct : public UStruct {
 public:
   DECL_UOBJ(UScriptStruct, UStruct);
-  DECL_CLASS_INERIT(UScriptStruct);
+  DECL_CLASS_CAST(UScriptStruct);
 
 protected:
   void Serialize(FStream& s) override;
@@ -317,7 +314,7 @@ class UConst : public UField
 {
 public:
   DECL_UOBJ(UConst, UField);
-  DECL_CLASS_INERIT(UConst);
+  DECL_CLASS_CAST(UConst);
 
 protected:
   void Serialize(FStream& s) override;
@@ -357,11 +354,8 @@ class TFieldIterator
   struct PrivateBooleanHelper { int32 Value = 0; };
 
 protected:
-  /** The object being searched for the specified field */
   const UStruct* Struct = nullptr;
-  /** The current location in the list of fields being iterated */
   UField* Field = nullptr;
-  /** Whether to include the super class or not */
   const bool bShouldIncludeSuper = true;
 
 public:
@@ -372,7 +366,7 @@ public:
   {
     IterateToNext();
   }
-  /** conversion to "bool" returning TRUE if the iterator is valid. */
+
   typedef bool PrivateBooleanType;
   inline operator PrivateBooleanType() const
   {
