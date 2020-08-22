@@ -169,6 +169,8 @@ public:
     Inner.push_back(inner);
   }
 
+  void* GetRawData();
+
 private:
   virtual void SerializeScriptProperties(FStream& s) const;
 

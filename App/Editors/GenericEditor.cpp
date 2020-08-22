@@ -4,6 +4,7 @@
 
 #include <Tera/ALog.h>
 #include <Tera/UObject.h>
+#include <Tera/FStream.h>
 
 #include "ObjectRedirectorEditor.h"
 #include "TextureEditor.h"
@@ -102,11 +103,36 @@ void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
 void GenericEditor::OnExportClicked(wxCommandEvent& e)
 {
   wxString path = wxSaveFileSelector("raw object data", ".*", Object->GetObjectName().WString(), Window);
-
+  if (path.empty())
+  {
+    return;
+  }
+  DBreakIf(!Object->GetDataSize());
+  FWriteStream s(path.ToStdWstring());
+  if (!s.IsGood())
+  {
+    wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+    return;
+  }
+  void* data = Object->GetRawData();
+  if (data)
+  {
+    s.SerializeBytes(data, Object->GetDataSize());
+    if (!s.IsGood())
+    {
+      wxMessageBox("Failed to save data to \"" + path + "\"", "Error!", wxICON_ERROR);
+      return;
+    }
+  }
 }
 
 void GenericEditor::OnImportClicked(wxCommandEvent& e)
 {
   wxString path = wxLoadFileSelector("raw object data", ".*", wxEmptyString, Window);
+  if (path.empty())
+  {
+    return;
+  }
   // TODO: import data
+  // Check if called by a redirector. In this case with might want to pull the object in this package and remove the redirector
 }

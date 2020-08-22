@@ -64,6 +64,37 @@ FILE_OFFSET UObject::GetDataSize() const
   return RawDataOffset ? (GetSerialOffset() + GetSerialSize() - RawDataOffset) : -1;
 }
 
+void* UObject::GetRawData()
+{
+  if (RawData)
+  {
+    return RawData;
+  }
+  FReadStream s(GetPackage()->GetDataPath());
+  if (!RawDataOffset)
+  {
+    try
+    {
+      Load(s);
+    }
+    catch (const std::exception& e)
+    {
+      LogE("Failed to load the object %s", GetObjectName().C_str());
+      LogE(e.what());
+    }
+    return nullptr;
+  }
+  if (!RawDataOffset || GetDataSize() <= 0)
+  {
+    return nullptr;
+  }
+  void* result = malloc(GetDataSize());
+  s.SetPosition(RawDataOffset);
+  s.SerializeBytes(result, GetDataSize());
+  RawData = (char*)result;
+  return result;
+}
+
 void UObject::SerializeScriptProperties(FStream& s) const
 {
   // TODO: add a way to serialize object with a different package version
