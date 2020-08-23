@@ -1264,6 +1264,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
   }
 
   bool packageNotFound = true;
+  std::vector<FString> incompleteMatch;
   for (const FString& path : DirCache)
   {
     if (path.Filename(false).StartWith(outerName))
@@ -1286,9 +1287,32 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
             return object;
           }
         }
+        else
+        {
+          incompleteMatch.push_back(completePath);
+        }
       }
       FPackage::UnloadPackage(p);
     }
+  }
+
+  // We failed to find the package with matching GUIDs. Lets check packages with the same name but ignor GUID this time
+  for (const FString& completePath : incompleteMatch)
+  {
+    std::shared_ptr<FPackage> p = nullptr;
+    if ((p = FPackage::GetPackage(completePath)))
+    {
+      p->Load();
+      if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+      {
+        {
+          std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+          ExternalPackages.push_back(p);
+        }
+        return object;
+      }
+    }
+    FPackage::UnloadPackage(p);
   }
 
   if (packageNotFound)

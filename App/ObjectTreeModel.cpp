@@ -254,5 +254,5 @@ void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 }
 
 wxBEGIN_EVENT_TABLE(ObjectTreeDataViewCtrl, wxDataViewCtrl)
-EVT_SIZE(OnSize)
+EVT_SIZE(ObjectTreeDataViewCtrl::OnSize)
 wxEND_EVENT_TABLE()

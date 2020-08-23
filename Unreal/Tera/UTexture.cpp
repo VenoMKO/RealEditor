@@ -265,7 +265,13 @@ void UTexture2D::PostLoad()
     {
       FString bulkDataName = GetObjectPath() + ".MipLevel_" + std::to_string(idx);
       bulkDataName = bulkDataName.ToUpper();
-      if (FBulkDataInfo* info = FPackage::GetBulkDataInfo(bulkDataName))
+      FBulkDataInfo* info = FPackage::GetBulkDataInfo(bulkDataName);
+      if (!info)
+      {
+        bulkDataName += "DXT";
+        info = FPackage::GetBulkDataInfo(bulkDataName);
+      }
+      if (info)
       {
         if (cacheName != info->TextureFileCacheName)
         {
