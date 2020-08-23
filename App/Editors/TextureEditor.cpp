@@ -3,10 +3,12 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 #include <osg/BlendFunc>
+#include <nvtt/nvtt.h>
 
 #include "../PackageWindow.h"
 
 #include <Tera/ALog.h>
+#include <Utils/TextureProcessor.h>
 
 TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
@@ -155,7 +157,6 @@ void TextureEditor::CreateRenderer()
 void TextureEditor::CreateRenderTexture()
 {
   osg::ref_ptr<osg::Image> image = Texture->GetTextureResource();
-  image->setFileName(Texture->GetObjectName().String());
   if (!image)
   {
     return;
@@ -242,8 +243,80 @@ void TextureEditor::CreateRenderTexture()
   OnAlphaMaskChange();
 }
 
-void TextureEditor::OnImportClicked(wxCommandEvent& e)
+void TextureEditor::OnImportClicked(wxCommandEvent&)
 {
   wxString path = wxLoadFileSelector("texture", ".png; .dds", wxEmptyString, Window);
   // TODO: import data
+}
+
+void TextureEditor::OnExportClicked(wxCommandEvent&)
+{
+  wxString path = wxSaveFileSelector("texture", wxT("PNG image|*.png|*.TGA image|*.tga"), Object->GetObjectName().WString(), Window);
+  if (path.empty())
+  {
+    return;
+  }
+  wxString ext = wxFileName(path).GetExt();
+  if (ext.empty())
+  {
+    ext = wxT(".png");
+  }
+
+  TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+  TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
+
+  if (Texture->Format == PF_DXT1)
+  {
+    inputFormat = TextureProcessor::TCFormat::DXT1;
+  }
+  else if (Texture->Format == PF_DXT3)
+  {
+    inputFormat = TextureProcessor::TCFormat::DXT3;
+  }
+  else if (Texture->Format == PF_DXT5)
+  {
+    inputFormat = TextureProcessor::TCFormat::DXT5;
+  }
+  else
+  {
+    std::string msg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+    wxMessageBox(msg, wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  if (ext == "png")
+  {
+    outputFormat = TextureProcessor::TCFormat::PNG;
+  }
+  else if (ext == "tga")
+  {
+    outputFormat = TextureProcessor::TCFormat::TGA;
+  }
+  else if (ext == "dds")
+  {
+    if (inputFormat == TextureProcessor::TCFormat::DXT1 ||
+        inputFormat == TextureProcessor::TCFormat::DXT3 ||
+        inputFormat == TextureProcessor::TCFormat::DXT5)
+    {
+      outputFormat = inputFormat;
+    }
+    else
+    {
+      outputFormat = TextureProcessor::TCFormat::DXT5;
+    }
+  }
+  else
+  {
+    DBreak();
+  }
+
+  TextureProcessor processor(inputFormat, outputFormat);
+  FTexture2DMipMap* mip = Texture->Mips[0];
+  processor.SetInputData(mip->Data.GetAllocation(), mip->Data.GetBulkDataSize());
+  processor.SetOutputPath(W2A(path.ToStdWstring()));
+  processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
+  if (!processor.Process())
+  {
+    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+  }
 }

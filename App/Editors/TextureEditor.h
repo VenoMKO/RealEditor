@@ -22,6 +22,8 @@ public:
 
   void OnImportClicked(wxCommandEvent& e) override;
 
+  void OnExportClicked(wxCommandEvent&) override;
+
 protected:
   void OnAlphaMaskChange();
 

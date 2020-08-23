@@ -229,6 +229,7 @@ osg::ref_ptr<osg::Image> UTexture2D::GetTextureResource()
   }
   FTexture2DMipMap* mip = Mips.front();
   TextureResource = new osg::Image();
+  TextureResource->setFileName(GetObjectName().String());
   TextureResource->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data.GetAllocation(), osg::Image::AllocationMode::NO_DELETE, 1, 0);
   return TextureResource;
 }

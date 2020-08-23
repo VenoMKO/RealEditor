@@ -116,6 +116,9 @@
     <ClCompile Include="App\Editors\OSGWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unreal\Utils\TextureProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -171,6 +174,7 @@
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Editors\OSGWindow.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Unreal\Utils\TextureProcessor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
