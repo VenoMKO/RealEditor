@@ -62,9 +62,10 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const s
   std::vector<wxPropertyCategory*> cats = { cat };
   int32 remainingArrayDim = properties.empty() ? 0 : properties.front()->ArrayDim;
   wxPropertyCategory* category = nullptr;
+  int32 prevArrayIndex = 0;
   for (FPropertyTag* tag : properties)
   {
-    if (--remainingArrayDim <= 0)
+    if (--remainingArrayDim <= 0 || prevArrayIndex > tag->ArrayIndex)
     {
       category = cats.back();
       cats.pop_back();
@@ -84,6 +85,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const s
       }
     }
     CreateProperty(mgr, category, tag->Value);
+    prevArrayIndex = tag->ArrayIndex;
   }
 }
 
