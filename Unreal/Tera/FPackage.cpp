@@ -223,6 +223,7 @@ void FPackage::LoadClassPackage(const FString& name)
   LogI("Loading %s", name.C_str());
   if (auto package = GetPackageNamed(name))
   {
+    package->AllowForcedExportResolving = false;
     package->Load();
     DefaultClassPackages.push_back(package);
     if (name == "Core.u")
@@ -1181,7 +1182,7 @@ UObject* FPackage::GetObject(FObjectExport* exp, bool load)
   {
     obj->Load();
   }
-  if (obj && exp->ExportFlags & EF_ForcedExport)
+  if (obj && exp->ExportFlags & EF_ForcedExport && AllowForcedExportResolving)
   {
     // Don't load packages or inner objects
     if (obj->GetClassName() != NAME_Package && obj->GetOuter() && obj->GetOuter()->GetClassName() == NAME_Package)
@@ -1213,6 +1214,10 @@ UObject* FPackage::GetObject(FObjectExport* exp, bool load)
 
 UObject* FPackage::GetForcedExport(FObjectExport* exp)
 {
+  if (!AllowForcedExportResolving)
+  {
+    return nullptr;
+  }
   FObjectExport* outer = nullptr;
   for (outer = exp->Outer; outer && outer->Outer; outer = outer->Outer);
   if (!outer)

@@ -218,6 +218,8 @@ private:
 	// Load was cancelled
 	std::atomic_bool Cancelled = { false };
 
+	bool AllowForcedExportResolving = true;
+
 	std::vector<FNameEntry> Names;
 	std::vector<FObjectExport*> Exports;
 	std::vector<VObjectExport*> VExports;
