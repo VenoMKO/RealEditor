@@ -79,7 +79,7 @@ std::vector<FPropertyTag*> GenericEditor::GetObjectProperties()
 
 void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
 {
-  if (Object->GetDataSize())
+  if (Object->GetDataSize() > 0)
   {
     toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
     toolbar->AddTool(eID_Import, "Import", wxBitmap("#113", wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");

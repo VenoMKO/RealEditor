@@ -236,6 +236,7 @@ int App::OnRun()
 {
   if (IsReady)
   {
+    wxInitAllImageHandlers();
     Server = new RpcServer;
     Server->RunWithDelegate(this);
     RegisterMimeTypes(argv[0]);

@@ -1,7 +1,79 @@
 #include "ObjectTreeModel.h"
 #include <wx/artprov.h>
+#include <wx/mimetype.h>
 
 #include <Tera/FObjectResource.h>
+
+enum ClassIco : int {
+	IcoPackage = 0,
+	IcoField,
+	IcoGeneric,
+	IcoClass,
+	IcoTexture,
+	IcoMesh,
+	IcoSound
+};
+
+wxIcon GetSysIconForExtension(const wxString& ext, wxIcon& def)
+{
+	wxMimeTypesManager manager;
+	try
+	{
+		wxFileType* type = manager.GetFileTypeFromExtension(ext);
+		wxIconLocation location;
+		if (type->GetIcon(&location))
+		{
+			auto icon = wxIcon(location);
+			if (icon.IsOk())
+			{
+				return icon;
+			}
+			return def;
+		}
+	}
+	catch(...)
+	{}
+	return def;
+}
+
+wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
+{
+	auto result = wxIcon(wxIconLocation(path, -id));
+	if (result.IsOk())
+	{
+		return result;
+	}
+	return def;
+}
+
+ClassIco ObjectClassToClassIco(const wxString& className)
+{
+	if (className == wxT("Package"))
+	{
+		return IcoPackage;
+	}
+	if (className == wxT("Texture2D"))
+	{
+		return IcoTexture;
+	}
+	if (className == wxT("SkeletalMesh"))
+	{
+		return IcoMesh;
+	}
+	if (className == wxT("StaticMesh"))
+	{
+		return IcoMesh;
+	}
+	if (className == wxT("Class"))
+	{
+		return IcoClass;
+	}
+	if (className == wxT("Field") || className == wxT("TextBuffer"))
+	{
+		return IcoField;
+	}
+	return IcoGeneric;
+}
 
 ObjectTreeNode::ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps)
 {
@@ -73,10 +145,35 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 	RootImport = new ObjectTreeNode(rootImports);
 	IconList = new wxImageList(16, 16, true, 2);
 	auto client = wxART_MAKE_CLIENT_ID("OBJECT_TREE_ICONS");
+	
+	// ORDER MATTERS!!!
+	// Keep in sync with the ClassIco enum and ObjectClassToClassIco
+
+	// Package icon
 	wxBitmap bitmap = wxArtProvider::GetBitmap(wxART_FOLDER, client, wxSize(16, 16));
 	IconList->Add(bitmap);
+	
+	// Field icon
 	bitmap = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, client, wxSize(16, 16));
 	IconList->Add(bitmap);
+	
+	const wxString imageres = R"(C:\Windows\system32\imageres.dll)";
+
+	// Default icon
+	auto defIcon = GetSysIconFromDll(imageres, 2, wxIcon());
+	IconList->Add(defIcon);
+
+	// Class icon
+	IconList->Add(GetSysIconFromDll(imageres, 114, defIcon));
+
+	// Texture icon
+	IconList->Add(GetSysIconForExtension("jpg", defIcon));
+
+	// Mesh icon
+	IconList->Add(GetSysIconFromDll(imageres, 198, defIcon));
+
+	// Sound icon
+	IconList->Add(GetSysIconForExtension("wav", defIcon));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
@@ -85,11 +182,11 @@ void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, u
 	wxDataViewIconText value = wxDataViewIconText(node->GetObjectName());
 	if (!node->GetParent() || node->GetClassName() == wxS("Package"))
 	{
-		value.SetIcon(IconList->GetIcon(0));
+		value.SetIcon(IconList->GetIcon(IcoPackage));
 	}
 	else
 	{
-		value.SetIcon(IconList->GetIcon(1));
+		value.SetIcon(IconList->GetIcon(ObjectClassToClassIco(node->GetClassName())));
 	}
 	variant << value;
 }
