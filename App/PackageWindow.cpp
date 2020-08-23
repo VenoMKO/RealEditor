@@ -238,6 +238,8 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 		PropertyRootCategory->SetValue(object->GetClassName().String());
 	}
 
+	// TODO: enable if the object is fexp && !Package->IsReadOnly()
+	PropertyRootCategory->Enable(!Package->IsReadOnly() && object->GetPackage() == Package.get());
 	CreateProperty(PropertiesCtrl, PropertyRootCategory, properties);
 
 	PropertiesCtrl->RefreshGrid();
@@ -313,6 +315,8 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	ObjectTreeCtrl->Freeze();
 	LoadObjectTree();
 	ObjectTreeCtrl->Thaw();
+	SaveMenu->Enable(!Package->IsReadOnly() && ALLOW_UI_PKG_SAVE);
+	SaveAsMenu->Enable(!Package->IsReadOnly() && ALLOW_UI_PKG_SAVE);
 }
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)

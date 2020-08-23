@@ -10,6 +10,7 @@
 // --------------------------------------------------------------------
 
 #define ENABLE_PERF_SAMPLE 1
+#define ALLOW_UI_PKG_SAVE 1
 
 #if _DEBUG
 // DUMP_PATH should be set to the ENV

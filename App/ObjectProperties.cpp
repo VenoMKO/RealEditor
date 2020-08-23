@@ -75,6 +75,8 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const s
       if (remainingArrayDim > 1)
       {
         wxPropertyCategory* newCategory = new wxPropertyCategory(tag->Name.String().String(), tag->Name.String().String());
+        newCategory->Enable(category->IsEnabled());
+        newCategory->SetExpanded(false);
         mgr->AppendIn(category, newCategory);
         cats.push_back(category);
         category = newCategory;
@@ -93,38 +95,54 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
 {
   if (value->Type == FPropertyValue::VID::Int)
   {
-    mgr->AppendIn(cat, new AIntProperty(value, idx));
+    auto pgp = new AIntProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Float)
   {
-    mgr->AppendIn(cat, new AFloatProperty(value, idx));
+    auto pgp = new AFloatProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Bool)
   {
-    mgr->AppendIn(cat, new ABoolProperty(value, idx));
+    auto pgp = new ABoolProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Byte)
   {
     if (value->Enum)
     {
-      mgr->AppendIn(cat, new AEnumProperty(value, idx));
+      auto pgp = new AEnumProperty(value, idx);
+      pgp->Enable(cat->IsEnabled());
+      mgr->AppendIn(cat, pgp);
     }
     else
     {
-      mgr->AppendIn(cat, new AByteProperty(value, idx));
+      auto pgp = new AByteProperty(value, idx);
+      pgp->Enable(cat->IsEnabled());
+      mgr->AppendIn(cat, pgp);
     }
   }
   else if (value->Type == FPropertyValue::VID::String)
   {
-    mgr->AppendIn(cat, new AStringProperty(value, idx));
+    auto pgp = new AStringProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Name)
   {
-    mgr->AppendIn(cat, new ANameProperty(value, idx));
+    auto pgp = new ANameProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Object)
   {
-    mgr->AppendIn(cat, new AObjectProperty(value, idx));
+    auto pgp = new AObjectProperty(value, idx);
+    pgp->Enable(cat->IsEnabled());
+    mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Property)
   {
@@ -156,6 +174,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     {
       // Special case for byte arrays
       wxStringProperty* pgp = new wxStringProperty(value->Property->Name.String().WString(), GetPropertyId(value), wxString::Format("%lluKb", arr.size() / 1024));
+      pgp->Enable(cat->IsEnabled());
       if (value->Field && value->Field->GetToolTip().Size())
       {
         pgp->SetHelpString(value->Field->GetToolTip().WString());
@@ -165,6 +184,8 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     else
     {
       wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
+      ncat->Enable(cat->IsEnabled());
+      ncat->SetExpanded(false);
       if (idx >= 0)
       {
         ncat->SetHelpString(value->Property->Name.String().WString() + wxString::Format("[%d]", idx));
@@ -188,6 +209,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   else if (value->Type == FPropertyValue::VID::Struct)
   {
     wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
+    ncat->Enable(cat->IsEnabled());
     mgr->AppendIn(cat, ncat);
     bool hasDesc = false;
     if (value->Struct)

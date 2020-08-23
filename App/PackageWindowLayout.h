@@ -13,21 +13,22 @@ void PackageWindow::InitLayout()
 	fileMenu = new wxMenu();
 	wxMenuItem* m_menuItem3;
 	m_menuItem3 = new wxMenuItem(fileMenu, ControlElementId::New, wxString(wxT("New...")) + wxT('\t') + wxT("Ctrl+N"), wxEmptyString, wxITEM_NORMAL);
+	m_menuItem3->Enable(false);
 	fileMenu->Append(m_menuItem3);
-
-	fileMenu->AppendSeparator();
 
 	wxMenuItem* m_menuItem4;
 	m_menuItem4 = new wxMenuItem(fileMenu, ControlElementId::Open, wxString(wxT("Open...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem4);
 
-	wxMenuItem* m_menuItem5;
-	m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::Save, wxString(wxT("Save")) + wxT('\t') + wxT("Ctrl+S"), wxEmptyString, wxITEM_NORMAL);
-	fileMenu->Append(m_menuItem5);
+	fileMenu->AppendSeparator();
 
-	wxMenuItem* m_menuItem6;
-	m_menuItem6 = new wxMenuItem(fileMenu, ControlElementId::SaveAs, wxString(wxT("Save As...")) + wxT('\t') + wxT("Ctrl+Shift+S"), wxEmptyString, wxITEM_NORMAL);
-	fileMenu->Append(m_menuItem6);
+	SaveMenu = new wxMenuItem(fileMenu, ControlElementId::Save, wxString(wxT("Save")) + wxT('\t') + wxT("Ctrl+S"), wxEmptyString, wxITEM_NORMAL);
+	SaveMenu->Enable(false);
+	fileMenu->Append(SaveMenu);
+
+	SaveAsMenu = new wxMenuItem(fileMenu, ControlElementId::SaveAs, wxString(wxT("Save As...")) + wxT('\t') + wxT("Ctrl+Shift+S"), wxEmptyString, wxITEM_NORMAL);
+	SaveAsMenu->Enable(false);
+	fileMenu->Append(SaveAsMenu);
 
 	fileMenu->AppendSeparator();
 

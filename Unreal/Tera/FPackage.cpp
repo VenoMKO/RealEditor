@@ -34,6 +34,7 @@ std::unordered_map<FString, FString> FPackage::TfcCache;
 std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
 std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackageMap;
+std::unordered_map<FString, std::vector<FString>> FPackage::CompositPackageList;
 std::unordered_map<FString, FBulkDataInfo> FPackage::BulkDataMap;
 std::unordered_map<FString, FTextureFileCacheInfo> FPackage::TextureCacheMap;
 std::mutex FPackage::ClassMapMutex;
@@ -223,6 +224,7 @@ void FPackage::LoadClassPackage(const FString& name)
   LogI("Loading %s", name.C_str());
   if (auto package = GetPackageNamed(name))
   {
+    package->AllowEdit = false;
     package->AllowForcedExportResolving = false;
     package->Load();
     DefaultClassPackages.push_back(package);
@@ -488,6 +490,10 @@ void FPackage::LoadCompositePackageMapper()
     if (fts == ts || !fts)
     {
       s << CompositPackageMap;
+      for (auto pair : CompositPackageMap)
+      {
+        CompositPackageList[pair.second.FileName.ToUpper()].push_back(pair.first);
+      }
       return;
     }
     else
@@ -535,6 +541,7 @@ void FPackage::LoadCompositePackageMapper()
 
       DBreakIf(CompositPackageMap.count(packageName));
       CompositPackageMap[packageName] = entry;
+      CompositPackageList[fileName].push_back(packageName);
     } while (buffer.Find('|', pos) < posEnd - 1);
   }
 
@@ -813,6 +820,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
       package->CompositeDataPath = tmpPath.wstring();
       package->CompositeSourcePath = packagePath.WString();
       package->Summary.PackageName = name;
+      package->Composite = true;
       return package;
     }
   }
@@ -1047,6 +1055,12 @@ void FPackage::Load()
 #if DUMP_PACKAGES
   _DebugDump();
 #endif
+
+  // Not bulletproof. Will work only for exposed packages
+  if (CompositPackageList.count(GetPackageName().ToUpper()))
+  {
+    Composite = true;
+  }
 
   Ready.store(true);
   Loading.store(false);

@@ -194,6 +194,16 @@ public:
 	// Get package name
 	FString GetPackageName(bool extension = false) const;
 
+	inline bool IsReadOnly() const
+	{
+		return !AllowEdit || Composite;
+	}
+
+	inline bool IsComposite() const
+	{
+		return Composite;
+	}
+
 private:
 	void _DebugDump() const;
 
@@ -218,6 +228,8 @@ private:
 	// Load was cancelled
 	std::atomic_bool Cancelled = { false };
 
+	bool AllowEdit = true;
+	bool Composite = false;
 	bool AllowForcedExportResolving = true;
 
 	std::vector<FNameEntry> Names;
@@ -256,6 +268,7 @@ private:
 	static std::unordered_map<FString, FString> PkgMap;
 	static std::unordered_map<FString, FString> ObjectRedirectorMap;
 	static std::unordered_map<FString, FCompositePackageMapEntry> CompositPackageMap;
+	static std::unordered_map<FString, std::vector<FString>> CompositPackageList;
 	static std::unordered_map<FString, FBulkDataInfo> BulkDataMap;
 	static std::unordered_map<FString, FTextureFileCacheInfo> TextureCacheMap;
 	static std::mutex ClassMapMutex;

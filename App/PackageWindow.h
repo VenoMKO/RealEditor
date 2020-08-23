@@ -71,6 +71,8 @@ private:
   std::shared_ptr<FPackage> Package = nullptr;
 	ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
 	wxMenuItem* LogWindowMenu = nullptr;
+	wxMenuItem* SaveMenu = nullptr;
+	wxMenuItem* SaveAsMenu = nullptr;
 	wxTextCtrl* ObjectFlagsTextfield = nullptr;
 	wxStaticText* ObjectOffsetLabel = nullptr;
 	wxStaticText* ObjectSizeLabel = nullptr;
