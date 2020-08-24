@@ -5,14 +5,14 @@ wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
-	: wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 94), wxCAPTION | wxTAB_TRAVERSAL)
+	: wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 94), wxCAPTION | wxTAB_TRAVERSAL)
 {
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 	this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
 	wxBoxSizer* bSizer1 = new wxBoxSizer(wxVERTICAL);
 
-	ActionLabel = new wxStaticText(this, wxID_ANY, wxT("Loading..."), wxDefaultPosition, wxDefaultSize, 0);
+	ActionLabel = new wxStaticText(this, wxID_ANY, wxT("Prepearing..."), wxDefaultPosition, wxDefaultSize, 0);
 	ActionLabel->Wrap(-1);
 	bSizer1->Add(ActionLabel, 1, wxALL | wxEXPAND, 5);
 
@@ -62,6 +62,11 @@ void ProgressWindow::SetCurrentProgress(int progress)
   }
 }
 
+void ProgressWindow::SetCanCancel(bool flag)
+{
+	CancelButton->Enable(flag);
+}
+
 void ProgressWindow::OnCancellClicked(wxCommandEvent&)
 {
 	CancelButton->Enable(false);
@@ -84,10 +89,17 @@ void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
 {
 	SetCurrentProgress(0);
 	CancelButton->Enable(false);
-	Close();
+	if (IsModal())
+	{
+		EndModal(wxID_OK);
+	}
+	else
+	{
+		Close();
+	}
 }
 
-wxBEGIN_EVENT_TABLE(ProgressWindow, wxFrame)
+wxBEGIN_EVENT_TABLE(ProgressWindow, wxDialog)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS, OnUpdateProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_DESC, OnUpdateProgressDescription)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_FINISH, OnUpdateProgressFinish)

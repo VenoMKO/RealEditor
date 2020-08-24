@@ -21,11 +21,11 @@ public:
 	// Unload class packages
 	static void UnloadDefaultClassPackages();
 	// Load Package Map
-	static void LoadPkgMapper();
+	static void LoadPkgMapper(bool rebuild = false);
 	// Load Composite Package Map
-	static void LoadCompositePackageMapper();
+	static void LoadCompositePackageMapper(bool rebuild = false);
 	// Load ObjectReference Map
-	static void LoadObjectRedirectorMapper();
+	static void LoadObjectRedirectorMapper(bool rebuild = false);
 	// Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
 	static std::shared_ptr<FPackage> GetPackage(const FString& path);
 	// Load and retain a package by name and guid(if valid). Every GetPackageNamed call must pair a UnloadPackage call
@@ -38,6 +38,8 @@ public:
 	static FBulkDataInfo* GetBulkDataInfo(const FString& bulkDataName);
 	// Get texture file cache path with name
 	static FString GetTextureFileCachePath(const FString& tfcName);
+	// Update DirCache
+	static void UpdateDirCache();
 
 private:
 	// Packages must be loaded/created from the static methods

@@ -194,6 +194,13 @@ FString FPackage::GetTextureFileCachePath(const FString& tfcName)
   return FString();
 }
 
+void FPackage::UpdateDirCache()
+{
+  LogI("Building directory cache: \"%s\"", RootDir.C_str());
+  BuildPackageList(RootDir, DirCache, TfcCache);
+  LogI("Done. Found %ld packages", DirCache.size());
+}
+
 uint16 FPackage::GetCoreVersion()
 {
   return CoreVersion;
@@ -411,8 +418,9 @@ void FPackage::UnloadDefaultClassPackages()
   DefaultClassPackages.clear();
 }
 
-void FPackage::LoadPkgMapper()
+void FPackage::LoadPkgMapper(bool rebuild)
 {
+  PkgMap.clear();
   std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / PackageMapperName;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / PackageMapperName;
@@ -420,7 +428,7 @@ void FPackage::LoadPkgMapper()
   LogI("Reading %s storage...", PackageMapperName);
 
   uint64 fts = GetFileTime(encryptedPath.wstring());
-  if (std::filesystem::exists(storagePath))
+  if (std::filesystem::exists(storagePath) && !rebuild)
   {
     FReadStream rs(storagePath.wstring());
     uint64 ts = 0;
@@ -473,8 +481,10 @@ void FPackage::LoadPkgMapper()
 #endif
 }
 
-void FPackage::LoadCompositePackageMapper()
+void FPackage::LoadCompositePackageMapper(bool rebuild)
 {
+  CompositPackageMap.clear();
+  CompositPackageList.clear();
   std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / CompositePackageMapperName;
@@ -482,7 +492,7 @@ void FPackage::LoadCompositePackageMapper()
   LogI("Reading %s storage...", CompositePackageMapperName);
 
   uint64 fts = GetFileTime(encryptedPath.wstring());
-  if (std::filesystem::exists(storagePath))
+  if (std::filesystem::exists(storagePath) && !rebuild)
   {
     FReadStream s(storagePath.wstring());
     uint64 ts = 0;
@@ -558,15 +568,16 @@ void FPackage::LoadCompositePackageMapper()
 #endif
 }
 
-void FPackage::LoadObjectRedirectorMapper()
+void FPackage::LoadObjectRedirectorMapper(bool rebuild)
 {
+  ObjectRedirectorMap.clear();
   std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / ObjectRedirectorMapperName;
   storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / ObjectRedirectorMapperName;
   encryptedPath.replace_extension(".dat");
   LogI("Reading %s storage...", ObjectRedirectorMapperName);
   uint64 fts = GetFileTime(encryptedPath.wstring());
-  if (std::filesystem::exists(storagePath))
+  if (std::filesystem::exists(storagePath) && !rebuild)
   {
     FReadStream rs(storagePath.wstring());
     uint64 ts = 0;

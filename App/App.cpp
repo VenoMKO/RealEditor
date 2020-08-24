@@ -400,12 +400,14 @@ void App::LoadCore(ProgressWindow* pWindow)
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
       SendEvent(this, LOAD_CORE_ERROR, error.String());
+      pWindow->Destroy();
       return;
     }
 
     if (pWindow->IsCancelled())
     {
       wxQueueEvent(this, new wxCloseEvent());
+      pWindow->Destroy();
       return;
     }
     PERF_END(AppLoad);
@@ -414,6 +416,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
   SendEvent(this, DELAY_LOAD);
+  pWindow->Destroy();
 }
 
 void App::DelayLoad(wxCommandEvent&)

@@ -1,7 +1,11 @@
 #include "SettingsWindow.h"
+#include "ProgressWindow.h"
 #include "App.h"
 
 #include <wx/statline.h>
+#include <thread>
+
+#include <Tera/FPackage.h>
 
 const wxString RootDir = wxS("S1Game");
 const wxString UpdatesUrl = wxS("https://github.com/VenoMKO/RealEditor/releases");
@@ -267,14 +271,51 @@ void SettingsWindow::OnPathChanged(wxCommandEvent&)
 
 void SettingsWindow::OnUpdateDirCacheClicked(wxCommandEvent&)
 {
+	ProgressWindow progress(this);
+	progress.SetCurrentProgress(-1);
+	progress.SetCanCancel(false);
+	std::thread([&progress] {
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating folder cache..."));
+		Sleep(200);
+		FPackage::UpdateDirCache();
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+	}).detach();
+	progress.ShowModal();
+	wxMessageBox(wxS("Folder cache has been updated!"), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 {
+	ProgressWindow progress(this);
+	progress.SetCurrentProgress(-1);
+	std::thread([&progress] {
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating package mapper..."));
+		Sleep(200);
+		FPackage::LoadPkgMapper(true);
+		if (progress.IsCancelled())
+		{
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating composite mapper..."));
+		FPackage::LoadCompositePackageMapper(true);
+		if (progress.IsCancelled())
+		{
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating object redirector mapper..."));
+		FPackage::LoadObjectRedirectorMapper(true);
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+	}).detach();
+	progress.ShowModal();
+	wxMessageBox(wxS("Mappers have been updated!"), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 {
+	// TODO: reset hidden message boxes here
+	wxMessageBox(wxS("UI Warnings were cleared!"), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
@@ -314,6 +355,8 @@ EVT_BUTTON(wxID_CANCEL, SettingsWindow::OnCancelClicked)
 EVT_BUTTON(ControlElementId::Register, SettingsWindow::OnRegisterClicked)
 EVT_BUTTON(ControlElementId::Unregister, SettingsWindow::OnUnregisterClicked)
 EVT_BUTTON(ControlElementId::Update, SettingsWindow::OnUpdateClicked)
+EVT_BUTTON(ControlElementId::DirCache, SettingsWindow::OnUpdateDirCacheClicked)
+EVT_BUTTON(ControlElementId::Mappers, SettingsWindow::OnUpdateMappersClicked)
 EVT_TEXT(ControlElementId::Path, SettingsWindow::OnPathChanged)
 EVT_TEXT_ENTER(ControlElementId::Path, SettingsWindow::OnOkClicked)
 wxEND_EVENT_TABLE()
