@@ -46,6 +46,7 @@ public:
   bool OpenPackage(const wxString& path);
   bool ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   void OnOpenPackage(wxCommandEvent& e);
+  void OnShowSettings(wxCommandEvent& e);
 
   void PackageWindowWillClose(const PackageWindow* frame);
   void OnRpcOpenFile(const wxString& path);
@@ -71,8 +72,6 @@ private:
   void LoadCore(ProgressWindow*);
   // Create windows for loaded packages
   void DelayLoad(wxCommandEvent&);
-  // Ask user for the S1Game/CookedPC path
-  std::string RequestRootDir();
 
   wxDECLARE_EVENT_TABLE();
 private:
@@ -83,6 +82,7 @@ private:
   bool IsReady = false;
   std::vector<PackageWindow*> PackageWindows;
   std::vector<wxString> OpenList;
-  std::vector<std::shared_ptr<FPackage>> OpenPackages;
+
+  bool NeedsRestart = false;
 };
 

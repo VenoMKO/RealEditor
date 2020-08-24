@@ -23,6 +23,7 @@ enum ControlElementId {
 	SaveAs,
 	Close,
 	Exit,
+	SettingsWin,
 	LogWin,
 	Back,
 	Forward,
@@ -284,6 +285,11 @@ void PackageWindow::OnExitClicked(wxCommandEvent&)
 	Application->ExitMainLoop();
 }
 
+void PackageWindow::OnSettingsClicked(wxCommandEvent&  e)
+{
+	Application->OnShowSettings(e);
+}
+
 void PackageWindow::OnToggleLogClicked(wxCommandEvent&)
 {
 	bool isShown = ALog::IsShown();
@@ -347,6 +353,7 @@ EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
+EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)

@@ -44,7 +44,9 @@ void PackageWindow::InitLayout()
 
 	wxMenu* m_menu2;
 	m_menu2 = new wxMenu();
-	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Log Window")), wxEmptyString, wxITEM_NORMAL);
+	SettingsWindowMenu = new wxMenuItem(m_menu2, ControlElementId::SettingsWin, wxString(wxT("Settings")), wxEmptyString, wxITEM_NORMAL);
+	m_menu2->Append(SettingsWindowMenu);
+	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Show Log")), wxEmptyString, wxITEM_NORMAL);
 	m_menu2->Append(LogWindowMenu);
 
 	menuBar->Append(m_menu2, wxT("View"));

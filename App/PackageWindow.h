@@ -42,6 +42,7 @@ private:
 	void OnSaveAsClicked(wxCommandEvent&);
 	void OnCloseClicked(wxCommandEvent&);
 	void OnExitClicked(wxCommandEvent&);
+	void OnSettingsClicked(wxCommandEvent&);
 	void OnToggleLogClicked(wxCommandEvent&);
 	void OnCloseWindow(wxCloseEvent& e);
 	void OnMoveEnd(wxMoveEvent& e);
@@ -70,6 +71,7 @@ private:
   App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
 	ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
+	wxMenuItem* SettingsWindowMenu = nullptr;
 	wxMenuItem* LogWindowMenu = nullptr;
 	wxMenuItem* SaveMenu = nullptr;
 	wxMenuItem* SaveAsMenu = nullptr;

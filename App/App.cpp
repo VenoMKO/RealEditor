@@ -1,6 +1,6 @@
 #include "App.h"
-#include "RootPathWindow.h"
 #include "ProgressWindow.h"
+#include "SettingsWindow.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -102,10 +102,54 @@ void App::OnOpenPackage(wxCommandEvent& e)
   OpenPackage(e.GetString());
 }
 
+void App::OnShowSettings(wxCommandEvent& e)
+{
+  FAppConfig newConfig;
+  SettingsWindow win(Config, newConfig, true);
+  if (win.ShowModal() == wxID_OK)
+  {
+    if (Config.RootDir != newConfig.RootDir)
+    {
+      wxMessageDialog dialog(nullptr, wxT("Application must be restarted to apply changes. If you click \"OK\" the app will restart!"), wxT("Restart ") + GetAppDisplayName() + wxT("?"), wxOK | wxCANCEL | wxICON_EXCLAMATION);
+      if (dialog.ShowModal() != wxID_OK)
+      {
+        return;
+      }
+
+      Config = newConfig;
+
+      AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
+      cfg.SetConfig(Config);
+      cfg.Save();
+
+      NeedsRestart = true;
+
+      OpenList.clear();
+      for (auto window : PackageWindows)
+      {
+        OpenList.push_back(window->GetPackagePath());
+      }
+
+      ExitMainLoop();
+    }
+    Config = newConfig;
+  }
+}
+
 App::~App()
 {
   delete InstanceChecker;
   delete Server;
+
+  if (NeedsRestart)
+  {
+    wxString cmd = argv[0];
+    for (const wxString& path: OpenList)
+    {
+      cmd += wxT(" \"") + path + wxT("\"");
+    }
+    wxExecute(cmd);
+  }
 }
 
 bool App::ShowOpenDialog(const wxString& rootDir)
@@ -213,12 +257,13 @@ bool App::OnInit()
   }
   if (Config.RootDir.Empty())
   {
-    Config = cfg.GetDefaultConfig();
-    Config.RootDir = RequestRootDir();
-    if (Config.RootDir.Empty())
+    FAppConfig newConfig;
+    SettingsWindow win(Config, newConfig, false);
+    if (win.ShowModal() != wxID_OK)
     {
       return false;
     }
+    Config = newConfig;
     cfg.SetConfig(Config);
     cfg.Save();
   }
@@ -402,13 +447,6 @@ void App::DelayLoad(wxCommandEvent&)
   OpenList.clear();
 }
 
-std::string App::RequestRootDir()
-{
-  RootPathWindow frame(Config.RootDir);
-  frame.ShowModal();
-  return W2A(frame.GetRootPath().ToStdWstring());
-}
-
 int App::OnExit()
 {
   FPackage::UnloadDefaultClassPackages();
@@ -434,19 +472,15 @@ void App::OnLoadError(wxCommandEvent& e)
 {
   wxMessageBox(e.GetString(), "Error!", wxICON_ERROR);
   FPackage::UnloadDefaultClassPackages();
-  wxString rootDir = RequestRootDir();
-  if (rootDir.empty())
-  {
-    Exit();
-    return;
-  }
+  // TODO: try to recover. Ask for a new root dir and reload.
+  /*
   // Retry to load the core with a new path
   Config.RootDir = rootDir.ToStdWstring();
   ProgressWindow* progressWindow = new ProgressWindow(nullptr);
   progressWindow->SetActionText(wxS("Loading..."));
   progressWindow->SetCurrentProgress(-1);
   progressWindow->Show();
-  std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();
+  std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();*/
 }
 
 bool App::OnCmdLineParsed(wxCmdLineParser& parser)
@@ -465,11 +499,14 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     }
     return true;
   }
+
   // If we have no input args, we want to show a Root selector window
-  Config.RootDir = RequestRootDir();
-  if (Config.RootDir.Size())
+  FAppConfig newConfig;
+  SettingsWindow win(Config, newConfig, Config.RootDir.Size());
+  if (win.ShowModal() == wxID_OK)
   {
-    AConfiguration cfg(W2A(GetConfigPath().ToStdWstring()));
+    Config = newConfig;
+    AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
     cfg.SetConfig(Config);
     cfg.Save();
   }
