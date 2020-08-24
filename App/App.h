@@ -38,6 +38,8 @@ wxDECLARE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDECLARE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 wxDECLARE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
 wxDECLARE_EVENT(OBJECT_LOADED, wxCommandEvent);
+wxDECLARE_EVENT(REGISTER_MIME, wxCommandEvent);
+wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 
 class ProgressWindow;
 class App : public wxApp {
@@ -53,6 +55,9 @@ public:
 
   void SetLastWindowPosition(const wxPoint& pos);
   wxPoint GetLastWindowPosition() const;
+
+  void OnRegisterMime(wxCommandEvent&);
+  void OnUnregisterMime(wxCommandEvent&);
 
   FAppConfig& GetConfig()
   {

@@ -1,5 +1,4 @@
 #pragma once
-
 #ifdef _DEBUG
 #define DEBUG_CLIENTBLOCK new( _CLIENT_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_CLIENTBLOCK
@@ -8,6 +7,8 @@
 // --------------------------------------------------------------------
 // Build configuration
 // --------------------------------------------------------------------
+
+static const float APP_VER = 1.000f;
 
 #define ENABLE_PERF_SAMPLE 1
 #define ALLOW_UI_PKG_SAVE 1

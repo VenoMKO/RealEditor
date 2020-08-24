@@ -17,6 +17,8 @@ wxDEFINE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDEFINE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 wxDEFINE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
 wxDEFINE_EVENT(OBJECT_LOADED, wxCommandEvent);
+wxDEFINE_EVENT(REGISTER_MIME, wxCommandEvent);
+wxDEFINE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 
 wxString GetConfigPath()
 {
@@ -29,48 +31,25 @@ wxString GetConfigPath()
   return path;
 }
 
-void RegisterFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager* man)
+void RegisterFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager& man)
 {
   wxFileTypeInfo info = wxFileTypeInfo("application/octet-stream");
   info.AddExtension(extension);
   info.SetDescription(description);
   info.SetOpenCommand(wxS("\"") + appPath + wxS("\" \"%1\""));
-  if (wxFileType* type = man->Associate(info))
+  if (wxFileType* type = man.Associate(info))
   {
     delete type;
   }
 }
 
-void RegisterMimeTypes(const wxString& appPath)
+void UnegisterFileType(const wxString& extension, wxMimeTypesManager& man)
 {
-  wxMimeTypesManager* man = new wxMimeTypesManager();
-  RegisterFileType(".gpk", "Tera Package", appPath, man);
-  RegisterFileType(".gmp", "Tera Map Package", appPath, man);
-  RegisterFileType(".u", "Tera Script Package", appPath, man);
-  RegisterFileType(".upk", "Unreal Package", appPath, man);
-  RegisterFileType(".umap", "Unreal Map", appPath, man);
-  delete man;
-}
-
-void UnegisterFileType(const wxString& extension, wxMimeTypesManager* man)
-{
-  wxFileType* type = man->GetFileTypeFromExtension(".gpk");
-  if (type)
+  if (wxFileType* type = man.GetFileTypeFromExtension(extension))
   {
-    man->Unassociate(type);
+    man.Unassociate(type);
     delete type;
   }
-}
-
-void UnregisterMimeTypes()
-{
-  wxMimeTypesManager* man = new wxMimeTypesManager();
-  UnegisterFileType(".gpk", man);
-  UnegisterFileType(".gmp", man);
-  UnegisterFileType(".u", man);
-  UnegisterFileType(".upk", man);
-  UnegisterFileType(".umap", man);
-  delete man;
 }
 
 void App::OnRpcOpenFile(const wxString& path)
@@ -284,7 +263,6 @@ int App::OnRun()
     wxInitAllImageHandlers();
     Server = new RpcServer;
     Server->RunWithDelegate(this);
-    RegisterMimeTypes(argv[0]);
     if (Config.LogConfig.ShowLog)
     {
       ALog::SharedLog()->Show();
@@ -525,9 +503,32 @@ void App::OnObjectLoaded(wxCommandEvent& e)
   }
 }
 
+void App::OnRegisterMime(wxCommandEvent&)
+{
+  wxString appPath = argv[0];
+  wxMimeTypesManager man;
+  RegisterFileType(".gpk", "Tera Game Package", appPath, man);
+  RegisterFileType(".gmp", "Tera Game Map", appPath, man);
+  RegisterFileType(".u", "Unreal Script Package", appPath, man);
+  RegisterFileType(".upk", "Unreal Package", appPath, man);
+  RegisterFileType(".umap", "Unreal Map", appPath, man);
+}
+
+void App::OnUnregisterMime(wxCommandEvent&)
+{
+  wxMimeTypesManager man;
+  UnegisterFileType(".gpk", man);
+  UnegisterFileType(".gmp", man);
+  UnegisterFileType(".u", man);
+  UnegisterFileType(".upk", man);
+  UnegisterFileType(".umap", man);
+}
+
 wxBEGIN_EVENT_TABLE(App, wxApp)
 EVT_COMMAND(wxID_ANY, DELAY_LOAD, App::DelayLoad)
 EVT_COMMAND(wxID_ANY, OPEN_PACKAGE, App::OnOpenPackage)
 EVT_COMMAND(wxID_ANY, LOAD_CORE_ERROR, App::OnLoadError)
 EVT_COMMAND(wxID_ANY, OBJECT_LOADED, App::OnObjectLoaded)
+EVT_COMMAND(wxID_ANY, REGISTER_MIME, App::OnRegisterMime)
+EVT_COMMAND(wxID_ANY, UNREGISTER_MIME, App::OnUnregisterMime)
 wxEND_EVENT_TABLE()

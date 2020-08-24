@@ -1,7 +1,10 @@
 #include "SettingsWindow.h"
+#include "App.h"
+
 #include <wx/statline.h>
 
 const wxString RootDir = wxS("S1Game");
+const wxString UpdatesUrl = wxS("https://github.com/VenoMKO/RealEditor/releases");
 
 enum ControlElementId {
 	Path = wxID_HIGHEST + 1,
@@ -191,7 +194,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	UpdatesButton->SetHelpText(wxT("Open GitHub release page to check if a new version is available"));
 	bSizer14->Add(UpdatesButton, 0, wxALL, 5);
 
-	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, wxT("v.1.00"), wxDefaultPosition, wxDefaultSize, 0);
+	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, wxString::Format("v.%.2f", APP_VER), wxDefaultPosition, wxDefaultSize, 0);
 	VersionLabel->Wrap(-1);
 	bSizer14->Add(VersionLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
@@ -276,14 +279,19 @@ void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 
 void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
 {
+	SendEvent(wxTheApp, REGISTER_MIME);
+	wxMessageBox(wxS("App registered!"), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnUnregisterClicked(wxCommandEvent&)
 {
+	SendEvent(wxTheApp, UNREGISTER_MIME);
+	wxMessageBox(wxS("App unregistered!"), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnUpdateClicked(wxCommandEvent&)
 {
+	wxLaunchDefaultBrowser(UpdatesUrl);
 }
 
 void SettingsWindow::OnCancelClicked(wxCommandEvent&)
@@ -303,6 +311,9 @@ wxBEGIN_EVENT_TABLE(SettingsWindow, wxDialog)
 EVT_BUTTON(ControlElementId::Browse, SettingsWindow::OnBrowseClicked)
 EVT_BUTTON(wxID_OK, SettingsWindow::OnOkClicked)
 EVT_BUTTON(wxID_CANCEL, SettingsWindow::OnCancelClicked)
+EVT_BUTTON(ControlElementId::Register, SettingsWindow::OnRegisterClicked)
+EVT_BUTTON(ControlElementId::Unregister, SettingsWindow::OnUnregisterClicked)
+EVT_BUTTON(ControlElementId::Update, SettingsWindow::OnUpdateClicked)
 EVT_TEXT(ControlElementId::Path, SettingsWindow::OnPathChanged)
 EVT_TEXT_ENTER(ControlElementId::Path, SettingsWindow::OnOkClicked)
 wxEND_EVENT_TABLE()
