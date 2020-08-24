@@ -13,5 +13,5 @@ protected:
   void Serialize(FStream& s) override;
 
 private:
-  UObject* Object = nullptr;
+  DECL_UREF(UObject, Object);
 };

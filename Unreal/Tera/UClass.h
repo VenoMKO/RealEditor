@@ -1,10 +1,7 @@
 #pragma once
 #include "Core.h"
-#include "UObject.h"
 #include "FName.h"
-#include "FPropertyTag.h"
-
-struct FPropertyTag;
+#include "UObject.h"
 
 #define DECL_CLASS_CAST(Class)\
   enum { StaticClassCastFlags = CASTCLASS_##Class};\
@@ -26,8 +23,8 @@ public:
   friend FStream& operator<<(FStream& s, FImplementedInterface& i);
 
 protected:
-  UObject* ObjectClass = nullptr;
-  UObject* PointerProperty = nullptr;
+  DECL_UREF(UObject, ObjectClass);
+  DECL_UREF(UObject, PointerProperty);
 };
 
 
@@ -83,8 +80,8 @@ protected:
   void Serialize(FStream& s) override;
 
 protected:
-  UField* Superfield = nullptr;
-  UField* Next = nullptr;
+  DECL_UREF(UField, Superfield);
+  DECL_UREF(UField, Next);
 
   FString ToolTip;
 };
@@ -177,10 +174,10 @@ protected:
   void Serialize(FStream& s) override;
 
 protected:
-  UStruct* SuperStruct = nullptr;
-  UTextBuffer* CppText = nullptr;
-  UTextBuffer* ScriptText = nullptr;
-  UField* Children = nullptr;
+  DECL_UREF(UStruct, SuperStruct);
+  DECL_UREF(UTextBuffer, CppText);
+  DECL_UREF(UTextBuffer, ScriptText);
+  DECL_UREF(UField, Children);
   int32 Line = 0;
   int32 TextPos = 0;
   uint32 ScriptDataSize = 0;
@@ -262,7 +259,7 @@ protected:
 protected:
   uint32 ClassFlags = 0;
   int32 ClassUnique = 0;
-  UClass* ClassWithin = nullptr;
+  DECL_UREF(UClass, ClassWithin);
   FName ClassConfigName;
   bool bForceScriptOrder = false;
   std::map<FName, UObject*> ComponentNameToDefaultObjectMap;
@@ -274,7 +271,7 @@ protected:
   std::vector<FName> ClassGroupNames;
   FString ClassHeaderFilename;
   FName DLLBindName;
-  UObject* ClassDefaultObject = nullptr;
+  DECL_UREF(UObject, ClassDefaultObject);
 
   uint32 ClassCastFlags = CASTCLASS_None;
 };
@@ -329,8 +326,8 @@ public:
   friend FStream& operator<<(FStream& s, FPushedState& f);
 
 protected:
-  UState* State = nullptr;
-  UStruct* Node = nullptr;
+  DECL_UREF(UState, State);
+  DECL_UREF(UStruct, Node);
 };
 
 class FStateFrame {
@@ -339,8 +336,8 @@ public:
   friend FStream& operator<<(FStream& s, FStateFrame& f);
 
 protected:
-  UState* Node = nullptr;
-  UState* StateNode = nullptr;
+  DECL_UREF(UState, Node);
+  DECL_UREF(UState, StateNode);
   uint64 ProbeMask64 = 0;
   uint32 ProbeMask32 = 0;
   uint16 LatentAction = 0;

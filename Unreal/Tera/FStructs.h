@@ -234,7 +234,7 @@ struct FVector {
 
 struct FScriptDelegate
 {
-	UObject* Object = nullptr;
+	DECL_UREF(UObject, Object);
 	FName FunctionName;
 
 	inline FString ToString(const UObject* OwnerObject) const;

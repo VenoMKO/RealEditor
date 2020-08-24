@@ -14,7 +14,7 @@ void UProperty::Serialize(FStream& s)
   s << ArrayDim;
   s << PropertyFlags;
   s << Category;
-  s << ArraySizeEnum;
+  SERIALIZE_UREF(s, ArraySizeEnum);
   if (PropertyFlags & CPF_Net)
   {
     s << RepOffset;
@@ -24,50 +24,51 @@ void UProperty::Serialize(FStream& s)
 void UObjectProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << PropertyClass;
+  SERIALIZE_UREF(s, PropertyClass);
 }
 
 void UClassProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << MetaClass;
+  SERIALIZE_UREF(s, MetaClass);
 }
 
 void UInterfaceProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << InterfaceClass;
+  SERIALIZE_UREF(s, InterfaceClass);
 }
 
 void UArrayProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Inner;
+  SERIALIZE_UREF(s, Inner);
 }
 
 void UMapProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Key;
-  s << Value;
+  SERIALIZE_UREF(s, Key);
+  SERIALIZE_UREF(s, Value);
 }
 
 void UStructProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Struct;
+  SERIALIZE_UREF(s, Struct);
 }
 
 void UByteProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Enum;
+  SERIALIZE_UREF(s, Enum);
 }
 
 void UDelegateProperty::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Function << SourceDelegate;
+  SERIALIZE_UREF(s, Function);
+  SERIALIZE_UREF(s, SourceDelegate);
 }
 
 void UInterfaceProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const

@@ -116,7 +116,19 @@ class UObjectRedirector;
 // Utils
 // --------------------------------------------------------------------
 
-#define SET_PACKAGE(s, obj) if (s.IsReading() && s.GetPackage()) obj.Package = s.GetPackage()
+// Glue for URefs. Don't use.
+#define __GLUE_OBJ_REF(Name, Sfx)\
+  Name##Sfx
+
+// Serialize UObject* with its index
+// In case we fail to find the object, we won't lose its index when saving
+#define SERIALIZE_UREF(Stream, Field)\
+  Stream.SerializeObjectRef((void*&)Field, __GLUE_OBJ_REF(Field, RefIndex))
+
+// Declare an object with its index
+#define DECL_UREF(TClass, Name)\
+  TClass* Name = nullptr;\
+  PACKAGE_INDEX __GLUE_OBJ_REF(Name, RefIndex) = 0
 
 FString ObjectFlagsToString(uint64 flags);
 FString ExportFlagsToString(uint32 flags);

@@ -25,9 +25,9 @@ void UField::Serialize(FStream& s)
   Super::Serialize(s);
   if (s.GetFV() < VER_TERA_MODERN)
   {
-    s << Superfield;
+    SERIALIZE_UREF(s, Superfield);
   }
-  s << Next;
+  SERIALIZE_UREF(s, Next);
 }
 
 UStruct::~UStruct()
@@ -65,16 +65,18 @@ void UStruct::Serialize(FStream& s)
   Super::Serialize(s);
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    s << SuperStruct;
+    SERIALIZE_UREF(s, SuperStruct);
   }
   else
   {
     SuperStruct = (UStruct*)Superfield;
+    SuperStructRefIndex = SuperfieldRefIndex;
   }
+  
+  SERIALIZE_UREF(s, ScriptText);
+  SERIALIZE_UREF(s, Children);
+  SERIALIZE_UREF(s, CppText);
 
-  s << ScriptText;
-  s << Children;
-  s << CppText;
   s << Line << TextPos;
   s << ScriptDataSize;
   if (s.GetFV() > VER_TERA_CLASSIC)
@@ -343,7 +345,7 @@ void UClass::Serialize(FStream& s)
 {
   Super::Serialize(s);
   s << ClassFlags;
-  s << ClassWithin;
+  SERIALIZE_UREF(s, ClassWithin);
   s << ClassConfigName;
   s << ComponentNameToDefaultObjectMap;
   s << Interfaces;
@@ -358,27 +360,27 @@ void UClass::Serialize(FStream& s)
   }
   s << ClassHeaderFilename;
   s << DLLBindName;
-  s << ClassDefaultObject;
+  SERIALIZE_UREF(s, ClassDefaultObject);
 }
 
 FStream& operator<<(FStream& s, FImplementedInterface& i)
 {
-  s << i.ObjectClass;
-  s << i.PointerProperty;
+  SERIALIZE_UREF(s, i.ObjectClass);
+  SERIALIZE_UREF(s, i.PointerProperty);
   return s;
 }
 
 FStream& operator<<(FStream& s, FPushedState& f)
 {
-  s << f.State;
-  s << f.Node;
+  SERIALIZE_UREF(s, f.State);
+  SERIALIZE_UREF(s, f.Node);
   return s;
 }
 
 FStream& operator<<(FStream& s, FStateFrame& f)
 {
-  s << f.Node;
-  s << f.StateNode;
+  SERIALIZE_UREF(s, f.Node);
+  SERIALIZE_UREF(s, f.StateNode);
   if (s.GetFV() < VER_TERA_MODERN)
   {
     s << f.ProbeMask64;

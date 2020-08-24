@@ -4,7 +4,7 @@
 
 void UComponent::PreSerialize(FStream& s)
 {
-  s << TemplateOwnerClass;
+  SERIALIZE_UREF(s, TemplateOwnerClass);
   if (IsTemplate(RF_ClassDefaultObject))
   {
     s << TemplateName;

@@ -1,8 +1,6 @@
 #pragma once
 #include "Core.h"
 #include "UClass.h"
-#include "FScriptArray.h"
-
 
 struct FPropertyTag;
 struct FPropertyValue;
@@ -21,7 +19,7 @@ public:
 	uint64 PropertyFlags = 0;
 	uint16 RepOffset = 0;
 	FName Category;
-	UEnum* ArraySizeEnum = nullptr;
+	DECL_UREF(UEnum, ArraySizeEnum);
 	UProperty* PropertyLinkNext = nullptr;
 };
 
@@ -40,7 +38,7 @@ public:
 	}
 
 public:
-	UEnum* Enum = nullptr;
+	DECL_UREF(UEnum, Enum);
 };
 
 class UIntProperty : public UProperty {
@@ -100,7 +98,7 @@ public:
 	}
 
 public:
-	UClass* PropertyClass = nullptr;
+	DECL_UREF(UClass, PropertyClass);
 };
 
 class UComponentProperty : public UObjectProperty {
@@ -117,7 +115,7 @@ public:
 	void Serialize(FStream& s) override;
 
 public:
-	UClass* MetaClass = nullptr;
+	DECL_UREF(UClass, MetaClass);
 };
 
 class UInterfaceProperty : public UProperty {
@@ -135,7 +133,7 @@ public:
 	}
 
 public:
-	UClass* InterfaceClass = nullptr;
+	DECL_UREF(UClass, InterfaceClass);
 };
 
 class UNameProperty : public UProperty {
@@ -179,7 +177,7 @@ public:
 	}
 
 public:
-	UProperty* Inner = nullptr;
+	DECL_UREF(UProperty, Inner);
 };
 
 class UMapProperty : public UProperty {
@@ -197,8 +195,8 @@ public:
 	}
 
 public:
-	UProperty* Key = nullptr;
-	UProperty* Value = nullptr;
+	DECL_UREF(UProperty, Key);
+	DECL_UREF(UProperty, Value);
 };
 
 class UStructProperty : public UProperty {
@@ -215,7 +213,7 @@ public:
 	void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 public:
-	UScriptStruct* Struct = nullptr;
+	DECL_UREF(UScriptStruct, Struct);
 };
 
 class UDelegateProperty : public UProperty {
@@ -233,6 +231,6 @@ public:
 	}
 
 public:
-	UObject* Function = nullptr;
-	UObject* SourceDelegate = nullptr;
+	DECL_UREF(UObject, Function);
+	DECL_UREF(UObject, SourceDelegate);
 };

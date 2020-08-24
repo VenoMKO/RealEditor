@@ -73,7 +73,6 @@
     <ClInclude Include="Unreal\Tera\FObjectResource.h" />
     <ClInclude Include="Unreal\Tera\FPackage.h" />
     <ClInclude Include="Unreal\Tera\FPropertyTag.h" />
-    <ClInclude Include="Unreal\Tera\FScriptArray.h" />
     <ClInclude Include="Unreal\Tera\FStream.h" />
     <ClInclude Include="Unreal\Tera\FString.h" />
     <ClInclude Include="Unreal\Tera\FStructs.h" />

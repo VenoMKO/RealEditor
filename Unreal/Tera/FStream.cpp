@@ -1,5 +1,6 @@
 #include "FStream.h"
 #include "FPackage.h"
+#include "UObject.h"
 
 #include <ppl.h>
 
@@ -71,6 +72,31 @@ FStream& FStream::operator<<(FStringRef& r)
     (*this) << *r.Cached;
   }
   return *this;
+}
+
+void FStream::SerializeObjectRef(void*& obj, PACKAGE_INDEX& index)
+{
+  if (IsReading())
+  {
+    (*this) << index;
+    FILE_OFFSET tmpPos = GetPosition();
+    obj = GetPackage()->GetObject(index, GetLoadSerializedObjects());
+    SetPosition(tmpPos);
+  }
+  else
+  {
+    if (obj)
+    {
+#if _DEBUG
+      PACKAGE_INDEX idx = GetPackage()->GetObjectIndex((UObject*&)obj);
+      DBreakIf(idx != index);
+      index = idx;
+#else
+      index = GetPackage()->GetObjectIndex((UObject*&)obj);
+#endif
+    }
+    (*this) << index;
+  }
 }
 
 void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags, bool concurrent)

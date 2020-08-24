@@ -71,7 +71,10 @@ void FName::SetString(const FString& str)
 
 FStream& operator<<(FStream& s, FName& n)
 {
-  SET_PACKAGE(s, n);
+  if (s.IsReading() && s.GetPackage())
+  {
+    n.Package = s.GetPackage();
+  }
   // Check if name's package does not match stream's one. Thus the Index is invalid.
   DBreakIf(!s.IsReading() && s.GetPackage() != n.Package);
   s << n.Index;

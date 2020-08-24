@@ -5,5 +5,5 @@
 void UObjectRedirector::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  s << Object;
+  SERIALIZE_UREF(s, Object);
 }

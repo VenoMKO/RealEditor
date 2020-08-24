@@ -13,7 +13,7 @@ public:
     return true;
   }
 
-  UClass* TemplateOwnerClass = nullptr;
+  DECL_UREF(UClass, TemplateOwnerClass);
   FName TemplateName;
 };
 

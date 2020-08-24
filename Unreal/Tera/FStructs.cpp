@@ -125,7 +125,8 @@ inline FString FScriptDelegate::ToString(const UObject* OwnerObject) const
 
 FStream& operator<<(FStream& s, FScriptDelegate& d)
 {
-  return s << d.Object << d.FunctionName;
+  SERIALIZE_UREF(s, d.Object);
+  return s << d.FunctionName;
 }
 
 FStream& operator<<(FStream& s, FPacakgeTreeEntry& e)

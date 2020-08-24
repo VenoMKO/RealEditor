@@ -5,7 +5,10 @@
 
 FStream& operator<<(FStream& s, FObjectImport& i)
 {
-  SET_PACKAGE(s, i);
+  if (s.IsReading() && s.GetPackage())
+  {
+    i.Package = s.GetPackage();
+  }
   s << i.ClassPackage;
   s << i.ClassName;
   s << i.OuterIndex;
@@ -15,7 +18,10 @@ FStream& operator<<(FStream& s, FObjectImport& i)
 
 FStream& operator<<(FStream& s, FObjectExport& e)
 {
-  SET_PACKAGE(s, e);
+  if (s.IsReading() && s.GetPackage())
+  {
+    e.Package = s.GetPackage();
+  }
   s << e.ClassIndex;
   s << e.SuperIndex;
   s << e.OuterIndex;

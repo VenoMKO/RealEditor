@@ -180,6 +180,8 @@ public:
     return *this;
   }
 
+  void SerializeObjectRef(void*& obj, PACKAGE_INDEX& index);
+
   void SerializeCompressed(void* v, int32 length, ECompressionFlags flags, bool concurrent = true);
   
   template <typename T>

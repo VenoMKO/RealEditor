@@ -157,7 +157,6 @@
     <ClInclude Include="Unreal\Tera\UComponent.h" />
     <ClInclude Include="Unreal\Tera\FPropertyTag.h" />
     <ClInclude Include="Unreal\Tera\UNames.h" />
-    <ClInclude Include="Unreal\Tera\FScriptArray.h" />
     <ClInclude Include="Unreal\Tera\FString.h" />
     <ClInclude Include="Unreal\Tera\Cast.h" />
     <ClInclude Include="Unreal\Tera\UMaterial.h" />
