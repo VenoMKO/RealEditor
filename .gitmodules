@@ -5,3 +5,7 @@
 	path = Extern/wxWidgets
 	url = https://github.com/VenoMKO/wxWidgets.git
 	branch = RE
+[submodule "Extern/nvtt"]
+	path = Extern/nvtt
+	url = https://github.com/VenoMKO/nvidia-texture-tools.git
+	branch = RE

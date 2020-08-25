@@ -56,6 +56,7 @@
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
+    <ClInclude Include="Extern\glew\glew.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />
@@ -157,7 +158,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>FREEIMAGE_LIB;OSG_LIBRARY_STATIC;_CRTDBG_MAP_ALLOC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;GLEW_STATIC;DUMP_PATH="C:\\Users\\VenoMKO\\Desktop\\ReDumps";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(NVTTWIN)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(GLEWWIN)\include;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -165,12 +166,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(NVTTWIN)\lib\;$(OSGWIN)\lib\debug\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore_d.lib;nvthread_d.lib;nvmath_d.lib;nvimage_d.lib;bc6h_d.lib;bc7_d.lib;squish_d.lib;nvtt_d.lib;FreeImageLibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(OSGWIN)\lib\debug\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
     <PreBuildEvent>
-      <Command>msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)</Command>
+      <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -181,7 +184,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>FREEIMAGE_LIB;OSG_LIBRARY_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;GLEW_STATIC;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(NVTTWIN)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(GLEWWIN)\include;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -191,12 +194,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(NVTTWIN)\lib\;$(OSGWIN)\lib\release\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(OSGWIN)\lib\release\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>4194304</StackReserveSize>
       <AdditionalDependencies>OpenThreads.lib;osg.lib;osgAnimation.lib;osgDB.lib;osgFX.lib;osgGA.lib;osgManipulator.lib;osgParticle.lib;osgPresentation.lib;osgShadow.lib;osgSim.lib;osgTerrain.lib;osgText.lib;osgUI.lib;osgUtil.lib;osgViewer.lib;osgVolume.lib;osgWidget.lib;freetype.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2.lib;libpng16.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)</Command>
+      <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

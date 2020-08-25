@@ -1,7 +1,7 @@
 #pragma once
 #include "UObject.h"
 
-#include <GL/glew.h>
+#include <../Extern/glew/glew.h>
 #include <osg/Image>
 
 class UTexture : public UObject {
