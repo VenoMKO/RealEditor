@@ -1,6 +1,6 @@
 #include "PackageWindow.h"
-#include "ObjectProperties.h"
-#include "App.h"
+#include "../Misc/ObjectProperties.h"
+#include "../App.h"
 
 #include <wx/menu.h>
 #include <wx/sizer.h>

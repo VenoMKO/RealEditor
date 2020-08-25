@@ -2,7 +2,7 @@
 
 #include <wx/wx.h>
 
-#include "../PackageWindow.h"
+#include "../Windows/PackageWindow.h"
 
 OSGCanvas::OSGCanvas(PackageWindow* rootWindow, wxWindow* parent, wxWindowID id,
   const wxPoint& pos, const wxSize& size, long style, const wxString& name, int* attributes)

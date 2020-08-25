@@ -5,7 +5,7 @@
 #include <osg/BlendFunc>
 #include <nvtt/nvtt.h>
 
-#include "../PackageWindow.h"
+#include "../Windows/PackageWindow.h"
 
 #include <Tera/ALog.h>
 #include <Utils/TextureProcessor.h>

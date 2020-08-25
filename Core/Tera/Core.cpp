@@ -32,10 +32,8 @@
 #define NORPC
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
 #include <ppl.h>
-
-#include <MiniLZO/minilzo.h>
+#include <minilzo/minilzo.h>
 
 #include "ALog.h"
 

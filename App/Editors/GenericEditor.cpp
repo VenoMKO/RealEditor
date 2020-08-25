@@ -1,5 +1,5 @@
 #include "GenericEditor.h"
-#include "../PackageWindow.h"
+#include "../Windows/PackageWindow.h"
 #include "../App.h"
 
 #include <Tera/ALog.h>

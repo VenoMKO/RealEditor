@@ -3,7 +3,7 @@
 #include "GenericEditor.h"
 #include <Tera/UTexture.h>
 
-#include "OSGWindow.h"
+#include "../Misc/OSGWindow.h"
 
 class TextureEditor : public GenericEditor {
 public:

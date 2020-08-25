@@ -17,106 +17,106 @@
     <ClCompile Include="App\App.cpp">
       <Filter>Source Files\App</Filter>
     </ClCompile>
-    <ClCompile Include="App\PackageWindow.cpp">
-      <Filter>Source Files\App</Filter>
-    </ClCompile>
-    <ClCompile Include="App\RpcCom.cpp">
-      <Filter>Source Files\App</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\MiniLZO\minilzo.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\Core.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FName.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FObjectResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FPackage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FStructs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UObject.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UProperty.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\AConfiguration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App\LogWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\ALog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App\ProgressWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UObjectRedirector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UComponent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UObjectFactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UNames.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UStaticMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UPersistentCookerData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\FPropertyTag.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App\ObjectProperties.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UMetaData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Unreal\Tera\UTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\GenericEditor.cpp">
       <Filter>Source Files\App</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\ObjectTreeModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\TextureEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Editors\OSGWindow.cpp">
+    <ClCompile Include="App\Windows\LogWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Unreal\Utils\TextureProcessor.cpp">
+    <ClCompile Include="App\Windows\PackageWindow.cpp">
+      <Filter>Source Files\App</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Windows\ProgressWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\SettingsWindow.cpp">
+    <ClCompile Include="App\Windows\SettingsWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Misc\ObjectProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Misc\ObjectTreeModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Misc\RpcCom.cpp">
+      <Filter>Source Files\App</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Misc\OSGWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\AConfiguration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\ALog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\Core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FName.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FObjectResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FPackage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FPropertyTag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FStructs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UMetaData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UNames.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UObjectFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UObjectRedirector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UPersistentCookerData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UProperty.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UStaticMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\TextureProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Extern\minilzo\minilzo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -124,54 +124,54 @@
     <ClInclude Include="App\App.h">
       <Filter>Source Files\App</Filter>
     </ClInclude>
-    <ClInclude Include="App\PackageWindow.h">
-      <Filter>Source Files\App</Filter>
-    </ClInclude>
-    <ClInclude Include="App\PackageWindowLayout.h">
-      <Filter>Source Files\App</Filter>
-    </ClInclude>
-    <ClInclude Include="App\RpcCom.h">
-      <Filter>Source Files\App</Filter>
-    </ClInclude>
-    <ClInclude Include="Unreal\MiniLZO\lzoconf.h" />
-    <ClInclude Include="Unreal\MiniLZO\lzodefs.h" />
-    <ClInclude Include="Unreal\MiniLZO\minilzo.h" />
-    <ClInclude Include="Unreal\Tera\Core.h" />
-    <ClInclude Include="Unreal\Tera\FFlags.h" />
-    <ClInclude Include="Unreal\Tera\FName.h" />
-    <ClInclude Include="Unreal\Tera\FObjectResource.h" />
-    <ClInclude Include="Unreal\Tera\FPackage.h" />
-    <ClInclude Include="Unreal\Tera\FStream.h" />
-    <ClInclude Include="Unreal\Tera\FStructs.h" />
-    <ClInclude Include="Unreal\Tera\UClass.h" />
-    <ClInclude Include="Unreal\Tera\UObject.h" />
-    <ClInclude Include="Unreal\Tera\UProperty.h" />
-    <ClInclude Include="Unreal\Tera\AConfiguration.h" />
-    <ClInclude Include="App\LogWindow.h" />
-    <ClInclude Include="Unreal\Tera\ALog.h" />
-    <ClInclude Include="App\ProgressWindow.h" />
-    <ClInclude Include="Unreal\Tera\UObjectRedirector.h" />
-    <ClInclude Include="Unreal\Tera\UComponent.h" />
-    <ClInclude Include="Unreal\Tera\FPropertyTag.h" />
-    <ClInclude Include="Unreal\Tera\UNames.h" />
-    <ClInclude Include="Unreal\Tera\FString.h" />
-    <ClInclude Include="Unreal\Tera\Cast.h" />
-    <ClInclude Include="Unreal\Tera\UMaterial.h" />
-    <ClInclude Include="Unreal\Tera\UStaticMesh.h" />
-    <ClInclude Include="Unreal\Tera\UPersistentCookerData.h" />
-    <ClInclude Include="App\ObjectProperties.h" />
-    <ClInclude Include="Unreal\Tera\UMetaData.h" />
-    <ClInclude Include="Unreal\Tera\UTexture.h" />
     <ClInclude Include="App\Editors\GenericEditor.h">
       <Filter>Source Files\App</Filter>
     </ClInclude>
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
-    <ClInclude Include="App\ObjectTreeModel.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
-    <ClInclude Include="App\Editors\OSGWindow.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Unreal\Utils\TextureProcessor.h" />
-    <ClInclude Include="App\SettingsWindow.h" />
+    <ClInclude Include="App\Windows\LogWindow.h" />
+    <ClInclude Include="App\Windows\PackageWindow.h">
+      <Filter>Source Files\App</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Windows\PackageWindowLayout.h">
+      <Filter>Source Files\App</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Windows\ProgressWindow.h" />
+    <ClInclude Include="App\Windows\SettingsWindow.h" />
+    <ClInclude Include="App\Misc\RpcCom.h">
+      <Filter>Source Files\App</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Misc\ObjectProperties.h" />
+    <ClInclude Include="App\Misc\ObjectTreeModel.h" />
+    <ClInclude Include="App\Misc\OSGWindow.h" />
+    <ClInclude Include="Core\Tera\AConfiguration.h" />
+    <ClInclude Include="Core\Tera\ALog.h" />
+    <ClInclude Include="Core\Tera\Cast.h" />
+    <ClInclude Include="Core\Tera\Core.h" />
+    <ClInclude Include="Core\Tera\FFlags.h" />
+    <ClInclude Include="Core\Tera\FName.h" />
+    <ClInclude Include="Core\Tera\FObjectResource.h" />
+    <ClInclude Include="Core\Tera\FPackage.h" />
+    <ClInclude Include="Core\Tera\FPropertyTag.h" />
+    <ClInclude Include="Core\Tera\FStream.h" />
+    <ClInclude Include="Core\Tera\FString.h" />
+    <ClInclude Include="Core\Tera\FStructs.h" />
+    <ClInclude Include="Core\Tera\UClass.h" />
+    <ClInclude Include="Core\Tera\UComponent.h" />
+    <ClInclude Include="Core\Tera\UMaterial.h" />
+    <ClInclude Include="Core\Tera\UMetaData.h" />
+    <ClInclude Include="Core\Tera\UNames.h" />
+    <ClInclude Include="Core\Tera\UObject.h" />
+    <ClInclude Include="Core\Tera\UObjectRedirector.h" />
+    <ClInclude Include="Core\Tera\UPersistentCookerData.h" />
+    <ClInclude Include="Core\Tera\UProperty.h" />
+    <ClInclude Include="Core\Tera\UStaticMesh.h" />
+    <ClInclude Include="Core\Tera\UTexture.h" />
+    <ClInclude Include="Core\Utils\TextureProcessor.h" />
+    <ClInclude Include="Extern\minilzo\lzoconf.h" />
+    <ClInclude Include="Extern\minilzo\lzodefs.h" />
+    <ClInclude Include="Extern\minilzo\minilzo.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -4,8 +4,8 @@
 #include <wx/event.h>
 #include <wx/snglinst.h>
 #include <vector>
-#include "RpcCom.h"
-#include "PackageWindow.h"
+#include "Misc/RpcCom.h"
+#include "Windows/PackageWindow.h"
 
 #include <Tera/Core.h>
 #include <Tera/AConfiguration.h>

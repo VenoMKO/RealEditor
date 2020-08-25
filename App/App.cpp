@@ -1,6 +1,6 @@
 #include "App.h"
-#include "ProgressWindow.h"
-#include "SettingsWindow.h"
+#include "Windows/ProgressWindow.h"
+#include "Windows/SettingsWindow.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>

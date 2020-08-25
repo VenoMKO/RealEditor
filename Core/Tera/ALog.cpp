@@ -1,4 +1,4 @@
-#include "../../App/LogWindow.h"
+#include "../../App/Windows/LogWindow.h"
 #include "../../App/App.h"
 #include "ALog.h"
 

@@ -1,0 +1,3 @@
+[submodule "Extern/minilzo"]
+	path = Extern/minilzo
+	url = https://github.com/VenoMKO/minilzo.git

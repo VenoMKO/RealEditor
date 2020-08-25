@@ -4,8 +4,8 @@
 #include <wx/toolbar.h>
 #include <wx/propgrid/manager.h>
 
-#include "Editors/GenericEditor.h"
-#include "ObjectTreeModel.h"
+#include "../Editors/GenericEditor.h"
+#include "../Misc/ObjectTreeModel.h"
 
 #include <map>
 #include <vector>

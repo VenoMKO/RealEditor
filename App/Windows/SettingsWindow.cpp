@@ -1,6 +1,6 @@
 #include "SettingsWindow.h"
 #include "ProgressWindow.h"
-#include "App.h"
+#include "../App.h"
 
 #include <wx/statline.h>
 #include <thread>

@@ -1,4 +1,4 @@
-#include "App.h"
+#include "../App.h"
 #include "LogWindow.h"
 #include <wx/richtext/richtextctrl.h>
 
