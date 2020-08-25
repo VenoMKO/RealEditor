@@ -166,7 +166,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(OSGWIN)\lib\debug\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OSGWIN)\lib\debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
@@ -194,7 +194,7 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(OSGWIN)\lib\release\;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OSGWIN)\lib\release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>4194304</StackReserveSize>
       <AdditionalDependencies>OpenThreads.lib;osg.lib;osgAnimation.lib;osgDB.lib;osgFX.lib;osgGA.lib;osgManipulator.lib;osgParticle.lib;osgPresentation.lib;osgShadow.lib;osgSim.lib;osgTerrain.lib;osgText.lib;osgUI.lib;osgUtil.lib;osgViewer.lib;osgVolume.lib;osgWidget.lib;freetype.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2.lib;libpng16.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
