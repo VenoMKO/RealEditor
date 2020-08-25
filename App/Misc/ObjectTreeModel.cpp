@@ -14,28 +14,6 @@ enum ClassIco : int {
 	IcoSound
 };
 
-wxIcon GetSysIconForExtension(const wxString& ext, wxIcon& def)
-{
-	wxMimeTypesManager manager;
-	try
-	{
-		wxFileType* type = manager.GetFileTypeFromExtension(ext);
-		wxIconLocation location;
-		if (type->GetIcon(&location))
-		{
-			auto icon = wxIcon(location);
-			if (icon.IsOk())
-			{
-				return icon;
-			}
-			return def;
-		}
-	}
-	catch(...)
-	{}
-	return def;
-}
-
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
 {
 	auto result = wxIcon(wxIconLocation(path, -id));
@@ -144,36 +122,36 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 	RootExport = new ObjectTreeNode(packageName, rootExports);
 	RootImport = new ObjectTreeNode(rootImports);
 	IconList = new wxImageList(16, 16, true, 2);
-	auto client = wxART_MAKE_CLIENT_ID("OBJECT_TREE_ICONS");
 	
 	// ORDER MATTERS!!!
 	// Keep in sync with the ClassIco enum and ObjectClassToClassIco
 
 	// Package icon
-	wxBitmap bitmap = wxArtProvider::GetBitmap(wxART_FOLDER, client, wxSize(16, 16));
+	wxBitmap bitmap = wxArtProvider::GetBitmap(wxART_FOLDER, wxART_OTHER, wxSize(16, 16));
 	IconList->Add(bitmap);
 	
 	// Field icon
-	bitmap = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, client, wxSize(16, 16));
+	bitmap = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, wxART_OTHER, wxSize(16, 16));
 	IconList->Add(bitmap);
 	
 	const wxString imageres = R"(C:\Windows\system32\imageres.dll)";
 
 	// Default icon
-	auto defIcon = GetSysIconFromDll(imageres, 2, wxIcon());
+	auto defIcon = wxIcon();
+	defIcon = GetSysIconFromDll(imageres, 2, defIcon);
 	IconList->Add(defIcon);
 
 	// Class icon
 	IconList->Add(GetSysIconFromDll(imageres, 114, defIcon));
 
 	// Texture icon
-	IconList->Add(GetSysIconForExtension("jpg", defIcon));
+	IconList->Add(GetSysIconFromDll(imageres, 72, defIcon));
 
 	// Mesh icon
 	IconList->Add(GetSysIconFromDll(imageres, 198, defIcon));
 
 	// Sound icon
-	IconList->Add(GetSysIconForExtension("wav", defIcon));
+	IconList->Add(GetSysIconFromDll(imageres, 108, defIcon));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
@@ -189,16 +167,6 @@ void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, u
 		value.SetIcon(IconList->GetIcon(ObjectClassToClassIco(node->GetClassName())));
 	}
 	variant << value;
-}
-
-bool ObjectTreeModel::SetValue(const wxVariant& variant, const wxDataViewItem& item, unsigned int col)
-{
-	return false;
-}
-
-bool ObjectTreeModel::IsEnabled(const wxDataViewItem& item, unsigned int col) const
-{
-	return false;
 }
 
 wxDataViewItem ObjectTreeModel::GetParent(const wxDataViewItem& item) const

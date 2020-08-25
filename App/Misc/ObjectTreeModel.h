@@ -68,20 +68,38 @@ public:
 		delete IconList;
 	}
 
-	virtual unsigned int GetColumnCount() const override
+	unsigned int GetColumnCount() const override
 	{
 		return 1;
 	}
-	virtual wxString GetColumnType(unsigned int col) const override
+	
+	wxString GetColumnType(unsigned int col) const override
 	{
 		return "wxDataViewIconText";
 	}
-	virtual void GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const override;
-	virtual bool SetValue(const wxVariant& variant, const wxDataViewItem& item, unsigned int col) override;
-	virtual bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override;
-	virtual wxDataViewItem GetParent(const wxDataViewItem& item) const override;
-	virtual bool IsContainer(const wxDataViewItem& item) const override;
-	virtual unsigned int GetChildren(const wxDataViewItem& parent, wxDataViewItemArray& array) const override;
+	
+	void GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const override;
+	
+	bool SetValue(const wxVariant& variant, const wxDataViewItem& item, unsigned int col) override
+	{
+		return false;
+	}
+
+	bool HasValue(const wxDataViewItem& item, unsigned col) const override
+	{
+		return true;
+	}
+
+	virtual bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override
+	{
+		return true;
+	}
+
+	wxDataViewItem GetParent(const wxDataViewItem& item) const override;
+
+	bool IsContainer(const wxDataViewItem& item) const override;
+
+	unsigned int GetChildren(const wxDataViewItem& parent, wxDataViewItemArray& array) const override;
 
 private:
 	ObjectTreeNode* RootExport = nullptr;

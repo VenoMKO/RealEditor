@@ -121,7 +121,7 @@ void TextureEditor::OnAlphaMaskChange()
 
 void TextureEditor::CreateRenderer()
 {
-  int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 16, 0 };
+  int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 8, WX_GL_STENCIL_SIZE, 8, 0 };
 
   Canvas = new OSGCanvas(Window, this, wxID_ANY, wxDefaultPosition, {100, 100}, wxNO_BORDER, wxT("OSGCanvas"), attrs);
   Canvas->SetLockLmb(true);

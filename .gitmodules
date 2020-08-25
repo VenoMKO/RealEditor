@@ -1,3 +1,7 @@
 [submodule "Extern/minilzo"]
 	path = Extern/minilzo
 	url = https://github.com/VenoMKO/minilzo.git
+[submodule "Extern/wxWidgets"]
+	path = Extern/wxWidgets
+	url = https://github.com/VenoMKO/wxWidgets.git
+	branch = RE
