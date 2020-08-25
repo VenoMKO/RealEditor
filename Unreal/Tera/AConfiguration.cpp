@@ -69,11 +69,8 @@ FStream& operator<<(FStream& s, FLogConfig& c)
       case FLogConfig::CFG_ShowLog:
         s << c.ShowLog;
         break;
-      case FLogConfig::CFG_LogPos:
-        s << c.LogPosition;
-        break;
-      case FLogConfig::CFG_LogSize:
-        s << c.LogSize;
+      case FLogConfig::CFG_LogRect:
+        s << c.LogRect;
         break;
       case FLogConfig::CFG_End:
         return s;
@@ -86,8 +83,7 @@ FStream& operator<<(FStream& s, FLogConfig& c)
   else
   {
     SerializeKeyValue(FLogConfig::CFG_ShowLog, c.ShowLog);
-    SerializeKeyValue(FLogConfig::CFG_LogPos, c.LogPosition);
-    SerializeKeyValue(FLogConfig::CFG_LogSize, c.LogSize);
+    SerializeKeyValue(FLogConfig::CFG_LogRect, c.LogRect);
 
     // End
     SerializeKey(FLogConfig::CFG_End);
@@ -115,6 +111,12 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_RootDir:
         s << c.RootDir;
         break;
+      case FAppConfig::CFG_WindowRect:
+        s << c.WindowRect;
+        break;
+      case FAppConfig::CFG_SashPos:
+        s << c.SashPos;
+        break;
       case FAppConfig::CFG_LogBegin:
         s << c.LogConfig;
         CheckKey(FAppConfig::CFG_LogEnd);
@@ -132,8 +134,10 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     // Writing
     // General
     SerializeKeyValue(FAppConfig::CFG_RootDir, c.RootDir);
+    SerializeKeyValue(FAppConfig::CFG_WindowRect, c.WindowRect);
+    SerializeKeyValue(FAppConfig::CFG_SashPos, c.SashPos);
 
-    // Log settings
+    // Log
     SerializeKey(FAppConfig::CFG_LogBegin);
     s << c.LogConfig;
     SerializeKey(FAppConfig::CFG_LogEnd);
@@ -143,7 +147,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     // Fixup storage size
     c.Size = s.GetSize();
-    s.SetPosition(6);
+    s.SetPosition(8);
     s << c.Size;
   }
   return s;

@@ -10,9 +10,6 @@
 #include <Tera/Core.h>
 #include <Tera/AConfiguration.h>
 
-#define WIN_POS_FULLSCREEN INT_MIN
-#define WIN_POS_CENTER INT_MIN + 1
-
 class wxEventHandler;
 inline void SendEvent(wxEvtHandler* obj, wxEventType type)
 {
@@ -54,7 +51,14 @@ public:
   void OnRpcOpenFile(const wxString& path);
 
   void SetLastWindowPosition(const wxPoint& pos);
+  void SetLastWindowSize(const wxSize& size);
+  void SetLastWindowObjectSash(const int32& sash, const int32& width);
+  void SetLastWindowPropertiesSash(const int32& sash, const int32& width);
+
   wxPoint GetLastWindowPosition() const;
+  wxSize GetLastWindowSize() const;
+  wxSize GetLastWindowObjectSash() const;
+  wxSize GetLastWindowPropSash() const;
 
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
@@ -81,7 +85,6 @@ private:
   wxDECLARE_EVENT_TABLE();
 private:
   FAppConfig Config;
-  wxPoint LastWindowPosition = wxDefaultPosition;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;

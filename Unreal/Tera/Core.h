@@ -10,6 +10,9 @@
 
 static const float APP_VER = 1.000f;
 
+#define WIN_POS_FULLSCREEN INT_MIN
+#define WIN_POS_CENTER INT_MIN + 1
+
 #define ENABLE_PERF_SAMPLE 1
 #define ALLOW_UI_PKG_SAVE 1
 
@@ -200,7 +203,7 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
 // Performance measure
 #if ENABLE_PERF_SAMPLE
 #define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
-#define PERF_END(ID) LogE("Perf %s: %d", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
+#define PERF_END(ID) LogE("Perf %s: %dms", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
 #else
 #define PERF_START(ID)
 #define PERF_END(ID)

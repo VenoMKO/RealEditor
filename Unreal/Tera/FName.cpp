@@ -11,12 +11,12 @@ FStream& operator<<(FStream& s, FNameEntry& e)
 
 bool FName::operator==(const FName& n) const
 {
-  return String() == n.String();
+  return String().ToUpper() == n.String().ToUpper();
 }
 
 bool FName::operator==(const FString& s) const
 {
-  return String() == s.String();
+  return String().ToUpper() == s.ToUpper();
 }
 
 bool FName::operator==(const char* s) const
@@ -26,12 +26,12 @@ bool FName::operator==(const char* s) const
 
 bool FName::operator!=(const FName& n) const
 {
-  return String() != n.String();
+  return String().ToUpper() != n.String().ToUpper();
 }
 
 bool FName::operator!=(const FString& s) const
 {
-  return String() != s.String();
+  return String().ToUpper() != s.ToUpper();
 }
 
 bool FName::operator!=(const char* s) const

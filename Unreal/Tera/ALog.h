@@ -55,6 +55,6 @@ private:
   std::recursive_mutex ELocker;
   std::vector<ALogEntry> Entries;
 
-  FVector2D LastPosition;
-  FVector2D LastSize;
+  FIntPoint LastPosition;
+  FIntPoint LastSize;
 };

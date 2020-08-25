@@ -4,7 +4,7 @@
 
 ALog* SharedLogger = nullptr;
 
-wxPoint FVectorToPoint(const FVector2D& v)
+wxPoint FIntPointToPoint(const FIntPoint& v)
 {
   const int x = v.X;
   const int y = v.Y;
@@ -60,20 +60,20 @@ void ALog::SetConfig(const FLogConfig& cfg)
 void ALog::_GetConfig(FLogConfig& cfg)
 {
   ALog* l = ALog::SharedLog();
-  cfg.LogPosition = l->LastPosition;
-  cfg.LogSize = l->LastSize;
+  cfg.LogRect.Min = l->LastPosition;
+  cfg.LogRect.Max = l->LastSize;
 }
 
 void ALog::_SetConfig(const FLogConfig& cfg)
 {
   ALog::SharedLog();
   std::scoped_lock<std::recursive_mutex> locker(WLocker);
-  LastPosition = cfg.LogPosition;
-  LastSize = cfg.LogSize;
+  LastPosition = cfg.LogRect.Min;
+  LastSize = cfg.LogRect.Max;
   if (Window)
   {
-    Window->SetPosition(FVectorToPoint(cfg.LogPosition));
-    Window->SetSize(wxSize(cfg.LogSize.X, cfg.LogSize.Y));
+    Window->SetPosition(FIntPointToPoint(cfg.LogRect.Min));
+    Window->SetSize(wxSize(cfg.LogRect.Max.X, cfg.LogRect.Max.Y));
   }
 }
 
@@ -113,9 +113,9 @@ void ALog::_Show(bool show)
   }
   else if (show)
   {
-    Window = new LogWindow(nullptr, wxID_ANY, FVectorToPoint(LastPosition), wxSize(LastSize.X, LastSize.Y));
+    Window = new LogWindow(nullptr, wxID_ANY, FIntPointToPoint(LastPosition), wxSize(LastSize.X, LastSize.Y));
     Window->SetLogger(this);
-    Window->SetPosition(FVectorToPoint(LastPosition));
+    Window->SetPosition(FIntPointToPoint(LastPosition));
     Window->SetSize(wxSize(LastSize.X, LastSize.Y));
     Window->Show(show);
     UpdateWindow();

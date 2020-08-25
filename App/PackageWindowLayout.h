@@ -338,6 +338,8 @@ void PackageWindow::SetPropertiesHidden(bool hidden)
 	}
 	else
 	{
+		MainPanel->Show(true);
+		PropertiesPanel->Show(true);
 		ContentSplitter->SplitVertically(MainPanel, PropertiesPanel, ContentSplitter->GetSize().x - PropertiesPos);
 	}
 }

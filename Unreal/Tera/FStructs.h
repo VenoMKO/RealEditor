@@ -413,6 +413,8 @@ struct FByteBulkData : public FUntypedBulkData
 struct FIntPoint {
 	int32 X = 0;
 	int32 Y = 0;
+
+	friend FStream& operator<<(FStream& s, FIntPoint& p);
 };
 
 class FColor {
@@ -480,4 +482,6 @@ struct FIntRect
 {
 	FIntPoint Min;
 	FIntPoint Max;
+
+	friend FStream& operator<<(FStream& s, FIntRect& r);
 };

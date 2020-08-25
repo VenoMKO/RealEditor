@@ -46,6 +46,7 @@ private:
 	void OnToggleLogClicked(wxCommandEvent&);
 	void OnCloseWindow(wxCloseEvent& e);
 	void OnMoveEnd(wxMoveEvent& e);
+	void OnSize(wxSizeEvent& e);
 	void OnMaximized(wxMaximizeEvent& e);
 
 	void OnPackageReady(wxCommandEvent&);
@@ -103,6 +104,7 @@ private:
 	wxObjectDataPtr<ObjectTreeModel> DataModel;
 	bool ContentHidden = false;
 	bool PropertiesHidden = false;
+	bool DisableSizeUpdates = true;
 	size_t ProcessedItemCnt = 0;
 	wxDataViewItem RootExport;
 	wxDataViewItemArray Exports;

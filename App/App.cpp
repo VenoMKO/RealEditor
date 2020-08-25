@@ -68,12 +68,48 @@ void App::OnRpcOpenFile(const wxString& path)
 
 void App::SetLastWindowPosition(const wxPoint& pos)
 {
-  LastWindowPosition = pos;
+  Config.WindowRect.Min = { pos.x, pos.y };
+}
+
+void App::SetLastWindowSize(const wxSize& size)
+{
+  Config.WindowRect.Max = { size.x, size.y };
+}
+
+void App::SetLastWindowObjectSash(const int32& sash, const int32& width)
+{
+  Config.SashPos.Min.X = sash;
+  Config.SashPos.Min.Y = width;
+}
+
+void App::SetLastWindowPropertiesSash(const int32& sash, const int32& width)
+{
+  if (!width)
+  {
+    return;
+  }
+  Config.SashPos.Max.X = sash;
+  Config.SashPos.Max.Y = width;
 }
 
 wxPoint App::GetLastWindowPosition() const
 {
-  return LastWindowPosition;
+  return wxPoint(Config.WindowRect.Min.X, Config.WindowRect.Min.Y);
+}
+
+wxSize App::GetLastWindowSize() const
+{
+  return wxSize(Config.WindowRect.Max.X, Config.WindowRect.Max.Y);
+}
+
+wxSize App::GetLastWindowObjectSash() const
+{
+  return wxSize(Config.SashPos.Min.X, Config.SashPos.Min.Y);
+}
+
+wxSize App::GetLastWindowPropSash() const
+{
+  return wxSize(Config.SashPos.Max.X, Config.SashPos.Max.Y);
 }
 
 void App::OnOpenPackage(wxCommandEvent& e)
@@ -245,8 +281,8 @@ bool App::OnInit()
     Config = newConfig;
     cfg.SetConfig(Config);
     cfg.Save();
+    Config.WindowRect.Min = { WIN_POS_CENTER, 0 };
   }
-  LastWindowPosition = wxPoint(WIN_POS_CENTER, 0);
   InstanceChecker = new wxSingleInstanceChecker;
   ALog::SharedLog();
   ALog::SetConfig(Config.LogConfig);

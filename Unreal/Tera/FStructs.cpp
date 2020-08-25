@@ -176,6 +176,16 @@ FStream& operator<<(FStream& s, FSHA& i)
   return s;
 }
 
+FStream& operator<<(FStream& s, FIntPoint& p)
+{
+  return s << p.X << p.Y;
+}
+
+FStream& operator<<(FStream& s, FIntRect& r)
+{
+  return s << r.Min << r.Max;
+}
+
 void FUntypedBulkData::SerializeBulkData(FStream& s, void* data)
 {
   if (BulkDataFlags & BULKDATA_Unused)

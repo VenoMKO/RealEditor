@@ -63,7 +63,26 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
 		SetPosition(pos);
 		Application->SetLastWindowPosition(pos);
 	}
+	if (pos.x != WIN_POS_FULLSCREEN)
+	{
+		SetSize(Application->GetLastWindowSize());
+	}
 	OnNoneObjectSelected();
+	{
+		wxSize hint;
+		float dx;
+		hint = Application->GetLastWindowObjectSash();
+		dx = float(hint.x) / float(hint.y);
+		SidebarSplitter->SetSashPosition(SidebarSplitter->GetSize().x * dx);
+
+		hint = Application->GetLastWindowPropSash();
+		PropertiesPos = hint.y - hint.x;
+		ContentSplitter->SetSashPosition(PropertiesPos);
+		ContentSplitter->SetSashGravity(1);
+	}
+	
+	ObjectTreeCtrl->Bind(wxEVT_SIZE, &PackageWindow::OnSize, this);
+	PropertiesCtrl->Bind(wxEVT_SIZE, &PackageWindow::OnSize, this);
 	HeartBeat.Bind(wxEVT_TIMER, &PackageWindow::OnTick, this);
 	HeartBeat.Start(1);
 }
@@ -138,8 +157,18 @@ void PackageWindow::OnIdle(wxIdleEvent& e)
 
 void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
 {
-	SidebarSplitter->SetSashPosition(230);
+	wxSize hint;
+	float dx;
+	hint = Application->GetLastWindowObjectSash();
+	dx = float(hint.x) / float(hint.y);
+	SidebarSplitter->SetSashPosition(SidebarSplitter->GetSize().x * dx);
+
+	hint = Application->GetLastWindowPropSash();
+	PropertiesPos = hint.y - hint.x;;
+	ContentSplitter->SetSashPosition(PropertiesPos);
+	ContentSplitter->SetSashGravity(1);
 	SidebarSplitter->Disconnect(wxEVT_IDLE, wxIdleEventHandler(PackageWindow::SidebarSplitterOnIdle), NULL, this);
+	DisableSizeUpdates = false;
 }
 
 void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
@@ -306,6 +335,24 @@ void PackageWindow::OnMoveEnd(wxMoveEvent& e)
 	else
 	{
 		Application->SetLastWindowPosition(GetPosition());
+
+		Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
+		Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		Application->SetLastWindowSize(GetSize());
+	}
+	e.Skip();
+}
+
+void PackageWindow::OnSize(wxSizeEvent& e)
+{
+	if (!DisableSizeUpdates)
+	{
+		Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
+		Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		if (!IsMaximized())
+		{
+			Application->SetLastWindowSize(GetSize());
+		}
 	}
 	e.Skip();
 }
@@ -358,6 +405,7 @@ EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)
+EVT_SIZE(PackageWindow::OnSize)
 EVT_MAXIMIZE(PackageWindow::OnMaximized)
 EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
