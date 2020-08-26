@@ -9,6 +9,7 @@ wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
 LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
 	: wxFrame(parent, id, wxTheApp->GetAppDisplayName() + wxT(" - Log"), pos, size, style)
 {
+	SetIcon(wxICON(#114));
 	SetSizeHints(wxSize(700, 300), wxDefaultSize);
 
 	wxBoxSizer* bSizer1 = new wxBoxSizer(wxVERTICAL);

@@ -33,6 +33,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	, AllowRebuild(allowRebuild)
 {
 	NewConfig = currentConfig;
+	SetIcon(wxICON(#114));
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 	this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 

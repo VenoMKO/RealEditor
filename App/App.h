@@ -43,7 +43,7 @@ class App : public wxApp {
 public:
   ~App();
   bool OpenPackage(const wxString& path);
-  bool ShowOpenDialog(const wxString& rootDir = wxEmptyString);
+  wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   void OnOpenPackage(wxCommandEvent& e);
   void OnShowSettings(wxCommandEvent& e);
 

@@ -62,6 +62,18 @@ IDB_EXPORT              RCDATA                  "Resources\\Btn_Export.png"
 
 IDB_IMPORT              RCDATA                  "Resources\\Btn_Import.png"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+APP_ICON               ICON                    "Resources\\AppIcon.ico"
+
+FILE_ICON              ICON                    "Resources\\FileIcon.ico"
+
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 

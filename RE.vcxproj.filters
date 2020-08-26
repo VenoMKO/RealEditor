@@ -198,5 +198,11 @@
     <Image Include="Resources\Btn_Export.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\FileIcon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\AppIcon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

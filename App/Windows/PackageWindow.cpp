@@ -40,6 +40,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   , Application(application)
   , Package(package)
 {
+	SetIcon(wxICON(#114));
 	SetSizeHints(wxSize(1024, 700), wxDefaultSize);
 	InitLayout();
 	
@@ -291,7 +292,11 @@ void PackageWindow::OnNewClicked(wxCommandEvent& e)
 
 void PackageWindow::OnOpenClicked(wxCommandEvent& e)
 {
-	Application->ShowOpenDialog();
+	wxString path = Application->ShowOpenDialog();
+	if (path.size())
+	{
+		Application->OpenPackage(path);
+	}
 }
 
 void PackageWindow::OnSaveClicked(wxCommandEvent& e)

@@ -40,13 +40,14 @@ void RegisterFileType(const wxString& extension, const wxString& description, co
   info.AddExtension(extension);
   info.SetDescription(description);
   info.SetOpenCommand(wxS("\"") + appPath + wxS("\" \"%1\""));
+  info.SetIcon(appPath, -115);
   if (wxFileType* type = man.Associate(info))
   {
     delete type;
   }
 }
 
-void UnegisterFileType(const wxString& extension, wxMimeTypesManager& man)
+void UnregisterFileType(const wxString& extension, wxMimeTypesManager& man)
 {
   if (wxFileType* type = man.GetFileTypeFromExtension(extension))
   {
@@ -215,15 +216,10 @@ App::~App()
   }
 }
 
-bool App::ShowOpenDialog(const wxString& rootDir)
+wxString App::ShowOpenDialog(const wxString& rootDir)
 {
   wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk");
-  wxString packagePath = wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-  if (packagePath.size())
-  {
-    return OpenPackage(packagePath);
-  }
-  return false;
+  return wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 }
 
 bool App::OpenPackage(const wxString& path)
@@ -590,6 +586,13 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
     cfg.SetConfig(Config);
     cfg.Save();
+
+    wxString path = ShowOpenDialog();
+    if (path.size())
+    {
+      OpenList.push_back(path);
+      return true;
+    }
   }
   return false;
 }
@@ -620,11 +623,11 @@ void App::OnRegisterMime(wxCommandEvent&)
 void App::OnUnregisterMime(wxCommandEvent&)
 {
   wxMimeTypesManager man;
-  UnegisterFileType(".gpk", man);
-  UnegisterFileType(".gmp", man);
-  UnegisterFileType(".u", man);
-  UnegisterFileType(".upk", man);
-  UnegisterFileType(".umap", man);
+  UnregisterFileType(".gpk", man);
+  UnregisterFileType(".gmp", man);
+  UnregisterFileType(".u", man);
+  UnregisterFileType(".upk", man);
+  UnregisterFileType(".umap", man);
 }
 
 wxBEGIN_EVENT_TABLE(App, wxApp)
