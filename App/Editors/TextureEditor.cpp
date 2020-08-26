@@ -15,17 +15,7 @@ TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
 {
   Mask = new osg::ColorMask(true, true, true, false);
   CreateRenderer();
-  
-  // Osg refuses to process events
-  // Resizing the window for some reasone fixes the issue
-  // TODO: fix the issue and get rid of the shitty hack below
-  Window->Freeze();
-  wxSize s = Window->GetSize();
-  s.x += 1;
-  Window->SetSize(s);
-  s.x -= 1;
-  Window->SetSize(s);
-  Window->Thaw();
+  window->FixOSG();
 }
 
 TextureEditor::~TextureEditor()

@@ -28,6 +28,8 @@ public:
 
 	bool OnObjectLoaded(const std::string& id);
 
+	void FixOSG();
+
 private:
 
 	void InitLayout();
@@ -109,4 +111,5 @@ private:
 	wxDataViewItem RootExport;
 	wxDataViewItemArray Exports;
 	int PropertiesPos = 0;
+	bool FixedOSG = false;
 };

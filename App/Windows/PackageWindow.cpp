@@ -277,6 +277,34 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 	PropertyRootCategory->RefreshChildren();
 }
 
+void PackageWindow::FixOSG()
+{
+	// Osg refuses to process events
+	// Resizing the window for some reasone fixes the issue
+	// TODO: fix the issue and get rid of the shitty hack below
+	if (FixedOSG)
+	{
+		return;
+	}
+	Freeze();
+	if (IsMaximized())
+	{
+		Maximize(false);
+		Maximize(true);
+	}
+	else
+	{
+		wxSize s = GetSize();
+		s.x += 1;
+		SetSize(s);
+		s.x -= 1;
+		SetSize(s);
+		
+	}
+	FixedOSG = true;
+	Thaw();
+}
+
 void PackageWindow::OnNoneObjectSelected()
 {
 	ObjectTitleLabel->SetLabelText("No selection");
