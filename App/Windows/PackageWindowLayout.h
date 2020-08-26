@@ -114,6 +114,8 @@ void PackageWindow::InitLayout()
 	wxBoxSizer* bSizer16;
 	bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
+	/*
+	* TODO: Create selection history stack
 	BackButton = new wxButton(m_panel8, ControlElementId::Back, wxT("<"), wxDefaultPosition, wxSize(30, -1), 0);
 	BackButton->Enable(false);
 
@@ -122,7 +124,7 @@ void PackageWindow::InitLayout()
 	ForwardButton = new wxButton(m_panel8, ControlElementId::Forward, wxT(">"), wxDefaultPosition, wxSize(30, -1), 0);
 	ForwardButton->Enable(false);
 
-	bSizer16->Add(ForwardButton, 0, wxALL, 0);
+	bSizer16->Add(ForwardButton, 0, wxALL, 0);*/
 
 	ObjectTitleLabel = new wxStaticText(m_panel8, wxID_ANY, wxT("[0] Object(Class)"), wxDefaultPosition, wxSize(500, -1), 0);
 	ObjectTitleLabel->Wrap(-1);

@@ -397,6 +397,14 @@ public:
     Data.reserve(size);
   }
 
+  void Terminate()
+  {
+    if (Data.size() && Data.back())
+    {
+      Data += '\0';
+    }
+  }
+
   inline bool IsAnsi() const
   {
     for (const char& ch : Data)

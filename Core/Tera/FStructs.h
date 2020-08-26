@@ -325,6 +325,13 @@ struct FForceCookedInfo
 	friend FStream& operator<<(FStream& s, FForceCookedInfo& i);
 };
 
+struct AMetaDataEntry {
+	FString Name;
+	FString Tooltip;
+
+	friend FStream& operator<<(FStream& s, AMetaDataEntry& e);
+};
+
 struct FSHA
 {
 	uint8* GetBytes()

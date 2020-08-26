@@ -6,6 +6,7 @@
 #include "UClass.h"
 #include "UMetaData.h"
 #include "UPersistentCookerData.h"
+#include "UProperty.h"
 #include "Cast.h"
 
 #include <iostream>
@@ -37,6 +38,7 @@ std::unordered_map<FString, FCompositePackageMapEntry> FPackage::CompositPackage
 std::unordered_map<FString, std::vector<FString>> FPackage::CompositPackageList;
 std::unordered_map<FString, FBulkDataInfo> FPackage::BulkDataMap;
 std::unordered_map<FString, FTextureFileCacheInfo> FPackage::TextureCacheMap;
+std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>> FPackage::MetaData;
 std::mutex FPackage::ClassMapMutex;
 std::unordered_map<FString, UObject*> FPackage::ClassMap;
 std::unordered_set<FString> FPackage::MissingClasses;
@@ -176,6 +178,11 @@ void FPackage::SetRootPath(const FString& path)
   LogI("Done. Found %ld packages", DirCache.size());
 }
 
+void FPackage::SetMetaData(const std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>>& meta)
+{
+  MetaData = meta;
+}
+
 FBulkDataInfo* FPackage::GetBulkDataInfo(const FString& bulkDataName)
 {
   if (BulkDataMap.count(bulkDataName))
@@ -265,6 +272,8 @@ void FPackage::LoadClassPackage(const FString& name)
     std::vector<UObject*> defaults;
     // Leftovers
     std::vector<UObject*> other;
+    // Properties
+    std::vector<UProperty*> properties;
 
     // Prepare object lists
     UMetaData* meta = nullptr;
@@ -292,6 +301,10 @@ void FPackage::LoadClassPackage(const FString& name)
       }
       else
       {
+        if (obj->IsA(UProperty::StaticClassName()))
+        {
+          properties.push_back((UProperty*)obj);
+        }
         other.push_back(obj);
       }
     }
@@ -393,6 +406,61 @@ void FPackage::LoadClassPackage(const FString& name)
               break;
             }
           }
+        }
+      }
+    }
+
+    for (UProperty* p : properties)
+    {
+      const FString propertyName = p->GetObjectName();
+      UObject* outer = p->GetOuter();
+      std::vector<UObject*> parents;
+
+      while (outer->GetOuter())
+      {
+        parents.push_back(outer);
+        outer = outer->GetOuter();
+      }
+      const FString className = outer->GetObjectName();
+      if (parents.size() && parents.front()->IsA(UFunction::StaticClassName()))
+      {
+        continue;
+      }
+      
+      if (parents.size())
+      {
+        FString key = className + ":" + parents.back()->GetObjectName();
+        if (MetaData.count(key))
+        {
+          if (MetaData[key].count(propertyName))
+          {
+            if (MetaData[key][propertyName].Name.Size())
+            {
+              p->DisplayName = MetaData[key][propertyName].Name;
+            }
+            if (MetaData[key][propertyName].Tooltip.Size())
+            {
+              p->SetToolTip(MetaData[key][propertyName].Tooltip);
+            }
+            continue;
+          }
+        }
+      }
+
+      if (MetaData.count(outer->GetObjectName().String()))
+      {
+        const FString& key = className;
+        if (MetaData[key].count(propertyName))
+        {
+          if (MetaData[key][propertyName].Name.Size())
+          {
+            p->DisplayName = MetaData[key][propertyName].Name;
+          }
+          if (MetaData[key][propertyName].Tooltip.Size())
+          {
+            p->SetToolTip(MetaData[key][propertyName].Tooltip);
+          }
+          continue;
         }
       }
     }

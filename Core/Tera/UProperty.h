@@ -21,6 +21,8 @@ public:
 	FName Category;
 	DECL_UREF(UEnum, ArraySizeEnum);
 	UProperty* PropertyLinkNext = nullptr;
+
+	FString DisplayName;
 };
 
 class UByteProperty : public UProperty {

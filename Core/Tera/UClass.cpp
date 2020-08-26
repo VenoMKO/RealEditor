@@ -238,6 +238,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       }
       else
       {
+        tag.ClassProperty = property;
         tag.ArrayDim = property->ArrayDim;
         if (property->GetStaticClassName() == UBoolProperty::StaticClassName())
         {

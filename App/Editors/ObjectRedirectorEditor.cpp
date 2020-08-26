@@ -4,8 +4,11 @@ void ObjectRedirectorEditor::OnObjectLoaded()
 {
   if (Loading)
   {
-    Redirector = (UObjectRedirector*)Object;
-    Object = Redirector->GetObject();
+    if (((UObjectRedirector*)Object)->GetObject())
+    {
+      Redirector = (UObjectRedirector*)Object;
+      Object = Redirector->GetObject();
+    }
   }
   GenericEditor::OnObjectLoaded();
 }

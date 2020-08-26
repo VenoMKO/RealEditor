@@ -34,6 +34,8 @@ public:
 	static void UnloadPackage(std::shared_ptr<FPackage> package);
 	// Find and cache all packages
 	static void SetRootPath(const FString& path);
+	// Set global meta data
+	static void SetMetaData(const std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>>& meta);
 	// Get bulk data info
 	static FBulkDataInfo* GetBulkDataInfo(const FString& bulkDataName);
 	// Get texture file cache path with name
@@ -273,6 +275,7 @@ private:
 	static std::unordered_map<FString, std::vector<FString>> CompositPackageList;
 	static std::unordered_map<FString, FBulkDataInfo> BulkDataMap;
 	static std::unordered_map<FString, FTextureFileCacheInfo> TextureCacheMap;
+	static std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>> MetaData;
 	static std::mutex ClassMapMutex;
 	static std::unordered_map<FString, UObject*> ClassMap;
 	static std::unordered_set<FString> MissingClasses;

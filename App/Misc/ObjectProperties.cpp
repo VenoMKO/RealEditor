@@ -3,6 +3,13 @@
 #include <Tera/FObjectResource.h>
 #include <Tera/FPackage.h>
 #include <Tera/UClass.h>
+#include <Tera/UProperty.h>
+#include <Tera/Cast.h>
+
+inline wxString _GetPropertyName(FPropertyValue* v)
+{
+  return v->Property->ClassProperty&& v->Property->ClassProperty->DisplayName.Size() ? v->Property->ClassProperty->DisplayName.WString() : v->Property->Name.String().WString();
+}
 
 inline wxString GetPropertyName(FPropertyValue* v, int32 idx = -1)
 {
@@ -12,13 +19,31 @@ inline wxString GetPropertyName(FPropertyValue* v, int32 idx = -1)
   }
   if (v->Property->StaticArrayNext || v->Property->ArrayDim > 1)
   {
+    if (UProperty* prop = Cast<UProperty>(v->Field))
+    {
+      if (prop->DisplayName.Size())
+      {
+        return prop->DisplayName.WString();
+      }
+    }
     return wxString::Format("[%d]", v->Property->ArrayIndex);
   }
   if (v->Type == FPropertyValue::VID::Struct)
   {
     return v->Property->Name.String().String();
   }
-  return v->Field ? v->Field->GetObjectName().WString() : v->Property->Name.String().WString();
+  if (v->Field)
+  {
+    if (UProperty* prop = Cast<UProperty>(v->Field))
+    {
+      if (prop->DisplayName.Size())
+      {
+        return prop->DisplayName.WString();
+      }
+    }
+    return v->Field->GetObjectName().WString();
+  }
+  return _GetPropertyName(v);
 }
 
 inline wxString GetPropertyId(FPropertyValue* v)
@@ -74,7 +99,11 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const s
 
       if (remainingArrayDim > 1)
       {
-        wxPropertyCategory* newCategory = new wxPropertyCategory(tag->Name.String().String(), tag->Name.String().String());
+        wxPropertyCategory* newCategory = new wxPropertyCategory(tag->ClassProperty ? tag->ClassProperty->DisplayName.WString() : tag->Name.String().WString(), tag->Name.String().WString());
+        if (tag->ClassProperty && tag->ClassProperty->GetToolTip().Size())
+        {
+          newCategory->SetHelpString(tag->ClassProperty->GetToolTip().WString());
+        }
         newCategory->Enable(category->IsEnabled());
         newCategory->SetExpanded(false);
         mgr->AppendIn(category, newCategory);
@@ -97,18 +126,30 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   {
     auto pgp = new AIntProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Float)
   {
     auto pgp = new AFloatProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Bool)
   {
     auto pgp = new ABoolProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Byte)
@@ -117,12 +158,20 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     {
       auto pgp = new AEnumProperty(value, idx);
       pgp->Enable(cat->IsEnabled());
+      if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+      {
+        pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+      }
       mgr->AppendIn(cat, pgp);
     }
     else
     {
       auto pgp = new AByteProperty(value, idx);
       pgp->Enable(cat->IsEnabled());
+      if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+      {
+        pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+      }
       mgr->AppendIn(cat, pgp);
     }
   }
@@ -130,18 +179,30 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   {
     auto pgp = new AStringProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Name)
   {
     auto pgp = new ANameProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Object)
   {
     auto pgp = new AObjectProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
+    if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+    }
     mgr->AppendIn(cat, pgp);
   }
   else if (value->Type == FPropertyValue::VID::Property)
@@ -173,17 +234,21 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     if (arr.size() && arr[0]->Type == FPropertyValue::VID::Byte && !arr[0]->Enum)
     {
       // Special case for byte arrays
-      wxStringProperty* pgp = new wxStringProperty(value->Property->Name.String().WString(), GetPropertyId(value), wxString::Format("%lluKb", arr.size() / 1024));
+      wxStringProperty* pgp = new wxStringProperty(_GetPropertyName(value), GetPropertyId(value), wxString::Format("%lluKb", arr.size() / 1024));
       pgp->Enable(cat->IsEnabled());
       if (value->Field && value->Field->GetToolTip().Size())
       {
         pgp->SetHelpString(value->Field->GetToolTip().WString());
       }
+      else if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+      {
+        pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+      }
       mgr->AppendIn(cat, pgp);
     }
     else
     {
-      wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
+      wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : _GetPropertyName(value), GetPropertyId(value));
       ncat->Enable(cat->IsEnabled());
       ncat->SetExpanded(false);
       if (idx >= 0)
@@ -199,6 +264,10 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
       {
         ncat->SetHelpString(value->Struct->GetToolTip().WString());
       }
+      else if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+      {
+        ncat->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+      }
 
       for (int32 aidx = 0; aidx < arr.size(); ++aidx)
       {
@@ -208,9 +277,10 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   }
   else if (value->Type == FPropertyValue::VID::Struct)
   {
-    wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : value->Property->Name.String().WString(), GetPropertyId(value));
+    wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : _GetPropertyName(value), GetPropertyId(value));
     ncat->Enable(cat->IsEnabled());
     mgr->AppendIn(cat, ncat);
+    ncat->SetExpanded(false);
     bool hasDesc = false;
     if (value->Struct)
     {
@@ -228,7 +298,12 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     }
     if (idx >= 0 && !hasDesc)
     {
+      hasDesc = true;
       ncat->SetHelpString(value->Property->Name.String().WString() + wxString::Format("[%d]", idx));
+    }
+    if (!hasDesc && value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+    {
+      ncat->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
     }
     std::vector<FPropertyValue*> arr = value->GetArray();
 

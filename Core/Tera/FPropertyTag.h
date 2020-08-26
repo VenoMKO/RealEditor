@@ -8,6 +8,7 @@
 
 struct FPropertyTag;
 class UField;
+class UProperty;
 struct FPropertyValue {
 
 	FPropertyValue()
@@ -164,6 +165,7 @@ struct FPropertyTag {
 	UObject* Owner = nullptr;
 	FPropertyValue* Value = nullptr;
 	FPropertyTag* StaticArrayNext = nullptr;
+	UProperty* ClassProperty = nullptr;
 
 	FPropertyTag()
 	{

@@ -170,6 +170,11 @@ FStream& operator<<(FStream& s, FForceCookedInfo& i)
   return s << i.CookedContentList;
 }
 
+FStream& operator<<(FStream& s, AMetaDataEntry& e)
+{
+  return s << e.Name << e.Tooltip;
+}
+
 FStream& operator<<(FStream& s, FSHA& i)
 {
   s.SerializeBytes(i.Bytes, 20);

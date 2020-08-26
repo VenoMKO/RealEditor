@@ -196,7 +196,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
 	UpdatesButton = new wxButton(m_panel9, ControlElementId::Update, wxT("Updates"), wxDefaultPosition, wxDefaultSize, 0);
 	UpdatesButton->SetHelpText(wxT("Open GitHub release page to check if a new version is available"));
-	bSizer14->Add(UpdatesButton, 0, wxALL, 5);
+	bSizer14->Add(UpdatesButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, wxString::Format("v.%.2f", APP_VER), wxDefaultPosition, wxDefaultSize, 0);
 	VersionLabel->Wrap(-1);
@@ -207,10 +207,10 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	bSizer14->Add(m_panel10, 1, wxEXPAND | wxALL, 5);
 
 	CancelButton = new wxButton(m_panel9, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer14->Add(CancelButton, 0, wxALL, 5);
+	bSizer14->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	ApplyButton = new wxButton(m_panel9, wxID_OK, wxT("Apply"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer14->Add(ApplyButton, 0, wxALL, 5);
+	bSizer14->Add(ApplyButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
 	m_panel9->SetSizer(bSizer14);
