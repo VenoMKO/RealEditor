@@ -121,12 +121,10 @@ bool UObject::RegisterProperty(FPropertyTag* property)
 
 FString UObject::GetObjectPath() const
 {
-  FString path = GetPackage()->GetPackageName();
-  FObjectResource* outer = Export->GetOuter();
-  while (outer)
+  FString path;
+  if (FObjectResource* outer = Export->GetOuter())
   {
-    path += "." + outer->GetObjectName();
-    outer = outer->GetOuter();
+    path += outer->GetObjectPath();
   }
   path += "." + GetObjectName();
   return path;
