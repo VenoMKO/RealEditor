@@ -83,6 +83,7 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
   {
     toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
     toolbar->AddTool(eID_Import, "Import", wxBitmap("#113", wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
+    toolbar->FindById(eID_Import)->Enable(false);
   }
 }
 
