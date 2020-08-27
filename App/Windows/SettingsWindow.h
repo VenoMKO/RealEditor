@@ -40,6 +40,7 @@ private:
 	wxButton* ApplyButton;
 
 	bool AllowRebuild = true;
+	bool WasRegistered = false;
 
 	wxDECLARE_EVENT_TABLE();
 };

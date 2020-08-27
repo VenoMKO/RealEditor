@@ -56,6 +56,17 @@ void UnregisterFileType(const wxString& extension, wxMimeTypesManager& man)
   }
 }
 
+bool CheckFileType(const wxString& extension, wxMimeTypesManager& man)
+{
+  if (wxFileType* type = man.GetFileTypeFromExtension(extension))
+  {
+    wxString cmd = type->GetOpenCommand(wxT("test") + extension);
+    delete type;
+    return cmd.size();
+  }
+  return false;
+}
+
 void LoadMeta(const wxString& source, std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>>& output)
 {
   wxString configText;
@@ -645,6 +656,20 @@ void App::OnUnregisterMime(wxCommandEvent&)
   UnregisterFileType(".u", man);
   UnregisterFileType(".upk", man);
   UnregisterFileType(".umap", man);
+}
+
+bool App::CheckMimeTypes() const
+{
+  wxMimeTypesManager man;
+  std::vector<wxString> extensions = { wxS(".gpk"), wxS(".gmp"), wxS(".u"), wxS(".upk"), wxS(".umap") };
+  for (const wxString& extension : extensions)
+  {
+    if (!CheckFileType(extension, man))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 wxBEGIN_EVENT_TABLE(App, wxApp)

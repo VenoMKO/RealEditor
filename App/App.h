@@ -63,6 +63,8 @@ public:
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
 
+  bool CheckMimeTypes() const;
+
   FAppConfig& GetConfig()
   {
     return Config;

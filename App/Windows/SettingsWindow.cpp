@@ -130,7 +130,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	bSizer11 = new wxBoxSizer(wxVERTICAL);
 
 	wxStaticText* m_staticText8;
-	m_staticText8 = new wxStaticText(m_panel6, wxID_ANY, wxT("Register file types"), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText8 = new wxStaticText(m_panel6, wxID_ANY, wxT("Associate filetypes"), wxDefaultPosition, wxDefaultSize, 0);
 	m_staticText8->Wrap(-1);
 	m_staticText8->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
@@ -147,19 +147,23 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	bSizer7 = new wxBoxSizer(wxHORIZONTAL);
 
 	wxStaticText* m_staticText9;
-	m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Explorer window. Press Register to enable the feature or Unregister to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
+	m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
 	m_staticText9->Wrap(300);
 	bSizer7->Add(m_staticText9, 0, wxALL, 5);
 
 	wxBoxSizer* bSizer9;
 	bSizer9 = new wxBoxSizer(wxVERTICAL);
 
-	RegisterButton = new wxButton(m_panel5, ControlElementId::Register, wxT("Register"), wxDefaultPosition, wxDefaultSize, 0);
+	WasRegistered = ((App*)wxTheApp)->CheckMimeTypes();
+
+	RegisterButton = new wxButton(m_panel5, ControlElementId::Register, wxT("Associate"), wxDefaultPosition, wxDefaultSize, 0);
 	RegisterButton->SetToolTip(wxT("Allow to open packages in the Explorer by double clicking them."));
+	RegisterButton->Enable(!WasRegistered);
 	bSizer9->Add(RegisterButton, 0, wxALL, 5);
 
-	UnregisterButton = new wxButton(m_panel5, ControlElementId::Unregister, wxT("Unregister"), wxDefaultPosition, wxDefaultSize, 0);
+	UnregisterButton = new wxButton(m_panel5, ControlElementId::Unregister, wxT("Dissociate"), wxDefaultPosition, wxDefaultSize, 0);
 	UnregisterButton->SetToolTip(wxT("Don't open packages in the Explorer by double clicking them."));
+	UnregisterButton->Enable(WasRegistered);
 	bSizer9->Add(UnregisterButton, 0, wxALL, 5);
 
 
@@ -368,14 +372,38 @@ void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 
 void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
 {
-	SendEvent(wxTheApp, REGISTER_MIME);
-	wxMessageBox(wxS("App registered!"), wxS("Done"), wxICON_INFORMATION);
+	App* app = (App*)wxTheApp;
+	wxCommandEvent tmp;
+	app->OnRegisterMime(tmp);
+	bool registered = app->CheckMimeTypes();
+	RegisterButton->Enable(!registered);
+	UnregisterButton->Enable(registered);
+	if (registered)
+	{
+		wxMessageBox(wxS("The filetype has been associated successfully!"), wxS("Done"), wxICON_INFORMATION);
+	}
+	else
+	{
+		wxMessageBox(wxS("Failed to associate!"), wxS("Error!"), wxICON_INFORMATION);
+	}
 }
 
 void SettingsWindow::OnUnregisterClicked(wxCommandEvent&)
 {
-	SendEvent(wxTheApp, UNREGISTER_MIME);
-	wxMessageBox(wxS("App unregistered!"), wxS("Done"), wxICON_INFORMATION);
+	App* app = (App*)wxTheApp;
+	wxCommandEvent tmp;
+	app->OnUnregisterMime(tmp);
+	bool registered = app->CheckMimeTypes();
+	RegisterButton->Enable(!registered);
+	UnregisterButton->Enable(registered);
+	if (!registered)
+	{
+		wxMessageBox(wxS("The filetype has been dissociated successfully!"), wxS("Done"), wxICON_INFORMATION);
+	}
+	else
+	{
+		wxMessageBox(wxS("Failed to dissociate!"), wxS("Error!"), wxICON_INFORMATION);
+	}
 }
 
 void SettingsWindow::OnUpdateClicked(wxCommandEvent&)
@@ -392,6 +420,15 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
 	if (IsValidDir(PathField->GetValue()))
 	{
+		if (!WasRegistered && RegisterButton->IsEnabled())
+		{
+			wxMessageDialog dialog(nullptr, wxT("You haven't associated *.gpk filetype with the ") + wxTheApp->GetAppDisplayName() + wxT(". This allows you to open packages without starting the application. Would you like to associate now?"), wxT("Associate *.gpk files?"), wxYES_NO | wxICON_INFORMATION);
+			if (dialog.ShowModal() == wxID_YES)
+			{
+				wxCommandEvent tmp;
+				OnRegisterClicked(tmp);
+			}
+		}
 		EndModal(wxID_OK);
 	}
 }
