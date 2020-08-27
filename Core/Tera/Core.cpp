@@ -88,7 +88,19 @@ uint64 GetFileTime(const std::wstring& path)
   return 0;
 }
 
+#include <wx/string.h>
+
 void UThrow(const char* fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  std::string msg = Sprintf(fmt, ap);
+  va_end(ap);
+  LogE(msg);
+  throw std::runtime_error(msg);
+}
+
+void UThrow(const wchar* fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
@@ -145,6 +157,54 @@ std::string Sprintf(const char* fmt, ...)
     }
   }
   return std::string(formatted.get());
+}
+
+std::string Sprintf(const char* fmt, va_list ap)
+{
+  int final_n, n = ((int)strlen(fmt)) * 2;
+  std::unique_ptr<char[]> formatted;
+  va_list tmp;
+  while (1)
+  {
+    formatted.reset(new char[n]);
+    strcpy(&formatted[0], fmt);
+    va_copy(tmp, ap);
+    final_n = vsnprintf(&formatted[0], n, fmt, tmp);
+    va_end(tmp);
+    if (final_n < 0 || final_n >= n)
+    {
+      n += abs(final_n - n + 1);
+    }
+    else
+    {
+      break;
+    }
+  }
+  return std::string(formatted.get());
+}
+
+std::string Sprintf(const wchar* fmt, va_list ap)
+{
+  int final_n, n = ((int)wcslen(fmt)) * 2;
+  std::unique_ptr<wchar[]> formatted;
+  va_list tmp;
+  while (1)
+  {
+    formatted.reset(new wchar[n]);
+    wcscpy(&formatted[0], fmt);
+    va_copy(tmp, ap);
+    final_n = _vsnwprintf(&formatted[0], n, fmt, tmp);
+    va_end(tmp);
+    if (final_n < 0 || final_n >= n)
+    {
+      n += abs(final_n - n + 1);
+    }
+    else
+    {
+      break;
+    }
+  }
+  return W2A(formatted.get());
 }
 
 std::wstring Sprintf(const wchar* fmt, ...)

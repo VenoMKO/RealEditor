@@ -207,11 +207,11 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
 
       if (!property)
       {
-        LogE("Property %s of %ls not found in %s", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
+        LogE("Property %s of %s not found in %s", tagName.c_str(), object->GetObjectName().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
       }
       else if (tag.ArrayIndex >= property->ArrayDim || tag.ArrayIndex < 0)
       {
-        LogE("Array bounds in %s of %s: %i/%i for package:  %s", tagName.c_str(), object->GetObjectName().WString().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
+        LogE("Array bounds in %s of %s: %i/%i for package:  %s", tagName.c_str(), object->GetObjectName().String().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
         DBreak();
       }
       else if (tagType == NAME_StrProperty && Cast<UNameProperty>(property) != nullptr)
@@ -260,7 +260,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       tag.Value->Type = FPropertyValue::VID::Unk;
       prevTagPtr = tagPtr;
       s.SerializeBytes(tag.GetValueData(), tag.Size);
-      LogW("Skipping property %s of %ls in %s package", tagName.c_str(), object->GetObjectName().WString().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
+      LogW("Skipping property %s of %s in %s package", tagName.c_str(), object->GetObjectName().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
     }
   }
 }

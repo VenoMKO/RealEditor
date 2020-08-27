@@ -107,7 +107,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
 {
   if (!std::filesystem::exists(path))
   {
-    UThrow("File \"%ls\" does not exist!", path.wstring().c_str());
+    UThrow("File \"%s\" does not exist!", path.string().c_str());
   }
   std::vector<char> encrypted;
   size_t size = 0;
@@ -116,7 +116,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
     std::ifstream s(path.wstring(), std::ios::binary | std::ios::ate);
     if (!s.is_open())
     {
-      UThrow("Can't open \"%ls\"!", path.wstring().c_str());
+      UThrow("Can't open \"%s\"!", path.string().c_str());
     }
     s.seekg(0, std::ios_base::end);
     size = s.tellg();
@@ -126,7 +126,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
     s.read(&encrypted[0], size);
   }
   
-  LogI("Decrypting %s", path.filename().string().c_str());
+  LogI("Decrypting \"%s\"", path.filename().string().c_str());
 
   size_t offset = 0;
   for (; offset + sizeof(Key1) < size; offset += sizeof(Key1))
@@ -514,7 +514,7 @@ void FPackage::LoadPkgMapper(bool rebuild)
 
   if (!std::filesystem::exists(encryptedPath))
   {
-    UThrow("Failed to open %ls", encryptedPath.string().c_str());
+    UThrow("Failed to open %s", encryptedPath.string().c_str());
   }
 
   FString buffer;
@@ -714,7 +714,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     }
   }
   
-  LogI("Opening package: %ls", path.WString().c_str());
+  LogI("Opening package: %s", path.String().c_str());
   FStream *stream = new FReadStream(path);
   if (!stream->IsGood())
   {
@@ -749,7 +749,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
 
     std::filesystem::path decompressedPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
     sum.DataPath = W2A(decompressedPath.wstring());
-    LogI("Decompressing package %s to %ls", sum.PackageName.C_str(), decompressedPath.wstring().c_str());
+    LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
     std::vector<FCompressedChunk> tmpChunks;
@@ -885,13 +885,13 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
         }
       }
       std::filesystem::path tmpPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
-      LogI("Writing composite package %s to %ls...", name.C_str(), tmpPath.wstring().c_str());
+      LogI("Writing composite package %s to %s...", name.C_str(), tmpPath.string().c_str());
       {
         FWriteStream ws(tmpPath);
         ws.SerializeBytes(rawData, entry.Size);
         if (!ws.IsGood())
         {
-          UThrow("Failed to save composit package %s to %ls", name.C_str(), tmpPath.wstring().c_str());
+          UThrow("Failed to save composit package %s to %s", name.C_str(), tmpPath.string().c_str());
         }
       }
       free(rawData);
@@ -1438,7 +1438,7 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
         return p.first;
       }
     }
-    UThrow("%s does not have import object for %ls", GetPackageName().C_str(), object->GetObjectName().WString().c_str());
+    UThrow("%s does not have import object for %s", GetPackageName().C_str(), object->GetObjectName().String().c_str());
   }
   return object->GetExportObject()->ObjectIndex;
 }

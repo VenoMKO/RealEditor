@@ -141,6 +141,7 @@ FString PackageFlagsToString(uint32 flags);
 
 // Generic runtime error
 void UThrow(const char* fmt, ...);
+void UThrow(const wchar* fmt, ...);
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
 bool IsAnsi(const std::wstring& str);
@@ -155,6 +156,8 @@ uint64 GetFileTime(const std::wstring& path);
 
 // Format like a C string
 std::string Sprintf(const char* fmt, ...);
+std::string Sprintf(const char* fmt, va_list ap);
+std::string Sprintf(const wchar* fmt, va_list ap);
 std::wstring Sprintf(const wchar* fmt, ...);
 std::string Sprintf(const std::string fmt, ...);
 

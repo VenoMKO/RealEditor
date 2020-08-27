@@ -275,42 +275,89 @@ void SettingsWindow::OnUpdateDirCacheClicked(wxCommandEvent&)
 	ProgressWindow progress(this);
 	progress.SetCurrentProgress(-1);
 	progress.SetCanCancel(false);
-	std::thread([&progress] {
+	bool ok = true;
+	std::thread([&progress, &ok] {
 		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating folder cache..."));
 		Sleep(200);
-		FPackage::UpdateDirCache();
+		try
+		{
+			FPackage::UpdateDirCache();
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			ok = false;
+		}
 		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 	}).detach();
 	progress.ShowModal();
-	wxMessageBox(wxS("Folder cache has been updated!"), wxS("Done"), wxICON_INFORMATION);
+	if (ok)
+	{
+		wxMessageBox(wxS("Folder cache has been updated!"), wxS("Done"), wxICON_INFORMATION);
+	}
 }
 
 void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 {
 	ProgressWindow progress(this);
 	progress.SetCurrentProgress(-1);
-	std::thread([&progress] {
+	bool ok = true;
+	std::thread([&progress, &ok] {
 		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating package mapper..."));
 		Sleep(200);
-		FPackage::LoadPkgMapper(true);
+		try
+		{
+			FPackage::LoadPkgMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			ok = false;
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
 		if (progress.IsCancelled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
 		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating composite mapper..."));
-		FPackage::LoadCompositePackageMapper(true);
+
+		try
+		{
+			FPackage::LoadCompositePackageMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			ok = false;
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
 		if (progress.IsCancelled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
 		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating object redirector mapper..."));
-		FPackage::LoadObjectRedirectorMapper(true);
+		try
+		{
+			FPackage::LoadObjectRedirectorMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			ok = false;
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
 		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 	}).detach();
 	progress.ShowModal();
-	wxMessageBox(wxS("Mappers have been updated!"), wxS("Done"), wxICON_INFORMATION);
+	if (ok)
+	{
+		wxMessageBox(wxS("Mappers have been updated!"), wxS("Done"), wxICON_INFORMATION);
+	}
 }
 
 void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)

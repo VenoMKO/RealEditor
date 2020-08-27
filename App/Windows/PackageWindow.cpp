@@ -202,7 +202,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
 		return;
 	}
 	FObjectImport* obj = Package->GetImportObject(index);
-	ObjectTitleLabel->SetLabelText(wxString::Format("%ls (%ls)", obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
+	ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
 	SetPropertiesHidden(true);
 	SetContentHidden(true);
 }
@@ -219,7 +219,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 	}
 	
 	FObjectExport* fobj = Package->GetExportObject(index);
-	ObjectTitleLabel->SetLabelText(wxString::Format("%ls (%ls)", fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
+	ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
 	ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
 	ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", -1));
 	ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
