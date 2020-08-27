@@ -129,7 +129,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
   LogI("Decrypting \"%s\"", path.filename().string().c_str());
 
   size_t offset = 0;
-  for (; offset + sizeof(Key1) < size; offset += sizeof(Key1))
+  for (; offset + sizeof(Key1) <= size; offset += sizeof(Key1))
   {
     for (size_t idx = 0; idx < sizeof(Key1); ++idx)
     {
