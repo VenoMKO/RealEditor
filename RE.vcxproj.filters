@@ -172,7 +172,6 @@
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />
-    <ClInclude Include="Extern\glew\glew.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

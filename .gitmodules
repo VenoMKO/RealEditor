@@ -9,3 +9,6 @@
 	path = Extern/nvtt
 	url = https://github.com/VenoMKO/nvidia-texture-tools.git
 	branch = RE
+[submodule "Extern/glew"]
+	path = Extern/glew
+	url = https://github.com/VenoMKO/glew.git
