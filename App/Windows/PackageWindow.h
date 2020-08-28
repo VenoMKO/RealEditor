@@ -35,11 +35,11 @@ private:
 	void InitLayout();
 	void LoadObjectTree();
 	void OnTick(wxTimerEvent& e);
-	void OnIdle(wxIdleEvent& e);
 
 	// Menu
 	void OnNewClicked(wxCommandEvent&);
 	void OnOpenClicked(wxCommandEvent&);
+	void OnOpenCompositeClicked(wxCommandEvent&);
 	void OnSaveClicked(wxCommandEvent&);
 	void OnSaveAsClicked(wxCommandEvent&);
 	void OnCloseClicked(wxCommandEvent&);

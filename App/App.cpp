@@ -1,6 +1,7 @@
 #include "App.h"
 #include "Windows/ProgressWindow.h"
 #include "Windows/SettingsWindow.h"
+#include "Windows/CompositePackagePicker.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -242,6 +243,24 @@ wxString App::ShowOpenDialog(const wxString& rootDir)
   return wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 }
 
+wxString App::ShowOpenCompositeDialog(wxWindow* parent)
+{
+  if (CompositePicker && parent != CompositePicker->GetParent())
+  {
+    CompositePicker->Reparent(parent);
+  }
+  else if (!CompositePicker)
+  {
+    CompositePicker = new CompositePackagePicker(parent, "Open composite package...");
+  }
+  CompositePicker->CenterOnParent();
+  if (CompositePicker->ShowModal() == wxID_OK)
+  {
+    return CompositePicker->GetResult();
+  }
+  return wxString();
+}
+
 bool App::OpenPackage(const wxString& path)
 {
   for (const auto window : PackageWindows)
@@ -257,6 +276,66 @@ bool App::OpenPackage(const wxString& path)
   try
   {
     package = FPackage::GetPackage(W2A(path.ToStdWstring()));
+  }
+  catch (const std::exception& e)
+  {
+    LogE("Failed to open the package: %s", e.what());
+    wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+    return false;
+  }
+
+  if (package == nullptr)
+  {
+    LogE("Failed to open the package: Unknow error");
+    wxMessageBox("Unknown error!", "Failed to open the package!", wxICON_ERROR);
+    return false;
+  }
+
+  PackageWindow* window = new PackageWindow(package, this);
+  PackageWindows.push_back(window);
+  window->Show();
+
+  if (!package->IsReady())
+  {
+    std::thread([package, window]() {
+      try
+      {
+        package->Load();
+      }
+      catch (const std::exception& e)
+      {
+        LogE("Failed to load the package. %s.", e.what());
+        SendEvent(window, PACKAGE_ERROR, e.what());
+        return;
+      }
+      if (!package->IsOperationCancelled())
+      {
+        SendEvent(window, PACKAGE_READY);
+      }
+    }).detach();
+  }
+  else
+  {
+    SendEvent(window, PACKAGE_READY);
+  }
+  return true;
+}
+
+bool App::OpenNamedPackage(const wxString& name)
+{
+  for (const auto window : PackageWindows)
+  {
+    if (window->GetPackage()->GetPackageName().String() == name)
+    {
+      window->Raise();
+      return true;
+    }
+  }
+
+  std::shared_ptr<FPackage> package = nullptr;
+  try
+  {
+    package = FPackage::GetPackageNamed(name.ToStdString());
   }
   catch (const std::exception& e)
   {
@@ -512,6 +591,13 @@ void App::LoadCore(ProgressWindow* pWindow)
     compositMapper.join();
     objectRedirectorMapper.join();
 
+    const auto& compositeMap = FPackage::GetCompositePackageMap();
+    CompositePackageNames.reserve(compositeMap.size());
+    for (const auto& pair : compositeMap)
+    {
+      CompositePackageNames.push_back(pair.first.String());
+    }
+
     if (error.Size())
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
@@ -656,6 +742,11 @@ void App::OnUnregisterMime(wxCommandEvent&)
   UnregisterFileType(".u", man);
   UnregisterFileType(".upk", man);
   UnregisterFileType(".umap", man);
+}
+
+const wxArrayString& App::GetCompositePackageNames() const
+{
+  return CompositePackageNames;
 }
 
 bool App::CheckMimeTypes() const

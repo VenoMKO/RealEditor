@@ -20,6 +20,10 @@ void PackageWindow::InitLayout()
 	m_menuItem4 = new wxMenuItem(fileMenu, ControlElementId::Open, wxString(wxT("Open...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem4);
 
+	wxMenuItem* m_menuItem5;
+	m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::OpenComposite, wxString(wxT("Open composite...")), wxEmptyString, wxITEM_NORMAL);
+	fileMenu->Append(m_menuItem5);
+
 	fileMenu->AppendSeparator();
 
 	SaveMenu = new wxMenuItem(fileMenu, ControlElementId::Save, wxString(wxT("Save")) + wxT('\t') + wxT("Ctrl+S"), wxEmptyString, wxITEM_NORMAL);

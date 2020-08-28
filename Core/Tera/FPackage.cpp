@@ -200,6 +200,11 @@ FString FPackage::GetTextureFileCachePath(const FString& tfcName)
   return FString();
 }
 
+const std::unordered_map<FString, FCompositePackageMapEntry>& FPackage::GetCompositePackageMap()
+{
+  return CompositPackageMap;
+}
+
 void FPackage::UpdateDirCache()
 {
   LogI("Building directory cache: \"%s\"", RootDir.C_str());

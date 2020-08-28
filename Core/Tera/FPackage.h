@@ -40,6 +40,8 @@ public:
 	static FBulkDataInfo* GetBulkDataInfo(const FString& bulkDataName);
 	// Get texture file cache path with name
 	static FString GetTextureFileCachePath(const FString& tfcName);
+	// Get composite map
+	static const std::unordered_map<FString, FCompositePackageMapEntry>& GetCompositePackageMap();
 	// Update DirCache
 	static void UpdateDirCache();
 

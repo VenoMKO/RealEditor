@@ -119,6 +119,9 @@
     <ClCompile Include="Extern\minilzo\minilzo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\CompositePackagePicker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -172,6 +175,7 @@
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />
+    <ClInclude Include="App\Windows\CompositePackagePicker.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

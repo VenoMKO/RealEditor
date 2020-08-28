@@ -1,4 +1,5 @@
 #include "PackageWindow.h"
+#include "CompositePackagePicker.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
@@ -19,6 +20,7 @@
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
 	Open,
+	OpenComposite,
 	Save,
 	SaveAs,
 	Close,
@@ -146,14 +148,10 @@ void PackageWindow::LoadObjectTree()
 
 void PackageWindow::OnTick(wxTimerEvent& e)
 {
-	if (ActiveEditor && !IsIconized())
+	if (ActiveEditor && !IsIconized() && GetForegroundWindow() == GetHWND())
 	{
 		ActiveEditor->OnTick();
 	}
-}
-
-void PackageWindow::OnIdle(wxIdleEvent& e)
-{
 }
 
 void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
@@ -327,6 +325,15 @@ void PackageWindow::OnOpenClicked(wxCommandEvent& e)
 	}
 }
 
+void PackageWindow::OnOpenCompositeClicked(wxCommandEvent&)
+{
+	wxString name = Application->ShowOpenCompositeDialog(this);
+	if (name.size())
+	{
+		Application->OpenNamedPackage(name);
+	}
+}
+
 void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 {
 
@@ -429,6 +436,7 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
 EVT_MENU(ControlElementId::Open, PackageWindow::OnOpenClicked)
+EVT_MENU(ControlElementId::OpenComposite, PackageWindow::OnOpenCompositeClicked)
 EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
@@ -443,6 +451,5 @@ EVT_MAXIMIZE(PackageWindow::OnMaximized)
 EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
-EVT_IDLE(PackageWindow::OnIdle)
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 wxEND_EVENT_TABLE()

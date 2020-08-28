@@ -39,11 +39,14 @@ wxDECLARE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 
 class ProgressWindow;
+class CompositePackagePicker;
 class App : public wxApp {
 public:
   ~App();
   bool OpenPackage(const wxString& path);
+  bool OpenNamedPackage(const wxString& name);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
+  wxString ShowOpenCompositeDialog(wxWindow* parent);
   void OnOpenPackage(wxCommandEvent& e);
   void OnShowSettings(wxCommandEvent& e);
 
@@ -62,6 +65,8 @@ public:
 
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
+
+  const wxArrayString& GetCompositePackageNames() const;
 
   bool CheckMimeTypes() const;
 
@@ -88,10 +93,13 @@ private:
 private:
   FAppConfig Config;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
+  CompositePackagePicker* CompositePicker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;
   std::vector<PackageWindow*> PackageWindows;
   std::vector<wxString> OpenList;
+
+  wxArrayString CompositePackageNames;
 
   bool NeedsRestart = false;
 };
