@@ -486,7 +486,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
   }
 
-  const std::vector<FString> classPackageNames = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "UnrealEd.u"  };
+  const std::vector<FString> classPackageNames = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
   PERF_START(ClassPackagesLoad);
   for (const FString& name : classPackageNames)
   {

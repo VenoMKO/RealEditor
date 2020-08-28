@@ -591,12 +591,10 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
 
   size_t pos = 0;
   size_t posEnd = 0;
-  std::vector<FString> packages;
   while ((pos = buffer.Find('?', posEnd)) != std::string::npos)
   {
-    FString fileName = buffer.Substr(posEnd + 1, pos - posEnd - 1);
+    FString fileName = buffer.Substr(posEnd, pos - posEnd);
     posEnd = buffer.Find('!', pos);
-    
     do
     {
       pos++;
@@ -627,6 +625,8 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
       CompositPackageMap[packageName] = entry;
       CompositPackageList[fileName].push_back(packageName);
     } while (buffer.Find('|', pos) < posEnd - 1);
+    pos++;
+    posEnd++;
   }
 
   LogI("Saving %s storage", CompositePackageMapperName);
@@ -1089,30 +1089,6 @@ void FPackage::Load()
     CheckCancel();
   }
 
-  if (Summary.ImportExportGuidsOffset)
-  {
-    if (Summary.ImportExportGuidsOffset != s.GetPosition())
-    {
-      s.SetPosition(Summary.ImportExportGuidsOffset);
-    }
-    DBreakIf(Summary.ImportGuidsCount || Summary.ExportGuidsCount);
-    ImportGuids.clear();
-    ImportGuids.resize(Summary.ImportGuidsCount);
-    for (int32 idx = 0; idx < Summary.ImportGuidsCount; ++idx)
-    {
-      s << ImportGuids[idx];
-    }
-
-    ExportGuids.clear();
-    for (int32 idx = 0; idx < Summary.ExportGuidsCount; ++idx)
-    {
-      FGuid objectGuid;
-      PACKAGE_INDEX exportIndex = 0;
-      s << objectGuid << exportIndex;
-      ExportGuids[objectGuid] = GetExportObject(exportIndex);
-    }
-  }
-
   if (Summary.ThumbnailTableOffset)
   {
     if (Summary.ThumbnailTableOffset != s.GetPosition())
@@ -1136,6 +1112,30 @@ void FPackage::Load()
       Thumbnails[idx] = new FObjectThumbnail;
       s.SetPosition(ThumbnailInfos[idx]->Offset);
       s << *Thumbnails[idx];
+    }
+  }
+
+  if (Summary.ImportExportGuidsOffset)
+  {
+    if (Summary.ImportExportGuidsOffset != s.GetPosition())
+    {
+      s.SetPosition(Summary.ImportExportGuidsOffset);
+    }
+    DBreakIf(Summary.ImportGuidsCount || Summary.ExportGuidsCount);
+    ImportGuids.clear();
+    ImportGuids.resize(Summary.ImportGuidsCount);
+    for (int32 idx = 0; idx < Summary.ImportGuidsCount; ++idx)
+    {
+      s << ImportGuids[idx];
+    }
+
+    ExportGuids.clear();
+    for (int32 idx = 0; idx < Summary.ExportGuidsCount; ++idx)
+    {
+      FGuid objectGuid;
+      PACKAGE_INDEX exportIndex = 0;
+      s << objectGuid << exportIndex;
+      ExportGuids[objectGuid] = GetExportObject(exportIndex);
     }
   }
 
