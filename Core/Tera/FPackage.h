@@ -251,6 +251,12 @@ private:
 	mutable std::mutex ImportObjectsMutex;
 	std::unordered_map<PACKAGE_INDEX, UObject*> ImportObjects;
 
+	std::vector<FLevelGuids> ImportGuids;
+	std::map<FGuid, FObjectExport*>	ExportGuids;
+
+	std::vector<FObjectThumbnailInfo*> ThumbnailInfos;
+	std::vector<FObjectThumbnail*> Thumbnails;
+
 	std::vector<FObjectExport*> RootExports;
 	std::vector<FObjectImport*> RootImports;
 

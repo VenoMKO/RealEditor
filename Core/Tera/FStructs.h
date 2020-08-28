@@ -61,6 +61,11 @@ public:
 		return A;
 	}
 
+	bool operator<(const FGuid& b) const
+	{
+		return String() < b.String();
+	}
+
 	friend FStream& operator<<(FStream& s, FGuid& g);
 
 	FString String() const
@@ -491,4 +496,38 @@ struct FIntRect
 	FIntPoint Max;
 
 	friend FStream& operator<<(FStream& s, FIntRect& r);
+};
+
+struct FLevelGuids
+{
+	friend FStream& operator<<(FStream& s, FLevelGuids& g);
+
+	FName LevelName;
+	std::vector<FGuid> Guids;
+};
+
+struct FObjectThumbnailInfo {
+
+	friend FStream& operator<<(FStream& s, FObjectThumbnailInfo& i);
+
+	FString ObjectClassName;
+	FString ObjectPath;
+	int32 Offset = 0;
+};
+
+struct FObjectThumbnail {
+
+	~FObjectThumbnail()
+	{
+		free(CompressedData);
+	}
+
+	friend FStream& operator<<(FStream& s, FObjectThumbnail& t);
+
+	int32 Width = 0;
+	int32 Height = 0;
+
+	int32 CompressedSize = 0;
+	void* CompressedData = nullptr;
+	bool IsDirty = false;
 };

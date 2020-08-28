@@ -191,6 +191,33 @@ FStream& operator<<(FStream& s, FIntRect& r)
   return s << r.Min << r.Max;
 }
 
+FStream& operator<<(FStream& s, FLevelGuids& g)
+{
+  return s << g.LevelName << g.Guids;
+}
+
+FStream& operator<<(FStream& s, FObjectThumbnailInfo& i)
+{
+  return s << i.ObjectClassName << i.ObjectPath << i.Offset;
+}
+
+FStream& operator<<(FStream& s, FObjectThumbnail& t)
+{
+  s << t.Width;
+  s << t.Height;
+
+  s << t.CompressedSize;
+  if (s.IsReading())
+  {
+    if (t.CompressedSize)
+    {
+      t.CompressedData = malloc(t.CompressedSize);
+    }
+  }
+  s.SerializeBytes(t.CompressedData, t.CompressedSize);
+  return s;
+}
+
 void FUntypedBulkData::SerializeBulkData(FStream& s, void* data)
 {
   if (BulkDataFlags & BULKDATA_Unused)

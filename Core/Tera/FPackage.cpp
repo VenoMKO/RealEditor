@@ -814,7 +814,6 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
     result = LoadedPackages.emplace_back(new FPackage(sum));
   }
-  DBreakIf(sum.ThumbnailTableOffset);
   return result;
 }
 
@@ -997,6 +996,14 @@ FPackage::~FPackage()
   {
     delete exp;
   }
+  for (FObjectThumbnailInfo* info : ThumbnailInfos)
+  {
+    delete info;
+  }
+  for (FObjectThumbnail* thumbnail : Thumbnails)
+  {
+    delete thumbnail;
+  }
   
   for (auto& pkg : ExternalPackages)
   {
@@ -1080,6 +1087,56 @@ void FPackage::Load()
     std::vector<int>& arr = Depends.emplace_back(std::vector<int>());
     s << arr;
     CheckCancel();
+  }
+
+  if (Summary.ImportExportGuidsOffset)
+  {
+    if (Summary.ImportExportGuidsOffset != s.GetPosition())
+    {
+      s.SetPosition(Summary.ImportExportGuidsOffset);
+    }
+    DBreakIf(Summary.ImportGuidsCount || Summary.ExportGuidsCount);
+    ImportGuids.clear();
+    ImportGuids.resize(Summary.ImportGuidsCount);
+    for (int32 idx = 0; idx < Summary.ImportGuidsCount; ++idx)
+    {
+      s << ImportGuids[idx];
+    }
+
+    ExportGuids.clear();
+    for (int32 idx = 0; idx < Summary.ExportGuidsCount; ++idx)
+    {
+      FGuid objectGuid;
+      PACKAGE_INDEX exportIndex = 0;
+      s << objectGuid << exportIndex;
+      ExportGuids[objectGuid] = GetExportObject(exportIndex);
+    }
+  }
+
+  if (Summary.ThumbnailTableOffset)
+  {
+    if (Summary.ThumbnailTableOffset != s.GetPosition())
+    {
+      s.SetPosition(Summary.ThumbnailTableOffset);
+    }
+
+    int32 thumbnailCount = 0;
+    s << thumbnailCount;
+
+    ThumbnailInfos.resize(thumbnailCount);
+    for (int32 idx = 0; idx < thumbnailCount; ++idx)
+    {
+      ThumbnailInfos[idx] = new FObjectThumbnailInfo;
+      s << *ThumbnailInfos[idx];
+    }
+
+    Thumbnails.resize(thumbnailCount);
+    for (int32 idx = 0; idx < thumbnailCount; ++idx)
+    {
+      Thumbnails[idx] = new FObjectThumbnail;
+      s.SetPosition(ThumbnailInfos[idx]->Offset);
+      s << *Thumbnails[idx];
+    }
   }
 
   for (uint32 index = 0; index < Summary.ExportsCount; ++index)
