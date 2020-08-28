@@ -63,7 +63,6 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
     std::string ext = itemPath.extension().string();
     if (!_stricmp(ext.c_str(), ".gpk") || !_stricmp(ext.c_str(), ".gmp") || !_stricmp(ext.c_str(), ".upk") || !_stricmp(ext.c_str(), ".u"))
     {
-      DBreakIf(ext == ".tfc");
       std::error_code err;
       std::filesystem::path rel = std::filesystem::relative(itemPath, fspath, err);
       if (!err)
@@ -410,8 +409,9 @@ void FPackage::LoadClassPackage(const FString& name)
       }
     }
 
-    for (UProperty* p : properties)
+    for (size_t idx = 0; idx < properties.size(); ++idx)
     {
+      UProperty* p = properties.at(idx);
       const FString propertyName = p->GetObjectName();
       UObject* outer = p->GetOuter();
       std::vector<UObject*> parents;
@@ -426,21 +426,22 @@ void FPackage::LoadClassPackage(const FString& name)
       {
         continue;
       }
-      
+
       if (parents.size())
       {
         FString key = className + ":" + parents.back()->GetObjectName();
         if (MetaData.count(key))
         {
-          if (MetaData[key].count(propertyName))
+          if (MetaData.at(key).count(propertyName))
           {
-            if (MetaData[key][propertyName].Name.Size())
+            const AMetaDataEntry& entry = MetaData.at(key).at(propertyName);
+            if (entry.Name.Size())
             {
-              p->DisplayName = MetaData[key][propertyName].Name;
+              p->DisplayName = entry.Name;
             }
-            if (MetaData[key][propertyName].Tooltip.Size())
+            if (entry.Tooltip.Size())
             {
-              p->SetToolTip(MetaData[key][propertyName].Tooltip);
+              p->SetToolTip(entry.Tooltip);
             }
             continue;
           }
@@ -452,15 +453,15 @@ void FPackage::LoadClassPackage(const FString& name)
         const FString& key = className;
         if (MetaData[key].count(propertyName))
         {
-          if (MetaData[key][propertyName].Name.Size())
+          const AMetaDataEntry& entry = MetaData.at(key).at(propertyName);
+          if (entry.Name.Size())
           {
-            p->DisplayName = MetaData[key][propertyName].Name;
+            p->DisplayName = entry.Name;
           }
-          if (MetaData[key][propertyName].Tooltip.Size())
+          if (entry.Tooltip.Size())
           {
-            p->SetToolTip(MetaData[key][propertyName].Tooltip);
+            p->SetToolTip(entry.Tooltip);
           }
-          continue;
         }
       }
     }

@@ -17,7 +17,7 @@ static const float APP_VER = 0.11f;
 #define ALLOW_UI_PKG_SAVE 1
 
 #if _DEBUG
-// DUMP_PATH should be set to the ENV
+// DUMP_PATH should be set in the ENV
 #if defined(DUMP_PATH)
 #define DUMP_OBJECTS 0
 #define DUMP_PACKAGES 0

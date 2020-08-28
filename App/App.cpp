@@ -87,11 +87,11 @@ void LoadMeta(const wxString& source, std::unordered_map<FString, std::unordered
   }
   wxMemoryInputStream s((const void*)configText.c_str(), configText.size());
   wxMBConvUTF8 conv;
-  wxFileConfig config(s, wxMBConvUTF8());
+  wxFileConfig config(s, conv);
   wxString groupName;
   long groupIndex = 0;
   bool hasGroup = config.GetFirstGroup(groupName, groupIndex);
-  if (hasGroup)
+  if (!hasGroup)
   {
     LogE("Failed to parse stripped meta data!");
     return;
