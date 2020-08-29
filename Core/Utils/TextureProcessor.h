@@ -70,6 +70,7 @@ public:
 private:
   bool BytesToFile();
   bool BytesToBytes();
+  bool FileToBytes();
 
 private:
   TCFormat InputFormat = TCFormat::None;
@@ -86,6 +87,8 @@ private:
   std::string OutputPath;
   
   bool SRGB = false;
+  bool Alpha = false;
+  bool Normal = false;
 
   std::string Error;
 };

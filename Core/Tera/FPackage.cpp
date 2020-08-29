@@ -724,8 +724,10 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   FStream *stream = new FReadStream(path);
   if (!stream->IsGood())
   {
-    UThrow("Couldn't open the file!");
     delete stream;
+    UThrow("Couldn't open the file!");
+    // Shut up static analyzer
+    return nullptr;
   }
   FPackageSummary sum;
   sum.SourcePath = path;

@@ -122,6 +122,9 @@
     <ClCompile Include="App\Windows\CompositePackagePicker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\TextureImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -176,6 +179,7 @@
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
+    <ClInclude Include="App\Windows\TextureImporter.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

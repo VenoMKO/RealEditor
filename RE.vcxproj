@@ -19,6 +19,7 @@
     <ClCompile Include="App\Windows\CompositePackagePicker.cpp" />
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
+    <ClCompile Include="App\Windows\TextureImporter.cpp" />
     <ClCompile Include="Core\Tera\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
     <ClCompile Include="App\Editors\GenericEditor.cpp" />
@@ -58,6 +59,7 @@
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
+    <ClInclude Include="App\Windows\TextureImporter.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />

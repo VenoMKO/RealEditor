@@ -6,8 +6,10 @@
 #include <nvtt/nvtt.h>
 
 #include "../Windows/PackageWindow.h"
+#include "../Windows/TextureImporter.h"
 
 #include <Tera/ALog.h>
+#include <Tera/FPackage.h>
 #include <Utils/TextureProcessor.h>
 
 TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
@@ -47,6 +49,7 @@ void TextureEditor::OnTick()
 void TextureEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
+  toolbar->FindById(eID_Import)->Enable(!Window->GetPackage()->IsReadOnly() && Texture && (Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5));
   toolbar->AddSeparator();
   toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_R, Mask->getRedMask());
@@ -235,8 +238,40 @@ void TextureEditor::CreateRenderTexture()
 
 void TextureEditor::OnImportClicked(wxCommandEvent&)
 {
-  wxString path = wxLoadFileSelector("texture", ".png; .dds", wxEmptyString, Window);
-  // TODO: import data
+  wxString path = wxLoadFileSelector("texture", ".png", wxEmptyString, Window);
+  TextureImporter importer(Window, Texture->Format, false, Texture->SRGB, TextureAddress::TA_Wrap, TextureAddress::TA_Wrap);
+  if (importer.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
+  switch (importer.GetPixelFormat())
+  {
+  case PF_DXT1:
+    outputFormat = TextureProcessor::TCFormat::DXT1;
+    break;
+  case PF_DXT3:
+    outputFormat = TextureProcessor::TCFormat::DXT3;
+    break;
+  case PF_DXT5:
+    outputFormat = TextureProcessor::TCFormat::DXT5;
+    break;
+  default:
+    wxMessageBox(std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!", wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+  
+  TextureProcessor processor(TextureProcessor::TCFormat::PNG, outputFormat);
+  processor.SetInputPath(W2A(path.ToStdWstring()));
+
+  if (!processor.Process())
+  {
+    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  // TODO: patch the UTexture
 }
 
 void TextureEditor::OnExportClicked(wxCommandEvent&)

@@ -38,6 +38,11 @@ struct FreeImageHolder {
 struct TPOutputHandler : public nvtt::OutputHandler {
   static const int32 MaxMipCount = 16;
 
+  TPOutputHandler()
+  {
+    memset(Mips, 0, sizeof(Mips));
+  }
+
   struct Mip {
     int32 SizeX = 0;
     int32 SizeY = 0;
@@ -73,21 +78,29 @@ struct TPOutputHandler : public nvtt::OutputHandler {
 
   bool writeData(const void* data, int size) override
   {
-    if (!Ok)
+    if (!Ok || !MipsCount)
     {
       return Ok;
     }
     Mip& mip = Mips[MipsCount - 1];
     if (mip.LastOffset + size > mip.Size)
     {
-      if (void* tmp = realloc(mip.Data, mip.LastOffset + size))
+      if (mip.Size)
       {
-        mip.Size = mip.LastOffset + size;
-        mip.Data = tmp;
+        if (void* tmp = realloc(mip.Data, mip.LastOffset + size))
+        {
+          mip.Size = mip.LastOffset + size;
+          mip.Data = tmp;
+        }
+        else
+        {
+          Ok = false;
+        }
       }
       else
       {
-        Ok = false;
+        mip.Data = malloc(size);
+        mip.Size = size;
       }
     }
     if (Ok)
@@ -127,7 +140,12 @@ bool TextureProcessor::Process()
     }
     return BytesToFile();
   }
+  if (OutputPath.empty())
+  {
+    return FileToBytes();
+  }
   bool result = false;
+  Error = "Texture Processor: no output specified";
   return result;
 }
 
@@ -241,5 +259,105 @@ bool TextureProcessor::BytesToFile()
 
 bool TextureProcessor::BytesToBytes()
 {
+  return false;
+}
+
+bool TextureProcessor::FileToBytes()
+{
+  FreeImageHolder holder(true);
+  FREE_IMAGE_FORMAT fmt;
+  if (InputFormat == TCFormat::PNG)
+  {
+    fmt = FIF_PNG;
+  }
+  else if (InputFormat == TCFormat::TGA)
+  {
+    fmt = FIF_TARGA;
+  }
+  else
+  {
+    Error = "Texture Processor: Input format \"" + std::to_string((int)InputFormat) + "\" is not supported!";
+    return false;
+  }
+  
+  holder.bmp = FreeImage_LoadU(fmt, A2W(InputPath).c_str());
+  if (FreeImage_GetBPP(holder.bmp) != 32)
+  {
+    holder.bmp = FreeImage_ConvertTo32Bits(holder.bmp);
+  }
+
+  Alpha = FreeImage_IsTransparent(holder.bmp);
+  uint8* data = (uint8*)FreeImage_GetBits(holder.bmp);
+
+  nvtt::Surface surface;
+  nvtt::Format outFmt = nvtt::Format_Count;
+
+  if (OutputFormat == TCFormat::DXT1)
+  {
+    outFmt = Alpha ? nvtt::Format_DXT1a : nvtt::Format_DXT1;
+  }
+  else if (OutputFormat == TCFormat::DXT3)
+  {
+    outFmt = nvtt::Format_DXT3;
+  }
+  else if (OutputFormat == TCFormat::DXT5)
+  {
+    outFmt = nvtt::Format_DXT5;
+  }
+
+  if (!surface.setImage(nvtt::InputFormat_BGRA_8UB, FreeImage_GetWidth(holder.bmp), FreeImage_GetHeight(holder.bmp), 1, data))
+  {
+    Error = "Texture Processor: failed to create input surface (";
+    Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp)) + ")";
+    FreeImage_Unload(holder.bmp);
+    return false;
+  }
+
+  if (Normal)
+  {
+    surface.setNormalMap(true);
+  }
+  surface.setAlphaMode(Alpha ? nvtt::AlphaMode_Transparency : nvtt::AlphaMode_None);
+  surface.flipY();
+  
+
+  nvtt::CompressionOptions compressionOptions;
+  compressionOptions.setFormat(outFmt);
+  compressionOptions.setQuality(nvtt::Quality_Production);
+  if (outFmt == nvtt::Format_DXT3)
+  {
+    compressionOptions.setQuantization(false, true, false);
+  }
+  else if (outFmt == nvtt::Format_DXT1a)
+  {
+    compressionOptions.setQuantization(false, true, true, 127);
+  }
+
+  TPOutputHandler ohandler;
+  nvtt::OutputOptions outputOptions;
+  outputOptions.setOutputHandler(&ohandler);
+  nvtt::Context context;
+  if (!context.compress(surface, 0, 1, compressionOptions, outputOptions))
+  {
+    Error = "Texture Processor: failed to compress the bitmap (";
+    Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp));
+    Error += ":" + std::to_string((int)OutputFormat) + ")";
+    return false;
+  }
+
+  if (!ohandler.MipsCount)
+  {
+    Error = "Texture Processor: failed to compress the bitmap. No mips were generated.";
+    return false;
+  }
+
+  if ((OutputDataSize = ohandler.Mips[0].Size))
+  {
+    OutputData = malloc(OutputDataSize);
+    memcpy(OutputData, ohandler.Mips[0].Data, ohandler.Mips[0].Size);
+    return true;
+  }
+
+  Error = "Texture Processor: compression result is empty.";
   return false;
 }
