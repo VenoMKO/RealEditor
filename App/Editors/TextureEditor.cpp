@@ -251,6 +251,11 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
 
   wxString path = wxLoadFileSelector("texture", ".png", wxEmptyString, Window);
 
+  if (path.empty())
+  {
+    return;
+  }
+
   bool isNormal = Texture->CompressionSettings == TC_Normalmap ||
     Texture->CompressionSettings == TC_NormalmapAlpha ||
     Texture->CompressionSettings == TC_NormalmapUncompressed ||
