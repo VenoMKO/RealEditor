@@ -1,4 +1,5 @@
 #include "PackageWindow.h"
+#include "ProgressWindow.h"
 #include "CompositePackagePicker.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -353,7 +354,53 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 
 void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 {
+	wxString path = wxSaveFileSelector("package", wxT("GPK package|*.gpk|*.GMP package|*.gmp"), Package->GetPackageName().WString(), this);
+	if (path.empty())
+	{
+		return;
+	}
 
+	ProgressWindow progress(this, "Saving");
+	progress.SetCurrentProgress(-1);
+	progress.SetActionText(wxT("Preparing..."));
+
+	PackageSaveContext context;
+	context.Path = W2A(path.ToStdWstring());
+
+	context.ProgressCallback = [&progress](int value) {
+		wxCommandEvent* e = new wxCommandEvent;
+		e->SetId(UPDATE_PROGRESS);
+		e->SetInt(value);
+		wxQueueEvent(&progress, e);
+	};
+
+	context.MaxProgressCallback = [&progress](int value) {
+		wxCommandEvent* e = new wxCommandEvent;
+		e->SetId(UPDATE_MAX_PROGRESS);
+		e->SetInt(value);
+		wxQueueEvent(&progress, e);
+	};
+
+	context.IsCancelledCallback = [&progress] {
+		return progress.IsCancelled();
+	};
+
+	context.ProgressDescriptionCallback = [&progress] (std::string desc) {
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, A2W(desc));
+	};
+
+	FPackage* package = Package.get();
+	std::thread([&progress, &context, package] {
+		Sleep(200);
+		progress.EndModal(package->Save(context));
+	}).detach();
+
+	if (!progress.ShowModal())
+	{
+		wxString err = wxT("Failed to save the package! Error: ");
+		err += A2W(context.Error);
+		wxMessageBox(err,"Error!", wxICON_ERROR, this);
+	}
 }
 
 void PackageWindow::OnCloseClicked(wxCommandEvent& e)
@@ -426,7 +473,7 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)
 {
-	wxMessageBox("Failed to load the package!", e.GetString(), wxICON_ERROR);
+	wxMessageBox(e.GetString(), "Failed to load the package!", wxICON_ERROR);
 	FPackage::UnloadPackage(Package);
 	Close();
 }

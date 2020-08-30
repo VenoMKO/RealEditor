@@ -6,8 +6,23 @@
 #include <memory>
 #include <atomic>
 #include <mutex>
+#include <functional>
 #include <unordered_map>
 #include <unordered_set>
+
+struct PackageSaveContext {
+	std::string Path;
+	
+	ECompressionFlags Compression = COMPRESS_None;
+	bool PreserveOffsets = true;
+
+	std::string Error;
+
+	std::function<void(int)> ProgressCallback;
+	std::function<void(int)> MaxProgressCallback;
+	std::function<void(std::string)> ProgressDescriptionCallback;
+	std::function<bool(void)> IsCancelledCallback;
+};
 
 class FPackage {
 public:
@@ -56,6 +71,8 @@ public:
 
 	// Create a read stream using DataPath and serialize tables
 	void Load();
+
+	bool Save(PackageSaveContext& options);
 
 	// Get an object at index
 	UObject* GetObject(PACKAGE_INDEX index, bool load = true);

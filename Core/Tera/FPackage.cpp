@@ -1210,6 +1210,49 @@ void FPackage::Load()
   Loading.store(false);
 }
 
+bool FPackage::Save(PackageSaveContext& context)
+{
+  if (!IsDirty())
+  {
+    if (context.Compression == COMPRESS_None)
+    {
+      context.ProgressDescriptionCallback("Reading source...");
+      context.ProgressCallback(0);
+      FReadStream readStream(Summary.DataPath);
+      FILE_OFFSET size = readStream.GetSize();
+      void* tmp = malloc(size);
+      readStream.SerializeBytes(tmp, size);
+      if (!readStream.IsGood() || !size)
+      {
+        context.Error = "Failed to read source package.";
+        free(tmp);
+        return false;
+      }
+      context.ProgressCallback(50);
+      context.ProgressDescriptionCallback("Writing data...");
+      FWriteStream writeStream(context.Path);
+      writeStream.SerializeBytes(tmp, size);
+      if (!writeStream.IsGood())
+      {
+        context.Error = "Failed to write the data.";
+        free(tmp);
+        return false;
+      }
+      free(tmp);
+      context.ProgressCallback(100);
+      return true;
+    }
+    else
+    {
+      // TODO: implement package recompression
+      context.Error = "Recompression is not implemented yet!";
+      return false;
+    }
+  }
+  context.Error = "Not implemented yet!";
+  return false;
+}
+
 VObjectExport* FPackage::CreateVirtualExport(const char* objName, const char* clsName)
 {
   VObjectExport* exp = new VObjectExport(this, objName, clsName);

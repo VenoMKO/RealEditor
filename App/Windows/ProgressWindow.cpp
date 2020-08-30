@@ -1,5 +1,6 @@
 #include "ProgressWindow.h"
 
+wxDEFINE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
@@ -62,6 +63,12 @@ void ProgressWindow::SetCurrentProgress(int progress)
   }
 }
 
+
+void ProgressWindow::SetMaxProgress(int max)
+{
+	ProgressBar->SetRange(max);
+}
+
 void ProgressWindow::SetCanCancel(bool flag)
 {
 	CancelButton->Enable(flag);
@@ -73,6 +80,11 @@ void ProgressWindow::OnCancellClicked(wxCommandEvent&)
 	Cancelled.store(true);
 	ActionLabel->SetLabelText("Stopping...");
 	ProgressBar->Pulse();
+}
+
+void ProgressWindow::OnUpdateMaxProgress(wxCommandEvent& e)
+{
+	SetMaxProgress(e.GetInt());
 }
 
 void ProgressWindow::OnUpdateProgress(wxCommandEvent& e)
@@ -101,6 +113,7 @@ void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
 
 wxBEGIN_EVENT_TABLE(ProgressWindow, wxDialog)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS, OnUpdateProgress)
+EVT_COMMAND(wxID_ANY, UPDATE_MAX_PROGRESS, OnUpdateMaxProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_DESC, OnUpdateProgressDescription)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_FINISH, OnUpdateProgressFinish)
 wxEND_EVENT_TABLE()

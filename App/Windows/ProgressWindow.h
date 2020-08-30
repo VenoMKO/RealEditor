@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <atomic>
 
+wxDECLARE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
@@ -14,6 +15,8 @@ public:
   
   void SetCurrentProgress(int progress);
 
+  void SetMaxProgress(int max);
+
   void SetCanCancel(bool flag);
 
   bool IsCancelled()
@@ -23,6 +26,8 @@ public:
 
 private:
   void OnCancellClicked(wxCommandEvent&);
+
+  void OnUpdateMaxProgress(wxCommandEvent& e);
 
   void OnUpdateProgress(wxCommandEvent& e);
 
