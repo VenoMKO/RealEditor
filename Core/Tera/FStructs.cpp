@@ -341,7 +341,7 @@ void FUntypedBulkData::SerializeSeparate(FStream& s, UObject* owner, int32 idx)
 
 FUntypedBulkData::~FUntypedBulkData()
 {
-  if (BulkData)
+  if (BulkData && OwnsMemory)
   {
     free(BulkData);
   }
@@ -396,8 +396,17 @@ void FByteBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
   s << b;
 }
 
+FTexture2DMipMap::~FTexture2DMipMap()
+{
+  delete Data;
+}
+
 void FTexture2DMipMap::Serialize(FStream& s, UObject* owner, int32 mipIdx)
 {
-  Data.Serialize(s, owner, mipIdx);
+  if (s.IsReading())
+  {
+    Data = new FByteBulkData();
+  }
+  Data->Serialize(s, owner, mipIdx);
   s << SizeX << SizeY;
 }

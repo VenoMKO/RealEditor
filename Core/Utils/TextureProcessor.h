@@ -65,7 +65,49 @@ public:
     SRGB = srgb;
   }
 
+  inline void SetNormal(bool normal)
+  {
+    Normal = normal;
+  }
+
+  inline void SetAddressX(TextureAddress x)
+  {
+    AddressX = x;
+  }
+
+  inline void SetAddressY(TextureAddress y)
+  {
+    AddressY = y;
+  }
+
+  inline void SetGenerateMips(bool generate)
+  {
+    GenerateMips = generate;
+  }
+
+  inline void SetMipFilter(MipFilterType filter)
+  {
+    MipFilter = filter;
+  }
+
+  inline bool GetAlpha() const
+  {
+    return Alpha;
+  }
+
   bool Process();
+
+  struct OutputMip {
+    int32 SizeX = 0;
+    int32 SizeY = 0;
+    int32 Size = 0;
+    void* Data = nullptr;
+  };
+
+  inline const std::vector<OutputMip>& GetOutputMips() const
+  {
+    return OutputMips;
+  }
 
 private:
   bool BytesToFile();
@@ -84,11 +126,21 @@ private:
 
   void* OutputData = nullptr;
   int32 OutputDataSize = 0;
+  int32 OutputMipCount = 0;
+
+  std::vector<OutputMip> OutputMips;
+
   std::string OutputPath;
   
   bool SRGB = false;
   bool Alpha = false;
   bool Normal = false;
+  bool GenerateMips = false;
+
+  MipFilterType MipFilter = MipFilterType::Mitchell;
+
+  TextureAddress AddressX = TA_Wrap;
+  TextureAddress AddressY = TA_Wrap;
 
   std::string Error;
 };

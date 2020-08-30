@@ -125,6 +125,9 @@
     <ClCompile Include="App\Windows\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Utils\TextureTravaller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -180,6 +183,7 @@
     <ClInclude Include="Extern\minilzo\minilzo.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
+    <ClInclude Include="Core\Utils\TextureTravaller.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

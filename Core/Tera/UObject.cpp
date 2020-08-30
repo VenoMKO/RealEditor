@@ -44,6 +44,19 @@ inline bool UObject::HasAnyFlags(uint64 flags) const
   return (GetObjectFlags() & flags) != 0 || flags == RF_AllFlags;
 }
 
+void UObject::MarkDirty(bool dirty)
+{
+  if (dirty)
+  {
+    Export->ObjectFlags |= RF_Marked;
+    GetPackage()->MarkDirty();
+  }
+  else
+  {
+    Export->ObjectFlags &= ~RF_Marked;
+  }
+}
+
 FILE_OFFSET UObject::GetSerialOffset() const
 {
   return Export ? Export->SerialOffset : -1;

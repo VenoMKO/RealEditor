@@ -360,6 +360,15 @@ struct FUntypedBulkData
 	FUntypedBulkData()
 	{}
 
+	FUntypedBulkData(FPackage* package, uint32 bulkDataFlags, int32 elementCount, void* bulkData, bool transferOwnership)
+	{
+		BulkDataFlags = bulkDataFlags;
+		ElementCount = elementCount;
+		BulkData = bulkData;
+		OwnsMemory = transferOwnership;
+		Package = package;
+	}
+
 	virtual ~FUntypedBulkData();
 
 	void* GetAllocation()
@@ -418,6 +427,8 @@ protected:
 
 struct FByteBulkData : public FUntypedBulkData
 {
+	using FUntypedBulkData::FUntypedBulkData;
+
 	int32 GetElementSize() const override;
 	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
 };
@@ -482,12 +493,13 @@ public:
 
 struct FTexture2DMipMap
 {
-	FByteBulkData Data;
-	int32 DataSize = 0;
-	int32 SizeX = 0;
-	int32 SizeY = 0;
+	~FTexture2DMipMap();
 
 	void Serialize(FStream& s, UObject* owner, int32 mipIdx);
+
+	FByteBulkData* Data = nullptr;
+	int32 SizeX = 0;
+	int32 SizeY = 0;
 };
 
 struct FIntRect

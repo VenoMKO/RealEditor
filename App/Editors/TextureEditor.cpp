@@ -7,10 +7,14 @@
 
 #include "../Windows/PackageWindow.h"
 #include "../Windows/TextureImporter.h"
+#include "../Windows/ProgressWindow.h"
 
 #include <Tera/ALog.h>
 #include <Tera/FPackage.h>
 #include <Utils/TextureProcessor.h>
+#include <Utils/TextureTravaller.h>
+
+#include <thread>
 
 TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
@@ -149,17 +153,17 @@ void TextureEditor::CreateRenderer()
 
 void TextureEditor::CreateRenderTexture()
 {
-  osg::ref_ptr<osg::Image> image = Texture->GetTextureResource();
-  if (!image)
+  if (!Image)
   {
-    return;
+    Image = new osg::Image;
   }
+  Texture->RenderTo(Image.get());
 
-  const float minV = std::min(std::max(GetSize().x, image->s()), std::max(GetSize().y, image->t()));
+  const float minV = std::min(std::max(GetSize().x, Image->s()), std::max(GetSize().y, Image->t()));
   const float canvasSizeX = GetSize().x / minV;
   const float canvasSizeY = GetSize().y / minV;
-  const float textureSizeX = image->s() / minV;
-  const float textureSizeY = image->t() / minV;
+  const float textureSizeX = Image->s() / minV;
+  const float textureSizeY = Image->t() / minV;
 
   // Texture plane
   osg::ref_ptr<osg::Vec3Array> verticies = new osg::Vec3Array;
@@ -188,7 +192,7 @@ void TextureEditor::CreateRenderTexture()
   geo->setColorArray(colors);
   geo->setColorBinding(osg::Geometry::BIND_OVERALL);
   geo->addPrimitiveSet(new osg::DrawArrays(GL_QUADS, 0, 4));
-  geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, new osg::Texture2D(Texture->GetTextureResource()));
+  geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, new osg::Texture2D(Image));
   geo->getOrCreateStateSet()->setAttribute(Mask);
 
   Root = new osg::Geode;
@@ -238,8 +242,20 @@ void TextureEditor::CreateRenderTexture()
 
 void TextureEditor::OnImportClicked(wxCommandEvent&)
 {
+  if (Texture->GetPackage() != Window->GetPackage().get())
+  {
+    wxMessageBox("Importing into external textures is not implemented yet.", wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
   wxString path = wxLoadFileSelector("texture", ".png", wxEmptyString, Window);
-  TextureImporter importer(Window, Texture->Format, false, Texture->SRGB, TextureAddress::TA_Wrap, TextureAddress::TA_Wrap);
+
+  bool isNormal = Texture->CompressionSettings == TC_Normalmap ||
+    Texture->CompressionSettings == TC_NormalmapAlpha ||
+    Texture->CompressionSettings == TC_NormalmapUncompressed ||
+    Texture->CompressionSettings == TC_NormalmapBC5;
+
+  TextureImporter importer(Window, Texture->Format, isNormal, Texture->SRGB, Texture->AddressX, Texture->AddressY);
   if (importer.ShowModal() != wxID_OK)
   {
     return;
@@ -264,14 +280,59 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
   
   TextureProcessor processor(TextureProcessor::TCFormat::PNG, outputFormat);
   processor.SetInputPath(W2A(path.ToStdWstring()));
+  processor.SetSrgb(importer.IsSRGB());
+  processor.SetNormal(importer.IsNormal());
+  processor.SetAddressX(importer.GetAddressX());
+  processor.SetAddressY(importer.GetAddressY());
+  processor.SetGenerateMips(importer.GetGenerateMips());
+  processor.SetMipFilter(importer.GetMipFilter());
 
-  if (!processor.Process())
+  ProgressWindow progress(Window, "Please, wait...");
+  progress.SetCurrentProgress(-1);
+  progress.SetCanCancel(false);
+  progress.SetActionText("Processing the image");
+  progress.Layout();
+
+  std::thread([&processor, &progress] {
+    if (!processor.Process())
+    {
+      wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    }
+    while (!progress.IsModal());
+    progress.EndModal(wxID_OK);
+  }).detach();
+
+  progress.ShowModal();
+
+  TextureTravaller travaller;
+  travaller.SetFormat(importer.GetPixelFormat());
+  travaller.SetAddressX(importer.GetAddressX());
+  travaller.SetAddressY(importer.GetAddressY());
+
+  if (isNormal == importer.IsNormal())
   {
-    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
-    return;
+    travaller.SetCompression(Texture->CompressionSettings);
+  }
+  else
+  {
+    travaller.SetCompression(importer.IsNormal() ? processor.GetAlpha() ? TC_NormalmapAlpha : TC_Normalmap : TC_Default);
   }
 
-  // TODO: patch the UTexture
+  const auto& mips = processor.GetOutputMips();
+  for (const auto mip : mips)
+  {
+    travaller.AddMipMap(mip.SizeX, mip.SizeY, mip.Size, mip.Data);
+  }
+
+  if (!travaller.Visit(Texture))
+  {
+    wxMessageBox(travaller.GetError(), wxT("Error!"), wxICON_ERROR);
+  }
+  else
+  {
+    CreateRenderTexture();
+    // TODO: update proprties UI
+  }
 }
 
 void TextureEditor::OnExportClicked(wxCommandEvent&)
@@ -337,7 +398,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
 
   TextureProcessor processor(inputFormat, outputFormat);
   FTexture2DMipMap* mip = Texture->Mips[0];
-  processor.SetInputData(mip->Data.GetAllocation(), mip->Data.GetBulkDataSize());
+  processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
   processor.SetOutputPath(W2A(path.ToStdWstring()));
   processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
   if (!processor.Process())

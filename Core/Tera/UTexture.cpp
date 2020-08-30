@@ -135,6 +135,13 @@ bool UTexture::RegisterProperty(FPropertyTag* property)
   if (PROP_IS(property, SRGB))
   {
     SRGB = property->BoolVal;
+    SRGBProperty = property;
+    return true;
+  }
+  else if (PROP_IS(property, CompressionSettings))
+  {
+    CompressionSettings = (TextureCompressionSettings)property->Value->GetByte();
+    CompressionSettingsProperty = property;
     return true;
   }
   return false;
@@ -148,22 +155,7 @@ void UTexture::Serialize(FStream& s)
 
 UTexture2D::~UTexture2D()
 {
-  for (auto& e : Mips)
-  {
-    delete e;
-  }
-  for (auto& e : CachedMips)
-  {
-    delete e;
-  }
-  for (auto& e : CachedAtiMips)
-  {
-    delete e;
-  }
-  for (auto& e : CachedEtcMips)
-  {
-    delete e;
-  }
+  DeleteStorage();
 }
 
 bool UTexture2D::RegisterProperty(FPropertyTag* property)
@@ -175,63 +167,73 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   if (PROP_IS(property, Format))
   {
     Format = (EPixelFormat)property->Value->GetByte();
+    FormatProperty = property;
     return true;
   }
   else if (PROP_IS(property, SizeX))
   {
     SizeX = property->Value->GetInt();
+    SizeXProperty = property;
     return true;
   }
   else if (PROP_IS(property, SizeY))
   {
     SizeY = property->Value->GetInt();
+    SizeYProperty = property;
     return true;
   }
   else if (PROP_IS(property, AddressX))
   {
     AddressX = (TextureAddress)property->Value->GetByte();
+    AddressXProperty = property;
     return true;
   }
   else if (PROP_IS(property, AddressY))
   {
     AddressY = (TextureAddress)property->Value->GetByte();
+    AddressYProperty = property;
     return true;
   }
   else if (PROP_IS(property, LODGroup))
   {
     LODGroup = (TextureGroup)property->Value->GetByte();
+    LODGroupProperty = property;
     return true;
   }
   else if (PROP_IS(property, MipTailBaseIdx))
   {
     MipTailBaseIdx = property->Value->GetInt();
+    MipTailBaseIdxProperty = property;
+    return true;
+  }
+  else if (PROP_IS(property, FirstResourceMemMip))
+  {
+    FirstResourceMemMip = property->Value->GetInt();
+    FirstResourceMemMipProperty = property;
     return true;
   }
   else if (PROP_IS(property, bNoTiling))
   {
     bNoTiling = property->Value->GetBool();
+    bNoTilingProperty = property;
     return true;
   }
   return false;
 }
 
-osg::ref_ptr<osg::Image> UTexture2D::GetTextureResource()
+void UTexture2D::RenderTo(osg::Image* target)
 {
-  if (TextureResource)
-  {
-    return TextureResource;
-  }
-  GLenum format = PixelFormatInfo[Format].Format;
   GLenum type = 0;
+  GLenum format = PixelFormatInfo[Format].Format;
   if (!Mips.size() || !FindInternalFormatAndType(Format, format, type, SRGB) || format == GL_NONE)
   {
-    return nullptr;
+    return;
   }
   FTexture2DMipMap* mip = Mips.front();
-  TextureResource = new osg::Image();
-  TextureResource->setFileName(GetObjectName().String());
-  TextureResource->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data.GetAllocation(), osg::Image::AllocationMode::NO_DELETE, 1, 0);
-  return TextureResource;
+  if (mip->SizeX && mip->SizeY && mip->Data)
+  {
+    target->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
+  }
 }
 
 void UTexture2D::Serialize(FStream& s)
@@ -261,7 +263,7 @@ void UTexture2D::PostLoad()
   for (int32 idx = 0; idx < Mips.size(); ++idx)
   {
     FTexture2DMipMap* mip = Mips[idx];
-    if (mip->Data.IsStoredInSeparateFile())
+    if (mip->Data->IsStoredInSeparateFile())
     {
       FString bulkDataName = GetObjectPath() + ".MipLevel_" + std::to_string(idx);
       bulkDataName = bulkDataName.ToUpper();
@@ -295,7 +297,7 @@ void UTexture2D::PostLoad()
           s.SetPosition(info->SavedBulkDataOffsetInFile);
           try
           {
-            mip->Data.SerializeSeparate(s, this, idx);
+            mip->Data->SerializeSeparate(s, this, idx);
           }
           catch (...)
           {
@@ -311,6 +313,30 @@ void UTexture2D::PostLoad()
   {
     delete rs;
   }
+}
+
+void UTexture2D::DeleteStorage()
+{
+  for (auto& e : Mips)
+  {
+    delete e;
+  }
+  Mips.clear();
+  for (auto& e : CachedMips)
+  {
+    delete e;
+  }
+  CachedMips.clear();
+  for (auto& e : CachedAtiMips)
+  {
+    delete e;
+  }
+  CachedAtiMips.clear();
+  for (auto& e : CachedEtcMips)
+  {
+    delete e;
+  }
+  CachedEtcMips.clear();
 }
 
 

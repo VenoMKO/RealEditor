@@ -119,6 +119,37 @@ struct TPOutputHandler : public nvtt::OutputHandler {
   bool Ok = true;
 };
 
+nvtt::ResizeFilter MipFilterTypeToNvtt(MipFilterType type)
+{
+  switch (type)
+  {
+  case MipFilterType::Box:
+    return nvtt::ResizeFilter_Box;
+  case MipFilterType::Triangle:
+    return nvtt::ResizeFilter_Triangle;
+  case MipFilterType::Kaiser:
+    return nvtt::ResizeFilter_Kaiser;
+  default:
+  case MipFilterType::Mitchell:
+    return nvtt::ResizeFilter_Mitchell;
+  }
+}
+
+nvtt::WrapMode AddressModeToNvtt(TextureAddress mode)
+{
+  switch (mode)
+  {
+  case TA_Clamp:
+    return nvtt::WrapMode_Clamp;
+  case TA_Mirror:
+    return nvtt::WrapMode_Mirror;
+  case TA_Wrap:
+  default:
+    return nvtt::WrapMode_Repeat;
+    break;
+  }
+}
+
 bool TextureProcessor::Process()
 {
   if (InputPath.empty())
@@ -290,6 +321,7 @@ bool TextureProcessor::FileToBytes()
   uint8* data = (uint8*)FreeImage_GetBits(holder.bmp);
 
   nvtt::Surface surface;
+  surface.setWrapMode(AddressModeToNvtt(AddressX));
   nvtt::Format outFmt = nvtt::Format_Count;
 
   if (OutputFormat == TCFormat::DXT1)
@@ -337,27 +369,56 @@ bool TextureProcessor::FileToBytes()
   nvtt::OutputOptions outputOptions;
   outputOptions.setOutputHandler(&ohandler);
   nvtt::Context context;
-  if (!context.compress(surface, 0, 1, compressionOptions, outputOptions))
+  
+  int32 idx = 0;
+  int32 sizeX = FreeImage_GetWidth(holder.bmp);
+  int32 sizeY = FreeImage_GetHeight(holder.bmp);
+  int32 minX = 2;
+  int32 minY = 2;
+  OutputDataSize = 0;
+  while (sizeX > minX && sizeY > minY && idx < TPOutputHandler::MaxMipCount)
   {
-    Error = "Texture Processor: failed to compress the bitmap (";
-    Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp));
-    Error += ":" + std::to_string((int)OutputFormat) + ")";
-    return false;
+    if (sizeX != surface.width() || sizeY != surface.height())
+    {
+      surface.resize(sizeX, sizeY, 1, MipFilterTypeToNvtt(MipFilter));
+    }
+    if (!context.compress(surface, 0, idx, compressionOptions, outputOptions))
+    {
+      Error = "Texture Processor: failed to compress the bitmap (";
+      Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp));
+      Error += ":" + std::to_string((int)OutputFormat) + ")";
+      return false;
+    }
+
+    OutputDataSize += ohandler.Mips[idx].Size;
+
+    if (GenerateMips)
+    {
+      sizeX /= 2;
+      sizeY /= 2;
+      idx++;
+    }
+    else
+    {
+      break;
+    }
   }
 
-  if (!ohandler.MipsCount)
+  if (!(OutputMipCount = ohandler.MipsCount))
   {
     Error = "Texture Processor: failed to compress the bitmap. No mips were generated.";
     return false;
   }
 
-  if ((OutputDataSize = ohandler.Mips[0].Size))
+  OutputData = malloc(OutputDataSize);
+  
+  int32 offset = 0;
+  for (int32 idx = 0; idx < OutputMipCount; ++idx)
   {
-    OutputData = malloc(OutputDataSize);
-    memcpy(OutputData, ohandler.Mips[0].Data, ohandler.Mips[0].Size);
-    return true;
+    TPOutputHandler::Mip& mip = ohandler.Mips[idx];
+    memcpy((uint8*)OutputData + offset, mip.Data, mip.Size);
+    OutputMips.push_back({mip.SizeX, mip.SizeY, mip.Size, (uint8*)OutputData + offset });
+    offset += ohandler.Mips[idx].Size;
   }
-
-  Error = "Texture Processor: compression result is empty.";
-  return false;
+  return true;
 }

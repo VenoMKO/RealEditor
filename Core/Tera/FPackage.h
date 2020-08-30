@@ -83,6 +83,14 @@ public:
 	// Get all exports that match the name
 	std::vector<FObjectExport*> GetExportObject(const FString& name);
 
+	// Package has changes
+	inline bool IsDirty() const
+	{
+		return Summary.PackageFlags & PKG_Dirty;
+	}
+
+	void MarkDirty(bool dirty = true);
+
 	// Get all root exports
 	inline std::vector<FObjectExport*> GetRootExports() const
 	{

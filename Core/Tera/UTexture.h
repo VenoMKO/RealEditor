@@ -1,6 +1,6 @@
 #pragma once
 #include "UObject.h"
-
+#include <Utils/TextureTravaller.h>
 #include <../Extern/glew/glew.h>
 #include <osg/Image>
 
@@ -9,6 +9,7 @@ public:
   DECL_UOBJ(UTexture, UObject);
 
   UPROP(bool, SRGB, true);
+  UPROP(TextureCompressionSettings, CompressionSettings, TC_Default);
 
   bool RegisterProperty(FPropertyTag* property) override;
 
@@ -37,14 +38,18 @@ public:
   UPROP(TextureAddress, AddressX, TA_Wrap);
   UPROP(TextureAddress, AddressY, TA_Wrap);
   UPROP(TextureGroup, LODGroup, TEXTUREGROUP_World);
-  UPROP(int32, MipTailBaseIdx, -1);
+  UPROP(int32, MipTailBaseIdx, 0);
+  UPROP(int32, FirstResourceMemMip, 0);
   UPROP(bool, bNoTiling, false);
 
-  osg::ref_ptr<osg::Image> GetTextureResource();
+  void RenderTo(osg::Image* target);
+
+  friend bool TextureTravaller::Visit(UTexture2D* texture);
 
 protected:
   void Serialize(FStream& s) override;
   void PostLoad() override;
+  void DeleteStorage();
 
 public:
   std::vector<FTexture2DMipMap*> Mips;
@@ -55,7 +60,6 @@ protected:
   FByteBulkData CachedFlashMip;
   std::vector<FTexture2DMipMap*> CachedEtcMips;
   FGuid TextureFileCacheGuid;
-  int32 FirstResourceMemMip = 0;
   int32 MaxCachedResolution = 0;
 
   osg::ref_ptr<osg::Image> TextureResource = nullptr;

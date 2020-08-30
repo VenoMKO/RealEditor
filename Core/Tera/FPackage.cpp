@@ -1670,6 +1670,23 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
   return std::vector<FObjectExport*>();
 }
 
+void FPackage::MarkDirty(bool dirty)
+{
+  if (dirty)
+  {
+    if (IsReadOnly())
+    {
+      LogE("Can't mark %s package. It is read-only.", GetPackageName().C_str());
+      DBreak();
+    }
+    Summary.PackageFlags |= PKG_Dirty;
+  }
+  else
+  {
+    Summary.PackageFlags &= ~PKG_Dirty;
+  }
+}
+
 FObjectImport* FPackage::GetImportObject(const FString& objectName, const FString& className) const
 {
   for (FObjectImport* imp : Imports)

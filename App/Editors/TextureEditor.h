@@ -35,6 +35,7 @@ protected:
 
 private:
   UTexture2D* Texture = nullptr;
+  osg::ref_ptr<osg::Image> Image = nullptr;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   osg::ref_ptr<osg::ColorMask> Mask = nullptr;
   OSGCanvas* Canvas = nullptr;

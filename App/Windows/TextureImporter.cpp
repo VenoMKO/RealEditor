@@ -5,6 +5,8 @@ enum ControlElementId {
 	Format = wxID_HIGHEST + 1,
 	Normal,
 	SRGB,
+	MipGen,
+	MipFilter,
 	AddressX,
 	AddressY
 };
@@ -70,7 +72,7 @@ inline TextureAddress WxToTextureAddress(int address)
 }
 
 TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
-  : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 435))
+  : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
 {
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -152,6 +154,61 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	m_panel2->Layout();
 	bSizer3->Fit(m_panel2);
 	bSizer11->Add(m_panel2, 0, wxEXPAND | wxALL, 5);
+
+	wxStaticText* m_staticText14;
+	m_staticText14 = new wxStaticText(this, wxID_ANY, wxT("Mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText14->Wrap(-1);
+	m_staticText14->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+
+	bSizer11->Add(m_staticText14, 0, wxALL, 5);
+
+	wxPanel* m_panel9;
+	m_panel9 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+	wxBoxSizer* bSizer14;
+	bSizer14 = new wxBoxSizer(wxVERTICAL);
+
+	GenMips = new wxCheckBox(m_panel9, ControlElementId::MipGen, wxT("Generate mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
+	GenMips->SetValue(true);
+	bSizer14->Add(GenMips, 0, wxALL, 5);
+
+	wxStaticText* m_staticText20;
+	m_staticText20 = new wxStaticText(m_panel9, wxID_ANY, wxT("Generating mipmaps during import saves GPU time during the gameplay."), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText20->Wrap(-1);
+	bSizer14->Add(m_staticText20, 0, wxALL, 5);
+
+	wxBoxSizer* bSizer20;
+	bSizer20 = new wxBoxSizer(wxHORIZONTAL);
+
+	wxStaticText* m_staticText15;
+	m_staticText15 = new wxStaticText(m_panel9, wxID_ANY, wxT("Mipmaps are rendered on distant objects to reduce GPU cost and during texture loading."), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText15->Wrap(350);
+	bSizer20->Add(m_staticText15, 0, wxALL, 5);
+
+	wxStaticText* m_staticText16;
+	m_staticText16 = new wxStaticText(m_panel9, wxID_ANY, wxT("Method:"), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText16->Wrap(-1);
+	m_staticText16->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+
+	bSizer20->Add(m_staticText16, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+	wxArrayString MipGenMethodChoices;
+	MipGenMethodChoices.Add("Box");
+	MipGenMethodChoices.Add("Triangle");
+	MipGenMethodChoices.Add("Kaiser");
+	MipGenMethodChoices.Add("Mitchell");
+	MipFilter = new wxChoice(m_panel9, ControlElementId::MipFilter, wxDefaultPosition, wxDefaultSize, MipGenMethodChoices, 0);
+	MipFilter->SetSelection(3);
+	bSizer20->Add(MipFilter, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+
+	bSizer14->Add(bSizer20, 1, wxEXPAND, 0);
+
+
+	m_panel9->SetSizer(bSizer14);
+	m_panel9->Layout();
+	bSizer14->Fit(m_panel9);
+	bSizer11->Add(m_panel9, 1, wxEXPAND | wxALL, 5);
+
 
 	wxStaticText* m_staticText9;
 	m_staticText9 = new wxStaticText(this, wxID_ANY, wxT("Address Mode"), wxDefaultPosition, wxDefaultSize, 0);
@@ -242,7 +299,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 
 	ImportButton = new wxButton(m_panel5, wxID_OK, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
 	bSizer10->Add(ImportButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
+	ImportButton->SetFocus();
 
 	m_panel5->SetSizer(bSizer10);
 	m_panel5->Layout();
@@ -271,19 +328,34 @@ TextureAddress TextureImporter::GetAddressY() const
 	return WxToTextureAddress(AddressY->GetSelection());
 }
 
-bool TextureImporter::GetIsNormal() const
+MipFilterType TextureImporter::GetMipFilter() const
+{
+	return (MipFilterType)MipFilter->GetSelection();
+}
+
+bool TextureImporter::IsNormal() const
 {
 	return Normal->GetValue();
 }
 
-bool TextureImporter::GetIsSRGB() const
+bool TextureImporter::IsSRGB() const
 {
 	return SRGB->GetValue();
+}
+
+bool TextureImporter::GetGenerateMips() const
+{
+	return GenMips->GetValue();
 }
 
 void TextureImporter::OnNormalClick(wxCommandEvent&)
 {
 	SRGB->Enable(!Normal->GetValue());
+}
+
+void TextureImporter::OnGenMipsClicked(wxCommandEvent&)
+{
+	MipFilter->Enable(GenMips->GetValue());
 }
 
 void TextureImporter::OnSRGBClick(wxCommandEvent&)
@@ -293,5 +365,6 @@ void TextureImporter::OnSRGBClick(wxCommandEvent&)
 
 wxBEGIN_EVENT_TABLE(TextureImporter, wxDialog)
 EVT_CHECKBOX(ControlElementId::Normal, TextureImporter::OnNormalClick)
+EVT_CHECKBOX(ControlElementId::MipGen, TextureImporter::OnGenMipsClicked)
 EVT_CHECKBOX(ControlElementId::SRGB, TextureImporter::OnSRGBClick)
 wxEND_EVENT_TABLE()
