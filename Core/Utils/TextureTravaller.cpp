@@ -96,12 +96,12 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     }
   }
 
-  if (Mips.size() != texture->MipTailBaseIdx)
+  if (Mips.size() - 1 != texture->MipTailBaseIdx)
   {
-    texture->MipTailBaseIdx = Mips.size();
+    texture->MipTailBaseIdx = Mips.size() - 1;
     if (texture->MipTailBaseIdxProperty)
     {
-      texture->MipTailBaseIdxProperty->Value->GetInt() = Mips.size();
+      texture->MipTailBaseIdxProperty->Value->GetInt() = Mips.size() - 1;
     }
   }
 

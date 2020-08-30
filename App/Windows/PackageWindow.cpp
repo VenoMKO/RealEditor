@@ -263,6 +263,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 
 void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*> properties)
 {
+	PropertiesCtrl->Freeze();
 	if (!PropertyRootCategory)
 	{
 		PropertyRootCategory = new wxPropertyCategory(object->GetObjectName().WString());
@@ -280,6 +281,7 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 	// TODO: enable if the object is fexp && !Package->IsReadOnly()
 	PropertyRootCategory->Enable(!Package->IsReadOnly() && object->GetPackage() == Package.get());
 	CreateProperty(PropertiesCtrl, PropertyRootCategory, properties);
+	PropertiesCtrl->Thaw();
 
 	PropertiesCtrl->RefreshGrid();
 	PropertyRootCategory->RefreshChildren();
@@ -418,7 +420,7 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	ObjectTreeCtrl->Freeze();
 	LoadObjectTree();
 	ObjectTreeCtrl->Thaw();
-	SaveMenu->Enable(!Package->IsReadOnly() && ALLOW_UI_PKG_SAVE);
+	SaveMenu->Enable(false); // TODO: track package dirty state
 	SaveAsMenu->Enable(!Package->IsReadOnly() && ALLOW_UI_PKG_SAVE);
 }
 
