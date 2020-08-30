@@ -12,6 +12,7 @@
 
 wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
 wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
+wxDECLARE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
 class App;
 class FPackage;
@@ -27,7 +28,7 @@ public:
   wxString GetPackagePath() const;
 
 	bool OnObjectLoaded(const std::string& id);
-
+	void OnUpdateProperties(wxCommandEvent&);
 	void FixOSG();
 
 private:

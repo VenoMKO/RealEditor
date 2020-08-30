@@ -34,6 +34,7 @@ enum ControlElementId {
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
 wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
+wxDEFINE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
 #include "PackageWindowLayout.h"
 
@@ -135,6 +136,15 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
 		}
 	}
 	return false;
+}
+
+void PackageWindow::OnUpdateProperties(wxCommandEvent&)
+{
+	if (ActiveEditor)
+	{
+		UObject* obj = ActiveEditor->GetObject();
+		UpdateProperties(obj, ActiveEditor->GetObjectProperties());
+	}
 }
 
 void PackageWindow::LoadObjectTree()
@@ -451,5 +461,6 @@ EVT_MAXIMIZE(PackageWindow::OnMaximized)
 EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
+EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 wxEND_EVENT_TABLE()

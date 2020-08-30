@@ -1,4 +1,5 @@
 #include "TextureEditor.h"
+#include "../App.h"
 
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
@@ -331,7 +332,7 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
   else
   {
     CreateRenderTexture();
-    // TODO: update proprties UI
+    SendEvent(Window, UPDATE_PROPERTIES);
   }
 }
 
