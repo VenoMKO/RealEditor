@@ -110,13 +110,7 @@ void* UObject::GetRawData()
 
 void UObject::SerializeScriptProperties(FStream& s)
 {
-  // TODO: add a way to serialize object with a different package version
-  if (s.GetFV() != FPackage::GetCoreVersion())
-  {
-    LogE("Can't read the object. Package %s was serialized with a different engine version", s.GetPackage()->GetPackageName().C_str());
-    return;
-  }
-  if (Class)
+  if (Class && s.GetFV() == FPackage::GetCoreVersion())
   {
     Class->SerializeTaggedProperties(s, (UObject*)this, nullptr, HasAnyFlags(RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
   }
@@ -163,9 +157,6 @@ void UObject::SerializeScriptProperties(FStream& s)
       }
     }
   }
-  
-  // TODO: serialize props without a Class obj
-  //DBreakIf(nonePropertyName.String() != "None");
 }
 
 bool UObject::RegisterProperty(FPropertyTag* property)

@@ -53,10 +53,17 @@ FString FName::String() const
 
 void FName::GetString(FString& str) const
 {
-  Package->GetIndexedName(Index, str);
-  if (Number)
+  if (Index == INDEX_NONE)
   {
-    str += "_" + std::to_string(Number);
+    str = NAME_None;
+  }
+  else
+  {
+    Package->GetIndexedName(Index, str);
+    if (Number)
+    {
+      str += "_" + std::to_string(Number);
+    }
   }
 }
 

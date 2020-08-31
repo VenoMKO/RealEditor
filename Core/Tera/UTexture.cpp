@@ -245,7 +245,7 @@ void UTexture2D::Serialize(FStream& s)
   }
   s.SerializeUntypeBulkDataArray(Mips, this);
   s << TextureFileCacheGuid;
-  if (s.GetFV() >= VER_TERA_CLASSIC)
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s.SerializeUntypeBulkDataArray(CachedMips, this);
     s << MaxCachedResolution;

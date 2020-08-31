@@ -110,7 +110,7 @@ public:
   }
 
 private:
-  NAME_INDEX Index = 0;
+  NAME_INDEX Index = INDEX_NONE;
   int32 Number = 0;
   
   FPackage* Package = nullptr;
