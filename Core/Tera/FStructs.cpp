@@ -263,7 +263,16 @@ void FUntypedBulkData::SerializeBulkData(FStream& s, void* data)
       }
       else
       {
-        // TODO: compression
+        void* tmp = malloc(GetElementSize() * ElementCount);
+        MWrightStream memStream(tmp, GetElementSize() * ElementCount);
+
+        // Serialize each element individually via memory reader.				
+        for (int32 idx = 0; idx < ElementCount; ++idx)
+        {
+          SerializeElement(memStream, data, idx);
+        }
+
+        s.SerializeCompressed(memStream.GetAllocation(), memStream.GetPosition(), GetDecompressionFlags(), true);
       }
     }
     else
@@ -303,6 +312,7 @@ void FUntypedBulkData::GetCopy(void** dest) const
 
 void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
 {
+  FILE_OFFSET flagsPos = s.GetPosition();
   s << BulkDataFlags;
   s << ElementCount;
   if (s.IsReading())
@@ -319,7 +329,44 @@ void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
   }
   else
   {
-    // TODO: compression
+    if (BulkDataFlags & BULKDATA_StoreInSeparateFile)
+    {
+      s.SetPosition(flagsPos);
+      s << SavedBulkDataFlags;
+      s << SavedElementCount;
+      s << BulkDataSizeOnDisk;
+      s << BulkDataOffsetInFile;
+    }
+    else
+    {
+      SavedBulkDataFlags = BulkDataFlags;
+      SavedElementCount = ElementCount;
+      int32 SavedBulkDataSizeOnDiskPos = INDEX_NONE;
+      int32 SavedBulkDataOffsetInFilePos = INDEX_NONE;
+
+      SavedBulkDataSizeOnDiskPos = s.GetPosition();
+      SavedBulkDataSizeOnDisk = INDEX_NONE;
+      s << SavedBulkDataSizeOnDisk;
+      SavedBulkDataOffsetInFilePos = s.GetPosition();
+      SavedBulkDataOffsetInFile = INDEX_NONE;
+      s << SavedBulkDataOffsetInFile;
+
+      int32 SavedBulkDataStartPos = s.GetPosition();
+      SerializeBulkData(s, BulkData);
+      int32 SavedBulkDataEndPos = s.GetPosition();
+
+      SavedBulkDataSizeOnDisk = SavedBulkDataEndPos - SavedBulkDataStartPos;
+      SavedBulkDataOffsetInFile = SavedBulkDataStartPos;
+
+
+      s.SetPosition(SavedBulkDataSizeOnDiskPos);
+      s << SavedBulkDataSizeOnDisk;
+
+      s.SetPosition(SavedBulkDataOffsetInFilePos);
+      s << SavedBulkDataOffsetInFile;
+
+      s.SetPosition(SavedBulkDataEndPos);
+    }
   }
 }
 

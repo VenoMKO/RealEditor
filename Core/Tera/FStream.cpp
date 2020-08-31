@@ -196,4 +196,56 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
       }
     }
   }
+  else
+  {
+    FCompressedChunkInfo packageFileTag;
+    packageFileTag.CompressedSize = PACKAGE_MAGIC;
+    packageFileTag.DecompressedSize = COMPRESSED_BLOCK_SIZE;
+    *this << packageFileTag;
+
+    int32	chunkCount = (length + COMPRESSED_BLOCK_SIZE - 1) / COMPRESSED_BLOCK_SIZE + 1;
+    FILE_OFFSET startPosition = GetPosition();
+    FCompressedChunkInfo* compressionChunks = new FCompressedChunkInfo[chunkCount];
+
+    for (int32 idx = 0; idx < chunkCount; idx++)
+    {
+      *this << compressionChunks[idx];
+    }
+
+    compressionChunks[0].DecompressedSize = length;
+    compressionChunks[0].CompressedSize = 0;
+
+    int32 remainingSize = length;
+    int32 chunkIndex = 1;
+    int32 bufferSize = 2 * COMPRESSED_BLOCK_SIZE;
+    void* buffer = malloc(bufferSize);
+
+    uint8* src = (uint8*)v;
+    while (remainingSize > 0)
+    {
+      int32 sizeToCompress = std::min(remainingSize, COMPRESSED_BLOCK_SIZE);
+      int32 compressedSize = bufferSize;
+
+      CompressMemory(flags, buffer, &compressedSize, src, sizeToCompress);
+      src += sizeToCompress;
+
+      SerializeBytes(buffer, compressedSize);
+      compressionChunks[0].CompressedSize += compressedSize;
+      compressionChunks[chunkIndex].CompressedSize = compressedSize;
+      compressionChunks[chunkIndex].DecompressedSize = sizeToCompress;
+      chunkIndex++;
+
+      remainingSize -= COMPRESSED_BLOCK_SIZE;
+    }
+
+    FILE_OFFSET endPosition = GetPosition();
+    SetPosition(startPosition);
+
+    for (int32 ChunkIndex = 0; ChunkIndex < chunkCount; ChunkIndex++)
+    {
+      *this << compressionChunks[ChunkIndex];
+    }
+    delete[] compressionChunks;
+    SetPosition(endPosition);
+  }
 }

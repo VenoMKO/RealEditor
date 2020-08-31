@@ -13,7 +13,6 @@ public:
 
   bool RegisterProperty(FPropertyTag* property) override;
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -46,8 +45,9 @@ public:
 
   friend bool TextureTravaller::Visit(UTexture2D* texture);
 
-protected:
   void Serialize(FStream& s) override;
+
+protected:
   void PostLoad() override;
   void DeleteStorage();
 

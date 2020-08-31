@@ -31,8 +31,6 @@ protected:
 class UTextBuffer : public UObject {
 public:
   DECL_UOBJ(UTextBuffer, UObject);
-
-protected:
   void Serialize(FStream& s);
 
 protected:
@@ -76,7 +74,6 @@ public:
     return ToolTip;
   }
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -112,8 +109,7 @@ public:
   {
     return Names.size() > index ? Names[index] : Names.back();
   }
-
-protected:
+  
   void Serialize(FStream& s) override;
 
 protected:
@@ -170,7 +166,6 @@ public:
 
   virtual void Link();
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -203,7 +198,6 @@ public:
     return GetSuperState();
   }
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -253,7 +247,6 @@ public:
     return (ClassCastFlags & FlagsToCheck) == FlagsToCheck;
   }
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:
@@ -281,7 +274,6 @@ public:
   DECL_UOBJ(UScriptStruct, UStruct);
   DECL_CLASS_CAST(UScriptStruct);
 
-protected:
   void Serialize(FStream& s) override;
 
 public:
@@ -295,7 +287,6 @@ class UFunction : public UStruct
 public:
   DECL_UOBJ(UFunction, UStruct);
 
-protected:
   void Serialize(FStream& s) override;
 
 public:
@@ -313,7 +304,6 @@ public:
   DECL_UOBJ(UConst, UField);
   DECL_CLASS_CAST(UConst);
 
-protected:
   void Serialize(FStream& s) override;
 
 public:

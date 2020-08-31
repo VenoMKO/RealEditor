@@ -8,8 +8,7 @@ class UObjectRedirector : public UObject {
   {
     return Object;
   }
-
-protected:
+  
   void Serialize(FStream& s) override;
 
 private:

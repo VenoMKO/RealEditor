@@ -122,19 +122,8 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
     int32 remainingDim = property ? property->ArrayDim : 0;
     FPropertyTag* tagPtr = nullptr;
     FPropertyTag* prevTagPtr = nullptr;
-#if _DEBUG
-    UProperty* last = nullptr;
-    static int32 GIteration = -1;
-    int32 iterations = 0;
-#endif
     while (1)
     {
-#if _DEBUG
-      GIteration++;
-      iterations++;
-      last = property;
-#endif
-      
       FPropertyValue* newValue = nullptr;
       if (value)
       {
@@ -188,6 +177,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
             break;
           }
         }
+
         if (!property)
         {
           for (property = PropertyLink; property && property != currentProperty; property = property->PropertyLinkNext)
@@ -197,11 +187,13 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
               break;
             }
           }
+
           if (property == currentProperty)
           {
             property = nullptr;
           }
         }
+
         remainingDim = property ? property->ArrayDim : 0;
       }
 
@@ -229,9 +221,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         LogE("Property %s of %s struct type mismatch %s/%s", tagName.c_str(), object->GetObjectName().UTF8(), tag.StructName.String().UTF8().c_str(), CastChecked<UStructProperty>(property)->Struct->GetObjectName().UTF8().c_str());
         DBreak();
       }
-      else if (tagType == NAME_ByteProperty && 
-              ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || 
-                (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
+      else if (tagType == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
       {
         LogE("Property coversion required in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
         DBreak();
@@ -250,17 +240,65 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         {
           property->SerializeItem(s, tag.Value, object, defaultsStruct);
         }
+
         object->RegisterProperty(tagPtr);
         advance = true;
         prevTagPtr = tagPtr;
         continue;
       }
+      
 
       tag.Value->Data = new uint8[tag.Size];
       tag.Value->Type = FPropertyValue::VID::Unk;
       prevTagPtr = tagPtr;
       s.SerializeBytes(tag.GetValueData(), tag.Size);
       LogW("Skipping property %s of %s in %s package", tagName.c_str(), object->GetObjectName().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
+    }
+  }
+  else
+  {
+    int32 idx = 0;
+    FPropertyTag* tagPtr = nullptr;
+    std::vector<FPropertyTag*> properties = object->GetProperties();
+    while (1)
+    {
+      if (!value)
+      {
+        if (idx >= properties.size())
+        {
+          break;
+        }
+        tagPtr = properties[idx];
+      }
+      else
+      {
+        auto& array = value->GetArray();
+        if (idx >= array.size())
+        {
+          break;
+        }
+        tagPtr = array[idx]->GetPropertyTagPtr();
+      }
+
+      s << *tagPtr;
+      FILE_OFFSET size = s.GetPosition();
+      if (tagPtr->ClassProperty)
+      {
+        tagPtr->ClassProperty->SerializeItem(s, tagPtr->Value, object, defaultsStruct);
+      }
+      else
+      {
+        s.SerializeBytes(tagPtr->GetValueData(), tagPtr->Size);
+      }
+      FILE_OFFSET tmpPos = s.GetPosition();
+      size = tmpPos - size;
+      if (size != tagPtr->Size)
+      {
+        s.SetPosition(tagPtr->SizeOffset);
+        s << size;
+        s.SetPosition(tmpPos);
+      }
+      idx++;
     }
   }
 }

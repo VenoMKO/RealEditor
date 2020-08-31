@@ -2,6 +2,8 @@
 #include "Core.h"
 #include "FString.h"
 
+#define MAX_NAME_ENTRY 1024
+
 class FNameEntry {
 public:
   FNameEntry()

@@ -15,6 +15,7 @@ struct PackageSaveContext {
 	
 	ECompressionFlags Compression = COMPRESS_None;
 	bool PreserveOffsets = true;
+	bool FullRecook = false;
 
 	std::string Error;
 

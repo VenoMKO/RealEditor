@@ -7,7 +7,6 @@ public:
 
   const std::map<UObject*, std::map<FName, FString>>& GetObjectMetaDataMap();
 
-protected:
   void Serialize(FStream& s) override;
 
 protected:

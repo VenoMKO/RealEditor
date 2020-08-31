@@ -9,9 +9,9 @@ public:
 	// Load only needed maps without object serialization
 	void GetPersistentData(std::unordered_map<FString, FBulkDataInfo>& outputBulk, std::unordered_map<FString, FTextureFileCacheInfo>& outputTFC);
 
-protected:
 	void Serialize(FStream& s) override;
 
+protected:
 	FILE_OFFSET GetCookedBulkDataInfoMapOffset(FStream& s);
 
 private:

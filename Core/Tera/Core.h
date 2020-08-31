@@ -191,6 +191,8 @@ namespace LZO
 // New decompression. compressedBuffer must point directly to a compressed data block
 bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 decompressedSize, const void* compressedBuffer, int32 compressedSize);
 
+bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* compressedSize, const void* decompressedBuffer, int32 decompressedSize);
+
 // --------------------------------------------------------------------
 // Logging
 // --------------------------------------------------------------------

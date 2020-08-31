@@ -337,6 +337,17 @@ bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET 
   return true;
 }
 
+bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* dstSize, bool concurrent)
+{
+  int e = lzo1x_1_compress((lzo_bytep)src, srcSize, (unsigned char*)dst, (lzo_uint*)dstSize, wrkmem);
+  if (e != LZO_E_OK)
+  {
+    LogE("Failed to compress memory. Code: %d", e);
+    return false;
+  }
+  return true;
+}
+
 bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 decompressedSize, const void* compressedBuffer, int32 compressedSize)
 {
   bool ok = false;
@@ -344,6 +355,7 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
   {
   case COMPRESS_ZLIB:
     // TODO: implement zlib
+    LogE("Zlib decompression not implemented!");
     DBreak();
     break;
   case COMPRESS_LZO:
@@ -351,6 +363,32 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
     break;
   case COMPRESS_LZX:
     // TODO: implement lzx
+    LogE("Lzx decompression not implemented!");
+    DBreak();
+    break;
+  default:
+    LogE("Unknown compression format: %d", flags & COMPRESSION_FLAGS_TYPE_MASK);
+    ok = false;
+  }
+  return ok;
+}
+
+bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* compressedSize, const void* decompressedBuffer, int32 decompressedSize)
+{
+  bool ok = false;
+  switch (flags & COMPRESSION_FLAGS_TYPE_MASK)
+  {
+  case COMPRESS_ZLIB:
+    // TODO: implement zlib
+    LogE("Zlib compression not implemented!");
+    DBreak();
+    break;
+  case COMPRESS_LZO:
+    ok = CompressLZO(decompressedBuffer, decompressedSize, compressedBuffer, compressedSize, true);
+    break;
+  case COMPRESS_LZX:
+    // TODO: implement lzx
+    LogE("Lzx compression not implemented!");
     DBreak();
     break;
   default:

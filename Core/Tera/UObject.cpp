@@ -108,7 +108,7 @@ void* UObject::GetRawData()
   return result;
 }
 
-void UObject::SerializeScriptProperties(FStream& s) const
+void UObject::SerializeScriptProperties(FStream& s)
 {
   // TODO: add a way to serialize object with a different package version
   if (s.GetFV() != FPackage::GetCoreVersion())
@@ -119,10 +119,51 @@ void UObject::SerializeScriptProperties(FStream& s) const
   if (Class)
   {
     Class->SerializeTaggedProperties(s, (UObject*)this, nullptr, HasAnyFlags(RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
-    return;
   }
-  FName noneProp;
-  s << noneProp;
+  else
+  {
+    if (s.IsReading())
+    {
+      // TODO: This won't work for complex structs
+      // We will break the loop on a first 'None'
+      // sub-property leaving rest of the props unread
+      // Need to use legacy serialization
+      bool warned = false;
+      while (1)
+      {
+        FPropertyTag* tag = new FPropertyTag((UObject*)this);
+        s << *tag;
+        AddProperty(tag);
+        if (tag->Name == NAME_None)
+        {
+          break;
+        }
+        else if (tag->Size)
+        {
+          tag->Value->Data = new uint8[tag->Size];
+          tag->Value->Type = FPropertyValue::VID::Unk;
+          s.SerializeBytes(tag->GetValueData(), tag->Size);
+        }
+        if (!warned)
+        {
+          LogW("Failed to use class serialization for %s.", GetObjectPath().C_str());
+          warned = true;
+        }
+      }
+    }
+    else
+    {
+      for (FPropertyTag* tag : Properties)
+      {
+        s << *tag;
+        if (tag->Size)
+        {
+          s.SerializeBytes(tag->GetValueData(), tag->Size);
+        }
+      }
+    }
+  }
+  
   // TODO: serialize props without a Class obj
   //DBreakIf(nonePropertyName.String() != "None");
 }
