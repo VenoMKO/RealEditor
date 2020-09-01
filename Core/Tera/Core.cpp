@@ -711,11 +711,7 @@ FString PackageFlagsToString(uint32 flags)
 void DumpData(void* data, int size, const char* path)
 {
   std::string p = std::string(DUMP_PATH) + "\\" + path;
-  if (FILE* f = fopen(p.c_str(), "w"))
-  {
-
-    fwrite(data, 1, size, f);
-    fclose(f);
-  }
+  std::ofstream s(p, std::ios::out | std::ios::binary);
+  s.write((const char*)data, size);
 }
 #endif

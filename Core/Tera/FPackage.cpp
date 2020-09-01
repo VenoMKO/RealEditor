@@ -13,6 +13,7 @@
 #include <sstream>
 #include <algorithm>
 #include <filesystem>
+#include <array>
 #include <ppl.h>
 
 const char* PackageMapperName = "PkgMapper";
@@ -100,6 +101,36 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
   FWriteStream s(listPath.wstring());
   s << dirCache;
   s << tfcCache;
+}
+
+void EncryptMapper(const FString& decrypted, std::vector<char>& encrypted)
+{
+  size_t size = decrypted.Size();
+  size_t offset = 0;
+  encrypted.resize(size);
+  for (offset = 0; offset < size; ++offset)
+  {
+    encrypted[offset] = decrypted[offset] ^ Key2[offset % sizeof(Key2)];
+  }
+
+  {
+    size_t a = 1;
+    size_t b = size - 1;
+    for (offset = (size / 2 + 1) / 2; offset; --offset, a += 2, b -= 2)
+    {
+      std::swap(encrypted[a], encrypted[b]);
+    }
+  }
+
+  std::array<char, sizeof(Key1)> tmp;
+  for (size_t offset = 0; offset + sizeof(Key1) <= size; offset += sizeof(Key1))
+  {
+    memcpy(&tmp[0], &encrypted[offset], sizeof(Key1));
+    for (size_t idx = 0; idx < sizeof(Key1); ++idx)
+    {
+      encrypted[offset + idx] = tmp[Key1[idx]];
+    }
+  }
 }
 
 void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
