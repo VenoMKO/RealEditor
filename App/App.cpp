@@ -245,18 +245,11 @@ wxString App::ShowOpenDialog(const wxString& rootDir)
 
 wxString App::ShowOpenCompositeDialog(wxWindow* parent)
 {
-  if (CompositePicker && parent != CompositePicker->GetParent())
+  CompositePackagePicker picker(parent, "Open composite package...");
+  picker.CenterOnParent();
+  if (picker.ShowModal() == wxID_OK)
   {
-    CompositePicker->Reparent(parent);
-  }
-  else if (!CompositePicker)
-  {
-    CompositePicker = new CompositePackagePicker(parent, "Open composite package...");
-  }
-  CompositePicker->CenterOnParent();
-  if (CompositePicker->ShowModal() == wxID_OK)
-  {
-    return CompositePicker->GetResult();
+    return picker.GetResult();
   }
   return wxString();
 }

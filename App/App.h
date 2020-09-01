@@ -39,7 +39,6 @@ wxDECLARE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 
 class ProgressWindow;
-class CompositePackagePicker;
 class App : public wxApp {
 public:
   ~App();
@@ -93,7 +92,6 @@ private:
 private:
   FAppConfig Config;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
-  CompositePackagePicker* CompositePicker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;
   std::vector<PackageWindow*> PackageWindows;

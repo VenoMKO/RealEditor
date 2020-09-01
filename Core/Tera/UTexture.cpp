@@ -218,6 +218,11 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
     bNoTilingProperty = property;
     return true;
   }
+  else if (PROP_IS(property, TextureFileCacheName))
+  {
+    TextureFileCacheName = property->Value->GetNamePtr();
+    TextureFileCacheNameProperty = property;
+  }
   return false;
 }
 
@@ -265,6 +270,48 @@ void UTexture2D::PostLoad()
     FTexture2DMipMap* mip = Mips[idx];
     if (mip->Data->IsStoredInSeparateFile())
     {
+      bool serializedFromCache = false;
+      if (TextureFileCacheName)
+      {
+        if (TextureFileCacheName->String() != cacheName)
+        {
+          if (rs)
+          {
+            delete rs;
+            rs = nullptr;
+          }
+          FString path = FPackage::GetTextureFileCachePath(TextureFileCacheName->String());
+          rs = new FReadStream(path);
+          if (rs->IsGood())
+          {
+            cacheName = TextureFileCacheName->String();
+          }
+        }
+
+        if (rs && rs->IsGood())
+        {
+          FStream& s = *rs;
+          s.SetPosition(mip->Data->GetBulkDataOffsetInFile());
+
+          try
+          {
+            mip->Data->SerializeSeparate(s, this, idx);
+            serializedFromCache = true;
+          }
+          catch (...)
+          {
+            serializedFromCache = false;
+          }
+        }
+      }
+
+      if (serializedFromCache)
+      {
+        continue;
+      }
+
+      // Maybe the texture is not cached. Search by bulkdata name
+
       FString bulkDataName = GetObjectPath() + ".MipLevel_" + std::to_string(idx);
       bulkDataName = bulkDataName.ToUpper();
       FBulkDataInfo* info = FPackage::GetBulkDataInfo(bulkDataName);
@@ -280,6 +327,7 @@ void UTexture2D::PostLoad()
           if (rs)
           {
             delete rs;
+            rs = nullptr;
           }
           FString path = FPackage::GetTextureFileCachePath(info->TextureFileCacheName);
           if (path.Size())
@@ -291,6 +339,7 @@ void UTexture2D::PostLoad()
             }
           }
         }
+
         if (rs)
         {
           FStream& s = *rs;
