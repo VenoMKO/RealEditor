@@ -300,15 +300,14 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
   progress.Layout();
 
   std::thread([&processor, &progress] {
-    if (!processor.Process())
-    {
-      wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
-    }
-    while (!progress.IsModal());
-    progress.EndModal(wxID_OK);
+    bool result = processor.Process();
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
   }).detach();
 
-  progress.ShowModal();
+  if (!progress.ShowModal())
+  {
+    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+  }
 
   TextureTravaller travaller;
   travaller.SetFormat(importer.GetPixelFormat());

@@ -103,7 +103,7 @@ void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
 	CancelButton->Enable(false);
 	if (IsModal())
 	{
-		EndModal(wxID_OK);
+		EndModal(e.GetInt());
 	}
 	else
 	{

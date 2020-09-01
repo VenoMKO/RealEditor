@@ -8,6 +8,7 @@
 #include <wx/sizer.h>
 #include <wx/statline.h>
 #include <wx/collpane.h>
+#include <wx/evtloop.h>
 
 #include <Tera/ALog.h>
 #include <Tera/FPackage.h>
@@ -408,8 +409,8 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 
 	FPackage* package = Package.get();
 	std::thread([&progress, &context, package] {
-		Sleep(200);
-		progress.EndModal(package->Save(context));
+		bool result = package->Save(context);
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
 	}).detach();
 
 	if (!progress.ShowModal())
@@ -485,7 +486,7 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	LoadObjectTree();
 	ObjectTreeCtrl->Thaw();
 	SaveMenu->Enable(false); // TODO: track package dirty state
-	SaveAsMenu->Enable(!Package->IsReadOnly() && ALLOW_UI_PKG_SAVE);
+	SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
 }
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)
