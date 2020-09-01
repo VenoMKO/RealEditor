@@ -143,6 +143,7 @@ struct FPackageSummary {
 	uint32 PackageFlags = 0;
 	uint32 NamesCount = 0;
 	FILE_OFFSET NamesOffset = 0;
+	FILE_OFFSET NamesSize = 0;
 	uint32 ExportsCount = 0;
 	FILE_OFFSET ExportsOffset = 0;
 	uint32 ImportsCount = 0;

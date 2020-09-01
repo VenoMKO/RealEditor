@@ -3,6 +3,7 @@
 #include "FPropertyTag.h"
 #include "FStructs.h"
 #include "FString.h"
+#include "FPackage.h"
 
 #define CPF_Net 0x0000000000000020
 #define STRUCT_Immutable 0x00000020
@@ -110,7 +111,7 @@ void UByteProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject*
     // TODO: maybe a bug during writing. Names table might not have eValue's string
     if (valuePtr->GetByte() < Enum->NumEnums() - 1)
     {
-      eValue = Enum->GetEnum(valuePtr->GetByte());
+      eValue.SetString(Enum->GetEnum(valuePtr->GetByte()).String());
     }
     else
     {

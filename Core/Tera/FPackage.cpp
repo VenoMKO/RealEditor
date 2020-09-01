@@ -1038,12 +1038,14 @@ void FPackage::Load()
     s.SetPosition(Summary.NamesOffset);
   }
   Names.clear();
+  Summary.NamesSize = s.GetPosition();
   for (uint32 idx = 0; idx < Summary.NamesCount; ++idx)
   {
     FNameEntry& e = Names.emplace_back(FNameEntry());
     s << e;
     CheckCancel();
   }
+  Summary.NamesSize = s.GetPosition() - Summary.NamesSize;
 
   if (Summary.ImportsOffset != s.GetPosition())
   {
@@ -1260,10 +1262,24 @@ bool FPackage::Save(PackageSaveContext& context)
   // TODO: we may have no data path for a new packages.
   FReadStream reader(Summary.DataPath);
   reader.SetPackage(this);
+  if (!reader.IsGood())
+  {
+    context.Error = "Failed to read the source package!";
+    return false;
+  }
 
-  void* namesData = nullptr;
-  FILE_OFFSET namesDataSize = 0;
   FILE_OFFSET endOffset = 0;
+
+  Summary.ThumbnailTableOffset = 0;
+  Summary.ImportExportGuidsOffset = INDEX_NONE; // Don't bother games linker with the Guid map
+  Summary.ImportGuidsCount = 0;
+  Summary.ExportGuidsCount = 0;
+  Summary.NamesCount = (uint32)Names.size();
+  Summary.ExportsCount = (uint32)Exports.size();
+  Summary.ImportsCount = (uint32)Imports.size();
+
+  writer << Summary;
+
   if (context.PreserveOffsets)
   {
     for (FObjectExport* exp : Exports)
@@ -1273,78 +1289,47 @@ bool FPackage::Save(PackageSaveContext& context)
         endOffset = exp->SerialOffset + exp->SerialSize;
       }
     }
-
-    if (Names.size() > Summary.NamesCount)
-    {
-      // Move names to the end of the package
-      Summary.NamesOffset = endOffset;
-      size_t size = Names.size() * (MAX_NAME_ENTRY * sizeof(wchar) + sizeof(int32) + sizeof(uint64)); // Maximum size
-      void* buffer = malloc(size);
-      MWrightStream s(buffer, size);
-      s.SetPackage(this);
-      for (FNameEntry& e : Names)
-      {
-        s << e;
-      }
-      if ((namesDataSize = s.GetPosition()))
-      {
-        namesData = malloc(namesDataSize);
-        endOffset += namesDataSize;
-        memcpy(namesData, buffer, namesDataSize);
-      }
-    }
-
-    if (Exports.size() > Summary.ExportsCount)
-    {
-      // Move exports to the end of the package
-      {
-        size_t size = 1024 * Exports.size(); // Stream will realloc if necessary
-        void* buffer = malloc(size);
-        MWrightStream s(buffer, size);
-        for (FObjectExport* exp : Exports)
-        {
-          s << *exp;
-        }
-        Summary.ExportsOffset = endOffset;
-        endOffset += s.GetPosition();
-      }
-
-      // Move depends to the end of the package
-      {
-        size_t size = 1024 * Exports.size(); // Stream will realloc if necessary
-        void* buffer = malloc(size);
-        MWrightStream s(buffer, size);
-        for (auto& dep : Depends)
-        {
-          s << dep;
-        }
-        Summary.DependsOffset = endOffset;
-        endOffset += s.GetPosition();
-      }
-    }
-
-    if (Imports.size() > Summary.ImportsCount)
-    {
-      const FILE_OFFSET importSize = 28; // Imports have static size
-      Summary.ImportsOffset = endOffset;
-      endOffset += importSize * Imports.size();
-    }
-
-    // Move dirty objects to the end of the package
-    for (FObjectExport* exp : Exports)
-    {
-      if (exp->ObjectFlags & RF_Marked)
-      {
-        exp->SerialOffset = endOffset;
-        endOffset += exp->SerialSize;
-      }
-    }
   }
   else
   {
     // TODO: implement
     context.Error = "Not implemented yet.";
     return false;
+  }
+
+  Summary.NamesOffset = writer.GetPosition();
+  for (FNameEntry& e : Names)
+  {
+    writer << e;
+  }
+
+  bool moveTables = false;
+  if (context.PreserveOffsets && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+  {
+    moveTables = true;
+    // Prevent the game from buffering export data if we are moving tables to the end
+    Summary.HeaderSize = writer.GetPosition();
+  }
+  else
+  {
+    Summary.ImportsOffset = writer.GetPosition();
+    for (FObjectImport* imp : Imports)
+    {
+      writer << *imp;
+    }
+
+    Summary.ExportsOffset = writer.GetPosition();
+    for (FObjectExport* exp : Exports)
+    {
+      writer << *exp;
+    }
+
+    Summary.DependsOffset = writer.GetPosition();
+    for (auto& dep : Depends)
+    {
+      writer << dep;
+    }
+    Summary.HeaderSize = writer.GetPosition();
   }
 
   FILE_OFFSET exportsStart = INT_MAX;
@@ -1362,30 +1347,18 @@ bool FPackage::Save(PackageSaveContext& context)
     free(tmp);
   };
 
-  Summary.NamesCount = (uint32)Names.size();
-  Summary.ExportsCount = (uint32)Exports.size();
-  Summary.ImportsCount = (uint32)Imports.size();
-
-  context.MaxProgressCallback(Exports.size());
-  context.ProgressCallback(0);
-
-  // I am not sure if Tera uses cross-level guids.
-  // To make my life easer I drop guids if any
-  Summary.ImportGuidsCount = 0;
-  Summary.ExportGuidsCount = 0;
-  // Drop thumbnails. They are editor only data and won't affect the game
-  Summary.ThumbnailTableOffset = 0;
-
-  writer << Summary;
-
   if (exportsStart > writer.GetPosition())
   {
     appendZeroed(writer, exportsStart - writer.GetPosition());
   }
-  else
+  else if (exportsStart < writer.GetPosition())
   {
-    writer.SetPosition(exportsStart);
+    DBreakIf(context.PreserveOffsets);
+    // Package has too much changes in the header. Can't save it with the PreserveOffsets flag
   }
+
+  context.MaxProgressCallback(Exports.size());
+  context.ProgressCallback(0);
 
   context.ProgressDescriptionCallback("Serializing objects...");
   int32 idx = 0;
@@ -1434,100 +1407,49 @@ bool FPackage::Save(PackageSaveContext& context)
     context.ProgressCallback(++idx);
   }
 
-  // Names
-
-  if (writer.GetPosition() != Summary.NamesOffset)
+  if (moveTables)
   {
-    if (Summary.NamesOffset < writer.GetPosition())
+    Summary.ImportsOffset = writer.GetPosition();
+    for (FObjectImport* imp : Imports)
     {
-      writer.SetPosition(Summary.NamesOffset);
+      writer << *imp;
     }
-    else
-    {
-      appendZeroed(writer, Summary.NamesOffset - writer.GetPosition());
-      writer.SetPosition(Summary.NamesOffset);
-    }
-  }
 
-  if (namesData)
-  {
-    writer.SerializeBytes(namesData, namesDataSize);
-  }
-  else
-  {
-    for (FNameEntry& e : Names)
+    Summary.ExportsOffset = writer.GetPosition();
+    for (FObjectExport* exp : Exports)
     {
-      writer << e;
+      writer << *exp;
+    }
+
+    Summary.DependsOffset = writer.GetPosition();
+    for (auto& dep : Depends)
+    {
+      writer << dep;
     }
   }
-
-  // Imports
-
-  if (writer.GetPosition() != Summary.ImportsOffset)
-  {
-    if (Summary.ImportsOffset < writer.GetPosition())
-    {
-      writer.SetPosition(Summary.ImportsOffset);
-    }
-    else
-    {
-      appendZeroed(writer, Summary.ImportsOffset - writer.GetPosition());
-      writer.SetPosition(Summary.ImportsOffset);
-    }
-  }
-
-  for (FObjectImport* imp : Imports)
-  {
-    writer << *imp;
-  }
-
-  // Shifted objects
 
   if (context.PreserveOffsets)
   {
     for (FObjectExport* exp : Exports)
     {
-      if (!(exp->ObjectFlags & RF_Marked))
+      if (exp->ObjectFlags & RF_Marked)
       {
-        continue;
+        exp->SerialOffset = writer.GetPosition();
+        UObject* obj = ExportObjects[exp->ObjectIndex];
+        DBreakIf(!obj->IsLoaded());
+        obj->Serialize(writer);
+        exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
       }
-      context.ProgressCallback(++idx);
-      if (writer.GetPosition() < exp->SerialOffset)
-      {
-        appendZeroed(writer, exp->SerialOffset - writer.GetPosition());
-      }
-      writer.SetPosition(exp->SerialOffset);
-      UObject* obj = ExportObjects[exp->ObjectIndex];
-      obj->Serialize(writer);
-      exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
-      exp->ObjectFlags &= ~RF_Marked;
     }
   }
 
-  // Exports
+  writer.SetPosition(0);
+  writer << Summary;
 
-  if (writer.GetPosition() < Summary.ExportsOffset)
-  {
-    appendZeroed(writer, Summary.ExportsOffset - writer.GetPosition());
-  }
   writer.SetPosition(Summary.ExportsOffset);
-
   for (FObjectExport* exp : Exports)
   {
     writer << *exp;
-  }
-
-  // Depends
-
-  if (writer.GetPosition() < Summary.DependsOffset)
-  {
-    appendZeroed(writer, Summary.DependsOffset - writer.GetPosition());
-  }
-
-  writer.SetPosition(Summary.DependsOffset);
-  for (auto& dep : Depends)
-  {
-    writer << dep;
   }
 
   bool isOk = writer.IsGood();

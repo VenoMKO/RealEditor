@@ -18,11 +18,11 @@ FStream& FStream::operator<<(FString& s)
     }
     else if (len < 0)
     {
+      std::wstring wstr;
+      wstr.resize(-len);
       len = -len * 2;
-      wchar* data = (wchar*)malloc(len);
-      SerializeBytes(data, len);
-      s += data;
-      free(data);
+      SerializeBytes(&wstr[0], len);
+      s += W2A(wstr);
     }
   }
   else
@@ -33,7 +33,7 @@ FStream& FStream::operator<<(FString& s)
       std::wstring wstr = s;
       len = -(int32)wstr.size();
       (*this) << len;
-      SerializeBytes((void*)s.C_str(), len * -2);
+      SerializeBytes((void*)wstr.c_str(), len * -2);
     }
     else
     {

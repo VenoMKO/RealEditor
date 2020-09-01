@@ -69,6 +69,8 @@ private:
 	void ShowEditor(GenericEditor* editor);
 	void UpdateProperties(UObject* object, std::vector<FPropertyTag*> properties);
 
+	void DebugOnTestCookObject(wxCommandEvent&);
+
 	wxDECLARE_EVENT_TABLE();
 
 private:
@@ -99,6 +101,8 @@ private:
 	wxPanel* ObjectInfoPanel = nullptr;
 	wxImageList* ImageList = nullptr;
 	wxStatusBar* StatusBar = nullptr;
+
+	wxMenuItem* _DebugTestCookObject = nullptr;
 
 	std::map<PACKAGE_INDEX, GenericEditor*> Editors;
 	GenericEditor* ActiveEditor = nullptr;

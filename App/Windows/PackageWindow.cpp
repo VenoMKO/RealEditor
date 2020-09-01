@@ -28,6 +28,7 @@ enum ControlElementId {
 	Exit,
 	SettingsWin,
 	LogWin,
+	DebugTestCookObj,
 	Back,
 	Forward,
 	HeartBeat
@@ -288,6 +289,22 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 	PropertyRootCategory->RefreshChildren();
 }
 
+void PackageWindow::DebugOnTestCookObject(wxCommandEvent&)
+{
+	if (!ActiveEditor || !ActiveEditor->GetObject() || ActiveEditor->GetObject()->GetPackage() != Package.get())
+	{
+		return;
+	}
+	wxString path = wxSaveFileSelector("object", wxT("BIN file|*.bin"), ActiveEditor->GetObject()->GetObjectName().WString(), this);
+	if (path.empty())
+	{
+		return;
+	}
+	FWriteStream s(path.ToStdWstring());
+	s.SetPackage(Package.get());
+	ActiveEditor->GetObject()->Serialize(s);
+}
+
 void PackageWindow::FixOSG()
 {
 	// Osg refuses to process events
@@ -512,4 +529,7 @@ EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
+
+EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObject)
+
 wxEND_EVENT_TABLE()

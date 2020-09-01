@@ -407,7 +407,7 @@ public:
 
   inline bool IsAnsi() const
   {
-    for (const char& ch : Data)
+    for (const unsigned char& ch : Data)
     {
       if (ch > 127)
       {

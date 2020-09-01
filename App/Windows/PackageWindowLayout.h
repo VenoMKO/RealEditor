@@ -55,6 +55,15 @@ void PackageWindow::InitLayout()
 
 	menuBar->Append(m_menu2, wxT("View"));
 
+#if _DEBUG
+	wxMenu* m_menu3;
+	m_menu3 = new wxMenu();
+	_DebugTestCookObject = new wxMenuItem(m_menu2, ControlElementId::DebugTestCookObj, wxString(wxT("Cook an object...")), wxEmptyString, wxITEM_NORMAL);
+	m_menu3->Append(_DebugTestCookObject);
+
+	menuBar->Append(m_menu3, wxT("Debug"));
+#endif
+
 	this->SetMenuBar(menuBar);
 
 	wxBoxSizer* topSizer;

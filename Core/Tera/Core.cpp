@@ -339,12 +339,14 @@ bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET 
 
 bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* dstSize, bool concurrent)
 {
-  int e = lzo1x_1_compress((lzo_bytep)src, srcSize, (unsigned char*)dst, (lzo_uint*)dstSize, wrkmem);
+  lzo_uint resultSize = *dstSize;
+  int e = lzo1x_1_compress((lzo_bytep)src, srcSize, (unsigned char*)dst, &resultSize, wrkmem);
   if (e != LZO_E_OK)
   {
     LogE("Failed to compress memory. Code: %d", e);
     return false;
   }
+  *dstSize = resultSize;
   return true;
 }
 
