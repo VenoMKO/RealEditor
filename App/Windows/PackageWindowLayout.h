@@ -46,14 +46,27 @@ void PackageWindow::InitLayout()
 
 	menuBar->Append(fileMenu, wxT("File"));
 
+	wxMenu* m_menu4;
+	m_menu4 = new wxMenu();
+	wxMenuItem* m_menuItem63 = new wxMenuItem(m_menu4, ControlElementId::Import, wxString(wxT("Import")), wxEmptyString, wxITEM_NORMAL);
+	m_menuItem63->Enable(false);
+	m_menu4->Append(m_menuItem63);
+	wxMenuItem* m_menuItem64 = new wxMenuItem(m_menu4, ControlElementId::Export, wxString(wxT("Export")), wxEmptyString, wxITEM_NORMAL);
+	m_menuItem64->Enable(false);
+	m_menu4->Append(m_menuItem64);
+	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch composite package map")), wxEmptyString, wxITEM_NORMAL);
+	m_menu4->Append(m_menuItem65);
+
+	menuBar->Append(m_menu4, wxT("Edit"));
+
 	wxMenu* m_menu2;
 	m_menu2 = new wxMenu();
 	SettingsWindowMenu = new wxMenuItem(m_menu2, ControlElementId::SettingsWin, wxString(wxT("Settings")), wxEmptyString, wxITEM_NORMAL);
 	m_menu2->Append(SettingsWindowMenu);
-	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Show Log")), wxEmptyString, wxITEM_NORMAL);
+	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Log")), wxEmptyString, wxITEM_NORMAL);
 	m_menu2->Append(LogWindowMenu);
 
-	menuBar->Append(m_menu2, wxT("View"));
+	menuBar->Append(m_menu2, wxT("Window"));
 
 #if _DEBUG
 	wxMenu* m_menu3;

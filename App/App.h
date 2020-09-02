@@ -23,7 +23,7 @@ inline void SendEvent(wxEvtHandler* obj, wxEventType type, const wxString& msg)
   wxQueueEvent(obj, e);
 }
 
-inline void SendEvent(wxEvtHandler* obj, wxEventType type, bool number)
+inline void SendEvent(wxEvtHandler* obj, wxEventType type, int32 number)
 {
   wxCommandEvent* e = new wxCommandEvent(type);
   e->SetInt(number);

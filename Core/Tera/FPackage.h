@@ -58,6 +58,10 @@ public:
 	static FString GetTextureFileCachePath(const FString& tfcName);
 	// Get composite map
 	static const std::unordered_map<FString, FCompositePackageMapEntry>& GetCompositePackageMap();
+	// Get list of all composite packages
+	static const std::unordered_map<FString, std::vector<FString>>& GetCompositePackageList();
+	// Get composite package map .dat path
+	static FString GetCompositePackageMapPath();
 	// Update DirCache
 	static void UpdateDirCache();
 

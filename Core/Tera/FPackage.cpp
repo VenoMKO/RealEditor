@@ -236,6 +236,18 @@ const std::unordered_map<FString, FCompositePackageMapEntry>& FPackage::GetCompo
   return CompositPackageMap;
 }
 
+const std::unordered_map<FString, std::vector<FString>>& FPackage::GetCompositePackageList()
+{
+  return CompositPackageList;
+}
+
+FString FPackage::GetCompositePackageMapPath()
+{
+  std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / CompositePackageMapperName;
+  encryptedPath.replace_extension(".dat");
+  return encryptedPath.wstring();
+}
+
 void FPackage::UpdateDirCache()
 {
   LogI("Building directory cache: \"%s\"", RootDir.C_str());

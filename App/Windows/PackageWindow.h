@@ -51,6 +51,7 @@ private:
 	void OnMoveEnd(wxMoveEvent& e);
 	void OnSize(wxSizeEvent& e);
 	void OnMaximized(wxMaximizeEvent& e);
+	void OnPatchCompositeMapClicked(wxCommandEvent&);
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);

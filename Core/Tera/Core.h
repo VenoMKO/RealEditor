@@ -21,7 +21,7 @@ static const float APP_VER = 0.20f;
 #if defined(DUMP_PATH)
 #define DUMP_OBJECTS 0
 #define DUMP_PACKAGES 0
-#define DUMP_MAPPERS 0
+#define DUMP_MAPPERS 1
 void DumpData(void* data, int size, const char* path);
 #endif
 #define MULTITHREADED_CLASS_SERIALIZATION 0

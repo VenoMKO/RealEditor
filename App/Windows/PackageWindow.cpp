@@ -1,6 +1,7 @@
 #include "PackageWindow.h"
 #include "ProgressWindow.h"
 #include "CompositePackagePicker.h"
+#include "CompositePatcherWindow.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
@@ -29,6 +30,9 @@ enum ControlElementId {
 	Exit,
 	SettingsWin,
 	LogWin,
+	CompositePatch,
+	Import,
+	Export,
 	DebugTestCookObj,
 	Back,
 	Forward,
@@ -480,6 +484,12 @@ void PackageWindow::OnMaximized(wxMaximizeEvent& e)
 	e.Skip();
 }
 
+void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
+{
+	CompositePatcherWindow patcher(this);
+	patcher.ShowModal();
+}
+
 void PackageWindow::OnPackageReady(wxCommandEvent&)
 {
 	ObjectTreeCtrl->Freeze();
@@ -518,6 +528,7 @@ EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
+EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
