@@ -223,6 +223,11 @@ public:
 	{
 		return Summary.GetLicenseeVersion();
 	}
+
+	inline FTextureAllocations& GetTextureAllocations()
+	{
+		return Summary.TextureAllocations;
+	}
 	
 	// Used to create builtin classes
 	VObjectExport* CreateVirtualExport(const char* objName, const char* clsName);

@@ -461,7 +461,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   if (pWindow->IsCancelled())
   {
-    wxQueueEvent(this, new wxCloseEvent());
+    ExitMainLoop();
     return;
   }
 
@@ -498,7 +498,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
     if (pWindow->IsCancelled())
     {
-      wxQueueEvent(this, new wxCloseEvent());
+      ExitMainLoop();
       return;
     }
   }
@@ -520,7 +520,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   if (pWindow->IsCancelled())
   {
-    wxQueueEvent(this, new wxCloseEvent());
+    ExitMainLoop();
     return;
   }
 

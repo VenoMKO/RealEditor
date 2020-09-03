@@ -8,8 +8,8 @@ enum EPackageFlags : uint32
 	PKG_Cooked = 0x00000008,	// Whether this package has been cooked for the target platform.
 	PKG_Unsecure = 0x00000010,   // Not trusted.
 	PKG_SavedWithNewerVersion = 0x00000020,	// Package was saved with newer version.
-	PKG_Dirty = 0x80000100,
-	PKG_PendingDeletion = 0x80000200,
+	PKG_Dirty = 0x00000100,
+	PKG_PendingDeletion = 0x00000200,
 	PKG_Need = 0x00008000,	// Client needs to download this package.
 	PKG_Compiling = 0x00010000,	// package is currently being compiled
 	PKG_ContainsMap = 0x00020000,	// Set if the package contains a ULevel/ UWorld object

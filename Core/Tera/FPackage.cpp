@@ -682,7 +682,7 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
 #endif
 
 #if DUMP_MAPPERS
-  std::filesystem::path debugPath = storagePath;
+  std::filesystem::path debugPath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
   debugPath.replace_extension(".txt");
   std::ofstream os(debugPath.wstring());
   os.write(&buffer[0], buffer.Size());
@@ -807,23 +807,25 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
-    std::vector<FCompressedChunk> tmpChunks;
-    std::swap(sum.CompressedChunks, tmpChunks);
+    sum.PackageFlags &= ~PKG_StoreCompressed;
+    sum.CompressionFlags = COMPRESS_None;
+
+    std::vector<FCompressedChunk> chunks;
+    std::swap(sum.CompressedChunks, chunks);
     (*tempStream) << sum;
-    std::swap(sum.CompressedChunks, tmpChunks);
 
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
     {
-      concurrency::parallel_for(size_t(0), size_t(sum.CompressedChunks.size()), [sum, compressedChunksData, decompressedData, startOffset](size_t idx) {
-        const FCompressedChunk& chunk = sum.CompressedChunks[idx];
+      concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedData, startOffset](size_t idx) {
+        const FCompressedChunk& chunk = chunks[idx];
         uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
         LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
       });
     }
     catch (const std::exception& e)
     {
-      for (size_t idx = 0; idx < sum.CompressedChunks.size(); ++idx)
+      for (size_t idx = 0; idx < chunks.size(); ++idx)
       {
         free(compressedChunksData[idx]);
       }
@@ -833,7 +835,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       delete stream;
       throw e;
     }
-    for (size_t idx = 0; idx < sum.CompressedChunks.size(); ++idx)
+    for (size_t idx = 0; idx < chunks.size(); ++idx)
     {
       free(compressedChunksData[idx]);
     }
@@ -1265,11 +1267,59 @@ bool FPackage::Save(PackageSaveContext& context)
   {
     if (context.Compression == COMPRESS_None)
     {
-      context.ProgressDescriptionCallback("Reading source...");
-      context.ProgressCallback(0);
+      context.ProgressDescriptionCallback("Saving...");
       FReadStream readStream(Summary.DataPath);
       FILE_OFFSET size = readStream.GetSize();
+
+      FPackageSummary summary;
+      readStream << summary;
+      if (summary.CompressionFlags != context.Compression && summary.CompressedChunks.size() && summary.PackageFlags & PKG_StoreCompressed)
+      {
+        FILE_OFFSET startOffset = INT_MAX;
+        FILE_OFFSET totalDecompressedSize = 0;
+
+        std::vector<FCompressedChunk> chunks = summary.CompressedChunks;
+        void** compressedChunksData = new void* [chunks.size()];
+
+        for (int32 idx = 0; idx < summary.CompressedChunks.size(); ++idx)
+        {
+          FCompressedChunk& chunk = chunks[idx];
+          compressedChunksData[idx] = malloc(chunk.CompressedSize);
+          readStream.SetPosition(chunk.CompressedOffset);
+          readStream.SerializeBytes(compressedChunksData[idx], chunk.CompressedSize);
+          totalDecompressedSize += chunk.DecompressedSize;
+          if (chunk.DecompressedOffset < startOffset)
+          {
+            startOffset = chunk.DecompressedOffset;
+          }
+        }
+        
+        summary.CompressedChunks.clear();
+        summary.CompressionFlags = COMPRESS_None;
+        summary.PackageFlags &= ~PKG_StoreCompressed;
+
+        void* decompressedPackageData = malloc(readStream.GetPosition() + totalDecompressedSize);
+
+        concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedPackageData, startOffset](size_t idx) {
+          const FCompressedChunk& chunk = chunks[idx];
+          uint8* dst = (uint8*)decompressedPackageData + chunk.DecompressedOffset - startOffset;
+          LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+        });
+
+        MWrightStream memStream(decompressedPackageData, readStream.GetPosition() + totalDecompressedSize);
+        memStream << summary;
+
+        FWriteStream writeStream(context.Path);
+        writeStream.SerializeBytes(memStream.GetAllocation(), memStream.GetSize());
+
+        free(decompressedPackageData);
+        return true;
+      }
+
+      // Package is already decompressed. Copy the data.
+
       void* tmp = malloc(size);
+      readStream.SetPosition(0);
       readStream.SerializeBytes(tmp, size);
       if (!readStream.IsGood() || !size)
       {
@@ -1288,15 +1338,99 @@ bool FPackage::Save(PackageSaveContext& context)
         return false;
       }
       free(tmp);
-      context.ProgressCallback(100);
       return true;
     }
-    else
+
+    // Compress the package without fancy object serialization
+
+    FReadStream readStream(Summary.DataPath);
+    if (!readStream.IsGood() || !readStream.GetSize())
     {
-      // TODO: implement package recompression
-      context.Error = "Recompression is not implemented yet!";
+      context.Error = "Failed to read source package.";
       return false;
     }
+
+    FPackageSummary summary;
+    readStream << summary;
+    FILE_OFFSET dataStart = readStream.GetPosition();
+    FILE_OFFSET size = readStream.GetSize() - dataStart;
+
+    // Copy-paste data if the package is already compressed
+    if (summary.CompressedChunks.size() && summary.CompressionFlags == context.Compression)
+    {
+      summary.PackageFlags |= PKG_StoreCompressed;
+
+      FWriteStream writeStream(context.Path);
+      writeStream << summary;
+
+      void* pkgData = malloc(size);
+      readStream.SerializeBytes(pkgData, size);
+      writeStream.SerializeBytes(pkgData, size);
+      free(pkgData);
+
+      if (!writeStream.IsGood() || !readStream.IsGood())
+      {
+        context.Error = "IO error. Check source and destination are available for read and write!";
+        return false;
+      }
+      return true;
+    }
+
+    void* uncompressedData = malloc(size);
+    readStream.SerializeBytes(uncompressedData, size);
+
+    int32	totalChunkCount = (size + COMPRESSED_BLOCK_SIZE - 1) / COMPRESSED_BLOCK_SIZE;
+    summary.CompressedChunks.resize(totalChunkCount);
+    summary.PackageFlags |= PKG_StoreCompressed;
+    summary.CompressionFlags = context.Compression;
+
+    FWriteStream writeStream(context.Path);
+    writeStream << summary;
+
+    const int32 compressedDataSize = 2 * COMPRESSED_BLOCK_SIZE;
+    void* compressedData = malloc(compressedDataSize);
+
+    int32 chunkIndex = 0;
+    int32 remainingSize = size;
+    FILE_OFFSET offset = dataStart;
+
+    while (remainingSize > 0)
+    {
+      int32 sizeToCompress = std::min(remainingSize, COMPRESSED_BLOCK_SIZE);
+      int32 compressedSize = compressedDataSize;
+
+      if (!CompressMemory(COMPRESS_LZO, compressedData, &compressedSize, (uint8*)uncompressedData + offset, sizeToCompress))
+      {
+        context.Error = "Failed to compress data.";
+        free(compressedData);
+        free(uncompressedData);
+        return false;
+      }
+
+      summary.CompressedChunks[chunkIndex].DecompressedSize = sizeToCompress;
+      summary.CompressedChunks[chunkIndex].CompressedOffset = writeStream.GetPosition();
+      summary.CompressedChunks[chunkIndex].DecompressedOffset = offset;
+      offset += sizeToCompress;
+
+      writeStream.SerializeBytes(compressedData, compressedSize);
+
+      summary.CompressedChunks[chunkIndex].CompressedSize = compressedSize;
+      chunkIndex++;
+      remainingSize -= COMPRESSED_BLOCK_SIZE;
+    }
+
+    writeStream.SetPosition(0);
+    writeStream << summary;
+
+    free(compressedData);
+    free(uncompressedData);
+
+    if (!writeStream.IsGood() || !readStream.IsGood())
+    {
+      context.Error = "IO error. Check source and destination are available for read and write!";
+      return false;
+    }
+    return true;
   }
 
   FWriteStream writer(context.Path);
@@ -1306,8 +1440,9 @@ bool FPackage::Save(PackageSaveContext& context)
     return false;
   }
   writer.SetPackage(this);
-  // TODO: we may have no data path for a new packages.
-  FReadStream reader(Summary.DataPath);
+  
+  // Stream of the decompressed temporary source.
+  FReadStream reader(Summary.DataPath); // TODO: we may have no data path for a new packages.
   reader.SetPackage(this);
   if (!reader.IsGood())
   {
@@ -1315,33 +1450,59 @@ bool FPackage::Save(PackageSaveContext& context)
     return false;
   }
 
-  FILE_OFFSET endOffset = 0;
+  // Get the original package summary
+  FPackageSummary summary; // TODO: we may not have source package(e.g. a new packge)
+  reader << summary;
 
-  Summary.ThumbnailTableOffset = 0;
-  Summary.ImportExportGuidsOffset = INDEX_NONE; // Don't bother games linker with the Guid map
-  Summary.ImportGuidsCount = 0;
-  Summary.ExportGuidsCount = 0;
+  if (!Summary.ImportGuidsCount && !Summary.ExportGuidsCount)
+  {
+    // Non-zero values force linker to seek for Guid map.
+    // Set offset to INDEX_NONE to make games linker ignore the map.
+    Summary.ImportExportGuidsOffset = INDEX_NONE;
+  }
+  else
+  {
+    // Never seen these maps in Tera. Need to implement if BHS used them somewhere
+    DBreak();
+    context.Error = "Packages with crosslevel guids are not supported yet!";
+    return false;
+  }
+  
+  Summary.ThumbnailTableOffset = 0; // Cleanup after BHS. They forgot to strip these.
+
   Summary.NamesCount = (uint32)Names.size();
   Summary.ExportsCount = (uint32)Exports.size();
   Summary.ImportsCount = (uint32)Imports.size();
 
-  writer << Summary;
-
-  if (context.PreserveOffsets)
+  Summary.CompressionFlags = context.Compression;
+  if (context.Compression == COMPRESS_None)
   {
-    for (FObjectExport* exp : Exports)
-    {
-      if (exp->SerialOffset >= endOffset)
-      {
-        endOffset = exp->SerialOffset + exp->SerialSize;
-      }
-    }
+    Summary.PackageFlags &= ~PKG_StoreCompressed;
   }
   else
   {
-    // TODO: implement
-    context.Error = "Not implemented yet.";
-    return false;
+    Summary.PackageFlags |= PKG_StoreCompressed;
+  }
+
+  Summary.PackageFlags &= ~PKG_Dirty;
+
+  writer << Summary;
+
+  std::vector<FObjectExport*> sortedExports = Exports;
+  std::sort(sortedExports.begin(), sortedExports.end(), [](FObjectExport* a, FObjectExport* b) {
+    return a->SerialOffset < b->SerialOffset;
+  });
+
+  // Check if header size did change and we honor offsets
+  bool moveTables = context.PreserveOffsets && (Summary.NamesOffset != writer.GetPosition());
+
+  if (!moveTables && context.PreserveOffsets)
+  {
+    // TODO: exports have non-const size. Table can become larger even if elements count is lower. Fixed calculation
+    if (Summary.ExportsCount > summary.ExportsCount || Summary.ImportsCount > summary.ImportsCount)
+    {
+      moveTables = true;
+    }
   }
 
   Summary.NamesOffset = writer.GetPosition();
@@ -1350,11 +1511,15 @@ bool FPackage::Save(PackageSaveContext& context)
     writer << e;
   }
 
-  bool moveTables = false;
-  if (context.PreserveOffsets && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+  if (!moveTables && context.PreserveOffsets && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
   {
+    // Names table become larger. We need to move tables to preserve offsets
     moveTables = true;
-    // Prevent the game from buffering export data if we are moving tables to the end
+  }
+
+  if (moveTables)
+  {
+    // Prevent the game from buffering whole package if we are moving tables to the end.
     Summary.HeaderSize = writer.GetPosition();
   }
   else
@@ -1379,15 +1544,7 @@ bool FPackage::Save(PackageSaveContext& context)
     Summary.HeaderSize = writer.GetPosition();
   }
 
-  FILE_OFFSET exportsStart = INT_MAX;
-  for (FObjectExport* exp : Exports)
-  {
-    if (exp->SerialOffset < exportsStart)
-    {
-      exportsStart = exp->SerialOffset;
-    }
-  }
-
+  FILE_OFFSET exportsStart = sortedExports.front()->SerialOffset;
   auto appendZeroed = [](FStream& s, FILE_OFFSET size) {
     void* tmp = calloc(size, 1);
     s.SerializeBytes(tmp, size);
@@ -1401,7 +1558,8 @@ bool FPackage::Save(PackageSaveContext& context)
   else if (exportsStart < writer.GetPosition())
   {
     DBreakIf(context.PreserveOffsets);
-    // Package has too much changes in the header. Can't save it with the PreserveOffsets flag
+    context.Error = "Package has too much changes in the header. Can't save it with the 'Preserve Offsets' flag";
+    return false;
   }
 
   context.MaxProgressCallback(Exports.size());
@@ -1409,7 +1567,8 @@ bool FPackage::Save(PackageSaveContext& context)
 
   context.ProgressDescriptionCallback("Serializing objects...");
   int32 idx = 0;
-  for (FObjectExport* exp : Exports)
+
+  for (FObjectExport* exp : sortedExports)
   {
     if (exp->ObjectFlags & RF_Marked)
     {
@@ -1427,9 +1586,10 @@ bool FPackage::Save(PackageSaveContext& context)
     }
     else
     {
-      if (context.PreserveOffsets)
+      if (context.PreserveOffsets && writer.GetPosition() != exp->SerialOffset)
       {
-        DBreakIf(writer.GetPosition() != exp->SerialOffset);
+        DBreak();
+        LogE("Failed to preserve offset of %s", exp->GetObjectName().C_str());
       }
       if (!context.FullRecook)
       {
@@ -1477,7 +1637,7 @@ bool FPackage::Save(PackageSaveContext& context)
 
   if (context.PreserveOffsets)
   {
-    for (FObjectExport* exp : Exports)
+    for (FObjectExport* exp : sortedExports)
     {
       if (exp->ObjectFlags & RF_Marked)
       {
@@ -1490,12 +1650,18 @@ bool FPackage::Save(PackageSaveContext& context)
     }
   }
 
+  // Apply header changes
   writer.SetPosition(0);
   writer << Summary;
 
+  // Unmark objects and apply exports table changes 
   writer.SetPosition(Summary.ExportsOffset);
   for (FObjectExport* exp : Exports)
   {
+    if (exp->ObjectFlags & RF_Marked)
+    {
+      exp->ObjectFlags &= ~RF_Marked;
+    }
     writer << *exp;
   }
 

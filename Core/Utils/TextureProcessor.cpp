@@ -119,19 +119,17 @@ struct TPOutputHandler : public nvtt::OutputHandler {
   bool Ok = true;
 };
 
-nvtt::ResizeFilter MipFilterTypeToNvtt(MipFilterType type)
+nvtt::MipmapFilter MipFilterTypeToNvtt(MipFilterType type)
 {
   switch (type)
   {
   case MipFilterType::Box:
-    return nvtt::ResizeFilter_Box;
+    return nvtt::MipmapFilter_Box;
   case MipFilterType::Triangle:
-    return nvtt::ResizeFilter_Triangle;
+    return nvtt::MipmapFilter_Triangle;
   case MipFilterType::Kaiser:
-    return nvtt::ResizeFilter_Kaiser;
   default:
-  case MipFilterType::Mitchell:
-    return nvtt::ResizeFilter_Mitchell;
+    return nvtt::MipmapFilter_Kaiser;
   }
 }
 
@@ -200,7 +198,7 @@ bool TextureProcessor::BytesToFile()
     {
       fmt = nvtt::Format_DXT5;
     }
-    if (!surface.setImage2D(fmt, nvtt::Decoder_D3D10, InputDataSizeX, InputDataSizeY, InputData))
+    if (!surface.setImage2D(fmt, nvtt::Decoder_D3D9, InputDataSizeX, InputDataSizeY, InputData))
     {
       Error = "Texture Processor: failed to create input surface (";
       Error += "DXT1:" + std::to_string(InputDataSizeX) + "x" + std::to_string(InputDataSizeY) + ")";
@@ -373,15 +371,11 @@ bool TextureProcessor::FileToBytes()
   int32 idx = 0;
   int32 sizeX = FreeImage_GetWidth(holder.bmp);
   int32 sizeY = FreeImage_GetHeight(holder.bmp);
-  int32 minX = 2;
-  int32 minY = 2;
+  const int32 minX = 4; // TODO: replace with PF block width & height
+  const int32 minY = minX;
   OutputDataSize = 0;
-  while (sizeX > minX && sizeY > minY && idx < TPOutputHandler::MaxMipCount)
+  while (sizeX >= minX && sizeY >= minY && idx < TPOutputHandler::MaxMipCount)
   {
-    if (sizeX != surface.width() || sizeY != surface.height())
-    {
-      surface.resize(sizeX, sizeY, 1, MipFilterTypeToNvtt(MipFilter));
-    }
     if (!context.compress(surface, 0, idx, compressionOptions, outputOptions))
     {
       Error = "Texture Processor: failed to compress the bitmap (";
@@ -394,8 +388,12 @@ bool TextureProcessor::FileToBytes()
 
     if (GenerateMips)
     {
-      sizeX /= 2;
-      sizeY /= 2;
+      if (!surface.buildNextMipmap(MipFilterTypeToNvtt(MipFilter), minX))
+      {
+        break;
+      }
+      sizeX = surface.width();
+      sizeY = surface.height();
       idx++;
     }
     else

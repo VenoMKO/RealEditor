@@ -1,5 +1,7 @@
 #include "TextureTravaller.h"
 #include <Tera/UTexture.h>
+#include <Tera/FPackage.h>
+#include <Tera/FObjectResource.h>
 
 void TextureTravaller::SetFormat(EPixelFormat format)
 {
@@ -60,6 +62,9 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     return false;
   }
 
+  // TODO: patch Resource allocation
+  texture->GetPackage()->GetTextureAllocations().TextureTypes.clear();
+
   if (Format != texture->Format)
   {
     texture->Format = Format;
@@ -105,6 +110,13 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     }
   }
 
+  if (texture->TextureFileCacheNameProperty)
+  {
+    texture->Properties.erase(std::remove(texture->Properties.begin(), texture->Properties.end(), texture->TextureFileCacheNameProperty), texture->Properties.end());
+    texture->TextureFileCacheName = nullptr;
+    texture->TextureFileCacheNameProperty = nullptr;
+  }
+
   if (texture->FirstResourceMemMip != 0)
   {
     texture->FirstResourceMemMip = 0;
@@ -113,6 +125,7 @@ bool TextureTravaller::Visit(UTexture2D* texture)
       texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
     }
   }
+  texture->Export->ExportFlags &= ~EF_ForcedExport;
 
   texture->DeleteStorage();
   texture->TextureResource = nullptr;
