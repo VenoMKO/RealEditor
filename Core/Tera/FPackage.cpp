@@ -602,12 +602,13 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
 {
   CompositPackageMap.clear();
   CompositPackageList.clear();
-  std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
-  storagePath.replace_extension(".re");
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / CompositePackageMapperName;
   encryptedPath.replace_extension(".dat");
-  LogI("Reading %s storage...", CompositePackageMapperName);
 
+#if CACHE_COMPOSITE_MAP
+  LogI("Reading %s storage...", CompositePackageMapperName);
+  std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
+  storagePath.replace_extension(".re");
   uint64 fts = GetFileTime(encryptedPath.wstring());
   if (std::filesystem::exists(storagePath) && !rebuild)
   {
@@ -628,6 +629,7 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
       LogW("%s storage is outdated! Updating...", CompositePackageMapperName);
     }
   }
+#endif
 
   FString buffer;
   DecryptMapper(encryptedPath, buffer);
@@ -672,10 +674,12 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
     posEnd++;
   }
 
+#if CACHE_COMPOSITE_MAP
   LogI("Saving %s storage", CompositePackageMapperName);
   FWriteStream s(storagePath.wstring());
   s << fts;
   s << CompositPackageMap;
+#endif
 
 #if DUMP_MAPPERS
   std::filesystem::path debugPath = storagePath;
