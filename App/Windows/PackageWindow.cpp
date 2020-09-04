@@ -119,6 +119,11 @@ wxString PackageWindow::GetPackagePath() const
   return wxString(Package->GetSourcePath().String());
 }
 
+void PackageWindow::SelectObject(const wxString& objectPath)
+{
+
+}
+
 bool PackageWindow::OnObjectLoaded(const std::string& id)
 {
 	auto editors = Editors;

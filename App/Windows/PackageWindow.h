@@ -27,6 +27,8 @@ public:
 	}
   wxString GetPackagePath() const;
 
+	void SelectObject(const wxString& objectPath);
+
 	bool OnObjectLoaded(const std::string& id);
 	void OnUpdateProperties(wxCommandEvent&);
 	void FixOSG();

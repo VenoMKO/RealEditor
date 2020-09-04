@@ -7,6 +7,8 @@ public:
   using GenericEditor::GenericEditor;
 
   void OnObjectLoaded() override;
+
+  void PopulateToolBar(wxToolBar* toolbar) override;
 private:
   UObjectRedirector* Redirector = nullptr;
 };

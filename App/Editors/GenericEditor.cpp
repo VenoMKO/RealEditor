@@ -5,6 +5,7 @@
 #include <Tera/ALog.h>
 #include <Tera/UObject.h>
 #include <Tera/FStream.h>
+#include <Tera/FPackage.h>
 
 #include "ObjectRedirectorEditor.h"
 #include "TextureEditor.h"
@@ -85,6 +86,15 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
     toolbar->AddTool(eID_Import, "Import", wxBitmap("#113", wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
     toolbar->FindById(eID_Import)->Enable(false);
   }
+
+  if (Object && !Object->GetPackage()->IsComposite())
+  {
+    CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
+    if (CompositeObjectPath.size())
+    {
+      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containig this object...");
+    }
+  }
 }
 
 void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
@@ -97,6 +107,11 @@ void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
   else if (e.GetId() == eID_Import)
   {
     OnImportClicked(e);
+    e.Skip(true);
+  }
+  else if (e.GetId() == eID_Composite)
+  {
+    OnSourceClicked(e);
     e.Skip(true);
   }
 }
@@ -136,4 +151,10 @@ void GenericEditor::OnImportClicked(wxCommandEvent& e)
   }
   // TODO: import data
   // Check if called by a redirector. In this case with might want to pull the object in this package and remove the redirector
+}
+
+void GenericEditor::OnSourceClicked(wxCommandEvent& e)
+{
+  wxString pkg = CompositeObjectPath.substr(0, CompositeObjectPath.find('.'));
+  ((App*)wxTheApp)->OpenNamedPackage(pkg, CompositeObjectPath);
 }

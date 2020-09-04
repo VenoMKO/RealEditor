@@ -50,7 +50,7 @@ class App : public wxApp {
 public:
   ~App();
   bool OpenPackage(const wxString& path);
-  bool OpenNamedPackage(const wxString& name);
+  bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   wxString ShowOpenCompositeDialog(wxWindow* parent);
   void OnOpenPackage(wxCommandEvent& e);

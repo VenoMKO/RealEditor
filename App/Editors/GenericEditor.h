@@ -5,6 +5,7 @@
 enum ToolEventID : int {
   eID_Export = 0,
   eID_Import,
+  eID_Composite,
   eID_Texture2D_Channel_R,
   eID_Texture2D_Channel_G,
   eID_Texture2D_Channel_B,
@@ -48,6 +49,8 @@ public:
 
   virtual void OnImportClicked(wxCommandEvent& e);
 
+  virtual void OnSourceClicked(wxCommandEvent& e);
+
 protected:
   virtual void OnObjectSet()
   {
@@ -63,6 +66,7 @@ protected:
 
 protected:
   UObject* Object = nullptr;
+  wxString CompositeObjectPath;
   PackageWindow* Window = nullptr;
   bool Loading = false;
 };

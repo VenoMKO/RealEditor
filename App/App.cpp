@@ -314,7 +314,7 @@ bool App::OpenPackage(const wxString& path)
   return true;
 }
 
-bool App::OpenNamedPackage(const wxString& name)
+bool App::OpenNamedPackage(const wxString& name, const wxString selection)
 {
   for (const auto window : PackageWindows)
   {
