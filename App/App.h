@@ -101,6 +101,7 @@ private:
   wxSingleInstanceChecker* InstanceChecker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;
+  bool ShowedStartupCfg = false;
   std::vector<PackageWindow*> PackageWindows;
   std::vector<wxString> OpenList;
 

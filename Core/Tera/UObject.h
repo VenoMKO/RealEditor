@@ -164,6 +164,8 @@ public:
   {
     Properties.push_back(property);
   }
+
+  void RemoveProperty(FPropertyTag* tag);
   
   // Object initialization. Wont modify package's object tree!
   void SetOuter(UObject* outer)

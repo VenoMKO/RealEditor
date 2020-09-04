@@ -77,6 +77,17 @@ FILE_OFFSET UObject::GetDataSize() const
   return RawDataOffset ? (GetSerialOffset() + GetSerialSize() - RawDataOffset) : -1;
 }
 
+void UObject::RemoveProperty(FPropertyTag* tag)
+{
+  if (!tag)
+  {
+    return;
+  }
+  // Store offset to the field and null it too
+  Properties.erase(std::remove(Properties.begin(), Properties.end(), tag), Properties.end());
+  delete tag;
+}
+
 void* UObject::GetRawData()
 {
   if (RawData)

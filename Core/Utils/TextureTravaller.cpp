@@ -114,7 +114,7 @@ bool TextureTravaller::Visit(UTexture2D* texture)
 
   if (texture->TextureFileCacheNameProperty)
   {
-    texture->Properties.erase(std::remove(texture->Properties.begin(), texture->Properties.end(), texture->TextureFileCacheNameProperty), texture->Properties.end());
+    texture->RemoveProperty(texture->TextureFileCacheNameProperty);
     texture->TextureFileCacheName = nullptr;
     texture->TextureFileCacheNameProperty = nullptr;
   }

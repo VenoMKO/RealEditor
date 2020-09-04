@@ -193,7 +193,7 @@ void App::OnShowSettings(wxCommandEvent& e)
   SettingsWindow win(Config, newConfig, true);
   if (win.ShowModal() == wxID_OK)
   {
-    if (Config.RootDir != newConfig.RootDir)
+    if (Config.RootDir.Size() && Config.RootDir != newConfig.RootDir)
     {
       wxMessageDialog dialog(nullptr, wxT("Application must be restarted to apply changes. If you click \"OK\" the app will restart!"), wxT("Restart ") + GetAppDisplayName() + wxT("?"), wxOK | wxCANCEL | wxICON_EXCLAMATION);
       if (dialog.ShowModal() != wxID_OK)
@@ -418,6 +418,7 @@ bool App::OnInit()
     cfg.SetConfig(Config);
     cfg.Save();
     Config.WindowRect.Min = { WIN_POS_CENTER, 0 };
+    ShowedStartupCfg = true;
   }
   InstanceChecker = new wxSingleInstanceChecker;
   ALog::SharedLog();
@@ -453,11 +454,8 @@ int App::OnRun()
 
 void App::LoadCore(ProgressWindow* pWindow)
 {
-  PERF_START(AppLoad);
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating root folder...");
-  PERF_START(DirCacheLoad);
   FPackage::SetRootPath(Config.RootDir);
-  PERF_END(DirCacheLoad);
 
   if (pWindow->IsCancelled())
   {
@@ -507,9 +505,7 @@ void App::LoadCore(ProgressWindow* pWindow)
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading persistent data...");
   try
   {
-    PERF_START(PersistentStorageLoad);
     FPackage::LoadPersistentData();
-    PERF_END(PersistentStorageLoad);
   }
   catch (const std::exception& e)
   {
@@ -532,9 +528,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread pkgMapper([&errorMutex, &error] {
       try
       {
-        PERF_START(PkgMapperLoad);
         FPackage::LoadPkgMapper();
-        PERF_END(PkgMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -549,9 +543,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread compositMapper([&errorMutex, &error] {
       try
       {
-        PERF_START(CompositeMapperLoad);
         FPackage::LoadCompositePackageMapper();
-        PERF_END(CompositeMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -566,9 +558,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     std::thread objectRedirectorMapper([&errorMutex, &error] {
       try
       {
-        PERF_START(RedirectorMapperLoad);
         FPackage::LoadObjectRedirectorMapper();
-        PERF_END(RedirectorMapperLoad);
       }
       catch (const std::exception& e)
       {
@@ -584,6 +574,15 @@ void App::LoadCore(ProgressWindow* pWindow)
     compositMapper.join();
     objectRedirectorMapper.join();
 
+    if (error.Size())
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, error.String());
+      pWindow->Destroy();
+      ExitMainLoop();
+      return;
+    }
+
     const auto& compositeMap = FPackage::GetCompositePackageMap();
     CompositePackageNames.reserve(compositeMap.size());
     for (const auto& pair : compositeMap)
@@ -591,21 +590,13 @@ void App::LoadCore(ProgressWindow* pWindow)
       CompositePackageNames.push_back(pair.first.String());
     }
 
-    if (error.Size())
-    {
-      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, error.String());
-      pWindow->Destroy();
-      ExitMainLoop();
-    }
-
     if (pWindow->IsCancelled())
     {
       wxQueueEvent(this, new wxCloseEvent());
       pWindow->Destroy();
       ExitMainLoop();
+      return;
     }
-    PERF_END(AppLoad);
   }
   
 
@@ -617,6 +608,19 @@ void App::LoadCore(ProgressWindow* pWindow)
 void App::DelayLoad(wxCommandEvent&)
 {
   bool anyLoaded = false;
+  if (OpenList.empty())
+  {
+    wxString path = ShowOpenDialog();
+    if (path.size())
+    {
+      OpenList.push_back(path);
+    }
+    else
+    {
+      ExitMainLoop();
+      return;
+    }
+  }
   for (const wxString& path : OpenList)
   {
     if (OpenPackage(path))
@@ -656,6 +660,7 @@ void App::OnLoadError(wxCommandEvent& e)
 {
   wxMessageBox(e.GetString(), "Error!", wxICON_ERROR);
   FPackage::UnloadDefaultClassPackages();
+  ExitMainLoop();
   // TODO: try to recover. Ask for a new root dir and reload.
   /*
   // Retry to load the core with a new path
@@ -685,6 +690,10 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
   }
 
   // If we have no input args, we want to show a Root selector window
+  if (ShowedStartupCfg)
+  {
+    return true;
+  }
   FAppConfig newConfig;
   SettingsWindow win(Config, newConfig, false);
   if (win.ShowModal() == wxID_OK)
@@ -694,12 +703,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     cfg.SetConfig(Config);
     cfg.Save();
 
-    wxString path = ShowOpenDialog();
-    if (path.size())
-    {
-      OpenList.push_back(path);
-      return true;
-    }
+    return true;
   }
   return false;
 }

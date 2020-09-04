@@ -46,7 +46,7 @@ std::unordered_set<FString> FPackage::MissingClasses;
 std::mutex FPackage::MissingPackagesMutex;
 std::vector<FString> FPackage::MissingPackages;
 
-uint16 FPackage::CoreVersion = VER_TERA_CLASSIC;
+uint16 FPackage::CoreVersion = 0;
 
 void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::unordered_map<FString, FString>& tfcCache)
 {
@@ -532,6 +532,10 @@ void FPackage::LoadClassPackage(const FString& name)
     }
 #endif
   }
+  else
+  {
+    UThrow("Failed to load: %s!", name.C_str());
+  }
 }
 
 void FPackage::UnloadDefaultClassPackages()
@@ -782,7 +786,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   if (!stream->IsGood())
   {
     delete stream;
-    UThrow("Couldn't open the file!");
+    UThrow("Couldn't open the file: %s!", path.FilenameString(true).c_str());
     // Shut up static analyzer
     return nullptr;
   }
@@ -791,6 +795,10 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   sum.DataPath = path;
   sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   (*stream) << sum;
+  if (CoreVersion && sum.GetFileVersion() != CoreVersion)
+  {
+    UThrow("%s version (%d/%d) differs from your game version(%d)", sum.PackageName.C_str(), sum.GetFileVersion(), sum.GetLicenseeVersion(), CoreVersion);
+  }
   if (sum.CompressedChunks.size())
   {
     FILE_OFFSET startOffset = INT_MAX;
