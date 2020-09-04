@@ -223,5 +223,8 @@
     <Image Include="Resources\AppIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\Btn_Forward.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -62,6 +62,8 @@ IDB_EXPORT              RCDATA                  "Resources\\Btn_Export.png"
 
 IDB_IMPORT              RCDATA                  "Resources\\Btn_Import.png"
 
+IDB_FORWARD             RCDATA                  "Resources\\Btn_Forward.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

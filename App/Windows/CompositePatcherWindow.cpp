@@ -12,7 +12,7 @@ enum ControlElementId {
 	Patch
 };
 
-CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent)
+CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent, const wxString& sourceName)
   : wxDialog(parent, wxID_ANY, wxT("Patch composite package map"), wxDefaultPosition, wxSize(540, 277))
 	, Patcher(FPackage::GetCompositePackageMapPath().WString())
 {
@@ -142,6 +142,8 @@ CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent)
 	CompositeNameField->Enable(false);
 	OffsetField->Enable(false);
 	SizeField->Enable(false);
+
+	SourceField->SetValue(sourceName);
 }
 
 void CompositePatcherWindow::OnSourceFieldText(wxCommandEvent&)

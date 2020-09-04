@@ -491,7 +491,7 @@ void PackageWindow::OnMaximized(wxMaximizeEvent& e)
 
 void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
 {
-	CompositePatcherWindow patcher(this);
+	CompositePatcherWindow patcher(this, Package->GetPackageName().WString());
 	patcher.ShowModal();
 }
 

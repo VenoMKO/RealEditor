@@ -4,7 +4,7 @@
 
 class CompositePatcherWindow : public wxDialog {
 public:
-	CompositePatcherWindow(wxWindow* parent);
+	CompositePatcherWindow(wxWindow* parent, const wxString& sourceName = wxEmptyString);
 
 protected:
 	void OnSourceFieldText(wxCommandEvent&);

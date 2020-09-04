@@ -24,7 +24,7 @@ void ObjectRedirectorEditor::PopulateToolBar(wxToolBar* toolbar)
     CompositeObjectPath = Object->GetObjectPath().WString();
     if (CompositeObjectPath.size())
     {
-      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containig this object...");
+      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containig this object...");
     }
   }
 }
