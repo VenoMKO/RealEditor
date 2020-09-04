@@ -248,6 +248,16 @@ FString FPackage::GetCompositePackageMapPath()
   return encryptedPath.wstring();
 }
 
+FString FPackage::GetObjectCompositePath(const FString& path)
+{
+  if (path.Size() && PkgMap.count(path.ToUpper()))
+  {
+    FString result = PkgMap.at(path.ToUpper());
+    return result.Substr(0, result.Find("."));
+  }
+  return FString();
+}
+
 void FPackage::UpdateDirCache()
 {
   LogI("Building directory cache: \"%s\"", RootDir.C_str());
@@ -578,7 +588,7 @@ void FPackage::LoadPkgMapper(bool rebuild)
     {
       UThrow("%s is corrupted!", PackageMapperName);
     }
-    FString key = buffer.Substr(prevPos, sepPos - prevPos);
+    FString key = buffer.Substr(prevPos, sepPos - prevPos).ToUpper();
     FString value = buffer.Substr(sepPos + 1, pos - sepPos - 1);
     PkgMap.emplace(key, value);
     pos++;

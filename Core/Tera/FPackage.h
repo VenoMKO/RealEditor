@@ -62,6 +62,8 @@ public:
 	static const std::unordered_map<FString, std::vector<FString>>& GetCompositePackageList();
 	// Get composite package map .dat path
 	static FString GetCompositePackageMapPath();
+	// Get composite package name for an object path
+	static FString GetObjectCompositePath(const FString& path);
 	// Update DirCache
 	static void UpdateDirCache();
 
