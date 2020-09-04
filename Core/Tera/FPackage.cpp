@@ -1598,6 +1598,7 @@ bool FPackage::Save(PackageSaveContext& context)
         reader.SerializeBytes(data, exp->SerialSize);
         exp->SerialOffset = writer.GetPosition();
         writer.SerializeBytes(data, exp->SerialSize);
+        free(data);
       }
       else
       {

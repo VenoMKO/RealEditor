@@ -231,12 +231,23 @@ void CompositePatcherWindow::OnPatchClicked(wxCommandEvent&)
 	CompositePatcher& patcher = Patcher;
 	const std::string source = SourceField->GetValue().ToStdString();
 
-	if (!patcher.IsLoaded())
+	try
 	{
-		patcher.Load();
+		if (!patcher.IsLoaded())
+		{
+			patcher.Load();
+		}
+		patcher.Patch(source, entry);
+		patcher.Apply();
 	}
-	patcher.Patch(source, entry);
-	patcher.Apply();
+	catch (const std::exception& e)
+	{
+		wxMessageBox(e.what(), wxT("Error!"), wxICON_ERROR);
+		EndModal(wxID_CANCEL);
+		return;
+	}
+	wxMessageBox(wxT("Composite package map has been patched."), wxT("Done!"), wxICON_INFORMATION);
+	EndModal(wxID_OK);
 }
 
 wxBEGIN_EVENT_TABLE(CompositePatcherWindow, wxDialog)

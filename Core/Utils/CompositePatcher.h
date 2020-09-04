@@ -39,6 +39,9 @@ public:
   // Encrypt and write .dat file. Throws.
   void Apply();
 
+  // Delete the entry (and file if the entry was the last one)
+  bool DeleteEntry(const std::string& compositePackageName);
+
   // Patch and entry with the compositePackageName by using dest as a reference. Returns old entry with the filename. Throws.
   // If dest.Offset is 0, acts like a Delete. Removes an entry with the name compositePackageName without adding/changing anything
   std::string Patch(const std::string& compositePackageName, const CompositeEntry& dest);

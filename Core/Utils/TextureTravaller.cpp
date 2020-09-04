@@ -64,6 +64,8 @@ bool TextureTravaller::Visit(UTexture2D* texture)
 
   // TODO: patch Resource allocation
   texture->GetPackage()->GetTextureAllocations().TextureTypes.clear();
+  // Invalidate texture cache
+  texture->TextureFileCacheGuid = FGuid();
 
   if (Format != texture->Format)
   {
@@ -125,6 +127,7 @@ bool TextureTravaller::Visit(UTexture2D* texture)
       texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
     }
   }
+  // We pulled all the data, so it should be safe to turn off fexp flag
   texture->Export->ExportFlags &= ~EF_ForcedExport;
 
   texture->DeleteStorage();

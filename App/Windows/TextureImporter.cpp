@@ -168,7 +168,8 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	bSizer14 = new wxBoxSizer(wxVERTICAL);
 
 	GenMips = new wxCheckBox(m_panel9, ControlElementId::MipGen, wxT("Generate mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
-	GenMips->SetValue(true);
+	GenMips->SetValue(false);
+	GenMips->Enable(false);
 	bSizer14->Add(GenMips, 0, wxALL, 5);
 
 	wxStaticText* m_staticText20;
@@ -195,9 +196,9 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	MipGenMethodChoices.Add("Box");
 	MipGenMethodChoices.Add("Triangle");
 	MipGenMethodChoices.Add("Kaiser");
-	MipGenMethodChoices.Add("Mitchell");
 	MipFilter = new wxChoice(m_panel9, ControlElementId::MipFilter, wxDefaultPosition, wxDefaultSize, MipGenMethodChoices, 0);
-	MipFilter->SetSelection(3);
+	MipFilter->SetSelection(2);
+	MipFilter->Enable(false);
 	bSizer20->Add(MipFilter, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
@@ -246,6 +247,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	AddressXChoices.Add("Mirror");
 	AddressX = new wxChoice(m_panel4, ControlElementId::AddressX, wxDefaultPosition, wxDefaultSize, AddressXChoices, 0);
 	AddressX->SetSelection(TextureAddressToWx(addressX));
+	AddressX->Enable(false);
 	bSizer6->Add(AddressX, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
@@ -265,6 +267,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	AddressYChoices.Add("Mirror");
 	AddressY = new wxChoice(m_panel4, ControlElementId::AddressY, wxDefaultPosition, wxDefaultSize, AddressYChoices, 0);
 	AddressY->SetSelection(TextureAddressToWx(addressY));
+	AddressY->Enable(false);
 	bSizer61->Add(AddressY, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 

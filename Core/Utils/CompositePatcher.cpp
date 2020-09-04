@@ -1,6 +1,7 @@
 #include "CompositePatcher.h"
 
 #include <array>
+#include <string_view>
 
 const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
 const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
@@ -101,6 +102,50 @@ void CompositePatcher::Apply()
   EncryptMapper(Path, Decrypted);
 }
 
+bool CompositePatcher::DeleteEntry(const std::string& compositePackageName)
+{
+  std::string prefix = compositePackageName + '.';
+  size_t start = Decrypted.find(prefix);
+  if (start == std::string::npos)
+  {
+    return false;
+  }
+  size_t end = Decrypted.find('|', start);
+  if (end == std::string::npos)
+  {
+    return false;
+  }
+  
+  end++;
+
+  if (start >= end)
+  {
+    return false;
+  }
+
+  memmove(&Decrypted[start], &Decrypted[end], Decrypted.size() - end);
+  Decrypted.resize(Decrypted.size() - (end - start));
+
+  if (Decrypted[start] == '!')
+  {
+    // This as the last file entry. Remove the empty file with trailing "?!"
+    size_t fstart;
+    size_t fend = Decrypted.rfind('?', start);
+    if (fend == std::string::npos)
+    {
+      return false;
+    }
+    fstart = Decrypted.rfind('!', fend);
+    if (fstart == std::string::npos)
+    {
+      fstart = 0;
+    }
+    memmove(&Decrypted[fstart], &Decrypted[start], Decrypted.size() - start);
+    Decrypted.resize(Decrypted.size() - (start - fstart));
+  }
+  return false;
+}
+
 std::string CompositePatcher::Patch(const std::string& compositePackageName, const CompositeEntry & dest)
 {
   if (Decrypted.empty())
@@ -140,11 +185,7 @@ std::string CompositePatcher::Patch(const std::string& compositePackageName, con
     {
       fstart = 0;
     }
-    else
-    {
-      fstart++;
-    }
-    previousFilename = Decrypted.substr(fstart, fend - fstart);
+    previousFilename = Decrypted.substr(fstart + 1, fend - fstart - 1);
   }
 
   if (!dest.Size)
@@ -195,7 +236,7 @@ std::string CompositePatcher::Patch(const std::string& compositePackageName, con
     if (Decrypted[start] == '!')
     {
       // This as the last file entry. Remove the empty file with trailing "?!"
-      memmove(&Decrypted[fstart], &Decrypted[start + 1], Decrypted.size() - start);
+      memmove(&Decrypted[fstart], &Decrypted[start], Decrypted.size() - start);
       Decrypted.resize(Decrypted.size() - (start - fstart));
     }
 
@@ -236,6 +277,5 @@ std::string CompositePatcher::Patch(const std::string& compositePackageName, con
       memcpy(&Decrypted[entryStart], &newEntry[0], newEntry.size());
     }
   }
-
   return previousFilename + previousEntry;
 }

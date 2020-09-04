@@ -237,6 +237,7 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
 
       remainingSize -= COMPRESSED_BLOCK_SIZE;
     }
+    free(buffer);
 
     FILE_OFFSET endPosition = GetPosition();
     SetPosition(startPosition);
