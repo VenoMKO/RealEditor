@@ -956,6 +956,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
       package->CompositeSourcePath = packagePath.WString();
       package->Summary.PackageName = name;
       package->Composite = true;
+      package->AllowForcedExportResolving = false;
       return package;
     }
   }

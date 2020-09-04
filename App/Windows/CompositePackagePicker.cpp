@@ -41,13 +41,12 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
-	CancelButton = new wxButton(m_panel2, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer3->Add(CancelButton, 0, wxALL, 5);
-
 	OpenButton = new wxButton(m_panel2, wxID_OK, wxT("Open"), wxDefaultPosition, wxDefaultSize, 0);
 	OpenButton->Enable(false);
 	bSizer3->Add(OpenButton, 0, wxALL, 5);
 
+	CancelButton = new wxButton(m_panel2, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+	bSizer3->Add(CancelButton, 0, wxALL, 5);
 
 	m_panel2->SetSizer(bSizer3);
 	m_panel2->Layout();
