@@ -97,10 +97,12 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
   {
     tfcCache[item.first] = W2A(item.second.wstring());
   }
+#if CACHE_S1GAME_CONTENTS
   std::filesystem::path listPath = fspath / PackageListName;
   FWriteStream s(listPath.wstring());
   s << dirCache;
   s << tfcCache;
+#endif
 }
 
 void EncryptMapper(const FString& decrypted, std::vector<char>& encrypted)
@@ -195,6 +197,7 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
 void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
+#if CACHE_S1GAME_CONTENTS
   std::filesystem::path listPath = std::filesystem::path(path.WString()) / PackageListName;
   FReadStream s(listPath.wstring());
   if (s.IsGood())
@@ -203,6 +206,7 @@ void FPackage::SetRootPath(const FString& path)
     s << TfcCache;
     return;
   }
+#endif
   LogI("Building directory cache: \"%s\"", path.C_str());
   BuildPackageList(path, DirCache, TfcCache);
   LogI("Done. Found %ld packages", DirCache.size());

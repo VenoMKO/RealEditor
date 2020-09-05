@@ -17,6 +17,7 @@ static const float APP_VER = 0.20f;
 #define ALLOW_UI_PKG_SAVE 1
 
 #define CACHE_COMPOSITE_MAP 0
+#define CACHE_S1GAME_CONTENTS 0
 
 #if _DEBUG
 // DUMP_PATH should be set in the ENV

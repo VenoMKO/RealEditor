@@ -454,7 +454,7 @@ int App::OnRun()
 
 void App::LoadCore(ProgressWindow* pWindow)
 {
-  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating root folder...");
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating S1Game folder contents...");
   FPackage::SetRootPath(Config.RootDir);
 
   if (pWindow->IsCancelled())
