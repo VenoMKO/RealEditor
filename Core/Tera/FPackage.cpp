@@ -830,7 +830,9 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
 
     std::vector<FCompressedChunk> chunks;
     std::swap(sum.CompressedChunks, chunks);
+    auto tmpSize = sum.SourceSize;
     (*tempStream) << sum;
+    sum.SourceSize = tmpSize;
 
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
@@ -1105,6 +1107,7 @@ void FPackage::Load()
   {
     s.SetPosition(Summary.NamesOffset);
   }
+  AllowForcedExportResolving = false;
   Names.clear();
   Summary.NamesSize = s.GetPosition();
   for (uint32 idx = 0; idx < Summary.NamesCount; ++idx)

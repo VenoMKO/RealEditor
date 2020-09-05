@@ -175,6 +175,12 @@ public:
 		return Summary.Guid;
 	}
 
+	// Get package size. If package was decompressed, return compressed size!
+	inline size_t GetSourceSize() const
+	{
+		return Summary.SourceSize;
+	}
+
 	// Get name at index
 	inline FString GetIndexedName(NAME_INDEX index) const
 	{

@@ -1,4 +1,5 @@
 #include "CompositePatcherWindow.h"
+#include "PackageWindow.h"
 #include "../App.h"
 
 #include <wx/statline.h>
@@ -9,6 +10,7 @@
 enum ControlElementId {
 	Select = wxID_HIGHEST + 1,
 	Source,
+	Size,
 	Patch
 };
 
@@ -109,6 +111,8 @@ CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent, const wxString&
 	SizeField = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
 	bSizer231->Add(SizeField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
+	SizeButton = new wxButton(this, ControlElementId::Size, wxT("Get Size"), wxDefaultPosition, wxDefaultSize, 0);
+	bSizer231->Add(SizeButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
 	bSizer12->Add(bSizer231, 0, wxEXPAND, 5);
 
@@ -142,7 +146,7 @@ CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent, const wxString&
 	CompositeNameField->Enable(false);
 	OffsetField->Enable(false);
 	SizeField->Enable(false);
-
+	SizeButton->Enable(false);
 	SourceField->SetValue(sourceName);
 }
 
@@ -158,6 +162,7 @@ void CompositePatcherWindow::OnSourceFieldText(wxCommandEvent&)
 		CompositeNameField->Enable(enabled);
 		OffsetField->Enable(enabled);
 		SizeField->Enable(enabled);
+		SizeButton->Enable(enabled);
 	}
 }
 
@@ -186,6 +191,7 @@ void CompositePatcherWindow::OnSelectClicked(wxCommandEvent&)
 	CompositeNameField->Enable(true);
 	OffsetField->Enable(true);
 	SizeField->Enable(true);
+	SizeButton->Enable(true);
 
 	FCompositePackageMapEntry info = map.at(name);
 	ObjectField->SetValue(info.ObjectPath.String());
@@ -252,9 +258,16 @@ void CompositePatcherWindow::OnPatchClicked(wxCommandEvent&)
 	EndModal(wxID_OK);
 }
 
+void CompositePatcherWindow::OnSizeClicked(wxCommandEvent&)
+{
+	FPackage* package = ((PackageWindow*)GetParent())->GetPackage().get();
+	SizeField->SetValue(wxString::Format("%d", (int)package->GetSourceSize()));
+}
+
 wxBEGIN_EVENT_TABLE(CompositePatcherWindow, wxDialog)
 EVT_BUTTON(ControlElementId::Select, CompositePatcherWindow::OnSelectClicked)
 EVT_TEXT(ControlElementId::Source, CompositePatcherWindow::OnSourceFieldText)
 EVT_TEXT_ENTER(ControlElementId::Source, CompositePatcherWindow::OnSourceFieldEnter)
 EVT_BUTTON(ControlElementId::Patch, CompositePatcherWindow::OnPatchClicked)
+EVT_BUTTON(ControlElementId::Size, CompositePatcherWindow::OnSizeClicked)
 wxEND_EVENT_TABLE()

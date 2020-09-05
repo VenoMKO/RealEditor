@@ -163,6 +163,8 @@ struct FPackageSummary {
 	std::vector<FString> AdditionalPackagesToCook;
 	FTextureAllocations TextureAllocations;
 
+	size_t SourceSize = 0;
+
 	uint16 GetFileVersion() const
 	{
 		return (FileVersion & 0xFFFF);

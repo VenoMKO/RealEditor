@@ -11,6 +11,7 @@ protected:
 	void OnSourceFieldEnter(wxCommandEvent& e);
 	void OnSelectClicked(wxCommandEvent&);
 	void OnPatchClicked(wxCommandEvent&);
+	void OnSizeClicked(wxCommandEvent&);
 
 protected:
 	CompositePatcher Patcher;
@@ -22,6 +23,7 @@ protected:
 	wxTextCtrl* ObjectField = nullptr;
 	wxTextCtrl* OffsetField = nullptr;
 	wxTextCtrl* SizeField = nullptr;
+	wxButton* SizeButton = nullptr;
 	wxButton* PatchButton = nullptr;
 	wxButton* CancelButton = nullptr;
 	DECLARE_EVENT_TABLE();

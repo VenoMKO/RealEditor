@@ -105,6 +105,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   {
     s << sum.TextureAllocations;
   }
+  sum.SourceSize = s.GetSize();
   return s;
 }
 
