@@ -16,7 +16,11 @@ Currently under development. Some features are not implemented yet or may not wo
 From here you will be presented with an open dialog to select a package you want to view/edit.
 Also, you don't need to start RE every time. After file association, you can double click a *.gpk file in the Explorer.
 
-Guides and tutorials will be added as soon as I finish working on texture import and package save features
+### Wiki
+
+* [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
+* [64 bit modding. How does it work?](https://github.com/VenoMKO/RealEditor/wiki/64-bit-modding.-How-does-it-work%3F)
+* [Guide: Importing a texture](https://github.com/VenoMKO/RealEditor/wiki/Guide:-Importing-a-texture)
 
 ### Features
 
@@ -25,12 +29,12 @@ Guides and tutorials will be added as soon as I finish working on texture import
 * Internal reference support
 * Properties viewer
 * DXT textures viewer
-* DXT textures export to *.png and *.tga
+* DXT textures export to *.png
+* Importing and converting *.png to DXT
+* Saving/Cooking packages
 
 ### Plans
 
-* Importing and converting *.png and *.tga to DXT
-* Saving/Cooking packages
 * Skeletal mesh viewer
 * Static mesh viewer
 * Object detaching & attaching
