@@ -168,8 +168,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	bSizer14 = new wxBoxSizer(wxVERTICAL);
 
 	GenMips = new wxCheckBox(m_panel9, ControlElementId::MipGen, wxT("Generate mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
-	GenMips->SetValue(false);
-	GenMips->Enable(false);
+	GenMips->SetValue(true);
 	bSizer14->Add(GenMips, 0, wxALL, 5);
 
 	wxStaticText* m_staticText20;
@@ -198,7 +197,6 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	MipGenMethodChoices.Add("Kaiser");
 	MipFilter = new wxChoice(m_panel9, ControlElementId::MipFilter, wxDefaultPosition, wxDefaultSize, MipGenMethodChoices, 0);
 	MipFilter->SetSelection(2);
-	MipFilter->Enable(false);
 	bSizer20->Add(MipFilter, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 

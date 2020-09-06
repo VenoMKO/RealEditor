@@ -313,7 +313,6 @@ void FUntypedBulkData::GetCopy(void** dest) const
 
 void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
 {
-  FILE_OFFSET flagsPos = s.GetPosition();
   s << BulkDataFlags;
   s << ElementCount;
   if (s.IsReading())
@@ -332,9 +331,6 @@ void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
   {
     if (BulkDataFlags & BULKDATA_StoreInSeparateFile)
     {
-      s.SetPosition(flagsPos);
-      s << SavedBulkDataFlags;
-      s << SavedElementCount;
       s << BulkDataSizeOnDisk;
       s << BulkDataOffsetInFile;
     }

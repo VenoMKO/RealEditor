@@ -141,11 +141,10 @@ bool TextureTravaller::Visit(UTexture2D* texture)
 
     void* data = malloc(tmip.Size);
     memcpy(data, tmip.Data, tmip.Size);
-    mip->Data = new FByteBulkData(texture->GetPackage(), BULKDATA_SerializeCompressedLZO, tmip.Size, data, true);
+    mip->Data = new FByteBulkData(texture->GetPackage(), BULKDATA_None, tmip.Size, data, true);
     texture->Mips.push_back(mip);
   }
+  
   texture->MarkDirty();
   return true;
 }
-
-
