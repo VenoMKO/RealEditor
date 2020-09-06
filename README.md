@@ -21,6 +21,7 @@ Also, you don't need to start RE every time. After file association, you can dou
 * [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
 * [64 bit modding. How does it work?](https://github.com/VenoMKO/RealEditor/wiki/64-bit-modding.-How-does-it-work%3F)
 * [Guide: Importing a texture](https://github.com/VenoMKO/RealEditor/wiki/Guide:-Importing-a-texture)
+* [Troubleshooting](https://github.com/VenoMKO/RealEditor/wiki/Troubleshooting)
 
 ### Features
 
