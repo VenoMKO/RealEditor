@@ -37,7 +37,7 @@ public:
 
 private:
   FString String;
-  uint64 Flags = 0;
+  uint64 Flags = (RF_TagExp | RF_LoadForClient | RF_LoadForServer | RF_LoadForEdit);
 };
 
 class FName {
