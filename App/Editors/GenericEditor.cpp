@@ -87,7 +87,7 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
     toolbar->FindById(eID_Import)->Enable(false);
   }
 
-  if (Object && !Object->GetPackage()->IsComposite())
+  if (Object)
   {
     CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
     if (CompositeObjectPath.size())
