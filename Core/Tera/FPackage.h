@@ -187,6 +187,20 @@ public:
 		return Names[index].GetString();
 	}
 
+	inline FString GetFolderName() const
+	{
+		return Summary.FolderName;
+	}
+
+	inline void SetFolderName(const FString& name)
+	{
+		if (Summary.FolderName != name)
+		{
+			MarkDirty();
+		}
+		Summary.FolderName = name;
+	}
+
 	// Get name at index
 	inline void GetIndexedName(NAME_INDEX index, FString& output) const
 	{

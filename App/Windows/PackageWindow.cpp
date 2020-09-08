@@ -31,6 +31,8 @@ enum ControlElementId {
 	SettingsWin,
 	LogWin,
 	CompositePatch,
+	DecryptCompositeMap,
+	EncryptCompositeMap,
 	Import,
 	Export,
 	DebugTestCookObj,
@@ -493,6 +495,14 @@ void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
 {
 	CompositePatcherWindow patcher(this, Package->GetPackageName().WString());
 	patcher.ShowModal();
+}
+
+void PackageWindow::OnDecryptClicked(wxCommandEvent&)
+{
+}
+
+void PackageWindow::OnEncryptClicked(wxCommandEvent&)
+{
 }
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)

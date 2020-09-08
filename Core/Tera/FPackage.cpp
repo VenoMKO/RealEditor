@@ -1289,6 +1289,18 @@ void FPackage::Load()
 
 bool FPackage::Save(PackageSaveContext& context)
 {
+  if (IsComposite() && GetFolderName() == NAME_None)
+  {
+    const FString packageName = GetPackageName();
+    const auto& map = FPackage::GetCompositePackageMap();
+    if (map.count(packageName))
+    {
+      const FCompositePackageMapEntry& entry = map.at(packageName);
+      FString incompleteObjectPath = entry.ObjectPath;
+      incompleteObjectPath = incompleteObjectPath.Substr(incompleteObjectPath.Find(".") + 1);
+      SetFolderName("MOD:" + incompleteObjectPath);
+    }
+  }
   if (!IsDirty())
   {
     if (context.Compression == COMPRESS_None)

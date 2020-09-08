@@ -21,7 +21,7 @@ void PackageWindow::InitLayout()
 	fileMenu->Append(m_menuItem4);
 
 	wxMenuItem* m_menuItem5;
-	m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::OpenComposite, wxString(wxT("Open composite...")), wxEmptyString, wxITEM_NORMAL);
+	m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::OpenComposite, wxString(wxT("Open composite...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem5);
 
 	fileMenu->AppendSeparator();
@@ -54,16 +54,25 @@ void PackageWindow::InitLayout()
 	wxMenuItem* m_menuItem64 = new wxMenuItem(m_menu4, ControlElementId::Export, wxString(wxT("Export")), wxEmptyString, wxITEM_NORMAL);
 	m_menuItem64->Enable(false);
 	m_menu4->Append(m_menuItem64);
-	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch composite package map")), wxEmptyString, wxITEM_NORMAL);
+
+	m_menu4->AppendSeparator();
+
+	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch composite map")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem65);
+	wxMenuItem* m_menuItem66 = new wxMenuItem(m_menu4, ControlElementId::DecryptCompositeMap, wxString(wxT("Decrypt composite map...")), wxS("Decrypt the CompositePackageMapper.dat and save it as a text file at a location of your choice."), wxITEM_NORMAL);
+	m_menuItem66->Enable(false);
+	m_menu4->Append(m_menuItem66);
+	wxMenuItem* m_menuItem67 = new wxMenuItem(m_menu4, ControlElementId::EncryptCompositeMap, wxString(wxT("Encrypt composite map...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
+	m_menuItem67->Enable(false);
+	m_menu4->Append(m_menuItem67);
 
 	menuBar->Append(m_menu4, wxT("Edit"));
 
 	wxMenu* m_menu2;
 	m_menu2 = new wxMenu();
-	SettingsWindowMenu = new wxMenuItem(m_menu2, ControlElementId::SettingsWin, wxString(wxT("Settings")), wxEmptyString, wxITEM_NORMAL);
+	SettingsWindowMenu = new wxMenuItem(m_menu2, ControlElementId::SettingsWin, wxString(wxT("Settings")), wxS("Show Real Editors settings window"), wxITEM_NORMAL);
 	m_menu2->Append(SettingsWindowMenu);
-	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Log")), wxEmptyString, wxITEM_NORMAL);
+	LogWindowMenu = new wxMenuItem(m_menu2, ControlElementId::LogWin, wxString(wxT("Log")), wxS("Toggle the Log window"), wxITEM_NORMAL);
 	m_menu2->Append(LogWindowMenu);
 
 	menuBar->Append(m_menu2, wxT("Window"));

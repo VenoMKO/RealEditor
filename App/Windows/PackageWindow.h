@@ -54,6 +54,8 @@ private:
 	void OnSize(wxSizeEvent& e);
 	void OnMaximized(wxMaximizeEvent& e);
 	void OnPatchCompositeMapClicked(wxCommandEvent&);
+	void OnDecryptClicked(wxCommandEvent&);
+	void OnEncryptClicked(wxCommandEvent&);
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);
