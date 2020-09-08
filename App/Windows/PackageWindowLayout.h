@@ -16,6 +16,11 @@ void PackageWindow::InitLayout()
 	m_menuItem3->Enable(false);
 	fileMenu->Append(m_menuItem3);
 
+	wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create a mod..."), wxS("Create a mod from existing modded GPKs"));
+	fileMenu->Append(m_menuItem68);
+
+	fileMenu->AppendSeparator();
+
 	wxMenuItem* m_menuItem4;
 	m_menuItem4 = new wxMenuItem(fileMenu, ControlElementId::Open, wxString(wxT("Open...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem4);

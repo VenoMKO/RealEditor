@@ -66,6 +66,8 @@ public:
 	static FString GetObjectCompositePath(const FString& path);
 	// Update DirCache
 	static void UpdateDirCache();
+	// Create a composite mod package
+	static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, const FString& name, const FString& author);
 
 private:
 	// Packages must be loaded/created from the static methods

@@ -41,6 +41,7 @@ private:
 
 	// Menu
 	void OnNewClicked(wxCommandEvent&);
+	void OnCreateModClicked(wxCommandEvent&);
 	void OnOpenClicked(wxCommandEvent&);
 	void OnOpenCompositeClicked(wxCommandEvent&);
 	void OnSaveClicked(wxCommandEvent&);

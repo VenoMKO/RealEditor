@@ -134,6 +134,9 @@
     <ClCompile Include="Core\Utils\CompositePatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\CreateModWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -192,6 +195,7 @@
     <ClInclude Include="Core\Utils\TextureTravaller.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
+    <ClInclude Include="App\Windows\CreateModWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

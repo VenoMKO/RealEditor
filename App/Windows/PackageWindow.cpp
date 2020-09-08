@@ -2,6 +2,7 @@
 #include "ProgressWindow.h"
 #include "CompositePackagePicker.h"
 #include "CompositePatcherWindow.h"
+#include "CreateModWindow.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
@@ -22,6 +23,7 @@
 
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
+	CreateMod,
 	Open,
 	OpenComposite,
 	Save,
@@ -353,12 +355,56 @@ void PackageWindow::OnNoneObjectSelected()
 	ShowEditor(nullptr);
 }
 
-void PackageWindow::OnNewClicked(wxCommandEvent& e)
+void PackageWindow::OnNewClicked(wxCommandEvent&)
 {
 
 }
 
-void PackageWindow::OnOpenClicked(wxCommandEvent& e)
+void PackageWindow::OnCreateModClicked(wxCommandEvent&)
+{
+	wxFileDialog fileDialog(this, wxT("Select modded packages"), wxEmptyString,
+		wxEmptyString, wxT("Tera Game Package (*.gpk, *.gmp)|*.gpk;*.gmp"),
+		wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE);
+
+	if (fileDialog.ShowModal() != wxID_OK)
+	{
+		return;
+	}
+	wxArrayString result;
+	fileDialog.GetPaths(result);
+	if (result.empty())
+	{
+		return;
+	}
+	std::vector<FString> paths;
+	for (const wxString& str : result)
+	{
+		paths.push_back(str.ToStdWstring());
+	}
+
+	CreateModWindow modInfo(this);
+	if (modInfo.ShowModal() != wxID_OK)
+	{
+		return;
+	}
+
+	wxString dest = wxSaveFileSelector("mod", "gpk", wxEmptyString, this);
+	if (dest.empty())
+	{
+		return;
+	}
+
+	try
+	{
+		FPackage::CreateCompositeMod(paths, dest.ToStdWstring(), modInfo.GetName().ToStdString(), modInfo.GetAuthor().ToStdString());
+	}
+	catch (const std::exception& e)
+	{
+		wxMessageBox(e.what(), "Error!", wxICON_ERROR, this);
+	}
+}
+
+void PackageWindow::OnOpenClicked(wxCommandEvent&)
 {
 	wxString path = Application->ShowOpenDialog();
 	if (path.size())
@@ -537,6 +583,7 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
+EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
 EVT_MENU(ControlElementId::Open, PackageWindow::OnOpenClicked)
 EVT_MENU(ControlElementId::OpenComposite, PackageWindow::OnOpenCompositeClicked)
 EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)

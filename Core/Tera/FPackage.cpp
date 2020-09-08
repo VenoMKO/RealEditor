@@ -269,6 +269,10 @@ void FPackage::UpdateDirCache()
   LogI("Done. Found %ld packages", DirCache.size());
 }
 
+void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, const FString& name, const FString& author)
+{
+}
+
 uint16 FPackage::GetCoreVersion()
 {
   return CoreVersion;
