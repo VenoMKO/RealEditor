@@ -54,7 +54,7 @@ void TextureEditor::OnTick()
 void TextureEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->FindById(eID_Import)->Enable(!Window->GetPackage()->IsReadOnly() && Texture && (Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5));
+  toolbar->FindById(eID_Import)->Enable((Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5));
   toolbar->AddSeparator();
   toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_R, Mask->getRedMask());
