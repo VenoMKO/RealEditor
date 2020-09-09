@@ -67,7 +67,7 @@ public:
 	// Update DirCache
 	static void UpdateDirCache();
 	// Create a composite mod package
-	static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, const FString& name, const FString& author);
+	static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author);
 
 private:
 	// Packages must be loaded/created from the static methods

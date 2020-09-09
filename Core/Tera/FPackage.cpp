@@ -269,8 +269,76 @@ void FPackage::UpdateDirCache()
   LogI("Done. Found %ld packages", DirCache.size());
 }
 
-void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, const FString& name, const FString& author)
+void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author)
 {
+  std::vector<FString> objects;
+  for (const FString& path : items)
+  {
+    FReadStream s(path);
+    FPackageSummary sum;
+    s << sum;
+    if (!s.IsGood())
+    {
+      UThrow("Failed to read package %s.", path.Filename().C_str());
+    }
+    if (!sum.FolderName.StartWith("MOD:"))
+    {
+      UThrow("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+    }
+    FString objName = sum.FolderName.Substr(4);
+    if (objName.Empty())
+    {
+      UThrow("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+    }
+    for (int32 idx = 0; idx < objects.size(); ++idx)
+    {
+      if (objects[idx] == objName)
+      {
+        UThrow("%s and %s are modifying the same composite package!", path.Filename().C_str(), items[idx].Filename().C_str());
+      }
+    }
+    objects.push_back(objName);
+  }
+
+  std::vector<FILE_OFFSET> offsets;
+  FWriteStream write(destination);
+  for (const FString& path : items)
+  {
+    FReadStream read(path);
+    FILE_OFFSET size = read.GetSize();
+    void* data = malloc(size);
+    read.SerializeBytes(data, size);
+    offsets.push_back(write.GetPosition());
+    write.SerializeBytes(data, size);
+    free(data);
+  }
+
+  // Save metadata
+
+  FILE_OFFSET authorOffset = write.GetPosition();
+  write << author;
+  FILE_OFFSET nameOffset = write.GetPosition();
+  write << name;
+  FILE_OFFSET containerOffset = write.GetPosition();
+  FString container = destination.Filename(false);
+  write << container;
+  
+  FILE_OFFSET offsetsOffset = write.GetPosition();
+  for (FILE_OFFSET offset : offsets)
+  {
+    write << offset;
+  }
+
+  uint32 tmp = PACKAGE_MAGIC;
+  write << tmp;
+  write << authorOffset;
+  write << nameOffset;
+  write << containerOffset;
+  write << offsetsOffset;
+  tmp = (uint32)offsets.size();
+  write << tmp;
+  tmp = PACKAGE_MAGIC;
+  write << tmp;
 }
 
 uint16 FPackage::GetCoreVersion()
