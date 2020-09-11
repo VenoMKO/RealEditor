@@ -11,12 +11,14 @@ void PackageWindow::InitLayout()
 
 	wxMenu* fileMenu;
 	fileMenu = new wxMenu();
+	/*
 	wxMenuItem* m_menuItem3;
 	m_menuItem3 = new wxMenuItem(fileMenu, ControlElementId::New, wxString(wxT("New...")) + wxT('\t') + wxT("Ctrl+N"), wxEmptyString, wxITEM_NORMAL);
 	m_menuItem3->Enable(false);
-	fileMenu->Append(m_menuItem3);
+	fileMenu->Append(m_menuItem3);*/
 
 	wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create a mod..."), wxS("Create a mod from existing modded GPKs"));
+	m_menuItem68->Enable(false);
 	fileMenu->Append(m_menuItem68);
 
 	fileMenu->AppendSeparator();

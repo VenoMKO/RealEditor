@@ -284,7 +284,10 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       FILE_OFFSET size = s.GetPosition();
       if (tagPtr->ClassProperty)
       {
-        tagPtr->ClassProperty->SerializeItem(s, tagPtr->Value, object, defaultsStruct);
+        if (tagPtr->ClassProperty->GetStaticClassName() != UBoolProperty::StaticClassName())
+        {
+          tagPtr->ClassProperty->SerializeItem(s, tagPtr->Value, object, defaultsStruct);
+        }
       }
       else
       {
