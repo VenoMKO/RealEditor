@@ -15,7 +15,7 @@ enum ControlElementId {
 };
 
 CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent, const wxString& sourceName)
-  : wxDialog(parent, wxID_ANY, wxT("Patch composite package map"), wxDefaultPosition, wxSize(540, 277))
+  : wxDialog(parent, wxID_ANY, wxT("Patch composite package map"), wxDefaultPosition, wxSize(540, 300))
 	, Patcher(FPackage::GetCompositePackageMapPath().WString())
 {
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
