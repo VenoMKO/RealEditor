@@ -57,6 +57,7 @@ private:
 	void OnPatchCompositeMapClicked(wxCommandEvent&);
 	void OnDecryptClicked(wxCommandEvent&);
 	void OnEncryptClicked(wxCommandEvent&);
+	void OnDumpCompositeObjectsClicked(wxCommandEvent&);
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);

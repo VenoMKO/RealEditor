@@ -35,6 +35,7 @@ enum ControlElementId {
 	CompositePatch,
 	DecryptCompositeMap,
 	EncryptCompositeMap,
+	DumpObjectsMap,
 	Import,
 	Export,
 	DebugTestCookObj,
@@ -551,6 +552,58 @@ void PackageWindow::OnEncryptClicked(wxCommandEvent&)
 {
 }
 
+void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
+{
+	wxString dest = wxSaveFileSelector("composite objects map", "txt", "ObjectDump", this);
+	if (dest.empty())
+	{
+		return;
+	}
+
+	if (wxMessageBox(_("This operation takes 10 to 20 minutes and requires at least 1.6 GB of free disk space.\nDo you want to continue?"), _("Dump a list of objects from composite packages..."), wxICON_INFORMATION | wxYES_NO) != wxYES)
+	{
+		return;
+	}
+
+	ProgressWindow progress(this, "Dumping all objects");
+
+	std::thread([dest, &progress] {
+		std::ofstream s(dest.ToStdWstring(), std::ios::out | std::ios::binary);
+		auto compositeMap = FPackage::GetCompositePackageMap();
+		int idx = 0;
+		const int total = (int)compositeMap.size();
+		SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
+		for (const auto& pair : compositeMap)
+		{
+			if (auto pkg = FPackage::GetPackageNamed(pair.first))
+			{
+				pkg->Load();
+				auto allExports = pkg->GetAllExports();
+				for (FObjectExport* exp : allExports)
+				{
+					s << exp->GetClassName().UTF8() << '\t' << exp->GetObjectPath().UTF8() << '\n';
+				}
+				s << std::endl;
+				FPackage::UnloadPackage(pkg);
+			}
+			if (idx % 3 == 0)
+			{
+				if (progress.IsCancelled())
+				{
+					SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+					return;
+				}
+				SendEvent(&progress, UPDATE_PROGRESS, idx);
+				SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format("Saving %d/%d...", idx, total));
+			}
+			idx++;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+	}).detach();
+
+	progress.ShowModal();
+}
+
 void PackageWindow::OnPackageReady(wxCommandEvent&)
 {
 	ObjectTreeCtrl->Freeze();
@@ -593,6 +646,7 @@ EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
 EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
+EVT_MENU(ControlElementId::DumpObjectsMap, PackageWindow::OnDumpCompositeObjectsClicked)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)

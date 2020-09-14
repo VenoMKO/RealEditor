@@ -6,7 +6,7 @@ wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
-	: wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 94), wxCAPTION | wxTAB_TRAVERSAL)
+	: wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 105), wxCAPTION | wxTAB_TRAVERSAL)
 {
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 	this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));

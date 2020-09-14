@@ -18,7 +18,6 @@ void PackageWindow::InitLayout()
 	fileMenu->Append(m_menuItem3);*/
 
 	wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create a mod..."), wxS("Create a mod from existing modded GPKs"));
-	m_menuItem68->Enable(false);
 	fileMenu->Append(m_menuItem68);
 
 	fileMenu->AppendSeparator();
@@ -72,6 +71,11 @@ void PackageWindow::InitLayout()
 	wxMenuItem* m_menuItem67 = new wxMenuItem(m_menu4, ControlElementId::EncryptCompositeMap, wxString(wxT("Encrypt composite map...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
 	m_menuItem67->Enable(false);
 	m_menu4->Append(m_menuItem67);
+
+	m_menu4->AppendSeparator();
+
+	wxMenuItem* m_menuItem69 = new wxMenuItem(m_menu4, ControlElementId::DumpObjectsMap, wxString(wxT("Dump all composite objects")), wxS("Build a list of all objects stored in all composite packages"), wxITEM_NORMAL);
+	m_menu4->Append(m_menuItem69);
 
 	menuBar->Append(m_menu4, wxT("Edit"));
 
