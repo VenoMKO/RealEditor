@@ -14,7 +14,9 @@ struct PackageSaveContext {
 	std::string Path;
 	
 	ECompressionFlags Compression = COMPRESS_None;
+	bool EmbedObjectPath = true;
 	bool PreserveOffsets = true;
+	bool DisableTextureCaching = true;
 	bool FullRecook = false;
 
 	std::string Error;

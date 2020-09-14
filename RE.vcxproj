@@ -18,6 +18,7 @@
     <ClCompile Include="App\Misc\ObjectTreeModel.cpp" />
     <ClCompile Include="App\Windows\CompositePackagePicker.cpp" />
     <ClCompile Include="App\Windows\CompositePatcherWindow.cpp" />
+    <ClCompile Include="App\Windows\CookingOptions.cpp" />
     <ClCompile Include="App\Windows\CreateModWindow.cpp" />
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
+    <ClInclude Include="App\Windows\CookingOptions.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />

@@ -7,6 +7,7 @@
 #include "UMetaData.h"
 #include "UPersistentCookerData.h"
 #include "UProperty.h"
+#include "UTexture.h"
 #include "Cast.h"
 
 #include <iostream>
@@ -315,6 +316,30 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
 
   // Save metadata
 
+  // MAGIC
+  
+  // Author
+  // Name
+  // Container(Filename)
+  // Composite offsets...
+
+  // MAGIC
+
+  // Region-lock
+  // Author offset
+  // Name offset
+  // Container offset
+  // Composite offsets offset
+  // Composite offsets count
+  // Meta size
+
+  // MAGIC
+  // EOF
+
+  uint32 tmp = PACKAGE_MAGIC;
+  uint32 metaSize = write.GetPosition();
+  write << tmp;
+
   FILE_OFFSET authorOffset = write.GetPosition();
   write << author;
   FILE_OFFSET nameOffset = write.GetPosition();
@@ -328,8 +353,10 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   {
     write << offset;
   }
-
-  uint32 tmp = PACKAGE_MAGIC;
+  
+  tmp = PACKAGE_MAGIC;
+  write << tmp;
+  tmp = 0; // Region-lock (unused): 1 - direct object path search, 0 - incomplete object path search
   write << tmp;
   write << authorOffset;
   write << nameOffset;
@@ -337,8 +364,14 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   write << offsetsOffset;
   tmp = (uint32)offsets.size();
   write << tmp;
+  FILE_OFFSET metaSizeOffset = write.GetPosition();
+  write << metaSize;
   tmp = PACKAGE_MAGIC;
   write << tmp;
+
+  metaSize = write.GetPosition() - metaSize;
+  write.SetPosition(metaSizeOffset);
+  write << metaSize;
 }
 
 uint16 FPackage::GetCoreVersion()
@@ -1361,18 +1394,28 @@ void FPackage::Load()
 
 bool FPackage::Save(PackageSaveContext& context)
 {
-  if (IsComposite() && GetFolderName() == NAME_None)
+  if (context.EmbedObjectPath && IsComposite() && GetFolderName() == NAME_None)
   {
     const FString packageName = GetPackageName();
     const auto& map = FPackage::GetCompositePackageMap();
     if (map.count(packageName))
     {
       const FCompositePackageMapEntry& entry = map.at(packageName);
-      FString incompleteObjectPath = entry.ObjectPath;
-      incompleteObjectPath = incompleteObjectPath.Substr(incompleteObjectPath.Find(".") + 1);
-      SetFolderName("MOD:" + incompleteObjectPath);
+      SetFolderName("MOD:" + entry.ObjectPath);
     }
   }
+
+  if (context.DisableTextureCaching)
+  {
+    for (FObjectExport* exp : Exports)
+    {
+      if (exp->GetClassName() == UTexture2D::StaticClassName())
+      {
+        ((UTexture2D*)GetObject(exp, true))->DisableCaching();
+      }
+    }
+  }
+  
   if (!IsDirty())
   {
     if (context.Compression == COMPRESS_None)

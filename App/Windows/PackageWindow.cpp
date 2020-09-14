@@ -2,6 +2,7 @@
 #include "ProgressWindow.h"
 #include "CompositePackagePicker.h"
 #include "CompositePatcherWindow.h"
+#include "CookingOptions.h"
 #include "CreateModWindow.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -436,11 +437,20 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 		return;
 	}
 
+	CookingOptionsWindow optionsWindow(this, Package.get());
+
+	if (optionsWindow.ShowModal() != wxID_OK)
+	{
+		return;
+	}
+
+
 	ProgressWindow progress(this, "Saving");
 	progress.SetCurrentProgress(-1);
 	progress.SetActionText(wxT("Preparing..."));
 
 	PackageSaveContext context;
+	optionsWindow.ConfigureSaveContext(context);
 	context.Path = W2A(path.ToStdWstring());
 
 	context.ProgressCallback = [&progress](int value) {

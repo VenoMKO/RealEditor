@@ -412,12 +412,12 @@ struct FUntypedBulkData
 
 	virtual void SerializeElement(FStream& s, void* data, int32 elementIndex) = 0;
 
-protected:
 	uint32 BulkDataFlags = BULKDATA_None;
 	int32 ElementCount = 0;
 	int32 BulkDataOffsetInFile = INDEX_NONE;
 	int32 BulkDataSizeOnDisk = INDEX_NONE;
 
+protected:
 	uint32 SavedBulkDataFlags = BULKDATA_None;
 	int32 SavedElementCount = 0;
 	int32 SavedBulkDataOffsetInFile = INDEX_NONE;

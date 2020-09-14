@@ -260,6 +260,60 @@ void UTexture2D::Serialize(FStream& s)
   }
 }
 
+void UTexture2D::DisableCaching()
+{
+  Load();
+  
+  if (TextureFileCacheNameProperty)
+  {
+    RemoveProperty(TextureFileCacheNameProperty);
+    TextureFileCacheName = nullptr;
+    TextureFileCacheNameProperty = nullptr;
+  }
+
+  TextureFileCacheGuid = FGuid();
+
+  if (FirstResourceMemMip != 0)
+  {
+    FirstResourceMemMip = 0;
+    if (FirstResourceMemMipProperty)
+    {
+      FirstResourceMemMipProperty->Value->GetInt() = 0;
+    }
+  }
+
+  if (MipTailBaseIdxProperty)
+  {
+    MipTailBaseIdx = 0;
+    MipTailBaseIdxProperty->Value->GetInt() = 0;
+  }
+
+  for (int32 idx = 0; idx < Mips.size(); ++idx)
+  {
+    if (idx > 0)
+    {
+      delete Mips[idx];
+    }
+    FTexture2DMipMap* mip = Mips[idx];
+    if (mip->Data->BulkDataFlags & BULKDATA_Unused)
+    {
+      continue;
+    }
+    if (mip->Data->IsStoredCompressedOnDisk())
+    {
+      // TODO: might be a different compresion
+      // TODO: remove this when switched to lzop
+      mip->Data->BulkDataFlags &= ~BULKDATA_SerializeCompressedLZO;
+    }
+    if (mip->Data->IsStoredInSeparateFile())
+    {
+      mip->Data->BulkDataFlags &= ~BULKDATA_StoreInSeparateFile;
+    }
+  }
+  Mips.resize(1);
+  MarkDirty();
+}
+
 void UTexture2D::PostLoad()
 {
   Super::PostLoad();

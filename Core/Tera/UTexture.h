@@ -48,6 +48,10 @@ public:
 
   void Serialize(FStream& s) override;
 
+  // Disable texture caching, pull max mipmap, delete smaller mips
+  // Needed for cross-region mods
+  void DisableCaching();
+
 protected:
   void PostLoad() override;
   void DeleteStorage();
