@@ -169,6 +169,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 
 	GenMips = new wxCheckBox(m_panel9, ControlElementId::MipGen, wxT("Generate mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
 	GenMips->SetValue(false);
+	GenMips->Enable(false);
 	bSizer14->Add(GenMips, 0, wxALL, 5);
 
 	wxStaticText* m_staticText20;
@@ -197,6 +198,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	MipGenMethodChoices.Add("Kaiser");
 	MipFilter = new wxChoice(m_panel9, ControlElementId::MipFilter, wxDefaultPosition, wxDefaultSize, MipGenMethodChoices, 0);
 	MipFilter->SetSelection(2);
+	MipFilter->Enable(GenMips->GetValue());
 	bSizer20->Add(MipFilter, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
@@ -295,12 +297,12 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	m_panel6 = new wxPanel(m_panel5, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 	bSizer10->Add(m_panel6, 1, wxEXPAND | wxALL, 5);
 
-	CancelButton = new wxButton(m_panel5, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer10->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
 	ImportButton = new wxButton(m_panel5, wxID_OK, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
 	bSizer10->Add(ImportButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 	ImportButton->SetFocus();
+
+	CancelButton = new wxButton(m_panel5, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+	bSizer10->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	m_panel5->SetSizer(bSizer10);
 	m_panel5->Layout();

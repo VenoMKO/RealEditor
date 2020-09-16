@@ -1407,6 +1407,11 @@ bool FPackage::Save(PackageSaveContext& context)
 
   if (context.DisableTextureCaching)
   {
+    if (Summary.TextureAllocations.TextureTypes.size())
+    {
+      Summary.TextureAllocations.TextureTypes.clear();
+      MarkDirty();
+    }
     for (FObjectExport* exp : Exports)
     {
       if (exp->GetClassName() == UTexture2D::StaticClassName())
@@ -1651,7 +1656,7 @@ bool FPackage::Save(PackageSaveContext& context)
 
   if (!moveTables && context.PreserveOffsets)
   {
-    // TODO: exports have non-const size. Table can become larger even if elements count is lower. Fixed calculation
+    // TODO: exports have non-const size. Table can become larger even if elements count is lower. Fixed-size calculation
     if (Summary.ExportsCount > summary.ExportsCount || Summary.ImportsCount > summary.ImportsCount)
     {
       moveTables = true;
@@ -1664,10 +1669,25 @@ bool FPackage::Save(PackageSaveContext& context)
     writer << e;
   }
 
-  if (!moveTables && context.PreserveOffsets && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+  if (context.PreserveOffsets)
   {
-    // Names table become larger. We need to move tables to preserve offsets
-    moveTables = true;
+    if (!moveTables && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+    {
+      // Names table become larger. We need to move tables to preserve offsets
+      moveTables = true;
+    }
+    if (!moveTables)
+    {
+      // Check if the tables were moved during previous save
+      for (FObjectExport* exp : Exports)
+      {
+        if (exp->SerialOffset < Summary.ImportsOffset)
+        {
+          moveTables = true;
+          break;
+        }
+      }
+    }
   }
 
   if (moveTables)
@@ -1719,14 +1739,17 @@ bool FPackage::Save(PackageSaveContext& context)
   context.ProgressCallback(0);
 
   context.ProgressDescriptionCallback("Serializing objects...");
-  int32 idx = 0;
 
+  // List of holes left after moving dirty objects. Offset, Size.
+  std::vector<std::pair<FILE_OFFSET, FILE_OFFSET>> holes;
+  int32 idx = 0;
   for (FObjectExport* exp : sortedExports)
   {
     if (exp->ObjectFlags & RF_Marked)
     {
       if (context.PreserveOffsets)
       {
+        holes.push_back({ writer.GetPosition(), exp->SerialSize });
         appendZeroed(writer, exp->SerialSize);
       }
       else
@@ -1741,8 +1764,16 @@ bool FPackage::Save(PackageSaveContext& context)
     {
       if (context.PreserveOffsets && writer.GetPosition() != exp->SerialOffset)
       {
-        DBreak();
-        LogE("Failed to preserve offset of %s", exp->GetObjectName().C_str());
+        if (writer.GetPosition() < exp->SerialOffset)
+        {
+          holes.push_back({ writer.GetPosition(), exp->SerialOffset - writer.GetPosition() });
+          appendZeroed(writer, exp->SerialOffset - writer.GetPosition());
+        }
+        else
+        {
+          DBreak();
+          LogE("Failed to preserve offset of %s", exp->GetObjectName().C_str());
+        }
       }
       if (!context.FullRecook)
       {
@@ -1795,11 +1826,55 @@ bool FPackage::Save(PackageSaveContext& context)
     {
       if (exp->ObjectFlags & RF_Marked)
       {
+        MWrightStream tmpWriter(nullptr, 1024 * 1024, writer.GetPosition());
+        tmpWriter.SetPackage(this);
+
         exp->SerialOffset = writer.GetPosition();
         UObject* obj = ExportObjects[exp->ObjectIndex];
         DBreakIf(!obj->IsLoaded());
-        obj->Serialize(writer);
-        exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
+        obj->Serialize(tmpWriter);
+        exp->SerialSize = tmpWriter.GetPosition() - exp->SerialOffset;
+
+        // Try to fit data in an existing hole
+        int32 foundHole = -1;
+        FILE_OFFSET holeSizeDelta = INT32_MAX;
+        for (int32 idx = 0; idx < holes.size(); ++idx)
+        {
+          FILE_OFFSET holeSize = holes[idx].second;
+          if (holeSize >= exp->SerialSize && holeSize - exp->SerialSize < holeSizeDelta)
+          {
+            holeSizeDelta = holeSize - exp->SerialSize;
+            foundHole = idx;
+          }
+        }
+
+        if (foundHole >= 0)
+        {
+          auto& hole = holes[foundHole];
+          exp->SerialOffset = hole.first;
+          
+          FILE_OFFSET tmpPos = writer.GetPosition();
+
+          writer.SetPosition(exp->SerialOffset);
+          obj->Serialize(writer);
+         
+          if (exp->SerialSize != writer.GetPosition() - exp->SerialOffset)
+          {
+            context.Error = "Failed to save package due to ambiguos object size!";
+            LogE("Failed to save package due to ambiguos object size!");
+            return false;
+          }
+          
+          hole.first += exp->SerialSize;
+          hole.second -= exp->SerialSize;
+          DBreakIf(hole.second < 0);
+
+          writer.SetPosition(tmpPos);
+        }
+        else
+        {
+          writer.SerializeBytes(tmpWriter.GetAllocation(), tmpWriter.GetSize() - tmpWriter.GetOffset());
+        }
       }
     }
   }

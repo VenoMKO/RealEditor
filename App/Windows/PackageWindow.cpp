@@ -390,7 +390,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
 		return;
 	}
 
-	wxString dest = wxSaveFileSelector("mod", "gpk", wxEmptyString, this);
+	wxString dest = wxSaveFileSelector("mod", "gpk", modInfo.GetName(), this);
 	if (dest.empty())
 	{
 		return;

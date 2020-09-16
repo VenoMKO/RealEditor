@@ -529,13 +529,18 @@ protected:
 
 class MWrightStream : public FStream {
 public:
-  MWrightStream(void* data, size_t size)
-    : Size(size)
+  MWrightStream(void* data, size_t size, size_t fakeOffset = 0)
+    : Offset(fakeOffset)
+    , Size(size)
   {
     if (data && size)
     {
       Data = (uint8*)malloc(size);
       memcpy_s(Data, size, data, size);
+    }
+    else if (size)
+    {
+      Data = (uint8*)malloc(size);
     }
     Reading = false;
     Good = true;
@@ -591,17 +596,18 @@ public:
 
   void SetPosition(FILE_OFFSET offset) override
   {
+    offset -= (FILE_OFFSET)Offset;
     Position = offset > Size ? Size : offset < 0 ? 0 : offset;
   }
 
   FILE_OFFSET GetPosition() override
   {
-    return (FILE_OFFSET)Position;
+    return (FILE_OFFSET)(Position + Offset);
   }
 
   FILE_OFFSET GetSize() override
   {
-    return (FILE_OFFSET)Size;
+    return (FILE_OFFSET)(Size + Offset);
   }
 
   bool IsGood() const override
@@ -619,9 +625,15 @@ public:
     return Data;
   }
 
+  FILE_OFFSET GetOffset() const
+  {
+    return (FILE_OFFSET)Offset;
+  }
+
 protected:
   bool Good = false;
   uint8* Data = nullptr;
   size_t Position = 0;
+  size_t Offset = 0;
   size_t Size = 0;
 };
