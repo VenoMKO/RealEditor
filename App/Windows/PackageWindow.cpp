@@ -588,6 +588,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 			if (auto pkg = FPackage::GetPackageNamed(pair.first))
 			{
 				pkg->Load();
+				s << "// Object path: " << pair.second.ObjectPath.UTF8() << '\n';
 				auto allExports = pkg->GetAllExports();
 				for (FObjectExport* exp : allExports)
 				{

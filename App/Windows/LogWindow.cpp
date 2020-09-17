@@ -39,6 +39,10 @@ void LogWindow::PumpMessages(wxCommandEvent&)
 	Logger->GetEntries(entries, LastMessageIndex);
 	LogCtrl->Freeze();
 	LogCtrl->SetInsertionPointEnd();
+	if (LogCtrl->GetValue().size() >= 5000)
+	{
+		LogCtrl->SetValue(LogCtrl->GetValue().substr(2000));
+	}
 	for (ALogEntry& e : entries)
 	{
 		std::string msg = e.Text;
