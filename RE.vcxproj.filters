@@ -140,6 +140,9 @@
     <ClCompile Include="App\Windows\CookingOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\CompositeExtractWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -200,6 +203,7 @@
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
     <ClInclude Include="App\Windows\CookingOptions.h" />
+    <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

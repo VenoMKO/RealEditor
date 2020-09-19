@@ -58,6 +58,7 @@ private:
 	void OnDecryptClicked(wxCommandEvent&);
 	void OnEncryptClicked(wxCommandEvent&);
 	void OnDumpCompositeObjectsClicked(wxCommandEvent&);
+	void OnBulkCompositeExtract(wxCommandEvent&);
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);

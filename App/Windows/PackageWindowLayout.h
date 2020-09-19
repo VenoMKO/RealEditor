@@ -77,6 +77,9 @@ void PackageWindow::InitLayout()
 	wxMenuItem* m_menuItem69 = new wxMenuItem(m_menu4, ControlElementId::DumpObjectsMap, wxString(wxT("Dump all composite objects")), wxS("Build a list of all objects stored in all composite packages"), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem69);
 
+	wxMenuItem* m_menuItem70 = new wxMenuItem(m_menu4, ControlElementId::BulkCompositeExtract, wxString(wxT("Extract composite packages...")), wxS("Extract all composite packages thast contain an object"), wxITEM_NORMAL);
+	m_menu4->Append(m_menuItem70);
+
 	menuBar->Append(m_menu4, wxT("Edit"));
 
 	wxMenu* m_menu2;

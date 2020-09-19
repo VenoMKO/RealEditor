@@ -33,6 +33,10 @@ public:
     }
     else
     {
+      if (InputData)
+      {
+        free(InputData);
+      }
       InputData = malloc(size);
       InputDataSize = size;
       memcpy(InputData, data, size);
@@ -93,6 +97,20 @@ public:
   inline bool GetAlpha() const
   {
     return Alpha;
+  }
+
+  inline void SetOutputFormat(TCFormat to)
+  {
+    OutputFormat = to;
+  }
+
+  inline void ClearOutput()
+  {
+    if (OutputData)
+    {
+      free(OutputData);
+    }
+    OutputMips.clear();
   }
 
   bool Process();

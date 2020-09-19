@@ -71,6 +71,11 @@ inline TextureAddress WxToTextureAddress(int address)
 	}
 }
 
+wxString TextureImporter::LoadImageDialog(wxWindow* parent)
+{
+	return wxLoadFileSelector("texture", ".png", wxEmptyString, parent);
+}
+
 TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
   : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
 {

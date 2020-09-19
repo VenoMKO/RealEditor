@@ -4,6 +4,9 @@
 
 class TextureImporter : public wxDialog {
 public:
+
+  static wxString LoadImageDialog(wxWindow* parent);
+
   TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY);
 
   EPixelFormat GetPixelFormat() const;

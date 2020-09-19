@@ -1425,7 +1425,11 @@ bool FPackage::Save(PackageSaveContext& context)
   {
     if (context.Compression == COMPRESS_None)
     {
-      context.ProgressDescriptionCallback("Saving...");
+      if (context.ProgressDescriptionCallback)
+      {
+        context.ProgressDescriptionCallback("Saving...");
+      }
+      
       FReadStream readStream(Summary.DataPath);
       FILE_OFFSET size = readStream.GetSize();
 
@@ -1485,8 +1489,14 @@ bool FPackage::Save(PackageSaveContext& context)
         free(tmp);
         return false;
       }
-      context.ProgressCallback(50);
-      context.ProgressDescriptionCallback("Writing data...");
+      if (context.ProgressCallback)
+      {
+        context.ProgressCallback(50);
+      }
+      if (context.ProgressDescriptionCallback)
+      {
+        context.ProgressDescriptionCallback("Writing data...");
+      }
       FWriteStream writeStream(context.Path);
       writeStream.SerializeBytes(tmp, size);
       if (!writeStream.IsGood())
@@ -1735,10 +1745,18 @@ bool FPackage::Save(PackageSaveContext& context)
     return false;
   }
 
-  context.MaxProgressCallback(Exports.size());
-  context.ProgressCallback(0);
-
-  context.ProgressDescriptionCallback("Serializing objects...");
+  if (context.MaxProgressCallback)
+  {
+    context.MaxProgressCallback(Exports.size());
+  }
+  if (context.ProgressCallback)
+  {
+    context.ProgressCallback(0);
+  }
+  if (context.ProgressDescriptionCallback)
+  {
+    context.ProgressDescriptionCallback("Serializing objects...");
+  }
 
   // List of holes left after moving dirty objects. Offset, Size.
   std::vector<std::pair<FILE_OFFSET, FILE_OFFSET>> holes;
@@ -1796,7 +1814,10 @@ bool FPackage::Save(PackageSaveContext& context)
         exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
       }
     }
-    context.ProgressCallback(++idx);
+    if (context.ProgressCallback)
+    {
+      context.ProgressCallback(++idx);
+    }
   }
 
   if (moveTables)

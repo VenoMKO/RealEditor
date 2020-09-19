@@ -249,7 +249,7 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     return;
   }
 
-  wxString path = wxLoadFileSelector("texture", ".png", wxEmptyString, Window);
+  wxString path = TextureImporter::LoadImageDialog(Window);
 
   if (path.empty())
   {

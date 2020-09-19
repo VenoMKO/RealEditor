@@ -4,8 +4,11 @@
 #include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
+#include "CompositeExtractWindow.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
+
+#include <filesystem>
 
 #include <wx/menu.h>
 #include <wx/sizer.h>
@@ -37,6 +40,7 @@ enum ControlElementId {
 	DecryptCompositeMap,
 	EncryptCompositeMap,
 	DumpObjectsMap,
+	BulkCompositeExtract,
 	Import,
 	Export,
 	DebugTestCookObj,
@@ -576,8 +580,8 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 	}
 
 	ProgressWindow progress(this, "Dumping all objects");
-
-	std::thread([dest, &progress] {
+	std::vector<std::pair<std::string, std::string>> failed;
+	std::thread([dest, &progress, &failed] {
 		std::ofstream s(dest.ToStdWstring(), std::ios::out | std::ios::binary);
 		auto compositeMap = FPackage::GetCompositePackageMap();
 		int idx = 0;
@@ -585,17 +589,28 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 		SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
 		for (const auto& pair : compositeMap)
 		{
-			if (auto pkg = FPackage::GetPackageNamed(pair.first))
+			std::shared_ptr<FPackage> pkg = nullptr;
+			try
 			{
-				pkg->Load();
-				s << "// Object path: " << pair.second.ObjectPath.UTF8() << '\n';
-				auto allExports = pkg->GetAllExports();
-				for (FObjectExport* exp : allExports)
+				if ((pkg = FPackage::GetPackageNamed(pair.first)))
 				{
-					s << exp->GetClassName().UTF8() << '\t' << exp->GetObjectPath().UTF8() << '\n';
+					pkg->Load();
+					s << "// Object path: " << pair.second.ObjectPath.UTF8() << '\n';
+					auto allExports = pkg->GetAllExports();
+					for (FObjectExport* exp : allExports)
+					{
+						s << exp->GetClassName().UTF8() << '\t' << exp->ObjectIndex << '\t' << exp->GetObjectPath().UTF8() << '\n';
+					}
+					s << std::endl;
+					FPackage::UnloadPackage(pkg);
+					pkg = nullptr;
 				}
-				s << std::endl;
+			}
+			catch (const std::exception& e)
+			{
+				failed.push_back(std::make_pair(pair.first, e.what()));
 				FPackage::UnloadPackage(pkg);
+				pkg = nullptr;
 			}
 			if (idx % 3 == 0)
 			{
@@ -613,6 +628,20 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 	}).detach();
 
 	progress.ShowModal();
+
+	if (failed.size())
+	{
+		std::filesystem::path errDst = dest.ToStdWstring();
+		errDst.replace_extension("errors.txt");
+		std::ofstream s(errDst, std::ios::out | std::ios::binary);
+
+		for (const auto& pair : failed)
+		{
+			s << pair.first << ": " << pair.second << '\n';
+		}
+
+		wxMessageBox(_("Failed to iterate some of the packages!\nSee ") + errDst.filename().wstring() + _(" file for details"), _(""), wxICON_WARNING);
+	}
 }
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)
@@ -645,6 +674,12 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 	e.Veto();
 }
 
+void PackageWindow::OnBulkCompositeExtract(wxCommandEvent&)
+{
+	CompositeExtractWindow extractor(this);
+	extractor.ShowModal();
+}
+
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
 EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
@@ -658,6 +693,7 @@ EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapCli
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_MENU(ControlElementId::DumpObjectsMap, PackageWindow::OnDumpCompositeObjectsClicked)
+EVT_MENU(ControlElementId::BulkCompositeExtract, PackageWindow::OnBulkCompositeExtract)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)
