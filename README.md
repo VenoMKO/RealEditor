@@ -24,9 +24,14 @@ You can get the latest version in the ['Release' section](https://github.com/Ven
 * Internal reference support
 * Properties viewer
 * DXT textures viewer
-* DXT textures export to *.png
-* Importing and converting *.png to DXT
+* DXT textures export to *.png or *.tga
+* Importing and converting *.png ot *.tga to DXT
 * Saving/Cooking packages
+* Remove region locking from packages
+* Encrypt/Decrypt mappers
+* Dumping table of contents of composite packages
+* Combining composite mods to a single mod file
+* Bulk composite extraction and modding
 
 ### Plans
 
