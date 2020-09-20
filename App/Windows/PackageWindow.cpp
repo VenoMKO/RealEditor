@@ -9,6 +9,7 @@
 #include "../App.h"
 
 #include <filesystem>
+#include <sstream>
 
 #include <wx/menu.h>
 #include <wx/sizer.h>
@@ -39,8 +40,8 @@ enum ControlElementId {
 	LogWin,
 	Help,
 	CompositePatch,
-	DecryptCompositeMap,
-	EncryptCompositeMap,
+	DecryptMapper,
+	EncryptMapper,
 	DumpObjectsMap,
 	BulkCompositeExtract,
 	Import,
@@ -636,10 +637,107 @@ void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
 
 void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 {
+	wxMessageBox(_("Select a source file you want to decrypt(e.g. CompositePackageMapper.dat). You can find these files in your S1Game\\CookedPC folder."), _("Select source..."), wxICON_INFORMATION);
+	wxString source = wxLoadFileSelector(_("source"), _(".dat"), wxEmptyString, this);
+	if (source.empty())
+	{
+		return;
+	}
+	wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".txt").wstring();
+	wxMessageBox(_("Select where you want to save the decrypted file."), _("Select destination..."), wxICON_INFORMATION);
+	wxString destination = wxSaveFileSelector(_("destination"), _(".txt"), destFileName, this);
+	if (destination.empty())
+	{
+		return;
+	}
+
+	ProgressWindow progress(this, "Decrypting...");
+	progress.SetCanCancel(false);
+	progress.SetCurrentProgress(-1);
+	progress.SetActionText("Decrypting the file...");
+
+	std::thread([&progress, source, destination] {
+		std::string output;
+		try
+		{
+			GDecrytMapperFile(source.ToStdWstring(), output);
+		}
+		catch (...)
+		{
+			wxMessageBox(_("Failed to decrypt the file!"), _("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		try
+		{
+			std::ofstream os(destination.ToStdWstring(), std::ios::out | std::ios::binary);
+			os.write(&output[0], output.size());
+		}
+		catch (...)
+		{
+			wxMessageBox(_("Failed to save the file!"), _("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+	}).detach();
+
+	progress.ShowModal();
 }
 
 void PackageWindow::OnEncryptClicked(wxCommandEvent&)
 {
+	wxMessageBox(_("Select a source file you want to encrypt(e.g. CompositePackageMapper.txt)"), _("Select source..."), wxICON_INFORMATION);
+	wxString source = wxLoadFileSelector(_("source"), _(".txt"), wxEmptyString, this);
+	if (source.empty())
+	{
+		return;
+	}
+	wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".dat").wstring();
+	wxMessageBox(_("Select where you want to save the encrypted file."), _("Select destination..."), wxICON_INFORMATION);
+	wxString destination = wxSaveFileSelector(_("destination"), _(".dat"), destFileName, this);
+	if (destination.empty())
+	{
+		return;
+	}
+
+	ProgressWindow progress(this, "Encrypting...");
+	progress.SetCanCancel(false);
+	progress.SetCurrentProgress(-1);
+	progress.SetActionText("Encrypting the file...");
+
+	std::thread([&progress, source, destination] {
+		std::string decrypted;
+		try
+		{
+			std::ifstream s(source.ToStdWstring(), std::ios::in | std::ios::binary);
+			s.seekg(0, std::ios::end);
+			size_t size = s.tellg();
+			decrypted.resize(size);
+			s.seekg(0);
+			s.read(&decrypted[0], size);
+		}
+		catch (...)
+		{
+			wxMessageBox(_("Failed to read the source file!"), _("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		try
+		{
+			GEncrytMapperFile(destination.ToStdWstring(), decrypted);
+		}
+		catch (...)
+		{
+			wxMessageBox(_("Failed to encrypt the file!"), _("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		
+		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+	}).detach();
+
+	progress.ShowModal();
 }
 
 void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
@@ -696,17 +794,6 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
-		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating object redirector mapper..."));
-		try
-		{
-			FPackage::LoadObjectRedirectorMapper(true);
-		}
-		catch (const std::exception& e)
-		{
-			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
-			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-			return;
-		}
 
 		// Run dumping
 
@@ -717,6 +804,11 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 		SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
 		for (const auto& pair : compositeMap)
 		{
+			if (pair.first == "tmm_marker")
+			{
+				// Skip the TMM marker
+				continue;
+			}
 			std::shared_ptr<FPackage> pkg = nullptr;
 			try
 			{
@@ -827,6 +919,8 @@ EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
 EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
+EVT_MENU(ControlElementId::DecryptMapper, PackageWindow::OnDecryptClicked)
+EVT_MENU(ControlElementId::EncryptMapper, PackageWindow::OnEncryptClicked)
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_MENU(ControlElementId::Help, PackageWindow::OnHelpClicked)

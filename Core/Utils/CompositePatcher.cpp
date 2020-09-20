@@ -6,9 +6,9 @@
 const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
 const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
 
-void EncryptMapper(const std::wstring& path, const std::string& decrypted)
+void GEncrytMapperFile(const std::wstring& path, const std::string& decrypted)
 {
-  std::string encrypted;
+  std::vector<char> encrypted;
   size_t size = decrypted.size();
   size_t offset = 0;
   encrypted.resize(size);
@@ -40,7 +40,7 @@ void EncryptMapper(const std::wstring& path, const std::string& decrypted)
   s.write(&encrypted[0], encrypted.size());
 }
 
-void DecryptMapper(const std::wstring& path, std::string& decrypted)
+void GDecrytMapperFile(const std::wstring& path, std::string& decrypted)
 {
   std::vector<char> encrypted;
   size_t size = 0;
@@ -94,12 +94,12 @@ CompositePatcher::CompositePatcher(const std::wstring& path)
 
 void CompositePatcher::Load()
 {
-  DecryptMapper(Path, Decrypted);
+  GDecrytMapperFile(Path, Decrypted);
 }
 
 void CompositePatcher::Apply()
 {
-  EncryptMapper(Path, Decrypted);
+  GEncrytMapperFile(Path, Decrypted);
 }
 
 bool CompositePatcher::DeleteEntry(const std::string& compositePackageName)

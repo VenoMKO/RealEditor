@@ -23,6 +23,9 @@ struct CompositeEntry {
   }
 };
 
+void GDecrytMapperFile(const std::wstring& path, std::string& output);
+void GEncrytMapperFile(const std::wstring& path, const std::string& decrypted);
+
 class CompositePatcher {
 public:
   // Path - path to the .dat file.

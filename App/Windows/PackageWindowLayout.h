@@ -64,13 +64,14 @@ void PackageWindow::InitLayout()
 
 	m_menu4->AppendSeparator();*/
 
-	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch composite map")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
+	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem65);
-	wxMenuItem* m_menuItem66 = new wxMenuItem(m_menu4, ControlElementId::DecryptCompositeMap, wxString(wxT("Decrypt composite map...")), wxS("Decrypt the CompositePackageMapper.dat and save it as a text file at a location of your choice."), wxITEM_NORMAL);
-	m_menuItem66->Enable(false);
+
+	m_menu4->AppendSeparator();
+
+	wxMenuItem* m_menuItem66 = new wxMenuItem(m_menu4, ControlElementId::DecryptMapper, wxString(wxT("Decrypt a mapper file...")), wxS("Decrypt a *Mapper.dat file and save it as a text file at a location of your choice."), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem66);
-	wxMenuItem* m_menuItem67 = new wxMenuItem(m_menu4, ControlElementId::EncryptCompositeMap, wxString(wxT("Encrypt composite map...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
-	m_menuItem67->Enable(false);
+	wxMenuItem* m_menuItem67 = new wxMenuItem(m_menu4, ControlElementId::EncryptMapper, wxString(wxT("Encrypt a mapper file...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem67);
 
 	m_menu4->AppendSeparator();
