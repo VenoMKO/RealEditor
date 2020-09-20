@@ -59,6 +59,7 @@ private:
 	void OnEncryptClicked(wxCommandEvent&);
 	void OnDumpCompositeObjectsClicked(wxCommandEvent&);
 	void OnBulkCompositeExtract(wxCommandEvent&);
+	void OnHelpClicked(wxCommandEvent&);
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);
@@ -66,6 +67,8 @@ private:
 	void SidebarSplitterOnIdle(wxIdleEvent&);
 	void OnObjectTreeStartEdit(wxDataViewEvent& e);
 	void OnObjectTreeSelectItem(wxDataViewEvent& e);
+	void OnObjectTreeContextMenu(wxDataViewEvent& e);
+	void OnObjectTreeContextMenuClick(wxCommandEvent& e);
 
 	void OnImportObjectSelected(INT index);
 	void OnExportObjectSelected(INT index);

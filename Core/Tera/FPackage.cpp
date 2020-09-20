@@ -1923,6 +1923,15 @@ bool FPackage::Save(PackageSaveContext& context)
   return isOk;
 }
 
+FString FPackage::GetCompositePath()
+{
+  if (IsComposite() && CompositPackageMap.count(GetPackageName()))
+  {
+    return CompositPackageMap[GetPackageName()].ObjectPath;
+  }
+  return FString();
+}
+
 VObjectExport* FPackage::CreateVirtualExport(const char* objName, const char* clsName)
 {
   VObjectExport* exp = new VObjectExport(this, objName, clsName);

@@ -15,8 +15,10 @@
 #include <Tera/FPackage.h>
 #include <Tera/Cast.h>
 
-CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) : wxDialog(parent, id, title, pos, size, style)
+CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+	: wxDialog(parent, id, title, pos, size, style)
 {
+	SetIcon(wxICON(#114));
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
 
 	wxBoxSizer* bSizer10;
@@ -300,27 +302,46 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 	{
 		return;
 	}
-
+	const std::string className = ObjectClassTextField->GetValue().ToStdString();
+	bool doImport = className == UTexture2D::StaticClassName() && ImportTextField->GetValue().size();
 	const std::filesystem::path destDir = dlg.GetPath().ToStdWstring();
 
 	PackageSaveContext ctx;
 	ctx.EmbedObjectPath = true;
 	ctx.DisableTextureCaching = false; // Don't waste disk space and CPU time at this stage
 
-	// TODO: get correct input format when TGA import is ready
-	TextureProcessor processor(TextureProcessor::TCFormat::PNG, TextureProcessor::TCFormat::None);
+	TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+	if (doImport)
+	{
+		wxString extension;
+		wxFileName::SplitPath(ImportTextField->GetValue(), nullptr, nullptr, nullptr, &extension);
+		extension.MakeLower();
+		if (extension == "tga")
+		{
+			inputFormat = TextureProcessor::TCFormat::TGA;
+		}
+		else if (extension == "png")
+		{
+			inputFormat = TextureProcessor::TCFormat::PNG;
+		}
+		else
+		{
+			doImport = false;
+		}
+	}
+	
+	TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::None);
 	EPixelFormat processorFormat = PF_Unknown;
 	ProgressWindow progress(this, wxT("Extracting packages..."));
 	progress.SetActionText(wxT("Preparing..."));
 	progress.SetCanCancel(false);
 	progress.SetMaxProgress((int)Found.size());
 	progress.SetCurrentProgress(0);
-	const std::string className = ObjectClassTextField->GetValue().ToStdString();
-	bool doImport = className == UTexture2D::StaticClassName() && ImportTextField->GetValue().size();
 	if (doImport)
 	{
 		processor.SetInputPath(W2A(ImportTextField->GetValue().ToStdWstring()));
 	}
+
 	std::vector<std::pair<std::string, std::string>> failed;
 	std::thread([&] {
 #define RetIfCancel if (progress.IsCancelled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); return; } //

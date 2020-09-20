@@ -15,6 +15,7 @@
 #include <wx/statline.h>
 #include <wx/collpane.h>
 #include <wx/evtloop.h>
+#include <wx/clipbrd.h>
 
 #include <Tera/ALog.h>
 #include <Tera/FPackage.h>
@@ -36,6 +37,7 @@ enum ControlElementId {
 	Exit,
 	SettingsWin,
 	LogWin,
+	Help,
 	CompositePatch,
 	DecryptCompositeMap,
 	EncryptCompositeMap,
@@ -49,17 +51,43 @@ enum ControlElementId {
 	HeartBeat
 };
 
+enum ObjTreeMenuId {
+	CopyName = wxID_HIGHEST + 1,
+	CopyPath
+};
+
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
 wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
+const wxString HelpUrl = wxS("https://github.com/VenoMKO/RealEditor/wiki");
+
 #include "PackageWindowLayout.h"
 
 PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* application)
-  : wxFrame(nullptr, wxID_ANY, application->GetAppDisplayName() + L" - " + A2W(package->GetSourcePath()))
+  : wxFrame(nullptr, wxID_ANY, wxEmptyString)
   , Application(application)
   , Package(package)
 {
+	wxString title = application->GetAppDisplayName() + wxT(" - ");
+	if (package->IsComposite())
+	{
+		std::wstring sub = package->GetCompositePath();
+		if (sub.empty())
+		{
+			title += package->GetSourcePath().WString();
+		}
+		else
+		{
+			std::replace(sub.begin(), sub.end(), '.', '\\');
+			title += wxS("Composite: ") + sub;
+		}
+	}
+	else
+	{
+		title += package->GetSourcePath().WString();
+	}
+	SetTitle(title);
 	SetIcon(wxICON(#114));
 	SetSizeHints(wxSize(1024, 700), wxDefaultSize);
 	InitLayout();
@@ -218,6 +246,54 @@ void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
 	else
 	{
 		OnExportObjectSelected(index);
+	}
+}
+
+void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
+{
+	if (!e.GetItem().IsOk())
+	{
+		return;
+	}
+	ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
+	if (!node || !node->GetParent())
+	{
+		return;
+	}
+
+	wxMenu menu;
+	menu.SetClientData((void*)node);
+	menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
+	menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
+	menu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(PackageWindow::OnObjectTreeContextMenuClick), NULL, this);
+	PopupMenu(&menu);
+}
+
+void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
+{
+	ObjectTreeNode* node = (ObjectTreeNode*)static_cast<wxMenu*>(e.GetEventObject())->GetClientData();
+	switch (e.GetId())
+	{
+	case ObjTreeMenuId::CopyName:
+		if (wxTheClipboard->Open())
+		{
+			wxTheClipboard->Clear();
+			wxTheClipboard->SetData(new wxTextDataObject(node->GetObjectName()));
+			wxTheClipboard->Flush();
+			wxTheClipboard->Close();
+		}
+		break;
+	case ObjTreeMenuId::CopyPath:
+		if (wxTheClipboard->Open())
+		{
+			wxTheClipboard->Clear();
+			wxTheClipboard->SetData(new wxTextDataObject(Package->GetObject(node->GetObjectIndex())->GetObjectPath().WString()));
+			wxTheClipboard->Flush();
+			wxTheClipboard->Close();
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -574,14 +650,66 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 		return;
 	}
 
-	if (wxMessageBox(_("This operation takes 10 to 20 minutes and requires at least 1.6 GB of free disk space.\nDo you want to continue?"), _("Dump a list of objects from composite packages..."), wxICON_INFORMATION | wxYES_NO) != wxYES)
+	if (wxMessageBox(_("Please, make sure you've turned off all composite mods!\nThis operation takes 20 to 30 minutes and requires at least 1.7 GB of free disk space.\nAre you ready to continue?"), _("Dump a list of objects from composite packages..."), wxICON_INFORMATION | wxYES_NO) != wxYES)
 	{
 		return;
 	}
 
 	ProgressWindow progress(this, "Dumping all objects");
+	progress.SetCurrentProgress(-1);
 	std::vector<std::pair<std::string, std::string>> failed;
 	std::thread([dest, &progress, &failed] {
+
+		// Update the mappers
+		
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating package mapper..."));
+		Sleep(200);
+		try
+		{
+			FPackage::LoadPkgMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		if (progress.IsCancelled())
+		{
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating composite mapper..."));
+
+		try
+		{
+			FPackage::LoadCompositePackageMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		if (progress.IsCancelled())
+		{
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+		SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating object redirector mapper..."));
+		try
+		{
+			FPackage::LoadObjectRedirectorMapper(true);
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+			return;
+		}
+
+		// Run dumping
+
 		std::ofstream s(dest.ToStdWstring(), std::ios::out | std::ios::binary);
 		auto compositeMap = FPackage::GetCompositePackageMap();
 		int idx = 0;
@@ -605,10 +733,14 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 					FPackage::UnloadPackage(pkg);
 					pkg = nullptr;
 				}
+				else
+				{
+					failed.emplace_back(std::make_pair(pair.first, "Failed to open the package!"));
+				}
 			}
 			catch (const std::exception& e)
 			{
-				failed.push_back(std::make_pair(pair.first, e.what()));
+				failed.emplace_back(std::make_pair(pair.first, e.what()));
 				FPackage::UnloadPackage(pkg);
 				pkg = nullptr;
 			}
@@ -680,6 +812,11 @@ void PackageWindow::OnBulkCompositeExtract(wxCommandEvent&)
 	extractor.ShowModal();
 }
 
+void PackageWindow::OnHelpClicked(wxCommandEvent&)
+{
+	wxLaunchDefaultBrowser(HelpUrl);
+}
+
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
 EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
@@ -692,10 +829,12 @@ EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
 EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)
 EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
+EVT_MENU(ControlElementId::Help, PackageWindow::OnHelpClicked)
 EVT_MENU(ControlElementId::DumpObjectsMap, PackageWindow::OnDumpCompositeObjectsClicked)
 EVT_MENU(ControlElementId::BulkCompositeExtract, PackageWindow::OnBulkCompositeExtract)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
+EVT_DATAVIEW_ITEM_CONTEXT_MENU(wxID_ANY, PackageWindow::OnObjectTreeContextMenu)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)
 EVT_SIZE(PackageWindow::OnSize)
 EVT_MAXIMIZE(PackageWindow::OnMaximized)

@@ -254,6 +254,8 @@ public:
 	{
 		return Summary.TextureAllocations;
 	}
+
+	FString GetCompositePath();
 	
 	// Used to create builtin classes
 	VObjectExport* CreateVirtualExport(const char* objName, const char* clsName);

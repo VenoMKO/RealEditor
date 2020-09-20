@@ -27,7 +27,7 @@ bool IsValidDir(const wxString& path)
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)
-	: wxDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 361), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+	: wxDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 375), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
 	, CurrentConfig(currentConfig)
 	, NewConfig(output)
 	, AllowRebuild(allowRebuild)

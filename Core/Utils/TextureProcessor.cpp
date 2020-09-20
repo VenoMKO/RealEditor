@@ -222,68 +222,67 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
-  if (OutputFormat == TCFormat::TGA)
+  surface.flipY();
+  nvtt::CompressionOptions compressionOptions;
+  compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
+  compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
+
+  nvtt::OutputOptions outputOptions;
+  outputOptions.setSrgbFlag(SRGB);
+
+  TPOutputHandler ohandler;
+  outputOptions.setOutputHandler(&ohandler);
+
+  nvtt::Context ctx;
+  if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
   {
-    // TODO: nvtt doesn't support unicode paths. Decompress to float and save using FreeImage & FStream.
-    if (!surface.save(OutputPath.c_str(), hasAlpha))
-    {
-      Error = "Texture Processor: failed to write the file \"" + OutputPath + "\"";
-      return false;
-    }
-    return true;
+    Error = "Texture Processor: Failed to decompress texture to RGBA";
+    return false;
   }
 
-  if (OutputFormat == TCFormat::PNG)
+  FreeImageHolder holder(true);
+  holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, hasAlpha ? 32 : 24);
+  memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
+  holder.mem = FreeImage_OpenMemory();
+
+  if (OutputFormat == TCFormat::TGA)
   {
-    surface.flipY();
-    nvtt::CompressionOptions compressionOptions;
-    compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
-    compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
-
-    nvtt::OutputOptions outputOptions;
-    outputOptions.setSrgbFlag(SRGB);
-
-    TPOutputHandler ohandler;
-    outputOptions.setOutputHandler(&ohandler);
-
-    nvtt::Context ctx;
-    if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
+    if (!FreeImage_SaveToMemory(FIF_TARGA, holder.bmp, holder.mem, 0))
     {
-      Error = "Texture Processor: Failed to decompress texture to RGBA";
+      Error = "Texture Processor: Failed to create a FreeImage(TARGA:" + std::to_string(hasAlpha ? 32 : 24) + ")";
       return false;
     }
-
-    FreeImageHolder holder(true);
-    holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, hasAlpha ? 32 : 24);
-    memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
-    holder.mem = FreeImage_OpenMemory();
-
+  }
+  else if (OutputFormat == TCFormat::PNG)
+  {
     if (!FreeImage_SaveToMemory(FIF_PNG, holder.bmp, holder.mem, 0))
     {
       Error = "Texture Processor: Failed to create a FreeImage(PNG:" + std::to_string(hasAlpha ? 32 : 24) + ")";
       return false;
     }
-
-    DWORD memBufferSize = 0;
-    unsigned char* memBuffer = nullptr;
-    if (!FreeImage_AcquireMemory(holder.mem, &memBuffer, &memBufferSize))
-    {
-      Error = "Texture Processor: Failed to acquire a memory buffer";
-      return false;
-    }
-
-    FWriteStream s(OutputPath);
-    if (!s.IsGood())
-    {
-      Error = "Texture Processor: Failed to create a write stream to \"" + OutputPath + "\"";
-      return false;
-    }
-    s.SerializeBytes(memBuffer, (FILE_OFFSET)memBufferSize);
-    return true;
   }
-  
-  Error = "Texture Processor: Unsupported IO combination BytesToFile(\"" + std::to_string((int)InputFormat) + "\"" + std::to_string((int)InputFormat) + ")";
-  return false;
+  else
+  {
+    Error = "Texture Processor: Unsupported IO combination BytesToFile(\"" + std::to_string((int)InputFormat) + "\"" + std::to_string((int)InputFormat) + ")";
+    return false;
+  }
+
+  DWORD memBufferSize = 0;
+  unsigned char* memBuffer = nullptr;
+  if (!FreeImage_AcquireMemory(holder.mem, &memBuffer, &memBufferSize))
+  {
+    Error = "Texture Processor: Failed to acquire a memory buffer";
+    return false;
+  }
+
+  FWriteStream s(OutputPath);
+  if (!s.IsGood())
+  {
+    Error = "Texture Processor: Failed to create a write stream to \"" + OutputPath + "\"";
+    return false;
+  }
+  s.SerializeBytes(memBuffer, (FILE_OFFSET)memBufferSize);
+  return true;
 }
 
 bool TextureProcessor::BytesToBytes()

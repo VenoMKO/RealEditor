@@ -54,6 +54,7 @@ void PackageWindow::InitLayout()
 
 	wxMenu* m_menu4;
 	m_menu4 = new wxMenu();
+	/*
 	wxMenuItem* m_menuItem63 = new wxMenuItem(m_menu4, ControlElementId::Import, wxString(wxT("Import")), wxEmptyString, wxITEM_NORMAL);
 	m_menuItem63->Enable(false);
 	m_menu4->Append(m_menuItem63);
@@ -61,7 +62,7 @@ void PackageWindow::InitLayout()
 	m_menuItem64->Enable(false);
 	m_menu4->Append(m_menuItem64);
 
-	m_menu4->AppendSeparator();
+	m_menu4->AppendSeparator();*/
 
 	wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch composite map")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
 	m_menu4->Append(m_menuItem65);
@@ -91,6 +92,12 @@ void PackageWindow::InitLayout()
 
 	menuBar->Append(m_menu2, wxT("Window"));
 
+	wxMenu* m_menu5;
+	m_menu5 = new wxMenu();
+	wxMenuItem* m_menuItem71 = new wxMenuItem(m_menu5, ControlElementId::Help, wxString(wxT("Guides, Tutorials, Help")), wxS("Open a Wiki page containing various helpful information"), wxITEM_NORMAL);
+	m_menu5->Append(m_menuItem71);
+
+	menuBar->Append(m_menu5, wxT("Help"));
 #if _DEBUG
 	wxMenu* m_menu3;
 	m_menu3 = new wxMenu();

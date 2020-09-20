@@ -17,6 +17,8 @@
 
 #include <thread>
 
+#include <wx/filename.h>
+
 TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
 {
@@ -283,8 +285,21 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     wxMessageBox(std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!", wxT("Error!"), wxICON_ERROR);
     return;
   }
+  TextureProcessor::TCFormat inFormat = TextureProcessor::TCFormat::None;
+
+  wxString extension;
+  wxFileName::SplitPath(path, nullptr, nullptr, nullptr, &extension);
+  extension.MakeLower();
+  if (extension == wxT("png"))
+  {
+    inFormat = TextureProcessor::TCFormat::PNG;
+  }
+  else if (extension == wxT("tga"))
+  {
+    inFormat = TextureProcessor::TCFormat::TGA;
+  }
   
-  TextureProcessor processor(TextureProcessor::TCFormat::PNG, outputFormat);
+  TextureProcessor processor(inFormat, outputFormat);
   processor.SetInputPath(W2A(path.ToStdWstring()));
   processor.SetSrgb(importer.IsSRGB());
   processor.SetNormal(importer.IsNormal());
@@ -342,7 +357,7 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
 
 void TextureEditor::OnExportClicked(wxCommandEvent&)
 {
-  wxString path = wxSaveFileSelector("texture", wxT("PNG image|*.png|*.TGA image|*.tga"), Object->GetObjectName().WString(), Window);
+  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png|"), Object->GetObjectName().WString(), Window);
   if (path.empty())
   {
     return;
@@ -350,7 +365,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   wxString ext = wxFileName(path).GetExt();
   if (ext.empty())
   {
-    ext = wxT(".png");
+    ext = wxT(".tga");
   }
 
   TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
