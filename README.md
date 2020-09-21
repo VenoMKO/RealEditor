@@ -1,5 +1,5 @@
 ## Real Editor
-> Tera Online 64-bit client package(\*.gpk, \*.gmp, \*.upk, \*.umap, \*.u) editor/viewer
+> Tera Online 64-bit client package(\*.gpk, \*.gmp, \*.upk, \*.umap, \*.u) editor/viewer. 32-bit version is [here](https://github.com/VenoMKO/Real-Editor) and it's no longer supported.
 
 Currently under development. Some features are not implemented yet or may not work correctly.
 
@@ -9,13 +9,15 @@ Currently under development. Some features are not implemented yet or may not wo
 
 * [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
 * [64 bit modding. How does it work?](https://github.com/VenoMKO/RealEditor/wiki/64-bit-modding.-How-does-it-work%3F)
-* [Guide: Importing a texture](https://github.com/VenoMKO/RealEditor/wiki/Guide:-Importing-a-texture)
+* [Create a mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-mod)
+* [Create a composite mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
 * [Troubleshooting](https://github.com/VenoMKO/RealEditor/wiki/Troubleshooting)
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
+* [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
 
 ### Download
 
-You can get the latest version in the ['Release' section](https://github.com/VenoMKO/RealEditor/releases).
+You can get the latest version in the ['Releases' section](https://github.com/VenoMKO/RealEditor/releases).
 
 ### Features
 
@@ -49,4 +51,6 @@ You can get the latest version in the ['Release' section](https://github.com/Ven
 
 ### Contacts
 
-You can contact me on [Tumblr](https://yupimods.tumblr.com/).
+You can contact me:
+* [Tumblr](https://yupimods.tumblr.com/)
+* Discord Yupi#9153
