@@ -320,7 +320,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
-		if (progress.IsCancelled())
+		if (progress.IsCanceled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
@@ -338,7 +338,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
-		if (progress.IsCancelled())
+		if (progress.IsCanceled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;

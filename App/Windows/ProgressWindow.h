@@ -19,7 +19,7 @@ public:
 
   void SetCanCancel(bool flag);
 
-  bool IsCancelled()
+  bool IsCanceled()
   {
     return Cancelled.load();
   }

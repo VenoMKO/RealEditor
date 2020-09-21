@@ -549,7 +549,7 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 	};
 
 	context.IsCancelledCallback = [&progress] {
-		return progress.IsCancelled();
+		return progress.IsCanceled();
 	};
 
 	context.ProgressDescriptionCallback = [&progress] (std::string desc) {
@@ -772,7 +772,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
-		if (progress.IsCancelled())
+		if (progress.IsCanceled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
@@ -789,7 +789,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
 		}
-		if (progress.IsCancelled())
+		if (progress.IsCanceled())
 		{
 			SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 			return;
@@ -838,7 +838,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 			}
 			if (idx % 3 == 0)
 			{
-				if (progress.IsCancelled())
+				if (progress.IsCanceled())
 				{
 					SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 					return;

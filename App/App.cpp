@@ -457,7 +457,7 @@ void App::LoadCore(ProgressWindow* pWindow)
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating S1Game folder contents...");
   FPackage::SetRootPath(Config.RootDir);
 
-  if (pWindow->IsCancelled())
+  if (pWindow->IsCanceled())
   {
     ExitMainLoop();
     return;
@@ -494,7 +494,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       SendEvent(this, LOAD_CORE_ERROR, e.what());
       return;
     }
-    if (pWindow->IsCancelled())
+    if (pWindow->IsCanceled())
     {
       ExitMainLoop();
       return;
@@ -514,7 +514,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
-  if (pWindow->IsCancelled())
+  if (pWindow->IsCanceled())
   {
     ExitMainLoop();
     return;
@@ -590,7 +590,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       CompositePackageNames.push_back(pair.first.String());
     }
 
-    if (pWindow->IsCancelled())
+    if (pWindow->IsCanceled())
     {
       wxQueueEvent(this, new wxCloseEvent());
       pWindow->Destroy();

@@ -308,7 +308,7 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 
 	PackageSaveContext ctx;
 	ctx.EmbedObjectPath = true;
-	ctx.DisableTextureCaching = false; // Don't waste disk space and CPU time at this stage
+	ctx.DisableTextureCaching = true;
 
 	TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
 	if (doImport)
@@ -334,7 +334,7 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 	EPixelFormat processorFormat = PF_Unknown;
 	ProgressWindow progress(this, wxT("Extracting packages..."));
 	progress.SetActionText(wxT("Preparing..."));
-	progress.SetCanCancel(false);
+	progress.SetCanCancel(true);
 	progress.SetMaxProgress((int)Found.size());
 	progress.SetCurrentProgress(0);
 	if (doImport)
@@ -342,9 +342,10 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 		processor.SetInputPath(W2A(ImportTextField->GetValue().ToStdWstring()));
 	}
 
+	bool canceled = false;
 	std::vector<std::pair<std::string, std::string>> failed;
 	std::thread([&] {
-#define RetIfCancel if (progress.IsCancelled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); return; } //
+#define RetIfCancel if (progress.IsCanceled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); canceled = true; return; } //
 		
 		for (size_t idx = 0; idx < Found.size(); ++idx)
 		{
@@ -439,13 +440,21 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 	}).detach();
 
 	progress.ShowModal();
-	if (failed.size())
+	if (!canceled)
 	{
-		std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
-		for (const auto& pair : failed)
+		if (failed.size())
 		{
-			s << pair.first << ": " << pair.second << '\n';
+			std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
+			for (const auto& pair : failed)
+			{
+				s << pair.first << ": " << pair.second << '\n';
+			}
+			wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
 		}
-		wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
+		else
+		{
+			wxString msg = doImport ? wxS("Packages were extracted and patched successfuly!") : wxS("Packages were extracted successfuly!");
+			wxMessageBox(msg, _("Done!"), wxICON_INFORMATION);
+		}
 	}
 }
