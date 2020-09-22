@@ -266,6 +266,10 @@ FString FPackage::GetObjectCompositePath(const FString& path)
 void FPackage::UpdateDirCache()
 {
   LogI("Building directory cache: \"%s\"", RootDir.C_str());
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    MissingPackages.clear();
+  }
   BuildPackageList(RootDir, DirCache, TfcCache);
   LogI("Done. Found %ld packages", DirCache.size());
 }
@@ -723,6 +727,10 @@ void FPackage::LoadPkgMapper(bool rebuild)
 
 void FPackage::LoadCompositePackageMapper(bool rebuild)
 {
+  {
+    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
+    MissingPackages.clear();
+  }
   CompositPackageMap.clear();
   CompositPackageList.clear();
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / CompositePackageMapperName;
