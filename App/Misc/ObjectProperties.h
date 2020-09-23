@@ -10,6 +10,9 @@ extern void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, 
 class AIntProperty : public wxIntProperty {
 public:
   AIntProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -17,6 +20,9 @@ protected:
 class AFloatProperty : public wxFloatProperty {
 public:
   AFloatProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -24,6 +30,9 @@ protected:
 class ABoolProperty : public wxBoolProperty {
 public:
   ABoolProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -31,6 +40,9 @@ protected:
 class AByteProperty : public wxIntProperty {
 public:
   AByteProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -38,6 +50,9 @@ protected:
 class AEnumProperty : public wxEnumProperty {
 public:
   AEnumProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -45,6 +60,9 @@ protected:
 class AStringProperty : public wxStringProperty {
 public:
   AStringProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };
@@ -52,6 +70,9 @@ protected:
 class ANameProperty : public wxStringProperty {
 public:
   ANameProperty(FPropertyValue* value, int32 idx);
+
+  void OnSetValue() override;
+
 protected:
   FPropertyValue* Value = nullptr;
 };

@@ -345,6 +345,15 @@ AIntProperty::AIntProperty(FPropertyValue* value, int32 idx)
   }
 }
 
+void AIntProperty::OnSetValue()
+{
+  if (m_value.GetInteger() != Value->GetInt())
+  {
+    Value->GetInt() = m_value.GetInteger();
+    Value->Property->Owner->MarkDirty();
+  }
+}
+
 AFloatProperty::AFloatProperty(FPropertyValue* value, int32 idx)
   : wxFloatProperty(GetPropertyName(value, idx), GetPropertyId(value), value->GetFloat())
   , Value(value)
@@ -356,6 +365,15 @@ AFloatProperty::AFloatProperty(FPropertyValue* value, int32 idx)
   else if (value->Struct && value->Struct->GetToolTip().Size())
   {
     SetHelpString(value->Field->GetToolTip().WString());
+  }
+}
+
+void AFloatProperty::OnSetValue()
+{
+  if (m_value.GetDouble() != Value->GetFloat())
+  {
+    Value->GetFloat() = m_value.GetDouble();
+    Value->Property->Owner->MarkDirty();
   }
 }
 
@@ -373,6 +391,15 @@ ABoolProperty::ABoolProperty(FPropertyValue* value, int32 idx)
   }
 }
 
+void ABoolProperty::OnSetValue()
+{
+  if (m_value.GetBool() != Value->GetBool())
+  {
+    Value->GetBool() = m_value.GetBool();
+    Value->Property->Owner->MarkDirty();
+  }
+}
+
 AByteProperty::AByteProperty(FPropertyValue* value, int32 idx)
   : wxIntProperty(GetPropertyName(value, idx), GetPropertyId(value), value->GetByte())
   , Value(value)
@@ -384,6 +411,21 @@ AByteProperty::AByteProperty(FPropertyValue* value, int32 idx)
   else if (value->Struct && value->Struct->GetToolTip().Size())
   {
     SetHelpString(value->Field->GetToolTip().WString());
+  }
+}
+
+void AByteProperty::OnSetValue()
+{
+  if (m_value.GetInteger() != Value->GetByte())
+  {
+    Value->GetByte() = (uint8)m_value.GetInteger();
+    Value->Property->Owner->MarkDirty();
+    if (Value->Enum)
+    {
+      // Add the name to the package if needed
+      const FName name = Value->Enum->GetEnum(Value->GetByte());
+      Value->Property->Owner->GetPackage()->GetNameIndex(name.String(), true);
+    }
   }
 }
 
@@ -401,6 +443,15 @@ AStringProperty::AStringProperty(FPropertyValue* value, int32 idx)
   }
 }
 
+void AStringProperty::OnSetValue()
+{
+  if (Value->GetString() != m_value.GetString().ToStdWstring())
+  {
+    Value->GetString() = m_value.GetString().ToStdWstring();
+    Value->Property->Owner->MarkDirty();
+  }
+}
+
 ANameProperty::ANameProperty(FPropertyValue* value, int32 idx)
   : wxStringProperty(GetPropertyName(value, idx), GetPropertyId(value), value->GetName().String().WString())
   , Value(value)
@@ -415,6 +466,15 @@ ANameProperty::ANameProperty(FPropertyValue* value, int32 idx)
   }
 }
 
+void ANameProperty::OnSetValue()
+{
+  if (Value->GetName() != m_value.GetString().ToStdWstring())
+  {
+    Value->GetName().SetString(m_value.GetString().ToStdWstring());
+    Value->Property->Owner->MarkDirty();
+  }
+}
+
 AEnumProperty::AEnumProperty(FPropertyValue* value, int32 idx)
   : wxEnumProperty(GetPropertyName(value, idx), GetPropertyId(value), GetEnumLabels(value), GetEnumValues(value), value->GetByte())
   , Value(value)
@@ -426,6 +486,21 @@ AEnumProperty::AEnumProperty(FPropertyValue* value, int32 idx)
   else if (value->Struct && value->Struct->GetToolTip().Size())
   {
     SetHelpString(value->Field->GetToolTip().WString());
+  }
+}
+
+void AEnumProperty::OnSetValue()
+{
+  if (m_value.GetInteger() != Value->GetByte())
+  {
+    Value->GetByte() = (uint8)m_value.GetInteger();
+    Value->Property->Owner->MarkDirty();
+    if (Value->Enum)
+    {
+      // Add the name to the package if needed
+      const FName name = Value->Enum->GetEnum(Value->GetByte());
+      Value->Property->Owner->GetPackage()->GetNameIndex(name.String(), true);
+    }
   }
 }
 
