@@ -64,6 +64,7 @@ typedef int32 NET_INDEX;
 typedef unsigned long BITFIELD;
 
 enum { INDEX_NONE = -1 };
+enum { MAX_TEXCOORDS = 4 };
 
 #define PACKAGE_MAGIC 0x9E2A83C1
 #define VER_TERA_CLASSIC 610

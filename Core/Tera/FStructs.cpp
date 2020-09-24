@@ -124,6 +124,11 @@ inline FString FScriptDelegate::ToString(const UObject* OwnerObject) const
   return DelegateObject->GetObjectPath() + "." + FunctionName.String();
 }
 
+FStream& operator<<(FStream& s, FVector& v)
+{
+  return s << v.X << v.Y << v.Z;
+}
+
 FStream& operator<<(FStream& s, FScriptDelegate& d)
 {
   SERIALIZE_UREF(s, d.Object);
@@ -187,6 +192,11 @@ FStream& operator<<(FStream& s, FIntPoint& p)
   return s << p.X << p.Y;
 }
 
+FStream& operator<<(FStream& s, FColor& c)
+{
+  return s << c.R << c.G << c.B << c.A;
+}
+
 FStream& operator<<(FStream& s, FIntRect& r)
 {
   return s << r.Min << r.Max;
@@ -200,6 +210,31 @@ FStream& operator<<(FStream& s, FLevelGuids& g)
 FStream& operator<<(FStream& s, FObjectThumbnailInfo& i)
 {
   return s << i.ObjectClassName << i.ObjectPath << i.Offset;
+}
+
+FStream& operator<<(FStream& s, FBoxSphereBounds& b)
+{
+  return s << b.Origin << b.BoxExtent << b.SphereRadius;
+}
+
+FStream& operator<<(FStream& s, FRotator& r)
+{
+  return s << r.Pitch << r.Yaw << r.Roll;
+}
+
+FStream& operator<<(FStream& s, FQuat& f)
+{
+  return s << f.X << f.Y << f.Z << f.W;
+}
+
+FStream& operator<<(FStream& s, FPackedNormal& n)
+{
+  return s << n.Vector.Packed;
+}
+
+FStream& operator<<(FStream& s, FVector2DHalf& v)
+{
+  return s << v.X << v.Y;
 }
 
 FStream& operator<<(FStream& s, FObjectThumbnail& t)
@@ -453,4 +488,16 @@ void FTexture2DMipMap::Serialize(FStream& s, UObject* owner, int32 mipIdx)
   }
   Data->Serialize(s, owner, mipIdx);
   s << SizeX << SizeY;
+}
+
+void FWordBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
+{
+  uint16& d = *((uint16*)data + elementIndex);
+  s << d;
+}
+
+void FIntBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
+{
+  uint32& d = *((uint32*)data + elementIndex);
+  s << d;
 }

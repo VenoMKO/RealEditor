@@ -235,6 +235,8 @@ struct FVector {
 		return X == v.X && Y == v.Y && Z == v.Z;
 	}
 
+	friend FStream& operator<<(FStream& s, FVector& v);
+
 	float X = 0;
 	float Y = 0;
 	float Z = 0;
@@ -384,6 +386,21 @@ struct FUntypedBulkData
 		return BulkData;
 	}
 
+	void Realloc(int32 elementCount)
+	{
+		if (elementCount <= 0)
+		{
+			return;
+		}
+		if (OwnsMemory)
+		{
+			free(BulkData);
+		}
+		OwnsMemory = true;
+		BulkData = malloc(elementCount * GetElementSize());
+		ElementCount = elementCount;
+	}
+
 	int32 GetElementCount() const;
 
 	int32 GetBulkDataSize() const;
@@ -459,6 +476,8 @@ public:
 	{
 		return R == v.R && G == v.G && B == v.B && A == v.A;
 	}
+
+	friend FStream& operator<<(FStream& s, FColor& c);
 
 	uint8 B = 0;
 	uint8 G = 0;
@@ -545,4 +564,72 @@ struct FObjectThumbnail {
 	int32 CompressedSize = 0;
 	void* CompressedData = nullptr;
 	bool IsDirty = false;
+};
+
+struct FBoxSphereBounds {
+	FVector	Origin;
+	FVector	BoxExtent;
+	float	SphereRadius = 0;
+
+	friend FStream& operator<<(FStream& s, FBoxSphereBounds& bounds);
+};
+
+struct FRotator
+{
+	int32 Pitch = 0; // Looking up and down (0=Straight Ahead, +Up, -Down).
+	int32 Yaw = 0;   // Rotating around (running in circles), 0=East, +North, -South.
+	int32 Roll = 0;  // Rotation about axis of screen, 0=Straight, +Clockwise, -CCW.
+
+	friend FStream& operator<<(FStream& s, FRotator& r);
+};
+
+struct FQuat
+{
+	float X = 0;
+	float Y = 0;
+	float Z = 0;
+	float W = 0;
+
+	friend FStream& operator<<(FStream& s, FQuat& f);
+};
+
+struct FPackedNormal
+{
+	union
+	{
+		struct
+		{
+			uint8	X, Y, Z, W;
+		};
+		uint32 Packed = 0;
+	} Vector;
+
+	friend FStream& operator<<(FStream& s, FPackedNormal& n);
+};
+
+struct FWordBulkData : public FUntypedBulkData
+{
+	int32 GetElementSize() const override
+	{
+		return sizeof(uint16);
+	}
+
+	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
+};
+
+struct FIntBulkData : public FUntypedBulkData
+{
+	int32 GetElementSize() const override
+	{
+		return sizeof(uint32);
+	}
+
+	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
+};
+
+struct FVector2DHalf {
+	uint16 X = 0;
+	uint16 Y = 0;
+
+	friend FStream& operator<<(FStream& s, FVector2DHalf& v);
 };
