@@ -1,17 +1,5 @@
 #include "USkeletalMesh.h"
 
-void USkeletalMesh::Serialize(FStream& s)
-{
-  Super::Serialize(s);
-  s << Bounds;
-  s << Materials;
-  s << Origin;
-  s << RotOrigin;
-  s << RefSkeleton;
-  s << SkeletalDepth;
-
-}
-
 FStream& operator<<(FStream& s, FRigidSkinVertex& v)
 {
   s << v.Position;
@@ -84,7 +72,15 @@ FStream& operator<<(FStream& s, FSkelMeshChunk& c)
   s << c.SoftVertices;
   s << c.BoneMap;
   s << c.NumRigidVertices;
+  if (c.RigidVertices.size() != c.NumRigidVertices)
+  {
+    UThrow("Failed to serialize a mesh chunk. RV mismatch: %zu != %d", c.RigidVertices.size(), c.NumRigidVertices);
+  }
   s << c.NumSoftVertices;
+  if (c.SoftVertices.size() != c.NumSoftVertices)
+  {
+    UThrow("Failed to serialize a mesh chunk. SV mismatch: %zu != %d", c.SoftVertices.size(), c.NumSoftVertices);
+  }
   s << c.MaxBoneInfluences;
   return s;
 }
@@ -96,6 +92,13 @@ FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c)
     s << c.NeedsCPUAccess;
   }
   s << c.ElementSize;
+  s << c.BulkElementSize;
+
+  if (c.ElementSize != c.BulkElementSize)
+  {
+    UThrow("Elements size mismatch: %u != %u", c.ElementSize, c.BulkElementSize);
+  }
+
   s << c.ElementCount;
   if (s.IsReading())
   {
@@ -112,12 +115,32 @@ FStream& operator<<(FStream& s, FMeshEdge& e)
 
 FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
 {
+#define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs ) \
+  switch(numUVs) \
+  { \
+    case 1: b.Data = (FGPUSkinVertexBase*)new VertexDataType<1>[b.ElementCount]; break; \
+    case 2: b.Data = (FGPUSkinVertexBase*)new VertexDataType<2>[b.ElementCount]; break; \
+    case 3: b.Data = (FGPUSkinVertexBase*)new VertexDataType<3>[b.ElementCount]; break; \
+    case 4: b.Data = (FGPUSkinVertexBase*)new VertexDataType<4>[b.ElementCount]; break; \
+  }
+
+#define SERIALIZE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, idx ) \
+  switch(numUVs) \
+  { \
+    case 1: s << ((VertexDataType<1>*)b.Data)[idx]; break; \
+    case 2: s << ((VertexDataType<2>*)b.Data)[idx]; break; \
+    case 3: s << ((VertexDataType<3>*)b.Data)[idx]; break; \
+    case 4: s << ((VertexDataType<4>*)b.Data)[idx]; break; \
+   }
+
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s << b.NumTexCoords;
   }
+
   s << b.bUseFullPrecisionUVs;
   s << b.bUsePackedPosition;
+  
 
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
@@ -125,6 +148,140 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
     s << b.MeshOrigin;
   }
 
+  s << b.ElementSize;
+  s << b.ElementCount;
+
+  if (b.ElementCount && b.ElementSize)
+  {
+    FILE_OFFSET len = s.GetPosition();
+#if ENABLE_PACKED_VERTEX_POSITION
+    if (!b.bUseFullPrecisionUVs)
+    {
+      if (b.bUsePackedPosition)
+      {
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAB, b.NumTexCoords);
+        
+        FILE_OFFSET tmp = 0;
+        for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+        {
+          tmp = s.GetPosition();
+          SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAB, b.NumTexCoords, idx);
+          tmp = s.GetPosition() - tmp;
+          int x = 1;
+        }
+      }
+      else
+      {
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatABB, b.NumTexCoords);
+        for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+        {
+          SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatABB, b.NumTexCoords, idx);
+        }
+      }
+    }
+    else
+    {
+      if (b.bUsePackedPosition)
+      {
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAAB, b.NumTexCoords);
+        for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+        {
+          SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAAB, b.NumTexCoords, idx);
+        }
+      }
+      else
+      {
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAABB, b.NumTexCoords);
+        for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+        {
+          SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAABB, b.NumTexCoords, idx);
+        }
+      }
+    }
+#else
+    if (!b.bUseFullPrecisionUVs)
+    {
+      ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatABB, b.NumTexCoords);
+      for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+      {
+        SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatABB, b.NumTexCoords, idx);
+      }
+    }
+    else
+    {
+      ALLOCATE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAABB, b.NumTexCoords);
+      for (uint32 idx = 0; idx < b.ElementCount; ++idx)
+      {
+        SERIALIZE_VERTEX_DATA_TEMPLATE(FGPUSkinVertexFloatAABB, b.NumTexCoords, idx);
+      }
+    }
+#endif
+    len = s.GetPosition() - len;
+    if (len != b.ElementCount * b.ElementSize)
+    {
+      UThrow("Failed to serialize GPU vertex buffer. Size mismatch: %d != %d(P:%d,T:%d)", len, b.ElementCount * b.ElementSize, b.bUsePackedPosition, b.bUseFullPrecisionUVs);
+    }
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FSkeletalMeshColorBuffer& b)
+{
+  s << b.ElementSize;
+  s << b.ElementCount;
+
+  if (b.ElementSize && b.ElementCount)
+  {
+    if (s.IsReading())
+    {
+      b.Data = new FColor[b.ElementCount];
+    }
+    FILE_OFFSET len = s.GetPosition();
+    for (int32 idx = 0; idx < b.ElementCount; ++idx)
+    {
+      s << b.Data[idx];
+    }
+    len = s.GetPosition() - len;
+    if (len != b.ElementCount * b.ElementSize)
+    {
+      UThrow("Failed to serialize GPU color buffer. Size mismatch: %d != %d", len, b.ElementCount * b.ElementSize);
+    }
+  }
+
+  return s;
+}
+
+FStream& operator<<(FStream& s, FInfluenceWeights& w)
+{
+  return s << w.InfluenceWeightsUint32;
+}
+
+FStream& operator<<(FStream& s, FInfluenceBones& w)
+{
+  return s << w.InfluenceBonesUint32;
+}
+
+FStream& operator<<(FStream& s, FVertexInfluence& i)
+{
+  return s << i.Wieghts << i.Bones;
+}
+
+FStream& operator<<(FStream& s, FSkeletalMeshVertexInfluences& i)
+{
+  s << i.Influences;
+  s << i.VertexInfluenceMap;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << i.Sections;
+    s << i.Chunks;
+    s << i.RequiredBones;
+    uint8 usage = i.Usage;
+    s << usage;
+    if (s.IsReading())
+    {
+      i.Usage = (EInstanceWeightUsage)usage;
+    }
+  }
   return s;
 }
 
@@ -176,5 +333,52 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner)
     s << NumTexCoords;
   }
 
+  s << VertexBufferGPUSkin;
 
+  if (((USkeletalMesh*)owner)->bHasVertexColors)
+  {
+    s << ColorBuffer;
+  }
+
+  s << VertexInfluences;
+
+  // TODO: serialize kDOPs
+}
+
+void FGPUSkinVertexBase::Serialize(FStream& s)
+{
+  s << TangentX;
+  s << TangentZ;
+
+  for (int32 idx = 0; idx < MAX_INFLUENCES; ++idx)
+  {
+    s << BoneIndex[idx];
+  }
+  for (int32 idx = 0; idx < MAX_INFLUENCES; ++idx)
+  {
+    s << BoneWeight[idx];
+  }
+}
+
+void USkeletalMesh::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << Bounds;
+  s << Materials;
+  s << Origin;
+  s << RotOrigin;
+  s << RefSkeleton;
+  s << SkeletalDepth;
+  int32 modelsCount = (int32)LodModels.size();
+  s << modelsCount;
+  if (s.IsReading())
+  {
+    LodModels.resize(modelsCount);
+  }
+  for (int32 idx = 0; idx < modelsCount; ++idx)
+  {
+    LodModels[idx].Serialize(s, this);
+  }
+  // TODO: finish lod models
+  //s << NameIndexMap;
 }

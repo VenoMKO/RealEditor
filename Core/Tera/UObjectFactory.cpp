@@ -14,6 +14,7 @@
 #include "UMaterial.h"
 #include "UPersistentCookerData.h"
 #include "UTexture.h"
+#include "USkeletalMesh.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -27,6 +28,12 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTexture2D(exp);
   }
+#if _DEBUG
+  else if (c == USkeletalMesh::StaticClassName())
+  {
+    result = new USkeletalMesh(exp);
+  }
+#endif
   else if (c == UField::StaticClassName())
   {
     result = new UField(exp);

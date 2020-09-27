@@ -7,6 +7,15 @@ FStream& operator<<(FStream& s, FGuid& g)
   return s << g.A << g.B << g.C << g.D;
 }
 
+FStream& operator<<(FStream& s, FFloat16& v)
+{
+  s << v.Packed;
+#if _DEBUG
+  v.Value = (float)v;
+#endif
+  return s;
+}
+
 FStream& operator<<(FStream& s, FCompressedChunk& c)
 {
   return s << c.DecompressedOffset << c.DecompressedSize << c.CompressedOffset << c.CompressedSize;
@@ -235,6 +244,18 @@ FStream& operator<<(FStream& s, FPackedNormal& n)
 FStream& operator<<(FStream& s, FVector2DHalf& v)
 {
   return s << v.X << v.Y;
+}
+
+void FPackedPosition::Set(const FVector& inVector)
+{
+  Vector.X = std::clamp<int32>(trunc(inVector.X * 1023.0f), -1023, 1023);
+  Vector.Y = std::clamp<int32>(trunc(inVector.Y * 1023.0f), -1023, 1023);
+  Vector.Z = std::clamp<int32>(trunc(inVector.Z * 511.0f), -511, 511);
+}
+
+FStream& operator<<(FStream& s, FPackedPosition& p)
+{
+  return s << p.Packed;
 }
 
 FStream& operator<<(FStream& s, FObjectThumbnail& t)

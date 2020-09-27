@@ -19,6 +19,10 @@ static const float APP_VER = 1.02f;
 #define CACHE_COMPOSITE_MAP 0
 #define CACHE_S1GAME_CONTENTS 0
 
+// Vertex buffer positions are not packed despite the flag.
+// Packed poisitions are allowed on consoles only.
+#define ENABLE_PACKED_VERTEX_POSITION 0
+
 #if _DEBUG
 // DUMP_PATH should be set in the ENV
 #if defined(DUMP_PATH)

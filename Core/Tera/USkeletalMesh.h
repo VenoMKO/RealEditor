@@ -1,6 +1,8 @@
 #pragma once
 #include "UObject.h"
 
+#include <unordered_map>
+
 enum { MAX_INFLUENCES = 4 };
 
 enum ETriangleSortOption : uint8
@@ -52,6 +54,41 @@ struct FMeshBone
 	}
 };
 
+struct FBonePair
+{
+	FName Bones[2];
+
+	bool operator==(const FBonePair& b) const
+	{
+		return Bones[0] == b.Bones[0] && Bones[1] == b.Bones[1];
+	}
+
+	bool IsMatch(const FBonePair& b) const
+	{
+		return	(Bones[0] == b.Bones[0] || Bones[1] == b.Bones[0]) && (Bones[0] == b.Bones[1] || Bones[1] == b.Bones[1]);
+	}
+};
+
+struct FBoneIndexPair
+{
+	int32 BoneIdx[2];
+
+	bool operator==(const FBoneIndexPair& b) const
+	{
+		return (BoneIdx[0] == b.BoneIdx[0]) && (BoneIdx[1] == b.BoneIdx[1]);
+	}
+
+	bool operator<(const FBoneIndexPair& b) const
+	{
+		return (BoneIdx[0] < b.BoneIdx[0]) && (BoneIdx[1] < b.BoneIdx[1]);
+	}
+
+	friend FStream& operator<<(FStream& s, FBoneIndexPair& p)
+	{
+		return s << p.BoneIdx[0] << p.BoneIdx[1];
+	}
+};
+
 struct FSkelMeshSection
 {
 	uint16 MaterialIndex = 0;
@@ -68,7 +105,7 @@ struct FSkelMeshSection
 
 		if (s.GetFV() == VER_TERA_CLASSIC)
 		{
-			uint16 ntris;
+			uint16 ntris = (uint16)m.NumTriangles;
 			s << ntris;
 			m.NumTriangles = ntris;
 		}
@@ -122,7 +159,7 @@ struct FSkelMeshChunk {
 	int32 NumRigidVertices = 0;
 	int32 NumSoftVertices = 0;
 
-	int32 MaxBoneInfluences = 0;
+	int32 MaxBoneInfluences = 4;
 
 	friend FStream& operator<<(FStream& s, FSkelMeshChunk& c);
 };
@@ -171,6 +208,7 @@ public:
 
 private:
 	uint8 ElementSize = 2;
+	uint32 BulkElementSize = 2; // Not an actual field of the MultiSizeContainer. Belongs to a bulk array serialization. TODO: create a template for bulk array serialization
 	uint32 ElementCount = 0;
 	bool NeedsCPUAccess = true;
 	void* IndexBuffer = nullptr;
@@ -189,23 +227,215 @@ struct FGPUSkinVertexBase {
 	FPackedNormal TangentZ; // Normal
 	uint8 BoneIndex[MAX_INFLUENCES];
 	uint8 BoneWeight[MAX_INFLUENCES];
+
+	void Serialize(FStream& s);
+
+	virtual ~FGPUSkinVertexBase()
+	{}
+
+	virtual FVector GetPosition() const = 0;
+	virtual FVector2D GetUVs(int32 idx) const = 0;
 };
 
 template<uint32 NumTexCoords = 1>
-struct TGPUSkinVertexFloat16Uvs : public FGPUSkinVertexBase {
+struct FGPUSkinVertexFloatAABB : public FGPUSkinVertexBase {
+	FVector Position;
+	FVector2D UV[NumTexCoords];
+
+	friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAABB& v)
+	{
+		v.Serialize(s);
+
+		s << v.Position;
+
+		for (int32 idx = 0; idx < NumTexCoords; ++idx)
+		{
+			s << v.UV[idx];
+		}
+		return s;
+	}
+
+	FVector GetPosition() const override
+	{
+		return Position;
+	}
+
+	FVector2D GetUVs(int32 idx) const override
+	{
+		return UV[idx];
+	}
+};
+
+template<uint32 NumTexCoords = 1>
+struct FGPUSkinVertexFloatAAB : public FGPUSkinVertexBase {
+	FPackedPosition Position;
+	FVector2D UV[NumTexCoords];
+
+	friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAAB& v)
+	{
+		v.Serialize(s);
+
+		s << v.Position;
+
+		for (int32 idx = 0; idx < NumTexCoords; ++idx)
+		{
+			s << v.UV[idx];
+		}
+		return s;
+	}
+
+	FVector GetPosition() const override
+	{
+		return Position;
+	}
+
+	FVector2D GetUVs(int32 idx) const override
+	{
+		return UV[idx];
+	}
+};
+
+template<uint32 NumTexCoords = 1>
+struct FGPUSkinVertexFloatABB : public FGPUSkinVertexBase {
 	FVector Position;
 	FVector2DHalf UV[NumTexCoords];
+
+	friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatABB& v)
+	{
+		v.Serialize(s);
+
+		s << v.Position;
+
+		for (int32 idx = 0; idx < NumTexCoords; ++idx)
+		{
+			s << v.UV[idx];
+		}
+		return s;
+	}
+
+	FVector GetPosition() const override
+	{
+		return Position;
+	}
+
+	FVector2D GetUVs(int32 idx) const override
+	{
+		return UV[idx];
+	}
+};
+
+template<uint32 NumTexCoords = 1>
+struct FGPUSkinVertexFloatAB : public FGPUSkinVertexBase {
+	FPackedPosition Position;
+	FVector2DHalf UV[NumTexCoords];
+
+	friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAB& v)
+	{
+		v.Serialize(s);
+
+		s << v.Position;
+
+		for (int32 idx = 0; idx < NumTexCoords; ++idx)
+		{
+			s << v.UV[idx];
+		}
+		return s;
+	}
+
+	FVector GetPosition() const override
+	{
+		return Position;
+	}
+
+	FVector2D GetUVs(int32 idx) const override
+	{
+		return UV[idx];
+	}
 };
 
 struct  FSkeletalMeshVertexBuffer {
+	bool bUseFullPrecisionUVs = true;
+	bool bUsePackedPosition = false;
+
 	uint32 NumVertices = 0;
 	uint32 NumTexCoords = 1;
-	bool bUseFullPrecisionUVs = false;
-	bool bUsePackedPosition = false;
 	FVector MeshOrigin;
 	FVector MeshExtension;
+	uint32 ElementSize = 0;
+	uint32 ElementCount = 0;
+	FGPUSkinVertexBase* Data = nullptr;
 
 	friend FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b);
+	
+	~FSkeletalMeshVertexBuffer()
+	{
+		delete[] Data;
+	}
+};
+
+struct  FSkeletalMeshColorBuffer {
+	FColor* Data = nullptr;
+	uint32 ElementSize = 0;
+	uint32 ElementCount = 0;
+
+	friend FStream& operator<<(FStream& s, FSkeletalMeshColorBuffer& b);
+	
+	~FSkeletalMeshColorBuffer()
+	{
+		delete[] Data;
+	}
+};
+
+struct FInfluenceWeights
+{
+	union
+	{
+		struct
+		{
+			uint8 InfluenceWeights[MAX_INFLUENCES];
+		};
+		uint32 InfluenceWeightsUint32 = 0;
+	};
+
+	friend FStream& operator<<(FStream& s, FInfluenceWeights& w);
+};
+
+struct FInfluenceBones
+{
+	union
+	{
+		struct
+		{
+			uint8 InfluenceBones[MAX_INFLUENCES];
+		};
+		uint32 InfluenceBonesUint32 = 0;
+	};
+
+	friend FStream& operator<<(FStream& s, FInfluenceBones& w);
+};
+
+struct FVertexInfluence {
+	FInfluenceWeights Wieghts;
+	FInfluenceBones Bones;
+
+	friend FStream& operator<<(FStream& s, FVertexInfluence& i);
+};
+
+enum EInstanceWeightUsage : uint8
+{
+	IWU_PartialSwap = 0,
+	IWU_FullSwap
+};
+
+struct FSkeletalMeshVertexInfluences {
+	std::vector<FVertexInfluence> Influences;
+	std::map<FBoneIndexPair, std::vector<uint32>> VertexInfluenceMap;
+	std::vector<FSkelMeshSection> Sections;
+	std::vector<FSkelMeshChunk> Chunks;
+	std::vector<uint8> RequiredBones;
+	EInstanceWeightUsage Usage = IWU_PartialSwap;
+
+	friend FStream& operator<<(FStream& s, FSkeletalMeshVertexInfluences& i);
 };
 
 class FStaticLODModel {
@@ -229,6 +459,8 @@ public:
 	FWordBulkData LegacyRawPointIndices;
 
 	FSkeletalMeshVertexBuffer VertexBufferGPUSkin;
+	FSkeletalMeshColorBuffer ColorBuffer;
+	std::vector<FSkeletalMeshVertexInfluences> VertexInfluences;
 };
 
 class USkeletalMesh : public UObject {
@@ -237,7 +469,7 @@ public:
 
 	UPROP(bool, bHasVertexColors, false);
 
-	void Serialize(FStream& s);
+	void Serialize(FStream& s) override;
 
 private:
   FBoxSphereBounds Bounds;
@@ -249,4 +481,7 @@ private:
 
 	std::vector<UObject*> Materials;
 	std::vector<UObject*> ClothingAssets;
+
+	std::vector<FStaticLODModel> LodModels;
+	std::map<FName, int32> NameIndexMap;
 };

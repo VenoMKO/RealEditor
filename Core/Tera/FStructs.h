@@ -627,9 +627,159 @@ struct FIntBulkData : public FUntypedBulkData
 	void SerializeElement(FStream& s, void* data, int32 elementIndex) override;
 };
 
+class FFloat32
+{
+public:
+	union
+	{
+		struct
+		{
+			uint32 Sign : 1;
+			uint32 Exponent : 8;
+			uint32 Mantissa : 23;
+		} Components;
+		float	FloatValue;
+	};
+
+	FFloat32(float v = 0.0f)
+		: FloatValue(v)
+	{}
+};
+
+class FFloat16
+{
+public:
+	union
+	{
+		struct
+		{
+			uint16 Mantissa : 10;
+			uint16 Exponent : 5;
+			uint16 Sign : 1;
+		} Components;
+		uint16 Packed = 0;
+	};
+
+#if _DEBUG
+	float Value = 0;
+#endif
+
+	FFloat16()
+		: Packed(0)
+	{}
+
+	FFloat16(const FFloat16& v)
+	{
+		Packed = v.Packed;
+	}
+
+	FFloat16(float v)
+	{
+		Set(v);
+	}
+
+	operator float() const
+	{
+		return GetFloat();
+	}
+
+	FFloat16& operator=(float v)
+	{
+		Set(v);
+		return *this;
+	}
+
+	FFloat16& operator=(const FFloat16& v)
+	{
+		Packed = v.Packed;
+		return *this;
+	}
+
+	void Set(float v32)
+	{
+		FFloat32 ffv(v32);
+
+		Components.Sign = ffv.Components.Sign;
+
+		if (ffv.Components.Exponent <= 112)
+		{
+			Components.Exponent = 0;
+			Components.Mantissa = 0;
+		}
+		else if (ffv.Components.Exponent >= 143)
+		{
+			Components.Exponent = 30;
+			Components.Mantissa = 1023;
+		}
+		else
+		{
+			Components.Exponent = int32(ffv.Components.Exponent) - 127 + 15;
+			Components.Mantissa = uint16(ffv.Components.Mantissa >> 13);
+		}
+	}
+
+	float GetFloat() const
+	{
+		FFloat32	result;
+		result.Components.Sign = Components.Sign;
+		if (Components.Exponent == 0)
+		{
+			result.Components.Exponent = 0;
+			result.Components.Mantissa = 0;
+		}
+		else if (Components.Exponent == 31)
+		{
+			result.Components.Exponent = 142;
+			result.Components.Mantissa = 8380416;
+		}
+		else
+		{
+			result.Components.Exponent = int32(Components.Exponent) - 15 + 127;
+			result.Components.Mantissa = uint32(Components.Mantissa) << 13;
+		}
+		return result.FloatValue;
+	}
+
+	friend FStream& operator<<(FStream& s, FFloat16& v);
+};
+
 struct FVector2DHalf {
-	uint16 X = 0;
-	uint16 Y = 0;
+	FFloat16 X = 0;
+	FFloat16 Y = 0;
+
+	operator FVector2D() const
+	{
+		return FVector2D(X, Y);
+	}
 
 	friend FStream& operator<<(FStream& s, FVector2DHalf& v);
+};
+
+struct FPackedPosition
+{
+	union
+	{
+		struct
+		{
+			int32 X : 11;
+			int32 Y : 11;
+			int32 Z : 10;
+		} Vector;
+		uint32 Packed = 0;
+	};
+
+	operator FVector() const
+	{
+		return FVector(Vector.X / 1023.f, Vector.Y / 1023.f, Vector.Z / 511.f);
+	}
+
+	FPackedPosition& operator=(FVector v)
+	{
+		Set(v);
+		return *this;
+	}
+
+	void Set(const FVector& inVector);
+
+	friend FStream& operator<<(FStream& s, FPackedPosition& p);
 };
