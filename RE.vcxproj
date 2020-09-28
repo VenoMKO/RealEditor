@@ -71,6 +71,7 @@
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
+    <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />

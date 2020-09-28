@@ -208,6 +208,7 @@
     <ClInclude Include="App\Windows\CookingOptions.h" />
     <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
+    <ClInclude Include="Core\Tera\kDOP.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

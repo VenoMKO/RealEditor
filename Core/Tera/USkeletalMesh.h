@@ -1,6 +1,6 @@
 #pragma once
 #include "UObject.h"
-
+#include "kDOP.h"
 #include <unordered_map>
 
 enum { MAX_INFLUENCES = 4 };
@@ -354,14 +354,14 @@ struct FGPUSkinVertexFloatAB : public FGPUSkinVertexBase {
 };
 
 struct  FSkeletalMeshVertexBuffer {
-	bool bUseFullPrecisionUVs = true;
-	bool bUsePackedPosition = false;
+	bool bUseFullPrecisionUVs = false;
+	bool bUsePackedPosition = true;
 
 	uint32 NumVertices = 0;
 	uint32 NumTexCoords = 1;
 	FVector MeshOrigin;
 	FVector MeshExtension;
-	uint32 ElementSize = 0;
+	uint32 ElementSize = 32;
 	uint32 ElementCount = 0;
 	FGPUSkinVertexBase* Data = nullptr;
 
@@ -375,7 +375,7 @@ struct  FSkeletalMeshVertexBuffer {
 
 struct  FSkeletalMeshColorBuffer {
 	FColor* Data = nullptr;
-	uint32 ElementSize = 0;
+	uint32 ElementSize = 4;
 	uint32 ElementCount = 0;
 
 	friend FStream& operator<<(FStream& s, FSkeletalMeshColorBuffer& b);
@@ -438,6 +438,13 @@ struct FSkeletalMeshVertexInfluences {
 	friend FStream& operator<<(FStream& s, FSkeletalMeshVertexInfluences& i);
 };
 
+struct FPerPolyBoneCollisionData {
+	FkDOPTreeCompact KDOPTree;
+	std::vector<FVector> Vertices;
+
+	friend FStream& operator<<(FStream& s, FPerPolyBoneCollisionData& d);
+};
+
 class FStaticLODModel {
 public:
 
@@ -461,14 +468,15 @@ public:
 	FSkeletalMeshVertexBuffer VertexBufferGPUSkin;
 	FSkeletalMeshColorBuffer ColorBuffer;
 	std::vector<FSkeletalMeshVertexInfluences> VertexInfluences;
+	FMultiSizeIndexContainer Unk;
 };
 
 class USkeletalMesh : public UObject {
 public:
   DECL_UOBJ(USkeletalMesh, UObject);
-
 	UPROP(bool, bHasVertexColors, false);
 
+	bool RegisterProperty(FPropertyTag* property) override;
 	void Serialize(FStream& s) override;
 
 private:
@@ -484,4 +492,12 @@ private:
 
 	std::vector<FStaticLODModel> LodModels;
 	std::map<FName, int32> NameIndexMap;
+
+	std::vector<FPerPolyBoneCollisionData> PerPolyBoneKDOPs;
+
+	std::vector<FString> BoneBreakNames;
+	std::vector<uint8> BoneBreakOptions;
+	std::vector<PACKAGE_INDEX> ApexClothing;
+	std::vector<float> CachedStreamingTextureFactors;
+	uint32 Unk1 = 0;
 };

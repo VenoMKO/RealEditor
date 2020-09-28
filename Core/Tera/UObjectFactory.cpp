@@ -28,12 +28,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTexture2D(exp);
   }
-#if _DEBUG
   else if (c == USkeletalMesh::StaticClassName())
   {
     result = new USkeletalMesh(exp);
   }
-#endif
   else if (c == UField::StaticClassName())
   {
     result = new UField(exp);

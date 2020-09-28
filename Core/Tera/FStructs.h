@@ -634,11 +634,11 @@ public:
 	{
 		struct
 		{
-			uint32 Sign : 1;
-			uint32 Exponent : 8;
 			uint32 Mantissa : 23;
+			uint32 Exponent : 8;
+			uint32 Sign : 1;
 		} Components;
-		float	FloatValue;
+		float	FloatValue = 0;
 	};
 
 	FFloat32(float v = 0.0f)

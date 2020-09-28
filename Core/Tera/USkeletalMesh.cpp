@@ -1,4 +1,5 @@
 #include "USkeletalMesh.h"
+#include "FObjectResource.h"
 
 FStream& operator<<(FStream& s, FRigidSkinVertex& v)
 {
@@ -285,6 +286,11 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexInfluences& i)
   return s;
 }
 
+FStream& operator<<(FStream& s, FPerPolyBoneCollisionData& d)
+{
+  return s << d.KDOPTree << d.Vertices;
+}
+
 void FStaticLODModel::Serialize(FStream& s, UObject* owner)
 {
   s << Sections;
@@ -335,14 +341,13 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner)
 
   s << VertexBufferGPUSkin;
 
-  if (((USkeletalMesh*)owner)->bHasVertexColors)
+  if (s.GetFV() > VER_TERA_CLASSIC && ((USkeletalMesh*)owner)->bHasVertexColors)
   {
     s << ColorBuffer;
   }
-
   s << VertexInfluences;
-
-  // TODO: serialize kDOPs
+  s << Unk;
+  DBreakIf(Unk.GetElementCount());
 }
 
 void FGPUSkinVertexBase::Serialize(FStream& s)
@@ -358,6 +363,17 @@ void FGPUSkinVertexBase::Serialize(FStream& s)
   {
     s << BoneWeight[idx];
   }
+}
+
+bool USkeletalMesh::RegisterProperty(FPropertyTag* property)
+{
+  if (PROP_IS(property, bHasVertexColors))
+  {
+    bHasVertexColors = property->BoolVal;
+    bHasVertexColorsProperty = property;
+    return true;
+  }
+  return false;
 }
 
 void USkeletalMesh::Serialize(FStream& s)
@@ -379,6 +395,37 @@ void USkeletalMesh::Serialize(FStream& s)
   {
     LodModels[idx].Serialize(s, this);
   }
-  // TODO: finish lod models
-  //s << NameIndexMap;
+
+  s << NameIndexMap;
+
+#if _DEBUG
+  // Untested code
+  // TODO: remove the whole "#if _DEBUG ... #endif" block after UStaticMesh is implemented
+  if (s.IsReading())
+  {
+    FILE_OFFSET tmp = s.GetPosition();
+    int32 cnt = 0;
+    s << cnt;
+    DBreakIf(cnt); 
+    s.SetPosition(tmp);
+  }
+#endif
+
+  if (s.GetFV() == VER_TERA_CLASSIC)
+  {
+    // TODO: implement kDOPs for 32-bit client and remove this check
+    return;
+  }
+
+  s << PerPolyBoneKDOPs;
+
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << BoneBreakNames;
+    s << BoneBreakOptions;
+    s << ApexClothing;
+    s << CachedStreamingTextureFactors;
+    s << Unk1;
+    DBreakIf(Unk1 || (Export->SerialOffset + Export->SerialSize) - s.GetPosition());
+  }
 }
