@@ -6,5 +6,6 @@ class SkelMeshEditor : public GenericEditor {
 public:
   using GenericEditor::GenericEditor;
 
+  void OnExportMenuClicked(wxCommandEvent& e);
   void OnExportClicked(wxCommandEvent&) override;
 };
