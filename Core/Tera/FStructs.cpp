@@ -522,3 +522,14 @@ void FIntBulkData::SerializeElement(FStream& s, void* data, int32 elementIndex)
   uint32& d = *((uint32*)data + elementIndex);
   s << d;
 }
+
+FPackedNormal::operator FVector() const
+{
+  float tmp[3] = { (float)Vector.X, (float)Vector.Y, (float)Vector.Z };
+  const float a = 1. / 127.5;
+  const float b = -1.;
+  tmp[0] = tmp[0] * a + b;
+  tmp[1] = tmp[1] * a + b;
+  tmp[2] = tmp[2] * a + b;
+  return FVector(tmp[0], tmp[1], tmp[2]);
+}

@@ -146,6 +146,12 @@
     <ClCompile Include="Core\Tera\USkeletalMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Utils\FbxUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\SkelMeshEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -209,6 +215,8 @@
     <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
+    <ClInclude Include="Core\Utils\FbxUtils.h" />
+    <ClInclude Include="App\Editors\SkelMeshEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

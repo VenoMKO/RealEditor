@@ -604,6 +604,8 @@ struct FPackedNormal
 		uint32 Packed = 0;
 	} Vector;
 
+	operator FVector() const;
+
 	friend FStream& operator<<(FStream& s, FPackedNormal& n);
 };
 

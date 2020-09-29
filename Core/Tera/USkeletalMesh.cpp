@@ -350,6 +350,23 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner)
   DBreakIf(Unk.GetElementCount());
 }
 
+std::vector<FSoftSkinVertex> FStaticLODModel::GetVertices() const
+{
+  std::vector<FSoftSkinVertex> result;
+  for (const FSkelMeshChunk& chunk : Chunks)
+  {
+    for (const FRigidSkinVertex& vert : chunk.RigidVertices)
+    {
+      result.emplace_back(vert);
+    }
+    for (const FSoftSkinVertex& vert : chunk.SoftVertices)
+    {
+      result.emplace_back(vert);
+    }
+  }
+  return result;
+}
+
 void FGPUSkinVertexBase::Serialize(FStream& s)
 {
   s << TangentX;

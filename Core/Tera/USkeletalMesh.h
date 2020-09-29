@@ -137,6 +137,45 @@ struct FRigidSkinVertex
 
 struct FSoftSkinVertex
 {
+	FSoftSkinVertex()
+	{
+		for (int32 idx = 0; idx < MAX_TEXCOORDS; ++idx)
+		{
+			UVs[idx].X = 0;
+			UVs[idx].Y = 0;
+		}
+		for (int32 idx = 0; idx < MAX_INFLUENCES; ++idx)
+		{
+			InfluenceBones[idx] = 0;
+			InfluenceWeights[idx] = 0;
+		}
+	}
+
+	FSoftSkinVertex(const FRigidSkinVertex& v)
+	{
+		Position = v.Position;
+
+		TangentX = v.TangentX;
+		TangentY = v.TangentY;
+		TangentZ = v.TangentZ;
+		
+		Color = v.Color;
+
+		for (int32 idx = 0; idx < MAX_TEXCOORDS; ++idx)
+		{
+			UVs[idx] = v.UVs[idx];
+		}
+
+		InfluenceBones[0] = v.Bone;
+		InfluenceWeights[0] = 0xFF;
+
+		for (int32 idx = 1; idx < MAX_INFLUENCES; ++idx)
+		{
+			InfluenceBones[idx] = 0;
+			InfluenceWeights[idx] = 0;
+		}
+	}
+
 	FVector Position;
 	FPackedNormal TangentX;	// Tangent
 	FPackedNormal TangentY;	// Binormal
@@ -202,6 +241,17 @@ public:
 	uint32* Get32BitBuffer()
 	{
 		return (uint32*)IndexBuffer;
+	}
+
+	uint32 GetIndex(int32 elementIndex) const
+	{
+		if (ElementSize == sizeof(uint16))
+		{
+			uint16* tmp = (uint16*)IndexBuffer;
+			return (uint32)*(tmp + elementIndex);
+		}
+		uint32* tmp = (uint32*)IndexBuffer;
+		return *(tmp + elementIndex);
 	}
 
 	friend FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c);
@@ -450,6 +500,29 @@ public:
 
 	void Serialize(FStream& s, UObject* owner);
 
+	std::vector<FSoftSkinVertex> GetVertices() const;
+
+	std::vector<const FSkelMeshSection*> GetSections() const
+	{
+		std::vector<const FSkelMeshSection*> result;
+		for (const auto& s : Sections)
+		{
+			result.emplace_back(&s);
+		}
+		return result;
+	}
+
+	int32 GetNumTexCoords() const
+	{
+		return NumTexCoords;
+	}
+
+	const FMultiSizeIndexContainer* GetIndexContainer() const
+	{
+		return &IndexContainer;
+	}
+
+private:
 	std::vector<FSkelMeshSection> Sections;
 	std::vector<uint16> LegacyShadowIndices;
 	std::vector<uint8> LegacyShadowTriangleDoubleSided;
@@ -478,6 +551,20 @@ public:
 
 	bool RegisterProperty(FPropertyTag* property) override;
 	void Serialize(FStream& s) override;
+
+	inline const FStaticLODModel* GetLod(int32 idx) const
+	{
+		if (idx >= LodModels.size())
+		{
+			return nullptr;
+		}
+		return &LodModels[idx];
+	}
+
+	inline std::vector<UObject*> GetMaterials() const
+	{
+		return Materials;
+	}
 
 private:
   FBoxSphereBounds Bounds;

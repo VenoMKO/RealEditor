@@ -9,6 +9,7 @@
 
 #include "ObjectRedirectorEditor.h"
 #include "TextureEditor.h"
+#include "SkelMeshEditor.h"
 
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
@@ -20,6 +21,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (object->GetClassName() == UTexture2D::StaticClassName())
   {
     editor = new TextureEditor(parent, window);
+  }
+  else if (object->GetClassName() == USkeletalMesh::StaticClassName())
+  {
+    editor = new SkelMeshEditor(parent, window);
   }
   else
   {
