@@ -38,10 +38,10 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 * Combining composite mods to a single mod file
 * Bulk composite extraction and modding
 * Mesh export to *.fbx
+* Skeletal mesh viewer
 
 ### Plans
 
-* Skeletal mesh viewer
 * Static mesh viewer
 * Object detaching & attaching
 * Mesh import from *.fbx
@@ -54,6 +54,5 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 
 ### Contacts
 
-You can contact me:
 * [Tumblr](https://yupimods.tumblr.com/)
 * Discord Yupi#9153
