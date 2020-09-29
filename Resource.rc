@@ -72,9 +72,48 @@ IDB_FORWARD             RCDATA                  "Resources\\Btn_Forward.png"
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-APP_ICON               ICON                    "Resources\\AppIcon.ico"
+APP_ICON                ICON                    "Resources\\AppIcon.ico"
 
-FILE_ICON              ICON                    "Resources\\FileIcon.ico"
+FILE_ICON               ICON                    "Resources\\FileIcon.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000904b0"
+        BEGIN
+            VALUE "CompanyName", "Yupi"
+            VALUE "FileDescription", "Real Editor by Yupi"
+            VALUE "FileVersion", "1.1.0.0"
+            VALUE "InternalName", "Real Editor.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2020"
+            VALUE "OriginalFilename", "Real Editor.exe"
+            VALUE "ProductName", "Real Editor"
+            VALUE "ProductVersion", "1.1.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x9, 1200
+    END
+END
 
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
