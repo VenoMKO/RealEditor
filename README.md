@@ -16,6 +16,10 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
 * [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
 
+### Wiki на русском
+
+* [Wiki](https://github.com/VenoMKO/RealEditor/wiki/Wiki-%D0%BD%D0%B0-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC)
+
 ### Download
 
 You can get the latest version in the ['Releases' section](https://github.com/VenoMKO/RealEditor/releases).
@@ -23,13 +27,11 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 ### Features
 
 * Opening 64-bit packages
-* Composite packages reference support
-* Internal reference support
+* Saving/Cooking packages
 * Properties viewer
 * DXT textures viewer
 * DXT textures export to *.png or *.tga
 * Importing and converting *.png ot *.tga to DXT
-* Saving/Cooking packages
 * Remove region locking from packages
 * Encrypt/Decrypt mappers
 * Dumping table of contents of composite packages
