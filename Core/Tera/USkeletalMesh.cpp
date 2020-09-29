@@ -83,6 +83,17 @@ FStream& operator<<(FStream& s, FSkelMeshChunk& c)
     UThrow("Failed to serialize a mesh chunk. SV mismatch: %zu != %d", c.SoftVertices.size(), c.NumSoftVertices);
   }
   s << c.MaxBoneInfluences;
+  if (s.IsReading())
+  {
+    for (FRigidSkinVertex& v : c.RigidVertices)
+    {
+      v.BoneMap = &c.BoneMap;
+    }
+    for (FSoftSkinVertex& v : c.SoftVertices)
+    {
+      v.BoneMap = &c.BoneMap;
+    }
+  }
   return s;
 }
 

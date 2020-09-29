@@ -10,6 +10,149 @@ char* FbxWideToUtf8(const wchar_t* in)
   return unistr;
 }
 
+FbxAMatrix GetGlobalDefaultPosition(FbxNode* node)
+{
+  FbxAMatrix localPosition;
+  FbxAMatrix globalPosition;
+  FbxAMatrix parentGlobalPosition;
+
+  localPosition.SetT(node->LclTranslation.Get());
+  localPosition.SetR(node->LclRotation.Get());
+  localPosition.SetS(node->LclScaling.Get());
+
+  if (node->GetParent())
+  {
+    parentGlobalPosition = GetGlobalDefaultPosition(node->GetParent());
+    globalPosition = parentGlobalPosition * localPosition;
+  }
+  else
+  {
+    globalPosition = localPosition;
+  }
+
+  return globalPosition;
+}
+
+void SetGlobalDefaultPosition(FbxNode* node, FbxAMatrix globalPosition)
+{
+  FbxAMatrix localPosition;
+  FbxAMatrix parentGlobalPosition;
+
+  if (node->GetParent())
+  {
+    parentGlobalPosition = GetGlobalDefaultPosition(node->GetParent());
+    localPosition = parentGlobalPosition.Inverse() * globalPosition;
+  }
+  else
+  {
+    localPosition = globalPosition;
+  }
+
+  node->LclTranslation.Set(localPosition.GetT());
+  node->LclRotation.Set(localPosition.GetR());
+  node->LclScaling.Set(localPosition.GetS());
+}
+
+FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene)
+{
+  if (!sourceMesh)
+  {
+    return nullptr;
+  }
+  std::vector<FMeshBone> refSkeleton = sourceMesh->GetReferenceSkeleton();
+  for (int32 idx = 0; idx < refSkeleton.size(); ++idx)
+  {
+    const FMeshBone& bone = refSkeleton[idx];
+    FbxSkeleton* skeletonAttribute = FbxSkeleton::Create(scene, bone.Name.String().C_str());
+    skeletonAttribute->SetSkeletonType((!idx && refSkeleton.size() > 1) ? FbxSkeleton::eRoot : FbxSkeleton::eLimbNode);
+    FbxNode* boneNode = FbxNode::Create(scene, bone.Name.String().C_str());
+    boneNode->SetNodeAttribute(skeletonAttribute);
+
+    FbxVector4 lT = FbxVector4(bone.BonePos.Position.X, bone.BonePos.Position.Y * -1., bone.BonePos.Position.Z);
+    FbxQuaternion lQ = FbxQuaternion(bone.BonePos.Orientation.X, bone.BonePos.Orientation.Y * -1., bone.BonePos.Orientation.Z, bone.BonePos.Orientation.W * 1.);
+    lQ[3] *= -1.;
+    FbxAMatrix lGM;
+    lGM.SetT(lT);
+    lGM.SetQ(lQ);
+
+    SetGlobalDefaultPosition(boneNode, lGM);
+
+    if (idx)
+    {
+      boneNodes[bone.ParentIndex]->AddChild(boneNode);
+    }
+    boneNodes.PushBack(boneNode);
+  }
+  return boneNodes[0];
+}
+
+void AddNodeRecursively(FbxArray<FbxNode*>& nodeArray, FbxNode* node)
+{
+  if (node)
+  {
+    AddNodeRecursively(nodeArray, node->GetParent());
+    if (nodeArray.Find(node) == -1)
+    {
+      nodeArray.Add(node);
+    }
+  }
+}
+
+void CreateBindPose(FbxNode* meshRootNode, FbxScene* scene)
+{
+  FbxArray<FbxNode*> clusteredFbxNodes;
+
+  if (meshRootNode && meshRootNode->GetNodeAttribute())
+  {
+    int32 skinCount = 0;
+    int32 clusterCount = 0;
+    switch (meshRootNode->GetNodeAttribute()->GetAttributeType())
+    {
+    case FbxNodeAttribute::eMesh:
+    case FbxNodeAttribute::eNurbs:
+    case FbxNodeAttribute::ePatch:
+      skinCount = ((FbxGeometry*)meshRootNode->GetNodeAttribute())->GetDeformerCount(FbxDeformer::eSkin);
+      for (int32 i = 0; i < skinCount; ++i)
+      {
+        FbxSkin* skin = (FbxSkin*)((FbxGeometry*)meshRootNode->GetNodeAttribute())->GetDeformer(i, FbxDeformer::eSkin);
+        clusterCount += skin->GetClusterCount();
+      }
+      break;
+    default:
+      break;
+    }
+    if (clusterCount)
+    {
+      for (int32 i = 0; i < skinCount; ++i)
+      {
+        FbxSkin* skin = (FbxSkin*)((FbxGeometry*)meshRootNode->GetNodeAttribute())->GetDeformer(i, FbxDeformer::eSkin);
+        clusterCount = skin->GetClusterCount();
+        for (int32 j = 0; j < clusterCount; ++j)
+        {
+          FbxNode* clusterNode = skin->GetCluster(j)->GetLink();
+          AddNodeRecursively(clusteredFbxNodes, clusterNode);
+        }
+
+      }
+      clusteredFbxNodes.Add(meshRootNode);
+    }
+  }
+
+  if (clusteredFbxNodes.GetCount())
+  {
+    FbxPose* pose = FbxPose::Create(scene, meshRootNode->GetName());
+    pose->SetIsBindPose(true);
+
+    for (int32 i = 0; i < clusteredFbxNodes.GetCount(); i++)
+    {
+      FbxNode* node = clusteredFbxNodes.GetAt(i);
+      FbxMatrix bindMatrix = node->EvaluateGlobalTransform();
+      pose->Add(node, bindMatrix);
+    }
+    scene->AddPose(pose);
+  }
+}
+
 #define GetManager() ((FbxManager*)SdkManager)
 #define GetScene() ((FbxScene*)Scene)
 
@@ -219,7 +362,53 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
     return true;
   }
 
-  // TODO: create a rig
+  FbxDynamicArray<FbxNode*> bonesArray;
+  FbxNode* skelRootNode = CreateSkeleton(sourceMesh, bonesArray, GetScene());
 
+  if (!skelRootNode)
+  {
+    ctx.Error = "Failed to build the skeleton!";
+    return false;
+  }
+
+  GetScene()->GetRootNode()->AddChild(skelRootNode);
+
+  FbxAMatrix meshMatrix = meshNode->EvaluateGlobalTransform();
+  FbxGeometry* meshAttribute = (FbxGeometry*)mesh;
+  FbxSkin* skin = FbxSkin::Create(GetScene(), "");
+
+  for (int boneIndex = 0; boneIndex < bonesArray.Size(); boneIndex++)
+  {
+    FbxNode* boneNode = bonesArray[boneIndex];
+
+    FbxCluster* currentCluster = FbxCluster::Create(GetScene(), "");
+    currentCluster->SetLink(boneNode);
+    currentCluster->SetLinkMode(FbxCluster::eTotalOne);
+
+    int32 vertIndex = 0;
+    for (const FSoftSkinVertex& v : verticies)
+    {
+      for (int influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
+      {
+
+        uint16 influenceBone = v.BoneMap->at(v.InfluenceBones[influenceIndex]);
+        float w = (float)v.InfluenceWeights[influenceIndex];
+        float influenceWeight = w / 255.0f;
+
+        if (influenceBone == boneIndex && influenceWeight > 0.f)
+        {
+          currentCluster->AddControlPointIndex(vertIndex, influenceWeight);
+        }
+      }
+      vertIndex++;
+    }
+    currentCluster->SetTransformMatrix(meshMatrix);
+    FbxAMatrix linkMatrix = boneNode->EvaluateGlobalTransform();
+    currentCluster->SetTransformLinkMatrix(linkMatrix);
+    skin->AddCluster(currentCluster);
+  }
+
+  meshAttribute->AddDeformer(skin);
+  CreateBindPose(meshNode, GetScene());
   return true;
 }

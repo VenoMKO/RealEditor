@@ -4,7 +4,7 @@
 struct FbxExportContext {
   std::wstring Path;
   bool EmbedMedia = false;
-  bool ExportSkeleton = false;
+  bool ExportSkeleton = true;
   uint32 LodIndex = 0;
 
   std::string Error;

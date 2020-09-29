@@ -131,6 +131,7 @@ struct FRigidSkinVertex
 	FVector2D UVs[MAX_TEXCOORDS];
 	FColor Color;
 	uint8 Bone = 0;
+	std::vector<uint16> const* BoneMap = nullptr;
 
 	friend FStream& operator<<(FStream& s, FRigidSkinVertex& v);
 };
@@ -166,6 +167,8 @@ struct FSoftSkinVertex
 			UVs[idx] = v.UVs[idx];
 		}
 
+		BoneMap = v.BoneMap;
+
 		InfluenceBones[0] = v.Bone;
 		InfluenceWeights[0] = 0xFF;
 
@@ -184,6 +187,7 @@ struct FSoftSkinVertex
 	FColor Color;
 	uint8 InfluenceBones[MAX_INFLUENCES];
 	uint8 InfluenceWeights[MAX_INFLUENCES];
+	std::vector<uint16> const* BoneMap = nullptr;
 
 	friend FStream& operator<<(FStream& s, FSoftSkinVertex& v);
 };
@@ -564,6 +568,11 @@ public:
 	inline std::vector<UObject*> GetMaterials() const
 	{
 		return Materials;
+	}
+
+	std::vector<FMeshBone> GetReferenceSkeleton() const
+	{
+		return RefSkeleton;
 	}
 
 private:
