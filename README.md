@@ -35,13 +35,13 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 * Dumping table of contents of composite packages
 * Combining composite mods to a single mod file
 * Bulk composite extraction and modding
+* Mesh export to *.fbx
 
 ### Plans
 
 * Skeletal mesh viewer
 * Static mesh viewer
 * Object detaching & attaching
-* Mesh export to *.fbx
 * Mesh import from *.fbx
 * Materials support
 * Map renderer
