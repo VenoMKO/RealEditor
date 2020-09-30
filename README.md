@@ -3,7 +3,7 @@
 
 Currently under development. Some features are not implemented yet or may not work correctly.
 
-![Header Screenshot](.gitresources/header.jpg)
+![Header Screenshot](.gitresources/header3D.jpg)
 
 ### Wiki
 
