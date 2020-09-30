@@ -42,6 +42,7 @@
     <ClCompile Include="Core\Tera\FStructs.cpp" />
     <ClCompile Include="Core\Tera\UClass.cpp" />
     <ClCompile Include="Core\Tera\UComponent.cpp" />
+    <ClCompile Include="Core\Tera\UMaterial.cpp" />
     <ClCompile Include="Core\Tera\UMetaData.cpp" />
     <ClCompile Include="Core\Tera\UNames.cpp" />
     <ClCompile Include="Core\Tera\UObject.cpp" />

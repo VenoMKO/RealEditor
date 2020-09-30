@@ -1,6 +1,7 @@
 #pragma once
 #include "GenericEditor.h"
 #include <Tera/USkeletalMesh.h>
+#include <Tera/UTexture.h>
 
 #include "../Misc/OSGWindow.h"
 
@@ -8,6 +9,7 @@ class SkelMeshEditor : public GenericEditor {
 public:
   using GenericEditor::GenericEditor;
   SkelMeshEditor(wxPanel* parent, PackageWindow* window);
+  ~SkelMeshEditor() override;
 
   void OnTick() override;
   void OnObjectLoaded() override;

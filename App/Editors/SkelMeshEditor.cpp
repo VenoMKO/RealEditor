@@ -8,6 +8,9 @@
 
 #include <Utils/FbxUtils.h>
 
+#include <Tera/Cast.h>
+#include <Tera/UMaterial.h>
+
 enum ExportMode {
   ExportGeometry = wxID_HIGHEST + 1,
   ExportFull
@@ -18,6 +21,14 @@ SkelMeshEditor::SkelMeshEditor(wxPanel* parent, PackageWindow* window)
 {
   CreateRenderer();
   window->FixOSG();
+}
+
+SkelMeshEditor::~SkelMeshEditor()
+{
+  if (Renderer)
+  {
+    delete Renderer;
+  }
 }
 
 void SkelMeshEditor::OnTick()
@@ -111,36 +122,50 @@ void SkelMeshEditor::CreateRenderModel()
   osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array(osg::Array::BIND_PER_VERTEX);
   osg::ref_ptr<osg::Vec2Array> uvs = new osg::Vec2Array(osg::Array::BIND_PER_VERTEX);
 
-  // TODO: use sections to build multi-part objects with different materials
+  std::vector<FSoftSkinVertex> uvertices = model->GetVertices();
+  for (int32 idx = 0; idx < uvertices.size(); ++idx)
   {
-    std::vector<FSoftSkinVertex> uvertices = model->GetVertices();
-    for (int32 idx = 0; idx < uvertices.size(); ++idx)
-    {
-      FVector normal = uvertices[idx].TangentZ;
-      normals->push_back(osg::Vec3(normal.X, normal.Y, normal.Z));
-      vertices->push_back(osg::Vec3(uvertices[idx].Position.X, uvertices[idx].Position.Y, uvertices[idx].Position.Z));
-      uvs->push_back(osg::Vec2(uvertices[idx].UVs[0].X, uvertices[idx].UVs[0].Y));
-    }
+    FVector normal = uvertices[idx].TangentZ;
+    normals->push_back(osg::Vec3(normal.X, normal.Y, normal.Z));
+    vertices->push_back(osg::Vec3(uvertices[idx].Position.X, uvertices[idx].Position.Y, uvertices[idx].Position.Z));
+    uvs->push_back(osg::Vec2(uvertices[idx].UVs[0].X, uvertices[idx].UVs[0].Y));
   }
 
-  osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
+  std::vector<const FSkelMeshSection*> sections = model->GetSections();
+  const FMultiSizeIndexContainer* indexContainer = model->GetIndexContainer();
+  for (const FSkelMeshSection* section : sections)
   {
-    const FMultiSizeIndexContainer* indexContainer = model->GetIndexContainer();
-    for (int32 idx = 0; idx < indexContainer->GetElementCount(); idx+=3)
+    osg::ref_ptr<osg::Geometry> geo = new osg::Geometry;
+    osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
+    for (int32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
     {
-      indices->push_back(indexContainer->GetIndex(idx + 0));
-      indices->push_back(indexContainer->GetIndex(idx + 2));
-      indices->push_back(indexContainer->GetIndex(idx + 1));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 0));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 2));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
     }
-  }
-  
-  osg::ref_ptr<osg::Geometry> geo = new osg::Geometry;
-  geo->addPrimitiveSet(indices.get());
-  geo->setVertexArray(vertices.get());
-  geo->setNormalArray(normals.get());
-  geo->setTexCoordArray(0, uvs.get());
+    geo->addPrimitiveSet(indices.get());
+    geo->setVertexArray(vertices.get());
+    geo->setNormalArray(normals.get());
+    geo->setTexCoordArray(0, uvs.get());
 
-  Root->addDrawable(geo.get());
+    if (Mesh->GetMaterials().size() > section->MaterialIndex)
+    {
+      if (UMaterialInstanceConstant* material = Cast<UMaterialInstanceConstant>(Mesh->GetMaterials()[section->MaterialIndex]))
+      {
+        if (UTexture2D* tex = material->GetDiffuseTexture())
+        {
+          osg::ref_ptr<osg::Image> img = new osg::Image;
+          tex->RenderTo(img.get());
+          osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
+          osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
+          osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
+          geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex.get());
+        }
+      }
+    }
+
+    Root->addDrawable(geo.get());
+  }
 
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
