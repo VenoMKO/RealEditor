@@ -5,6 +5,7 @@
 #include <osgGA/TrackballManipulator>
 #include <osgUtil/SmoothingVisitor>
 #include <osg/BlendFunc>
+#include <osg/Depth>
 
 #include <Utils/FbxUtils.h>
 
@@ -148,9 +149,10 @@ void SkelMeshEditor::CreateRenderModel()
     geo->setNormalArray(normals.get());
     geo->setTexCoordArray(0, uvs.get());
 
+    // TODO: Use MaterialMap to remap section materials to the global materials list
     if (Mesh->GetMaterials().size() > section->MaterialIndex)
     {
-      if (UMaterialInstanceConstant* material = Cast<UMaterialInstanceConstant>(Mesh->GetMaterials()[section->MaterialIndex]))
+      if (UMaterialInterface* material = Cast<UMaterialInterface>(Mesh->GetMaterials()[section->MaterialIndex]))
       {
         if (UTexture2D* tex = material->GetDiffuseTexture())
         {
@@ -160,10 +162,14 @@ void SkelMeshEditor::CreateRenderModel()
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
           geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex.get());
+          if (material->GetBlendMode() == EBlendMode::BLEND_Masked)
+          {
+            geo->getOrCreateStateSet()->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            geo->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+          }
         }
       }
     }
-
     Root->addDrawable(geo.get());
   }
 

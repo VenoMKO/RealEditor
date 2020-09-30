@@ -32,6 +32,14 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new USkeletalMesh(exp);
   }
+  else if (c == UMaterial::StaticClassName())
+  {
+    result = new UMaterial(exp);
+  }
+  else if (c == UMaterialInstance::StaticClassName())
+  {
+    result = new UMaterialInstance(exp);
+  }
   else if (c == UMaterialInstanceConstant::StaticClassName())
   {
     result = new UMaterialInstanceConstant(exp);

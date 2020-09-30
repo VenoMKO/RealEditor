@@ -3,38 +3,66 @@
 #include "FPackage.h"
 #include "Cast.h"
 
-bool UMaterialInstanceConstant::RegisterProperty(FPropertyTag* property)
+bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
 {
-  if (property->Name == "TextureParameterValues")
+  if (PROP_IS(property, TextureParameterValues))
   {
-    if (property->Value->GetArray().empty())
-    {
-      return false;
-    }
-    TextureParameterValues = property->Value->GetArrayPtr();
+    TextureParameterValues = property->Value->GetArray();
+    TextureParameterValuesProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, BlendMode))
+  {
+    BlendMode = (EBlendMode)property->Value->GetByte();
+    BlendModeProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, Parent))
+  {
+    Parent = property->Value->GetObjectIndex();
+    ParentProperty = property;
     return true;
   }
   return false;
 }
 
-UTexture2D* UMaterialInstanceConstant::GetDiffuseTexture() const
+UTexture2D* UMaterialInterface::GetDiffuseTexture() const
 {
-  UTexture2D* result = GetTextureParameterValue("DiffuseMap");
+  UTexture2D* result = GetTextureParameterValue("PCC_HairDiffuseMap");
   if (!result)
   {
-    result = GetTextureParameterValue("PPC_HairDiffuseMap");
+    result = GetTextureParameterValue("DiffuseMap");
   }
   return result;
 }
 
-UTexture2D* UMaterialInstanceConstant::GetTextureParameterValue(const FString& name) const
+EBlendMode UMaterialInterface::GetBlendMode() const
 {
-  if (!TextureParameterValues)
+  if (BlendModeProperty)
   {
-    return nullptr;
+    return BlendMode;
   }
+  UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
+  while (parent)
+  {
+    if (parent->BlendModeProperty)
+    {
+      return parent->GetBlendMode();
+    }
+    parent = Cast<UMaterialInterface>(parent->GetParent());
+  }
+  return BlendMode;
+}
+
+UObject* UMaterialInterface::GetParent() const
+{
+  return ParentProperty ? GetPackage()->GetObject(Parent) : nullptr;
+}
+
+UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) const
+{
   bool thisValue = false;
-  for (FPropertyValue* container : *TextureParameterValues)
+  for (FPropertyValue* container : TextureParameterValues)
   {
     std::vector<FPropertyValue*>& tmpArray = container->GetArray();
     for (FPropertyValue* subcontainer : tmpArray)
