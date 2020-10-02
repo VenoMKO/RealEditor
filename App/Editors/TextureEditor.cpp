@@ -248,6 +248,7 @@ void TextureEditor::CreateRenderTexture()
 
 void TextureEditor::OnImportClicked(wxCommandEvent&)
 {
+  LogI("Import a texture...");
   if (Texture->GetPackage() != Window->GetPackage().get())
   {
     wxMessageBox("Importing into external textures is not implemented yet.", wxT("Error!"), wxICON_ERROR);
@@ -258,6 +259,7 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
 
   if (path.empty())
   {
+    LogI("Import canceled by user.");
     return;
   }
 
@@ -269,6 +271,7 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
   TextureImporter importer(Window, Texture->Format, isNormal, Texture->SRGB, Texture->AddressX, Texture->AddressY);
   if (importer.ShowModal() != wxID_OK)
   {
+    LogI("Import canceled by user.");
     return;
   }
 
@@ -285,8 +288,12 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     outputFormat = TextureProcessor::TCFormat::DXT5;
     break;
   default:
-    wxMessageBox(std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!", wxT("Error!"), wxICON_ERROR);
-    return;
+    {
+      std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+      LogE(errmsg.c_str());
+      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      return;
+    }
   }
   TextureProcessor::TCFormat inFormat = TextureProcessor::TCFormat::None;
 
@@ -318,13 +325,23 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
   progress.Layout();
 
   std::thread([&processor, &progress] {
-    bool result = processor.Process();
+    bool result = false;
+    try
+    {
+      result = processor.Process();
+    }
+    catch (const std::exception& e)
+    {
+      result = false;
+      LogE(e.what());
+    }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
   }).detach();
 
   if (!progress.ShowModal())
   {
     wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    return;
   }
 
   TextureTravaller travaller;
@@ -360,16 +377,19 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
 
 void TextureEditor::OnExportClicked(wxCommandEvent&)
 {
+  LogI("Export a texture...");
   wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png|"), Object->GetObjectName().WString(), Window);
   if (path.empty())
   {
+    LogI("Export canceled by user!");
     return;
   }
   wxString ext = wxFileName(path).GetExt();
   if (ext.empty())
   {
-    ext = wxT(".tga");
+    ext = wxT("tga");
   }
+  ext.MakeLower();
 
   TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
   TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
@@ -416,7 +436,8 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   }
   else
   {
-    DBreak();
+    wxMessageBox("Unknown file extension. Export canceled!", wxT("Error!"), wxICON_ERROR);
+    return;
   }
 
   TextureProcessor processor(inputFormat, outputFormat);
@@ -424,8 +445,39 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
   processor.SetOutputPath(W2A(path.ToStdWstring()));
   processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
-  if (!processor.Process())
+
+  LogI("Processing texture input...");
+  bool result = false;
+  std::string err;
+  try
   {
-    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    result = processor.Process();
+  }
+  catch (const std::exception& e)
+  {
+    result = false;
+    err = processor.GetError();
+    if (err.empty())
+    {
+      err = e.what();
+    }
+    else
+    {
+      err += '\n';
+      err += e.what();
+    }
+  }
+  if (!result)
+  {
+    if (err.empty())
+    {
+      err = processor.GetError();
+    }
+    LogE("Failed to export: %s", err.c_str());
+    wxMessageBox(err, wxT("Error!"), wxICON_ERROR);
+  }
+  else
+  {
+    LogI("Exported texture to: %s", path.ToStdString().c_str());
   }
 }

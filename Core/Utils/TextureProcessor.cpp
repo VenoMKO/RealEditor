@@ -173,15 +173,14 @@ bool TextureProcessor::Process()
   {
     return FileToBytes();
   }
-  bool result = false;
   Error = "Texture Processor: no output specified";
-  return result;
+  return false;
 }
 
 bool TextureProcessor::BytesToFile()
 {
   nvtt::Surface surface;
-  bool hasAlpha = true ;
+  bool hasAlpha = true;
   if (InputFormat == TCFormat::DXT1 || InputFormat == TCFormat::DXT3 || InputFormat == TCFormat::DXT5)
   {
     nvtt::Format fmt = nvtt::Format_Count;
@@ -236,7 +235,13 @@ bool TextureProcessor::BytesToFile()
   nvtt::Context ctx;
   if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
   {
-    Error = "Texture Processor: Failed to decompress texture to RGBA";
+    Error = "Texture Processor: Failed to decompress texture to RGBA!";
+    return false;
+  }
+
+  if (!ohandler.Mips[0].Size)
+  {
+    Error = "Texture Processor: NVTT failed to decompress the texture!";
     return false;
   }
 
@@ -275,6 +280,12 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
+  if (!memBufferSize)
+  {
+    Error = "Texture Processor: FreeImageLib failed to acquire memory!";
+    return false;
+  }
+
   FWriteStream s(OutputPath);
   if (!s.IsGood())
   {
@@ -282,11 +293,17 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
   s.SerializeBytes(memBuffer, (FILE_OFFSET)memBufferSize);
+  if (!s.IsGood())
+  {
+    Error = "Texture Processor: Failed to write data to the stream at: \"" + OutputPath + "\"";
+    return false;
+  }
   return true;
 }
 
 bool TextureProcessor::BytesToBytes()
 {
+  Error = "Texture Processor: B2B conversion unsupported!";
   return false;
 }
 
@@ -370,9 +387,17 @@ bool TextureProcessor::FileToBytes()
   int32 idx = 0;
   int32 sizeX = FreeImage_GetWidth(holder.bmp);
   int32 sizeY = FreeImage_GetHeight(holder.bmp);
+
   const int32 minX = 4; // TODO: replace with PF block width & height
   const int32 minY = minX;
   OutputDataSize = 0;
+
+  if (sizeX < minX || sizeY < minY)
+  {
+    Error = "Texture Processor: failed to compress the bitmap. The image is too small!";
+    return false;
+  }
+
   while (sizeX >= minX && sizeY >= minY && idx < TPOutputHandler::MaxMipCount)
   {
     if (!context.compress(surface, 0, idx, compressionOptions, outputOptions))
@@ -404,6 +429,11 @@ bool TextureProcessor::FileToBytes()
   if (!(OutputMipCount = ohandler.MipsCount))
   {
     Error = "Texture Processor: failed to compress the bitmap. No mips were generated.";
+    return false;
+  }
+  if (!OutputDataSize)
+  {
+    Error = "Texture Processor: NVTT encoding error!";
     return false;
   }
 
