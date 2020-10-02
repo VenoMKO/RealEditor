@@ -258,5 +258,20 @@
     <Image Include="Resources\Btn_Forward.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\Classes\icon_mesh.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_redir.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_t2d.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_sound.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_class.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

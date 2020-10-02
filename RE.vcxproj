@@ -128,6 +128,11 @@
     <Image Include="Resources\Btn_Texture2D_Blue.png" />
     <Image Include="Resources\Btn_Texture2D_Green.png" />
     <Image Include="Resources\Btn_Texture2D_Red.png" />
+    <Image Include="Resources\Classes\icon_class.png" />
+    <Image Include="Resources\Classes\icon_mesh.png" />
+    <Image Include="Resources\Classes\icon_redir.png" />
+    <Image Include="Resources\Classes\icon_sound.png" />
+    <Image Include="Resources\Classes\icon_t2d.png" />
     <Image Include="Resources\FileIcon.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

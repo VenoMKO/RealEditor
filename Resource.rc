@@ -64,6 +64,16 @@ IDB_IMPORT              RCDATA                  "Resources\\Btn_Import.png"
 
 IDB_FORWARD             RCDATA                  "Resources\\Btn_Forward.png"
 
+IDB_ICO_CLASS           RCDATA                  "Resources\\Classes\\icon_class.png"
+
+IDB_ICO_MESH            RCDATA                  "Resources\\Classes\\icon_mesh.png"
+
+IDB_ICO_REDIRECTOR      RCDATA                  "Resources\\Classes\\icon_redir.png"
+
+IDB_ICO_SOUND           RCDATA                  "Resources\\Classes\\icon_sound.png"
+
+IDB_ICO_TEXTURE         RCDATA                  "Resources\\Classes\\icon_t2d.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -114,6 +124,7 @@ BEGIN
         VALUE "Translation", 0x9, 1200
     END
 END
+
 
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////

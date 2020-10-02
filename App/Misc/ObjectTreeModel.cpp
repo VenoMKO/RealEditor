@@ -147,19 +147,19 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 	IconList->Add(defIcon);
 
 	// Class icon
-	IconList->Add(GetSysIconFromDll(imageres, 114, defIcon));
+	IconList->Add(wxBitmap("#117", wxBITMAP_TYPE_PNG_RESOURCE));
 
 	// Texture icon
-	IconList->Add(GetSysIconFromDll(imageres, 72, defIcon));
+	IconList->Add(wxBitmap("#121", wxBITMAP_TYPE_PNG_RESOURCE));
 
 	// Mesh icon
-	IconList->Add(GetSysIconFromDll(imageres, 198, defIcon));
+	IconList->Add(wxBitmap("#118", wxBITMAP_TYPE_PNG_RESOURCE));
 
 	// Sound icon
-	IconList->Add(GetSysIconFromDll(imageres, 108, defIcon));
+	IconList->Add(wxBitmap("#120", wxBITMAP_TYPE_PNG_RESOURCE));
 
 	// Redirector
-	IconList->Add(GetSysIconFromDll(imageres, 5348, defIcon));
+	IconList->Add(wxBitmap("#119", wxBITMAP_TYPE_PNG_RESOURCE));
 	
 }
 
