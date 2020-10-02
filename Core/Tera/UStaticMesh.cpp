@@ -153,6 +153,11 @@ void UStaticMesh::ConfigureClassObject(UClass* object)
   object->Link();
 }
 
+UStaticMesh::~UStaticMesh()
+{
+  free(Unk);
+}
+
 void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
 {
   if (s.IsReading())
@@ -378,6 +383,11 @@ std::vector<UObject*> UStaticMesh::GetMaterials() const
   return result;
 }
 
+FStaticMeshVertexBuffer::~FStaticMeshVertexBuffer()
+{
+  delete[] Data;
+}
+
 const FStaticMeshVertexBase* FStaticMeshVertexBuffer::GetVertex(int32 idx) const
 {
   if (bUseFullPrecisionUVs)
@@ -401,4 +411,14 @@ const FStaticMeshVertexBase* FStaticMeshVertexBuffer::GetVertex(int32 idx) const
     }
   }
   return nullptr;
+}
+
+FStaticMeshPositionBuffer::~FStaticMeshPositionBuffer()
+{
+  delete[] Data;
+}
+
+FStaticMeshVertexColorBuffer::~FStaticMeshVertexColorBuffer()
+{
+  delete[] Data;
 }

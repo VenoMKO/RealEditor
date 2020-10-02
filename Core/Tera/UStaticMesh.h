@@ -135,6 +135,8 @@ struct FStaticMeshVertexBuffer {
   uint32 ElementCount = 0;
   FStaticMeshVertexBase* Data = nullptr;
 
+  ~FStaticMeshVertexBuffer();
+
   const FStaticMeshVertexBase* GetVertex(int32 idx) const;
 
   friend FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b);
@@ -148,6 +150,8 @@ struct FStaticMeshPositionBuffer {
 
   FVector* Data = nullptr;
 
+  ~FStaticMeshPositionBuffer();
+
   friend FStream& operator<<(FStream& s, FStaticMeshPositionBuffer& b);
 };
 
@@ -158,6 +162,8 @@ struct FStaticMeshVertexColorBuffer {
   uint32 ElementCount = 0;
 
   FColor* Data = nullptr;
+
+  ~FStaticMeshVertexColorBuffer();
 
   friend FStream& operator<<(FStream& s, FStaticMeshVertexColorBuffer& b);
 };
@@ -257,6 +263,8 @@ public:
   DECL_UOBJ(UStaticMesh, UObject);
   // Construct StaticMesh class and link properties
   static void ConfigureClassObject(UClass* object);
+
+  ~UStaticMesh() override;
 
   void Serialize(FStream& s) override;
 
