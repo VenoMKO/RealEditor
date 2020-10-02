@@ -15,6 +15,7 @@
 #include "UPersistentCookerData.h"
 #include "UTexture.h"
 #include "USkeletalMesh.h"
+#include "UStaticMesh.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -43,6 +44,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UMaterialInstanceConstant::StaticClassName())
   {
     result = new UMaterialInstanceConstant(exp);
+  }
+  else if (c == UStaticMesh::StaticClassName())
+  {
+    result = new UStaticMesh(exp);
   }
   else if (c == UField::StaticClassName())
   {

@@ -117,11 +117,11 @@ struct FkDOPTreeCompact {
 	std::vector<FkDOPNodeCompact> Nodes;
 	uint32 TrianglesElementSize = 0;
 	std::vector<FkDOPCollisionTriangle> Triangles;
-	FkDOPNode RootNode;
+	FkDOP RootBounds;
 
 	friend FStream& operator<<(FStream& s, FkDOPTreeCompact& t)
 	{
-		s << t.RootNode;
+		s << t.RootBounds;
 		s << t.NodesElementSize;
 
 		// Nodes

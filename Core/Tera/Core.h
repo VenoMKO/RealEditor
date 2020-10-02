@@ -8,7 +8,7 @@
 // Build configuration
 // --------------------------------------------------------------------
 
-static const float APP_VER = 1.12f;
+static const float APP_VER = 1.2f;
 
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1
@@ -28,7 +28,7 @@ static const float APP_VER = 1.12f;
 #if defined(DUMP_PATH)
 #define DUMP_OBJECTS 0
 #define DUMP_PACKAGES 0
-#define DUMP_MAPPERS 1
+#define DUMP_MAPPERS 0
 void DumpData(void* data, int size, const char* path);
 #endif
 #define MULTITHREADED_CLASS_SERIALIZATION 0

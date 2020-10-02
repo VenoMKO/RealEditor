@@ -235,6 +235,21 @@ struct FVector {
 		return X == v.X && Y == v.Y && Z == v.Z;
 	}
 
+	FVector operator^(const FVector& V) const
+	{
+		return FVector
+		(
+			Y * V.Z - Z * V.Y,
+			Z * V.X - X * V.Z,
+			X * V.Y - Y * V.X
+		);
+	}
+
+	FVector operator*(float s) const
+	{
+		return FVector(X * s, Y * s, Z * s);
+	}
+
 	friend FStream& operator<<(FStream& s, FVector& v);
 
 	float X = 0;
@@ -784,4 +799,125 @@ struct FPackedPosition
 	void Set(const FVector& inVector);
 
 	friend FStream& operator<<(FStream& s, FPackedPosition& p);
+};
+
+class FMultiSizeIndexContainer {
+public:
+	~FMultiSizeIndexContainer()
+	{
+		free(IndexBuffer);
+	}
+
+	friend FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c);
+
+	uint8 GetElementSize() const
+	{
+		return ElementSize;
+	}
+
+	uint32 GetElementCount() const
+	{
+		return ElementCount;
+	}
+
+	void AllocateBuffer(uint32 elementCount, uint8 elementSize)
+	{
+		free(IndexBuffer);
+		IndexBuffer = nullptr;
+		ElementSize = elementSize;
+		ElementCount = elementCount;
+		if (elementCount * elementSize)
+		{
+			IndexBuffer = malloc(elementCount * elementSize);
+		}
+	}
+
+	uint16* Get16BitBuffer()
+	{
+		return (uint16*)IndexBuffer;
+	}
+
+	uint32* Get32BitBuffer()
+	{
+		return (uint32*)IndexBuffer;
+	}
+
+	uint32 GetIndex(int32 elementIndex) const
+	{
+		if (ElementSize == sizeof(uint16))
+		{
+			uint16* tmp = (uint16*)IndexBuffer;
+			return (uint32) * (tmp + elementIndex);
+		}
+		uint32* tmp = (uint32*)IndexBuffer;
+		return *(tmp + elementIndex);
+	}
+
+	friend FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c);
+
+private:
+	uint8 ElementSize = 2;
+	uint32 BulkElementSize = 2; // Not an actual field of the MultiSizeContainer. Belongs to a bulk array serialization. TODO: create a template for bulk array serialization
+	uint32 ElementCount = 0;
+	bool NeedsCPUAccess = true;
+	void* IndexBuffer = nullptr;
+};
+
+class FRawIndexBuffer {
+public:
+
+	~FRawIndexBuffer()
+	{
+		free(Data);
+	}
+
+	friend FStream& operator<<(FStream& s, FRawIndexBuffer& b);
+
+	uint32 GetElementSize() const
+	{
+		return ElementSize;
+	}
+
+	uint32 GetElementCount() const
+	{
+		return ElementCount;
+	}
+
+	void AllocateBuffer(uint32 elementCount, uint8 elementSize)
+	{
+		free(Data);
+		Data = nullptr;
+		ElementSize = elementSize;
+		ElementCount = elementCount;
+		if (elementCount * elementSize)
+		{
+			Data = malloc(elementCount * elementSize);
+		}
+	}
+
+	uint16* Get16BitBuffer()
+	{
+		return (uint16*)Data;
+	}
+
+	uint32* Get32BitBuffer()
+	{
+		return (uint32*)Data;
+	}
+
+	uint32 GetIndex(int32 elementIndex) const
+	{
+		if (ElementSize == sizeof(uint16))
+		{
+			uint16* tmp = (uint16*)Data;
+			return (uint32) * (tmp + elementIndex);
+		}
+		uint32* tmp = (uint32*)Data;
+		return *(tmp + elementIndex);
+	}
+
+protected:
+	uint32 ElementSize = 2;
+	uint32 ElementCount = 0;
+	void* Data = nullptr;
 };

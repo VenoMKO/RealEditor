@@ -97,29 +97,6 @@ FStream& operator<<(FStream& s, FSkelMeshChunk& c)
   return s;
 }
 
-FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c)
-{
-  if (s.GetFV() > VER_TERA_CLASSIC)
-  {
-    s << c.NeedsCPUAccess;
-  }
-  s << c.ElementSize;
-  s << c.BulkElementSize;
-
-  if (c.ElementSize != c.BulkElementSize)
-  {
-    UThrow("Elements size mismatch: %u != %u", c.ElementSize, c.BulkElementSize);
-  }
-
-  s << c.ElementCount;
-  if (s.IsReading())
-  {
-    c.AllocateBuffer(c.ElementCount, c.ElementSize);
-  }
-  s.SerializeBytes(c.Get16BitBuffer(), c.ElementSize * c.ElementCount);
-  return s;
-}
-
 FStream& operator<<(FStream& s, FMeshEdge& e)
 {
   return s << e.Vertices[0] << e.Vertices[1] << e.Faces[0] << e.Faces[1];

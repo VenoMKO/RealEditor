@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
+    <ClCompile Include="App\Editors\StaticMeshEditor.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
     <ClCompile Include="App\Misc\ObjectProperties.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="App\App.h" />
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
+    <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Misc\ObjectProperties.h" />

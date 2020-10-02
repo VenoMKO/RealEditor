@@ -155,6 +155,9 @@
     <ClCompile Include="Core\Tera\UMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\StaticMeshEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -220,6 +223,7 @@
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
+    <ClInclude Include="App\Editors\StaticMeshEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

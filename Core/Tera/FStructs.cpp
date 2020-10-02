@@ -533,3 +533,38 @@ FPackedNormal::operator FVector() const
   tmp[2] = tmp[2] * a + b;
   return FVector(tmp[0], tmp[1], tmp[2]);
 }
+
+FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c)
+{
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << c.NeedsCPUAccess;
+  }
+  s << c.ElementSize;
+  s << c.BulkElementSize;
+
+  if (c.ElementSize != c.BulkElementSize)
+  {
+    UThrow("Elements size mismatch: %u != %u", c.ElementSize, c.BulkElementSize);
+  }
+
+  s << c.ElementCount;
+  if (s.IsReading())
+  {
+    c.AllocateBuffer(c.ElementCount, c.ElementSize);
+  }
+  s.SerializeBytes(c.IndexBuffer, c.ElementSize * c.ElementCount);
+  return s;
+}
+
+FStream& operator<<(FStream& s, FRawIndexBuffer& b)
+{
+  s << b.ElementSize;
+  s << b.ElementCount;
+  if (s.IsReading())
+  {
+    b.AllocateBuffer(b.ElementCount, b.ElementSize);
+  }
+  s.SerializeBytes(b.Data, b.ElementSize * b.ElementCount);
+  return s;
+}
