@@ -3,7 +3,7 @@
 
 Currently under development. Some features are not implemented yet or may not work correctly.
 
-![Header Screenshot](.gitresources/header3D.jpg)
+![Header Screenshot](.gitresources/new_header.jpg)
 
 ### Wiki
 
@@ -39,10 +39,10 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 * Bulk composite extraction and modding
 * Mesh export to *.fbx
 * Skeletal mesh viewer
+* Static mesh viewer
 
 ### Plans
 
-* Static mesh viewer
 * Object detaching & attaching
 * Mesh import from *.fbx
 * Materials support
