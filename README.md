@@ -20,6 +20,9 @@ Currently under development. Some features are not implemented yet or may not wo
 
 * [Wiki](https://github.com/VenoMKO/RealEditor/wiki/Wiki-%D0%BD%D0%B0-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC)
 
+### System requirements
+* Windows 10 x64 (RE can run on previous Windows versions, but some features may not work)
+
 ### Download
 
 You can get the latest version in the ['Releases' section](https://github.com/VenoMKO/RealEditor/releases).
