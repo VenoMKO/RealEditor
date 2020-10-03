@@ -380,7 +380,8 @@ void PackageWindow::InitLayout()
 	Centre(wxBOTH);
 	Layout();
 
-	StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
+	// TODO: add progress UI
+	//StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
 }
 
 void PackageWindow::SetPropertiesHidden(bool hidden)

@@ -226,19 +226,25 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UTexture2D::RenderTo(osg::Image* target)
+bool UTexture2D::RenderTo(osg::Image* target)
 {
   GLenum type = 0;
   GLenum format = PixelFormatInfo[Format].Format;
   if (!Mips.size() || !FindInternalFormatAndType(Format, format, type, SRGB) || format == GL_NONE)
   {
-    return;
+    return false;
   }
-  FTexture2DMipMap* mip = Mips.front();
-  if (mip->SizeX && mip->SizeY && mip->Data)
+
+  for (FTexture2DMipMap* mip : Mips)
   {
-    target->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
+    if (mip->SizeX && mip->SizeY && mip->Data->GetAllocation())
+    {
+      target->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
+      return true;
+    }
   }
+
+  return false;
 }
 
 void UTexture2D::Serialize(FStream& s)
@@ -354,7 +360,9 @@ void UTexture2D::PostLoad()
           }
           catch (...)
           {
-            serializedFromCache = false;
+            LogE("Failed to serialize a separate mip: %s.MipLevel_%d", GetObjectPath().C_str(), idx);
+            delete rs;
+            return;
           }
         }
       }

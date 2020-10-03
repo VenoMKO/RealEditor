@@ -432,7 +432,24 @@ void FUntypedBulkData::SerializeSeparate(FStream& s, UObject* owner, int32 idx)
   }
   OwnsMemory = true;
   BulkData = malloc(GetBulkDataSize());
-  SerializeBulkData(s, BulkData);
+  try
+  {
+    SerializeBulkData(s, BulkData);
+  }
+  catch (const std::exception& e)
+  {
+    if (s.IsReading())
+    {
+      free(BulkData);
+      BulkData = nullptr;
+      OwnsMemory = false;
+    }
+    if (hasFlag)
+    {
+      BulkDataFlags |= BULKDATA_StoreInSeparateFile;
+    }
+    throw e;
+  }
   if (hasFlag)
   {
     BulkDataFlags |= BULKDATA_StoreInSeparateFile;

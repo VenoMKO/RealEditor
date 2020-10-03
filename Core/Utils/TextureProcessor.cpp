@@ -197,6 +197,7 @@ bool TextureProcessor::BytesToFile()
     {
       fmt = nvtt::Format_DXT5;
     }
+    LogI("Texture Processor: Setting surface image");
     if (!surface.setImage2D(fmt, nvtt::Decoder_D3D9, InputDataSizeX, InputDataSizeY, InputData))
     {
       Error = "Texture Processor: failed to create input surface (";
@@ -221,6 +222,12 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
+  if (surface.isNull() || !surface.width() || !surface.height())
+  {
+    Error = "Texture Processor: NVTT failed to create the surface!";
+    return false;
+  }
+
   surface.flipY();
   nvtt::CompressionOptions compressionOptions;
   compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
@@ -232,10 +239,17 @@ bool TextureProcessor::BytesToFile()
   TPOutputHandler ohandler;
   outputOptions.setOutputHandler(&ohandler);
 
+  LogI("Texture Processor: Decompress DXT data");
   nvtt::Context ctx;
   if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
   {
     Error = "Texture Processor: Failed to decompress texture to RGBA!";
+    return false;
+  }
+
+  if (!ohandler.MipsCount)
+  {
+    Error = "Texture Processor: Failed to decompress DXT texture to RGBA!";
     return false;
   }
 
@@ -245,11 +259,13 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
+  LogI("Texture Processor: Preparing to convert the buffer to FreeImage format");
   FreeImageHolder holder(true);
   holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, hasAlpha ? 32 : 24);
   memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
   holder.mem = FreeImage_OpenMemory();
 
+  LogI("Texture Processor: Convert the buffer to FreeImage format");
   if (OutputFormat == TCFormat::TGA)
   {
     if (!FreeImage_SaveToMemory(FIF_TARGA, holder.bmp, holder.mem, 0))
@@ -272,6 +288,7 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
+  LogI("Texture Processor: Preparing to save the buffer");
   DWORD memBufferSize = 0;
   unsigned char* memBuffer = nullptr;
   if (!FreeImage_AcquireMemory(holder.mem, &memBuffer, &memBufferSize))
@@ -286,6 +303,7 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
+  LogI("Saving data...");
   FWriteStream s(OutputPath);
   if (!s.IsGood())
   {

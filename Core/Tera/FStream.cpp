@@ -105,10 +105,14 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
   {
     FCompressedChunkInfo packageFileTag;
     *this << packageFileTag;
+
+    if (packageFileTag.CompressedSize != PACKAGE_MAGIC)
+    {
+      UThrow("Failed to decompress data! No compressed magic!");
+    }
+
     FCompressedChunkInfo summary;
     *this << summary;
-
-    DBreakIf(packageFileTag.CompressedSize != PACKAGE_MAGIC);
 
     int32 loadingCompressionChunkSize = packageFileTag.DecompressedSize;
     if (loadingCompressionChunkSize == PACKAGE_MAGIC)

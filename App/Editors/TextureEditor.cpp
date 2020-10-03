@@ -163,7 +163,11 @@ void TextureEditor::CreateRenderTexture()
   {
     Image = new osg::Image;
   }
-  Texture->RenderTo(Image.get());
+  if (!Texture->RenderTo(Image.get()))
+  {
+    Image = nullptr;
+    return;
+  }
 
   const float minV = std::min(std::max(GetSize().x, Image->s()), std::max(GetSize().y, Image->t()));
   const float canvasSizeX = GetSize().x / minV;
@@ -378,7 +382,25 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
 void TextureEditor::OnExportClicked(wxCommandEvent&)
 {
   LogI("Export a texture...");
-  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png|"), Object->GetObjectName().WString(), Window);
+
+  FTexture2DMipMap* mip = nullptr; Texture->Mips[0];
+  for (FTexture2DMipMap* mipmap : Texture->Mips)
+  {
+    if (mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+    {
+      mip = mipmap;
+      break;
+    }
+  }
+
+  if (!mip)
+  {
+    LogE("Export canceled: This texture object has no mipmaps!");
+    wxMessageBox(wxT("This texture object has no mipmaps!"), wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png"), Object->GetObjectName().WString(), Window);
   if (path.empty())
   {
     LogI("Export canceled by user!");
@@ -441,38 +463,36 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   }
 
   TextureProcessor processor(inputFormat, outputFormat);
-  FTexture2DMipMap* mip = Texture->Mips[0];
+  
   processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
   processor.SetOutputPath(W2A(path.ToStdWstring()));
   processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
 
-  LogI("Processing texture input...");
   bool result = false;
   std::string err;
   try
   {
-    result = processor.Process();
+    if (!(result = processor.Process()))
+    {
+      err = processor.GetError();
+      if (err.empty())
+      {
+        err = "Texture Processor: failed with an unkown error!";
+      }
+    }
   }
-  catch (const std::exception& e)
+  catch (...)
   {
     result = false;
     err = processor.GetError();
     if (err.empty())
     {
-      err = e.what();
+      err = "Texture Processor: Unexpected exception!";
     }
-    else
-    {
-      err += '\n';
-      err += e.what();
-    }
+    LogE("%s", err.c_str());
   }
   if (!result)
   {
-    if (err.empty())
-    {
-      err = processor.GetError();
-    }
     LogE("Failed to export: %s", err.c_str());
     wxMessageBox(err, wxT("Error!"), wxICON_ERROR);
   }
