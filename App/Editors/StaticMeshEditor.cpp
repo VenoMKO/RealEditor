@@ -29,7 +29,7 @@ StaticMeshEditor::~StaticMeshEditor()
 
 void StaticMeshEditor::OnTick()
 {
-  if (Renderer && Renderer->isRealized())
+  if (Renderer && Renderer->isRealized() && Renderer->checkNeedToDoFrame())
   {
     Renderer->frame();
   }
@@ -77,6 +77,7 @@ void StaticMeshEditor::CreateRenderer()
   OSGProxy = new OSGWindow(Canvas);
   Canvas->SetGraphicsWindow(OSGProxy);
   Renderer = new osgViewer::Viewer;
+  Renderer->setRunFrameScheme(osgViewer::ViewerBase::FrameScheme::ON_DEMAND);
   Renderer->getCamera()->setClearColor({ .3, .3, .3, 1 });
   Renderer->getCamera()->setGraphicsContext(OSGProxy);
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);

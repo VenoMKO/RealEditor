@@ -47,7 +47,7 @@ void TextureEditor::OnObjectLoaded()
 
 void TextureEditor::OnTick()
 {
-  if (Renderer && Renderer->isRealized())
+  if (Renderer && Renderer->isRealized() && Renderer->checkNeedToDoFrame())
   {
     Renderer->frame();
   }
@@ -139,6 +139,7 @@ void TextureEditor::CreateRenderer()
   OSGProxy = new OSGWindow(Canvas);
   Canvas->SetGraphicsWindow(OSGProxy);
   Renderer = new osgViewer::Viewer;
+  Renderer->setRunFrameScheme(osgViewer::ViewerBase::FrameScheme::ON_DEMAND);
   Renderer->getCamera()->setNearFarRatio(2);
   Renderer->getCamera()->setClearColor({0, 0, 0, 1});
   Renderer->getCamera()->setGraphicsContext(OSGProxy);
