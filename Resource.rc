@@ -74,6 +74,8 @@ IDB_ICO_SOUND           RCDATA                  "Resources\\Classes\\icon_sound.
 
 IDB_ICO_TEXTURE         RCDATA                  "Resources\\Classes\\icon_t2d.png"
 
+IDB_REFRESH             RCDATA                  "Resources\\Btn_Refresh.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

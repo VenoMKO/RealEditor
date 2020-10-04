@@ -274,5 +274,8 @@
     <Image Include="Resources\Classes\icon_class.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\Btn_Refresh.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

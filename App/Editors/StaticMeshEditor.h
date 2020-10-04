@@ -14,11 +14,14 @@ public:
   void OnTick() override;
   void OnObjectLoaded() override;
 
+  void PopulateToolBar(wxToolBar* toolbar) override;
+  void OnToolBarEvent(wxCommandEvent& e) override;
   void OnExportClicked(wxCommandEvent&) override;
 
 protected:
   void CreateRenderer();
   void CreateRenderModel();
+  void OnRefreshClicked();
 
 protected:
   UStaticMesh* Mesh = nullptr;

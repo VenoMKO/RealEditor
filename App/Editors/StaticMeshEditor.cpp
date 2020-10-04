@@ -45,6 +45,29 @@ void StaticMeshEditor::OnObjectLoaded()
   GenericEditor::OnObjectLoaded();
 }
 
+void StaticMeshEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
+}
+
+void StaticMeshEditor::OnToolBarEvent(wxCommandEvent& e)
+{
+  GenericEditor::OnToolBarEvent(e);
+  if (e.GetSkipped())
+  {
+    // The base class has processed the event. Unmark the event and exit
+    e.Skip(false);
+    return;
+  }
+  auto eId = e.GetId();
+  if (eId == eID_Refresh)
+  {
+    OnRefreshClicked();
+    Renderer->requestRedraw();
+  }
+}
+
 void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
 {
   FbxExportContext ctx;
@@ -163,4 +186,9 @@ void StaticMeshEditor::CreateRenderModel()
 
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+}
+
+void StaticMeshEditor::OnRefreshClicked()
+{
+  CreateRenderModel();
 }

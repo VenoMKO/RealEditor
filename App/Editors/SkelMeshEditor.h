@@ -14,12 +14,15 @@ public:
   void OnTick() override;
   void OnObjectLoaded() override;
 
+  void PopulateToolBar(wxToolBar* toolbar) override;
+  void OnToolBarEvent(wxCommandEvent& e) override;
   void OnExportMenuClicked(wxCommandEvent& e);
   void OnExportClicked(wxCommandEvent&) override;
 
 protected:
   void CreateRenderer();
   void CreateRenderModel();
+  void OnRefreshClicked();
 
 protected:
   USkeletalMesh* Mesh = nullptr;

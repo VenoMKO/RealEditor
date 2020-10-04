@@ -6,6 +6,7 @@ enum ToolEventID : int {
   eID_Export = 0,
   eID_Import,
   eID_Composite,
+  eID_Refresh,
   eID_Texture2D_Channel_R,
   eID_Texture2D_Channel_G,
   eID_Texture2D_Channel_B,
