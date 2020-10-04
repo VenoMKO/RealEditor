@@ -8,7 +8,7 @@
 // Build configuration
 // --------------------------------------------------------------------
 
-static const float APP_VER = 1.21f;
+static const float APP_VER = 1.22f;
 
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1
@@ -20,7 +20,7 @@ static const float APP_VER = 1.21f;
 #define CACHE_S1GAME_CONTENTS 0
 
 // Vertex buffer positions are not packed despite the flag.
-// Packed poisitions are allowed on consoles only.
+// Packed positions are allowed on consoles only.
 #define ENABLE_PACKED_VERTEX_POSITION 0
 
 #if _DEBUG
