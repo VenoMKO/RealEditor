@@ -86,18 +86,22 @@ void TextureEditor::OnToolBarEvent(wxCommandEvent& e)
   {
     Mask->setAlphaMask(state);
     OnAlphaMaskChange();
+    Renderer->requestRedraw();
   }
   else if (eId == eID_Texture2D_Channel_R)
   {
     Mask->setRedMask(state);
+    Renderer->requestRedraw();
   }
   else if (eId == eID_Texture2D_Channel_G)
   {
     Mask->setGreenMask(state);
+    Renderer->requestRedraw();
   }
   else if (eId == eID_Texture2D_Channel_B)
   {
     Mask->setBlueMask(state);
+    Renderer->requestRedraw();
   }
 }
 
@@ -273,45 +277,69 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     Texture->CompressionSettings == TC_NormalmapUncompressed ||
     Texture->CompressionSettings == TC_NormalmapBC5;
 
-  TextureImporter importer(Window, Texture->Format, isNormal, Texture->SRGB, Texture->AddressX, Texture->AddressY);
-  if (importer.ShowModal() != wxID_OK)
-  {
-    LogI("Import canceled by user.");
-    return;
-  }
+  wxString extension;
+  wxFileName::SplitPath(path, nullptr, nullptr, nullptr, &extension);
+  extension.MakeLower();
 
   TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
-  switch (importer.GetPixelFormat())
+  TextureProcessor::TCFormat inFormat = TextureProcessor::TCFormat::None;
+
+  TextureImporter importer(Window, Texture->Format, isNormal, Texture->SRGB, Texture->AddressX, Texture->AddressY);
+  if (extension != wxT("dds"))
   {
-  case PF_DXT1:
-    outputFormat = TextureProcessor::TCFormat::DXT1;
-    break;
-  case PF_DXT3:
-    outputFormat = TextureProcessor::TCFormat::DXT3;
-    break;
-  case PF_DXT5:
-    outputFormat = TextureProcessor::TCFormat::DXT5;
-    break;
-  default:
+    if (extension == wxT("png"))
+    {
+      inFormat = TextureProcessor::TCFormat::PNG;
+    }
+    else if (extension == wxT("tga"))
+    {
+      inFormat = TextureProcessor::TCFormat::TGA;
+    }
+
+    if (importer.ShowModal() != wxID_OK)
+    {
+      LogI("Import canceled by user.");
+      return;
+    }
+
+    switch (importer.GetPixelFormat())
+    {
+    case PF_DXT1:
+      outputFormat = TextureProcessor::TCFormat::DXT1;
+      break;
+    case PF_DXT3:
+      outputFormat = TextureProcessor::TCFormat::DXT3;
+      break;
+    case PF_DXT5:
+      outputFormat = TextureProcessor::TCFormat::DXT5;
+      break;
+    default:
     {
       std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
       LogE(errmsg.c_str());
       wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
       return;
     }
+    }
   }
-  TextureProcessor::TCFormat inFormat = TextureProcessor::TCFormat::None;
-
-  wxString extension;
-  wxFileName::SplitPath(path, nullptr, nullptr, nullptr, &extension);
-  extension.MakeLower();
-  if (extension == wxT("png"))
+  else
   {
-    inFormat = TextureProcessor::TCFormat::PNG;
-  }
-  else if (extension == wxT("tga"))
-  {
-    inFormat = TextureProcessor::TCFormat::TGA;
+    inFormat = TextureProcessor::TCFormat::DDS;
+    switch (Texture->Format)
+    {
+    case PF_DXT1:
+    case PF_DXT3:
+    case PF_DXT5:
+      outputFormat = TextureProcessor::TCFormat::DXT;
+      break;
+    default:
+    {
+      std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+      LogE(errmsg.c_str());
+      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      return;
+    }
+    }
   }
   
   TextureProcessor processor(inFormat, outputFormat);
@@ -349,8 +377,25 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     return;
   }
 
+  EPixelFormat resultFormat = importer.GetPixelFormat();
+  if (extension == wxT("dds"))
+  {
+    switch (processor.GetOutputFormat())
+    {
+    case TextureProcessor::TCFormat::DXT1:
+      resultFormat = PF_DXT1;
+      break;
+    case TextureProcessor::TCFormat::DXT3:
+      resultFormat = PF_DXT3;
+      break;
+    case TextureProcessor::TCFormat::DXT5:
+      resultFormat = PF_DXT5;
+      break;
+    }
+  }
+
   TextureTravaller travaller;
-  travaller.SetFormat(importer.GetPixelFormat());
+  travaller.SetFormat(resultFormat);
   travaller.SetAddressX(importer.GetAddressX());
   travaller.SetAddressY(importer.GetAddressY());
 
@@ -384,7 +429,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
 {
   LogI("Export a texture...");
 
-  FTexture2DMipMap* mip = nullptr; Texture->Mips[0];
+  FTexture2DMipMap* mip = nullptr;
   for (FTexture2DMipMap* mipmap : Texture->Mips)
   {
     if (mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
@@ -401,7 +446,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
     return;
   }
 
-  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png"), Object->GetObjectName().WString(), Window);
+  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png|*.DDS texture|*.dds"), Object->GetObjectName().WString(), Window);
   if (path.empty())
   {
     LogI("Export canceled by user!");
@@ -446,16 +491,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   }
   else if (ext == "dds")
   {
-    if (inputFormat == TextureProcessor::TCFormat::DXT1 ||
-        inputFormat == TextureProcessor::TCFormat::DXT3 ||
-        inputFormat == TextureProcessor::TCFormat::DXT5)
-    {
-      outputFormat = inputFormat;
-    }
-    else
-    {
-      outputFormat = TextureProcessor::TCFormat::DXT5;
-    }
+    outputFormat = TextureProcessor::TCFormat::DDS;
   }
   else
   {
@@ -478,7 +514,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
       err = processor.GetError();
       if (err.empty())
       {
-        err = "Texture Processor: failed with an unkown error!";
+        err = "Texture Processor: failed with an unknown error!";
       }
     }
   }

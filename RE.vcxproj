@@ -80,6 +80,7 @@
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
+    <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />

@@ -224,6 +224,7 @@
     <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
+    <ClInclude Include="Core\Utils\DDS.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -5,12 +5,14 @@ class TextureProcessor {
 public:
   enum class TCFormat {
     None = 0,
-    DXT1,
+    DXT,
+    DXT1, 
     DXT3,
     DXT5,
     RGBA8,
     PNG,
-    TGA
+    TGA,
+    DDS
   };
 
   TextureProcessor(TCFormat from, TCFormat to)
@@ -127,10 +129,17 @@ public:
     return OutputMips;
   }
 
+  TCFormat GetOutputFormat() const
+  {
+    return OutputFormat;
+  }
+
 private:
   bool BytesToFile();
+  bool BytesToDDS();
   bool BytesToBytes();
   bool FileToBytes();
+  bool DDSToBytes();
 
 private:
   TCFormat InputFormat = TCFormat::None;

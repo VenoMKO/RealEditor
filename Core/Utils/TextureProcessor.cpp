@@ -7,6 +7,9 @@
 #include <FreeImage.h>
 
 #include <ppl.h>
+#include <algorithm>
+
+#include "DDS.h"
 
 // freeimage raii container
 struct FreeImageHolder {
@@ -181,6 +184,10 @@ bool TextureProcessor::BytesToFile()
 {
   nvtt::Surface surface;
   bool hasAlpha = true;
+  if (OutputFormat == TCFormat::DDS)
+  {
+    return BytesToDDS();
+  }
   if (InputFormat == TCFormat::DXT1 || InputFormat == TCFormat::DXT3 || InputFormat == TCFormat::DXT5)
   {
     nvtt::Format fmt = nvtt::Format_Count;
@@ -319,6 +326,39 @@ bool TextureProcessor::BytesToFile()
   return true;
 }
 
+bool TextureProcessor::BytesToDDS()
+{
+  DDS::DDSHeader header;
+  header.D3D9.dwWidth = InputDataSizeX;
+  header.D3D9.dwHeight = InputDataSizeY;
+  header.D3D9.dwPitchOrLinearSize = std::max(1, ((InputDataSizeX + 3) / 4)) * (InputFormat == TCFormat::DXT1 ? 8 : 16);
+  switch (InputFormat)
+  {
+  case TextureProcessor::TCFormat::DXT1:
+    header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC1_TYPELESS;
+    break;
+  case TextureProcessor::TCFormat::DXT3:
+    header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC2_TYPELESS;
+    break;
+  case TextureProcessor::TCFormat::DXT5:
+    header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC3_TYPELESS;
+    break;
+  default:
+    Error = "Texture Processor: pixel format is not supported!";
+    return false;
+  }
+
+  FWriteStream s(OutputPath);
+  s << header;
+  s.SerializeBytes(InputData, InputDataSize);
+  if (!s.IsGood())
+  {
+    Error = "Texture Processor: failed to save the file!";
+    return false;
+  }
+  return true;
+}
+
 bool TextureProcessor::BytesToBytes()
 {
   Error = "Texture Processor: B2B conversion unsupported!";
@@ -336,6 +376,10 @@ bool TextureProcessor::FileToBytes()
   else if (InputFormat == TCFormat::TGA)
   {
     fmt = FIF_TARGA;
+  }
+  else if (InputFormat == TCFormat::DDS)
+  {
+    return DDSToBytes();
   }
   else
   {
@@ -420,9 +464,7 @@ bool TextureProcessor::FileToBytes()
   {
     if (!context.compress(surface, 0, idx, compressionOptions, outputOptions))
     {
-      Error = "Texture Processor: failed to compress the bitmap (";
-      Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp));
-      Error += ":" + std::to_string((int)OutputFormat) + ")";
+      Error = "Texture Processor: failed to compress the bitmap.";
       return false;
     }
 
@@ -446,7 +488,7 @@ bool TextureProcessor::FileToBytes()
 
   if (!(OutputMipCount = ohandler.MipsCount))
   {
-    Error = "Texture Processor: failed to compress the bitmap. No mips were generated.";
+    Error = "Texture Processor: failed to compress the bitmap. No mipmaps were generated.";
     return false;
   }
   if (!OutputDataSize)
@@ -465,5 +507,68 @@ bool TextureProcessor::FileToBytes()
     OutputMips.push_back({mip.SizeX, mip.SizeY, mip.Size, (uint8*)OutputData + offset });
     offset += ohandler.Mips[idx].Size;
   }
+  return true;
+}
+
+bool TextureProcessor::DDSToBytes()
+{
+  FReadStream s = FReadStream(InputPath);
+  if (!s.IsGood())
+  {
+    Error = "Texture Processor: Failed to open the texture file!";
+    return false;
+  }
+  
+  DDS::DDSHeader header;
+  try
+  {
+    s << header;
+  }
+  catch (const std::exception& e)
+  {
+    Error = e.what();
+    return false;
+  }
+  EPixelFormat fmt = header.GetPixelFormat();
+  if (fmt == PF_Unknown)
+  {
+    switch (header.D3D10.dxgiFormat)
+    {
+    case DDS::DXGI_FORMAT_BC7_TYPELESS:
+    case DDS::DXGI_FORMAT_BC7_UNORM:
+    case DDS::DXGI_FORMAT_BC7_UNORM_SRGB:
+      // BC7 is a default format in NVTE. Show more specific error to make sure that user understands what's wrong.
+      Error = "Texture Processor: The input file has BC7 format. Tera does not support it!\nPlease, use BC1(DXT1) or BC3(DXT5) format when saving your DDS file.";
+      return false;
+    }
+    Error = "Texture Processor: The input file has unsupported pixel format.\nPlease, use BC1(DXT1) or BC3(DXT5) format when saving your DDS file.";
+    return false;
+  }
+  else if (fmt == PF_DXT1)
+  {
+    OutputFormat = TCFormat::DXT1;
+  }
+  else if (fmt == PF_DXT3)
+  {
+    OutputFormat = TCFormat::DXT3;
+  }
+  else if (fmt == PF_DXT5)
+  {
+    OutputFormat = TCFormat::DXT5;
+    Alpha = true;
+  }
+  FILE_OFFSET mipSize = header.CalculateMipmapSize();
+  if (!mipSize)
+  {
+    Error = "Texture Processor: Failed to calculate texture size.";
+    return false;
+  }
+
+  OutputData = malloc(mipSize);
+  s.SerializeBytes(OutputData, mipSize);
+  OutputDataSize = mipSize;
+  OutputMipCount = 1;
+  OutputMips.clear();
+  OutputMips.push_back({header.GetWidth(), header.GetHeight(), OutputDataSize, OutputData});
   return true;
 }
