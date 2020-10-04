@@ -1913,16 +1913,24 @@ bool FPackage::Save(PackageSaveContext& context)
   writer << Summary;
 
   // Unmark objects and apply exports table changes 
+  std::vector<FObjectExport*> marked;
   writer.SetPosition(Summary.ExportsOffset);
   for (FObjectExport* exp : Exports)
   {
     if (exp->ObjectFlags & RF_Marked)
     {
+      marked.push_back(exp);
       exp->ObjectFlags &= ~RF_Marked;
     }
     writer << *exp;
   }
-
+  // Since this is a "Save As" we need to restore dirty flags
+  for (FObjectExport* exp : marked)
+  {
+    exp->ObjectFlags |= RF_Marked;
+  }
+  MarkDirty();
+  
   bool isOk = writer.IsGood();
   if (!isOk)
   {
