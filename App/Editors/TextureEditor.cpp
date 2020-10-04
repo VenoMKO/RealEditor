@@ -526,7 +526,6 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
     {
       err = "Texture Processor: Unexpected exception!";
     }
-    LogE("%s", err.c_str());
   }
   if (!result)
   {

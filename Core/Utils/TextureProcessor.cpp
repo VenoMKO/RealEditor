@@ -41,11 +41,6 @@ struct FreeImageHolder {
 struct TPOutputHandler : public nvtt::OutputHandler {
   static const int32 MaxMipCount = 16;
 
-  TPOutputHandler()
-  {
-    memset(Mips, 0, sizeof(Mips));
-  }
-
   struct Mip {
     int32 SizeX = 0;
     int32 SizeY = 0;
@@ -65,7 +60,7 @@ struct TPOutputHandler : public nvtt::OutputHandler {
 
   void beginImage(int size, int width, int height, int depth, int face, int miplevel) override
   {
-    if (miplevel >= MaxMipCount)
+    if (miplevel >= MaxMipCount || !Ok)
     {
       Ok = false;
       return;
@@ -81,7 +76,7 @@ struct TPOutputHandler : public nvtt::OutputHandler {
 
   bool writeData(const void* data, int size) override
   {
-    if (!Ok || !MipsCount)
+    if (!Ok || !MipsCount || !data)
     {
       return Ok;
     }
@@ -106,15 +101,16 @@ struct TPOutputHandler : public nvtt::OutputHandler {
         mip.Size = size;
       }
     }
-    if (Ok)
+    if (Ok && mip.Data)
     {
-      memcpy((char*)mip.Data + mip.LastOffset, data, size);
+      void* dst = (uint8*)mip.Data + mip.LastOffset;
+      memcpy(dst, data, size);
       mip.LastOffset += size;
     }
     return Ok;
   }
 
-  virtual void endImage() override
+  void endImage() override
   {}
 
   Mip Mips[MaxMipCount];
@@ -248,9 +244,18 @@ bool TextureProcessor::BytesToFile()
 
   LogI("Texture Processor: Decompress DXT data");
   nvtt::Context ctx;
-  if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
+
+  try
   {
-    Error = "Texture Processor: Failed to decompress texture to RGBA!";
+    if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
+    {
+      Error = "Texture Processor: Failed to decompress texture to RGBA!";
+      return false;
+    }
+  }
+  catch (...)
+  {
+    Error = "Texture Processor: NVTT failed to decompress texture to RGBA!";
     return false;
   }
 
@@ -331,7 +336,6 @@ bool TextureProcessor::BytesToDDS()
   DDS::DDSHeader header;
   header.D3D9.dwWidth = InputDataSizeX;
   header.D3D9.dwHeight = InputDataSizeY;
-  header.D3D9.dwPitchOrLinearSize = std::max(1, ((InputDataSizeX + 3) / 4)) * (InputFormat == TCFormat::DXT1 ? 8 : 16);
   switch (InputFormat)
   {
   case TextureProcessor::TCFormat::DXT1:
@@ -347,7 +351,7 @@ bool TextureProcessor::BytesToDDS()
     Error = "Texture Processor: pixel format is not supported!";
     return false;
   }
-
+  header.D3D9.dwPitchOrLinearSize = header.CalculateMipmapSize();
   FWriteStream s(OutputPath);
   s << header;
   s.SerializeBytes(InputData, InputDataSize);
@@ -396,6 +400,13 @@ bool TextureProcessor::FileToBytes()
   Alpha = FreeImage_IsTransparent(holder.bmp);
   uint8* data = (uint8*)FreeImage_GetBits(holder.bmp);
 
+  if (!data)
+  {
+    Error = "Texture Processor: FreeImage failed to get bitmap!";
+    FreeImage_Unload(holder.bmp);
+    return false;
+  }
+
   nvtt::Surface surface;
   surface.setWrapMode(AddressModeToNvtt(AddressX));
   nvtt::Format outFmt = nvtt::Format_Count;
@@ -413,10 +424,18 @@ bool TextureProcessor::FileToBytes()
     outFmt = nvtt::Format_DXT5;
   }
 
-  if (!surface.setImage(nvtt::InputFormat_BGRA_8UB, FreeImage_GetWidth(holder.bmp), FreeImage_GetHeight(holder.bmp), 1, data))
+  try
   {
-    Error = "Texture Processor: failed to create input surface (";
-    Error += std::to_string(FreeImage_GetWidth(holder.bmp)) + "x" + std::to_string(FreeImage_GetHeight(holder.bmp)) + ")";
+    if (!surface.setImage(nvtt::InputFormat_BGRA_8UB, FreeImage_GetWidth(holder.bmp), FreeImage_GetHeight(holder.bmp), 1, data))
+    {
+      Error = "Texture Processor: failed to set a surface.";
+      FreeImage_Unload(holder.bmp);
+      return false;
+    }
+  }
+  catch (...)
+  {
+    Error = "Texture Processor: NVTT failed to set a surface.";
     FreeImage_Unload(holder.bmp);
     return false;
   }
