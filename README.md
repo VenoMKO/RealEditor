@@ -33,8 +33,8 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 * Saving/Cooking packages
 * Properties viewer
 * DXT textures viewer
-* DXT textures export to *.png or *.tga
-* Importing and converting *.png ot *.tga to DXT
+* DXT textures export to *.png, *.tga, *.dds
+* Importing *.png, *.tga, *.dds textures
 * Remove region locking from packages
 * Encrypt/Decrypt mappers
 * Dumping table of contents of composite packages
