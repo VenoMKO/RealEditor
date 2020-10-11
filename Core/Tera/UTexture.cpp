@@ -299,6 +299,7 @@ void UTexture2D::DisableCaching()
     if (idx > 0)
     {
       delete Mips[idx];
+      continue;
     }
     FTexture2DMipMap* mip = Mips[idx];
     if (mip->Data->BulkDataFlags & BULKDATA_Unused)
@@ -307,8 +308,8 @@ void UTexture2D::DisableCaching()
     }
     if (mip->Data->IsStoredCompressedOnDisk())
     {
-      // TODO: might be a different compresion
-      // TODO: remove this when switched to lzop
+      // TODO: might be a different compression
+      // TODO: remove this when switched to lzopro
       mip->Data->BulkDataFlags &= ~BULKDATA_SerializeCompressedLZO;
     }
     if (mip->Data->IsStoredInSeparateFile())

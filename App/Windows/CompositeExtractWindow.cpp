@@ -324,6 +324,10 @@ void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 		{
 			inputFormat = TextureProcessor::TCFormat::PNG;
 		}
+    else if (extension == "dds")
+    {
+      inputFormat = TextureProcessor::TCFormat::DDS;
+    }
 		else
 		{
 			doImport = false;
