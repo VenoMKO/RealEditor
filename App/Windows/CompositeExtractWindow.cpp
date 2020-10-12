@@ -178,6 +178,7 @@ void CompositeExtractWindow::OnSearchClicked(wxCommandEvent& event)
 	Found.clear();
 	const std::string className = ObjectClassTextField->GetValue().ToStdString();
 	const std::string objectName = ObjectTextField->GetValue().ToStdString();
+	const std::string dupObjectName = objectName + "_dup";
 	ProgressWindow progress(this, wxT("Searching..."));
 	wxString desc = "Looking for all " + className + " objects with " + objectName + " name";
 	progress.SetActionText(desc);
@@ -200,7 +201,7 @@ void CompositeExtractWindow::OnSearchClicked(wxCommandEvent& event)
 			}
 			PACKAGE_INDEX objIndex = INDEX_NONE;
 			std::string_view lineObjectName(&line[pos + 1]);
-			if (lineObjectName == objectName)
+			if (lineObjectName == objectName || lineObjectName == dupObjectName)
 			{
 				pos = line.find_first_of('\t');
 				if (pos == std::string::npos)
