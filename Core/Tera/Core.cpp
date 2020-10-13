@@ -5,7 +5,9 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string.h>
+#include <array>
+#include <bitset>
+#include <cstring>
 #define NOGDICAPMASKS
 #define NOMENUS
 #define NOATOM
@@ -45,6 +47,25 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 #define COMPRESSED_BLOCK_MAGIC PACKAGE_MAGIC
 #define COMPRESSION_FLAGS_TYPE_MASK		0x0F
 #define COMPRESSION_FLAGS_OPTIONS_MASK	0xF0
+
+bool _HasAVX2()
+{
+  std::array<int, 4> cpui;
+  std::vector<std::array<int, 4>> data;
+  std::bitset<32> f_7_EBX_;
+  __cpuid(cpui.data(), 0);
+  int nIds = cpui[0];
+  for (int i = 0; i <= nIds; ++i)
+  {
+    __cpuidex(cpui.data(), i, 0);
+    data.push_back(cpui);
+  }
+  if (nIds >= 7)
+  {
+    f_7_EBX_ = data[7][1];
+  }
+  return f_7_EBX_[5];
+}
 
 std::string W2A(const wchar_t* str, int32 len)
 {
@@ -714,6 +735,12 @@ std::string GetAppVersion()
   std::stringstream stream;
   stream << "v." << std::fixed << std::setprecision(2) << APP_VER << BUILD_SUFFIX;
   return stream.str();
+}
+
+bool HasAVX2()
+{
+  static bool result = _HasAVX2();
+  return result;
 }
 
 #if _DEBUG

@@ -184,6 +184,11 @@ bool TextureProcessor::BytesToFile()
   {
     return BytesToDDS();
   }
+  if (!HasAVX2())
+  {
+    Error = "Texture Processor: Your CPU does not support AVX2 instructions. Please, use DDS format to export the texture.";
+    return false;
+  }
   if (InputFormat == TCFormat::DXT1 || InputFormat == TCFormat::DXT3 || InputFormat == TCFormat::DXT5)
   {
     nvtt::Format fmt = nvtt::Format_Count;
@@ -388,6 +393,12 @@ bool TextureProcessor::FileToBytes()
   else
   {
     Error = "Texture Processor: Input format \"" + std::to_string((int)InputFormat) + "\" is not supported!";
+    return false;
+  }
+
+  if (!HasAVX2())
+  {
+    Error = "Texture Processor: Your CPU does not support AVX2 instructions. Please, use DDS format to import the texture.";
     return false;
   }
   

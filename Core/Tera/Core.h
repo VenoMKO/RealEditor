@@ -156,6 +156,9 @@ FString PackageFlagsToString(uint32 flags);
 
 std::string GetAppVersion();
 
+// Check if the CPU has AVX2 instructions set. Mandatory for TGA and PNG export/import
+bool HasAVX2();
+
 // Generic runtime error
 void UThrow(const char* fmt, ...);
 void UThrow(const wchar* fmt, ...);

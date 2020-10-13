@@ -2,79 +2,102 @@
 #include <wx/statline.h>
 
 enum ControlElementId {
-	Format = wxID_HIGHEST + 1,
-	Normal,
-	SRGB,
-	MipGen,
-	MipFilter,
-	AddressX,
-	AddressY
+  Format = wxID_HIGHEST + 1,
+  Normal,
+  SRGB,
+  MipGen,
+  MipFilter,
+  AddressX,
+  AddressY
 };
 
 inline int PixelFormatToWx(EPixelFormat fmt)
 {
-	switch (fmt)
-	{
-	case PF_DXT1:
-		return 0;
-	case PF_DXT3:
-		return 1;
-	default:
-	case PF_DXT5:
-		return 2;
-	}
+  switch (fmt)
+  {
+  case PF_DXT1:
+    return 0;
+  case PF_DXT3:
+    return 1;
+  default:
+  case PF_DXT5:
+    return 2;
+  }
 }
 
 inline EPixelFormat WxToPixelFormat(int fmt)
 {
-	switch (fmt)
-	{
-	case 0:
-		return PF_DXT1;
-	case 1:
-		return PF_DXT3;
-	default:
-	case 2:
-		return PF_DXT5;
-	}
+  switch (fmt)
+  {
+  case 0:
+    return PF_DXT1;
+  case 1:
+    return PF_DXT3;
+  default:
+  case 2:
+    return PF_DXT5;
+  }
 }
 
 inline int TextureAddressToWx(TextureAddress address)
 {
-	switch (address)
-	{
-	case TA_Wrap:
-		return 0;
-	case TA_Clamp:
-		return 1;
-	case TA_Mirror:
-		return 2;
-	case TA_MAX:
-	default:
-		return -1;
-	}
+  switch (address)
+  {
+  case TA_Wrap:
+    return 0;
+  case TA_Clamp:
+    return 1;
+  case TA_Mirror:
+    return 2;
+  case TA_MAX:
+  default:
+    return -1;
+  }
 }
 
 inline TextureAddress WxToTextureAddress(int address)
 {
-	switch (address)
-	{
-	case 0:
-		return TA_Wrap;
-	case 1:
-		return TA_Clamp;
-	case 2:
-		return TA_Mirror;
-	case TA_MAX:
-	default:
-		return TA_MAX;
-	}
+  switch (address)
+  {
+  case 0:
+    return TA_Wrap;
+  case 1:
+    return TA_Clamp;
+  case 2:
+    return TA_Mirror;
+  case TA_MAX:
+  default:
+    return TA_MAX;
+  }
 }
 
 wxString TextureImporter::LoadImageDialog(wxWindow* parent)
 {
-	wxString ext = wxT("Image files (*.png, *.tga, *.dds)|*.png;*.tga;*.dds");
-	return wxFileSelector("Import a texture", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, parent);
+  wxString ext;
+  if (HasAVX2())
+  {
+    ext = wxT("Image files (*.png, *.tga, *.dds)|*.png;*.tga;*.dds");
+  }
+  else
+  {
+    ext = wxT("DDS files (*.dds)|*.dds");
+  }
+  return wxFileSelector("Import a texture", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, parent);
+}
+
+
+wxString TextureImporter::SaveImageDialog(wxWindow* parent, const wxString& defaultFileName)
+{
+  wxString allowedExts;
+  if (HasAVX2())
+  {
+    allowedExts = wxT("TGA image|*.tga|*.PNG image|*.png|*.DDS texture|*.dds");
+  }
+  else
+  {
+    allowedExts = wxT("DDS texture|*.dds");
+  }
+  return wxSaveFileSelector("texture", allowedExts, defaultFileName, parent);
 }
 
 TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)

@@ -452,7 +452,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
     return;
   }
 
-  wxString path = wxSaveFileSelector("texture", wxT("TGA image|*.tga|*.PNG image|*.png|*.DDS texture|*.dds"), Object->GetObjectName().WString(), Window);
+  wxString path = TextureImporter::SaveImageDialog(Window, Object->GetObjectName().WString());
   if (path.empty())
   {
     LogI("Export canceled by user!");
@@ -461,7 +461,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   wxString ext = wxFileName(path).GetExt();
   if (ext.empty())
   {
-    ext = wxT("tga");
+    ext = wxT("dds");
   }
   ext.MakeLower();
 

@@ -6,6 +6,7 @@ class TextureImporter : public wxDialog {
 public:
 
   static wxString LoadImageDialog(wxWindow* parent);
+  static wxString SaveImageDialog(wxWindow* parent, const wxString& defaultFileName = wxEmptyString);
 
   TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY);
 
