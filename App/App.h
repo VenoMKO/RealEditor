@@ -1,4 +1,5 @@
 #pragma once
+#define WXDEBUG 1
 #include <wx/msw/msvcrt.h>
 #include <wx/wx.h>
 #include <wx/event.h>
@@ -71,6 +72,8 @@ public:
 
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
+
+  void OnFatalException() override;
 
   const wxArrayString& GetCompositePackageNames() const;
 

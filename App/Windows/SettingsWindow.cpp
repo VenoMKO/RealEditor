@@ -203,7 +203,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	UpdatesButton->SetHelpText(wxT("Open GitHub release page to check if a new version is available"));
 	bSizer14->Add(UpdatesButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, wxString::Format("v.%.2f", APP_VER), wxDefaultPosition, wxDefaultSize, 0);
+	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, GetAppVersion(), wxDefaultPosition, wxDefaultSize, 0);
 	VersionLabel->Wrap(-1);
 	bSizer14->Add(VersionLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 

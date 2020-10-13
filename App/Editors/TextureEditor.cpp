@@ -368,6 +368,12 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
       result = false;
       LogE(e.what());
     }
+    catch (const char* msg)
+    {
+      result = false;
+      std::string err = std::string("Failed to process the image: ") + msg;
+      LogE(err.c_str());
+    }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
   }).detach();
 
@@ -432,7 +438,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   FTexture2DMipMap* mip = nullptr;
   for (FTexture2DMipMap* mipmap : Texture->Mips)
   {
-    if (mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+    if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
     {
       mip = mipmap;
       break;
@@ -517,6 +523,11 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
         err = "Texture Processor: failed with an unknown error!";
       }
     }
+  }
+  catch (const std::exception& e)
+  {
+    err = e.what();
+    result = false;
   }
   catch (...)
   {

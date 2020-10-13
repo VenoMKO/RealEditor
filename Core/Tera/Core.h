@@ -9,6 +9,7 @@
 // --------------------------------------------------------------------
 
 static const float APP_VER = 1.25f;
+//#define CUSTOM_BUILD " RC"
 
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1
@@ -33,9 +34,15 @@ void DumpData(void* data, int size, const char* path);
 #endif
 #define MULTITHREADED_CLASS_SERIALIZATION 0
 #define SERIALIZE_PROPERTIES 1
+#define BUILD_SUFFIX "d"
 #else
 #define MULTITHREADED_CLASS_SERIALIZATION 1
 #define SERIALIZE_PROPERTIES 1
+#ifdef CUSTOM_BUILD
+#define BUILD_SUFFIX CUSTOM_BUILD
+#else
+#define BUILD_SUFFIX ""
+#endif
 #endif
 
 // --------------------------------------------------------------------
@@ -146,6 +153,8 @@ FString ObjectFlagsToString(uint64 flags);
 FString ExportFlagsToString(uint32 flags);
 FString PixelFormatToString(uint32 pf);
 FString PackageFlagsToString(uint32 flags);
+
+std::string GetAppVersion();
 
 // Generic runtime error
 void UThrow(const char* fmt, ...);

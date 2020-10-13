@@ -70,7 +70,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   , Application(application)
   , Package(package)
 {
-	wxString title = application->GetAppDisplayName() + wxT(" - ");
+	wxString title = application->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - ");
 	if (package->IsComposite())
 	{
 		std::wstring sub = package->GetCompositePath();
@@ -886,15 +886,6 @@ void PackageWindow::OnPackageError(wxCommandEvent& e)
 
 void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 {
-	wxDataViewItem item = e.GetItem();
-	if (ObjectTreeCtrl->IsExpanded(item))
-	{
-		ObjectTreeCtrl->Collapse(item);
-	}
-	else
-	{
-		ObjectTreeCtrl->Expand(item);
-	}
 	e.Veto();
 }
 

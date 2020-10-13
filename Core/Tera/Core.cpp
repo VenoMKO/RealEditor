@@ -2,7 +2,9 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string.h>
 #define NOGDICAPMASKS
 #define NOMENUS
@@ -705,6 +707,13 @@ FString PackageFlagsToString(uint32 flags)
     s = s.Substr(0, s.Size() - 2);
   }
   return s;
+}
+
+std::string GetAppVersion()
+{
+  std::stringstream stream;
+  stream << "v." << std::fixed << std::setprecision(2) << APP_VER << BUILD_SUFFIX;
+  return stream.str();
 }
 
 #if _DEBUG

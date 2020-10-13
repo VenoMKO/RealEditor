@@ -276,6 +276,12 @@ bool App::OpenPackage(const wxString& path)
     wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
     return false;
   }
+  catch (...)
+  {
+    LogE("Failed to open the package: Unexpected exception!");
+    wxMessageBox("Unexpected exception!", "Failed to open the package!", wxICON_ERROR);
+    return false;
+  }
 
   if (package == nullptr)
   {
@@ -297,8 +303,20 @@ bool App::OpenPackage(const wxString& path)
       }
       catch (const std::exception& e)
       {
-        LogE("Failed to load the package. %s.", e.what());
+        LogE("Failed to load the package: %s.", e.what());
         SendEvent(window, PACKAGE_ERROR, e.what());
+        return;
+      }
+      catch (const char* msg)
+      {
+        LogE("Failed to load the package: %s.", msg);
+        SendEvent(window, PACKAGE_ERROR, wxString("Failed to load the package: ") + msg);
+        return;
+      }
+      catch (...)
+      {
+        LogE("Failed to load the package. Unexpected exception occurred!");
+        SendEvent(window, PACKAGE_ERROR, "Failed to load the package. Unexpected exception occurred!");
         return;
       }
       if (!package->IsOperationCancelled())
@@ -336,6 +354,18 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
     wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
     return false;
   }
+  catch (const char* msg)
+  {
+    LogE("Failed to open the package: %s.", msg);
+    wxMessageBox(msg, "Failed to open the package!", wxICON_ERROR);
+    return false;
+  }
+  catch (...)
+  {
+    LogE("Failed to open the package. Unexpected exception occurred!");
+    wxMessageBox("Unexpected exception occurred!", "Failed to open the package!", wxICON_ERROR);
+    return false;
+  }
 
   if (package == nullptr)
   {
@@ -359,6 +389,18 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
       {
         LogE("Failed to load the package. %s.", e.what());
         SendEvent(window, PACKAGE_ERROR, e.what());
+        return;
+      }
+      catch (const char* msg)
+      {
+        LogE("Failed to load the package: %s.", msg);
+        wxMessageBox(msg, "Failed to open the package!", wxICON_ERROR);
+        return;
+      }
+      catch (...)
+      {
+        LogE("Failed to load the package. Unexpected exception occurred!");
+        wxMessageBox("Unexpected exception occurred!", "Failed to load the package!", wxICON_ERROR);
         return;
       }
       if (!package->IsOperationCancelled())
@@ -395,7 +437,7 @@ bool App::OnInit()
 #ifdef _DEBUG
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
-  
+  wxHandleFatalExceptions(true);
   // If the executable name changes our AppData storage path will change too. We don't want that.
   // So we set AppName manually. This will keep paths consistent.
   SetAppName(APP_NAME);
@@ -474,6 +516,10 @@ void App::LoadCore(ProgressWindow* pWindow)
     catch (const std::exception& e)
     {
       LogE("Can't load metadata: %s", e.what());
+    }
+    catch (...)
+    {
+      LogE("Can't load metadata!");
     }
   }
 
@@ -758,6 +804,11 @@ bool App::CheckMimeTypes() const
     }
   }
   return true;
+}
+
+void App::OnFatalException()
+{
+  wxMessageBox("An unknown error occurred. The program will close!", "Error!", wxICON_ERROR);
 }
 
 wxBEGIN_EVENT_TABLE(App, wxApp)

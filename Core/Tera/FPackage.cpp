@@ -415,6 +415,10 @@ void FPackage::LoadClassPackage(const FString& name)
     if (name == "Core.u")
     {
       CoreVersion = package->GetFileVersion();
+      if (CoreVersion == VER_TERA_CLASSIC)
+      {
+        UThrow("Real Editor does not support 32-bit Tera!");
+      }
       LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
     }
     else if (package->GetFileVersion() != CoreVersion)
@@ -914,6 +918,10 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   (*stream) << sum;
   if (CoreVersion && sum.GetFileVersion() != CoreVersion)
   {
+    if (sum.GetFileVersion() == VER_TERA_CLASSIC)
+    {
+      UThrow("Real Editor can't open 32-bit packages!");
+    }
     UThrow("%s version (%d/%d) differs from your game version(%d)", sum.PackageName.C_str(), sum.GetFileVersion(), sum.GetLicenseeVersion(), CoreVersion);
   }
   if (sum.CompressedChunks.size())
