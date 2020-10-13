@@ -19,6 +19,10 @@ void ObjectRedirectorEditor::OnObjectLoaded()
 void ObjectRedirectorEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
+  if (auto item = toolbar->FindById(eID_Export))
+  {
+    item->Enable(false);
+  }
   if (Object && Object->GetPackage() != Window->GetPackage().get() && Object->GetPackage()->IsComposite())
   {
     CompositeObjectPath = Object->GetObjectPath().WString();
