@@ -443,6 +443,13 @@ bool App::OnInit()
   SetAppName(APP_NAME);
   SetAppDisplayName(APP_NAME);
 
+  // Update executable path if MIME is registered
+  if (CheckMimeTypes())
+  {
+    wxCommandEvent tmp;
+    OnRegisterMime(tmp);
+  }
+
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   if (cfg.Load())
   {
