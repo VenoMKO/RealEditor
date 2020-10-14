@@ -8,7 +8,7 @@
 // Build configuration
 // --------------------------------------------------------------------
 
-static const float APP_VER = 1.26f;
+static const float APP_VER = 1.3f;
 //#define CUSTOM_BUILD " RC"
 
 #define WIN_POS_FULLSCREEN INT_MIN

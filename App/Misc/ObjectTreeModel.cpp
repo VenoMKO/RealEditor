@@ -51,6 +51,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
 	{
 		return IcoClass;
 	}
+  if (className == wxT("SoundNodeWave"))
+  {
+    return IcoSound;
+  }
 	if (className == wxT("Field") || className == wxT("TextBuffer"))
 	{
 		return IcoField;

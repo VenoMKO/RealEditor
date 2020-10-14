@@ -158,6 +158,12 @@
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\USoundNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\SoundWaveEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -225,6 +231,8 @@
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="Core\Utils\DDS.h" />
+    <ClInclude Include="Core\Tera\USoundNode.h" />
+    <ClInclude Include="App\Editors\SoundWaveEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

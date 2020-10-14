@@ -11,6 +11,7 @@
 #include "TextureEditor.h"
 #include "SkelMeshEditor.h"
 #include "StaticMeshEditor.h"
+#include "SoundWaveEditor.h"
 
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
@@ -30,6 +31,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (object->GetClassName() == UStaticMesh::StaticClassName())
   {
     editor = new StaticMeshEditor(parent, window);
+  }
+  else if (object->GetClassName() == USoundNodeWave::StaticClassName())
+  {
+    editor = new SoundWaveEditor(parent, window);
   }
   else
   {

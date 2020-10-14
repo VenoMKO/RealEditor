@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
+    <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
@@ -52,6 +53,7 @@
     <ClCompile Include="Core\Tera\UPersistentCookerData.cpp" />
     <ClCompile Include="Core\Tera\UProperty.cpp" />
     <ClCompile Include="Core\Tera\USkeletalMesh.cpp" />
+    <ClCompile Include="Core\Tera\USoundNode.cpp" />
     <ClCompile Include="Core\Tera\UStaticMesh.cpp" />
     <ClCompile Include="Core\Tera\UTexture.cpp" />
     <ClCompile Include="Core\Utils\CompositePatcher.cpp" />
@@ -64,6 +66,7 @@
     <ClInclude Include="App\App.h" />
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
+    <ClInclude Include="App\Editors\SoundWaveEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
@@ -79,6 +82,7 @@
     <ClInclude Include="App\Windows\TextureImporter.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
+    <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />

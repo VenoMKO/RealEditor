@@ -16,6 +16,7 @@
 #include "UTexture.h"
 #include "USkeletalMesh.h"
 #include "UStaticMesh.h"
+#include "USoundNode.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -48,6 +49,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UStaticMesh::StaticClassName())
   {
     result = new UStaticMesh(exp);
+  }
+  else if (c == USoundNodeWave::StaticClassName())
+  {
+    result = new USoundNodeWave(exp);
   }
   else if (c == UField::StaticClassName())
   {
