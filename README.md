@@ -29,30 +29,27 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 
 ### Features
 
-* Opening 64-bit packages
-* Saving/Cooking packages
+* Opening/Saving 64-bit packages
+* Textures export/import to *.png, *.tga, *.dds
+* 3D model export to *.fbx
+* Sound export to *.ogg
 * Properties viewer
-* DXT textures viewer
-* DXT textures export to *.png, *.tga, *.dds
-* Importing *.png, *.tga, *.dds textures
-* Remove region locking from packages
-* Encrypt/Decrypt mappers
+* DXT texture viewer
+* 3D model viewer
+* Bulk composite extraction and modding
 * Dumping table of contents of composite packages
 * Combining composite mods to a single mod file
-* Bulk composite extraction and modding
-* Mesh export to *.fbx
-* Skeletal mesh viewer
-* Static mesh viewer
+* Remove region locking from packages
+* Encrypt/Decrypt mappers
+
 
 ### Plans
 
-* Object detaching & attaching
 * Mesh import from *.fbx
 * Materials support
 * Map renderer
 * Map export to UE4 via *.t3d or custom Datasmith plugin
 * Animation renderer / exporter to *.fbx
-* Sound export to *.ogg
 * HiDPI screen support
 
 ### Contacts
