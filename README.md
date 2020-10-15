@@ -20,13 +20,6 @@ Currently under development. Some features are not implemented yet or may not wo
 
 * [Wiki](https://github.com/VenoMKO/RealEditor/wiki/Wiki-%D0%BD%D0%B0-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC)
 
-### System requirements
-* Windows 10 x64 (RE can run on previous Windows versions, but some features may not work)
-
-### Download
-
-You can get the latest version in the ['Releases' section](https://github.com/VenoMKO/RealEditor/releases).
-
 ### Features
 
 * Opening/Saving 64-bit packages
@@ -51,6 +44,15 @@ You can get the latest version in the ['Releases' section](https://github.com/Ve
 * Map export to UE4 via *.t3d or custom Datasmith plugin
 * Animation renderer / exporter to *.fbx
 * HiDPI screen support
+
+### System requirements
+
+* Windows 10 x64 (RE can run on previous Windows versions, but some features may not work)
+* CPU: Intel Haswell / AMD Excavator or anything newer with AVX2 instructions
+
+### Download
+
+You can get the latest version in the ['Releases' section](https://github.com/VenoMKO/RealEditor/releases).
 
 ### Contacts
 
