@@ -339,6 +339,7 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
     if (window->GetPackage()->GetPackageName().String() == name)
     {
       window->Raise();
+      window->SelectObject(selection);
       return true;
     }
   }
@@ -380,7 +381,7 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
 
   if (!package->IsReady())
   {
-    std::thread([package, window]() {
+    std::thread([package, window, selection]() {
       try
       {
         package->Load();
@@ -406,12 +407,14 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
       if (!package->IsOperationCancelled())
       {
         SendEvent(window, PACKAGE_READY);
+        SendEvent(window, SELECT_OBJECT, selection);
       }
     }).detach();
   }
   else
   {
     SendEvent(window, PACKAGE_READY);
+    SendEvent(window, SELECT_OBJECT, selection);
   }
   return true;
 }
@@ -811,6 +814,13 @@ bool App::CheckMimeTypes() const
     }
   }
   return true;
+}
+
+void App::SaveConfig()
+{
+  AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
+  cfg.SetConfig(Config);
+  cfg.Save();
 }
 
 void App::OnFatalException()

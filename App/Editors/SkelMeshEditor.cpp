@@ -99,6 +99,14 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
   PopupMenu(&menu);
 }
 
+void SkelMeshEditor::SetNeedsUpdate()
+{
+  if (Renderer)
+  {
+    Renderer->requestRedraw();
+  }
+}
+
 void SkelMeshEditor::CreateRenderer()
 {
   int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 8, WX_GL_STENCIL_SIZE, 8, 0 };

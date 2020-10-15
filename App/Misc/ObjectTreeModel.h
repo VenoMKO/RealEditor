@@ -47,6 +47,8 @@ public:
 
 	void Append(ObjectTreeNode* child);
 
+	ObjectTreeNode* FindItemByObjectIndex(PACKAGE_INDEX index);
+
 private:
 	FObjectExport* Export = nullptr;
 	FObjectImport* Import = nullptr;
@@ -100,6 +102,8 @@ public:
 	bool IsContainer(const wxDataViewItem& item) const override;
 
 	unsigned int GetChildren(const wxDataViewItem& parent, wxDataViewItemArray& array) const override;
+
+	ObjectTreeNode* FindItemByObjectIndex(PACKAGE_INDEX index);
 
 private:
 	ObjectTreeNode* RootExport = nullptr;

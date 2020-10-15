@@ -6,6 +6,7 @@ enum ToolEventID : int {
   eID_Export = 0,
   eID_Import,
   eID_Composite,
+  eID_Origin,
   eID_Refresh,
   eID_Texture2D_Channel_R,
   eID_Texture2D_Channel_G,
@@ -36,6 +37,9 @@ public:
   {
     return Loading;
   }
+
+  virtual void SetNeedsUpdate()
+  {}
 
   virtual void OnTick()
   {}
@@ -70,4 +74,5 @@ protected:
   wxString CompositeObjectPath;
   PackageWindow* Window = nullptr;
   bool Loading = false;
+  bool NeedsUpdate = false;
 };

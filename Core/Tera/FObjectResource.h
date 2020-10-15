@@ -58,6 +58,8 @@ public:
 
   FString GetPackageName() const;
 
+  FString GetObjectPath() const override;
+
   friend FStream& operator<<(FStream& s, FObjectImport& i);
 
   FName ClassPackage;

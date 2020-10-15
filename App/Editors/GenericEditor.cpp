@@ -107,7 +107,7 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
     CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
     if (CompositeObjectPath.size())
     {
-      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containig this object...");
+      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
     }
   }
 }

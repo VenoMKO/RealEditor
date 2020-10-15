@@ -257,8 +257,7 @@ FString FPackage::GetObjectCompositePath(const FString& path)
 {
   if (path.Size() && PkgMap.count(path.ToUpper()))
   {
-    FString result = PkgMap.at(path.ToUpper());
-    return result.Substr(0, result.Find("."));
+    return PkgMap.at(path.ToUpper());
   }
   return FString();
 }

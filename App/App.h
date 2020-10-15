@@ -84,6 +84,8 @@ public:
     return Config;
   }
 
+  void SaveConfig();
+
 private:
   bool OnInit();
   int OnRun();

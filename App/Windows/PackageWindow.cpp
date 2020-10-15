@@ -8,6 +8,8 @@
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <sstream>
 
@@ -49,6 +51,7 @@ enum ControlElementId {
 	DebugTestCookObj,
 	Back,
 	Forward,
+	ContentSplitter,
 	HeartBeat
 };
 
@@ -59,6 +62,7 @@ enum ObjTreeMenuId {
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
 wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
+wxDEFINE_EVENT(SELECT_OBJECT, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
 const wxString HelpUrl = wxS("https://github.com/VenoMKO/RealEditor/wiki");
@@ -160,7 +164,89 @@ wxString PackageWindow::GetPackagePath() const
 
 void PackageWindow::SelectObject(const wxString& objectPath)
 {
+  std::vector<std::string> components;
+  std::istringstream f(objectPath.ToStdString());
+  std::string tmp;
+  while (std::getline(f, tmp, '.'))
+	{
+		if (tmp.size())
+		{
+			components.push_back(tmp);
+		}
+  }
+	if (components.empty())
+	{
+		return;
+	}
+	FObjectResource* found = nullptr;
 
+	std::vector<FObjectExport*> searchItems = Package->GetRootExports();
+	for (int32 idx = 1; idx < components.size(); ++idx)
+	{
+		std::string upper = components[idx];
+    std::transform(upper.begin(), upper.end(), upper.begin(),
+      [](unsigned char c) { return std::toupper(c); }
+    );
+		for (FObjectExport* exp : searchItems)
+		{
+			if (exp->GetObjectName().ToUpper() == upper)
+			{
+				found = exp;
+				searchItems = exp->Inner;
+				break;
+			}
+		}
+	}
+	if (!found)
+	{
+		std::vector<FObjectImport*> searchItems = Package->GetRootImports();
+    for (int32 idx = 1; idx < components.size(); ++idx)
+    {
+      std::string upper = components[idx];
+      std::transform(upper.begin(), upper.end(), upper.begin(),
+        [](unsigned char c) { return std::toupper(c); }
+      );
+      for (FObjectImport* imp : searchItems)
+      {
+        if (imp->GetObjectName().ToUpper() == upper)
+        {
+          found = imp;
+          searchItems = imp->Inner;
+          break;
+        }
+      }
+    }
+	}
+	if (found && found->ObjectIndex)
+	{
+		if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(found->ObjectIndex))
+		{
+      auto item = wxDataViewItem(node);
+      ObjectTreeCtrl->Select(item);
+      ObjectTreeCtrl->EnsureVisible(item);
+			OnExportObjectSelected(found->ObjectIndex);
+		}
+	}
+}
+
+void PackageWindow::SelectObject(UObject* object)
+{
+	if (!object)
+	{
+		return;
+	}
+	PACKAGE_INDEX idx = GetPackage()->GetObjectIndex(object);
+	if (idx == INDEX_NONE || idx == 0)
+	{
+		return;
+	}
+  if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(idx))
+  {
+		auto item = wxDataViewItem(node);
+    ObjectTreeCtrl->Select(item);
+		ObjectTreeCtrl->EnsureVisible(item);
+    OnExportObjectSelected(idx);
+  }
 }
 
 bool PackageWindow::OnObjectLoaded(const std::string& id)
@@ -217,18 +303,8 @@ void PackageWindow::OnTick(wxTimerEvent& e)
 
 void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
 {
-	wxSize hint;
-	float dx;
-	hint = Application->GetLastWindowObjectSash();
-	dx = float(hint.x) / float(hint.y);
-	SidebarSplitter->SetSashPosition(SidebarSplitter->GetSize().x * dx);
-
-	hint = Application->GetLastWindowPropSash();
-	PropertiesPos = hint.y - hint.x;;
-	ContentSplitter->SetSashPosition(PropertiesPos);
-	ContentSplitter->SetSashGravity(1);
-	SidebarSplitter->Disconnect(wxEVT_IDLE, wxIdleEventHandler(PackageWindow::SidebarSplitterOnIdle), NULL, this);
-	DisableSizeUpdates = false;
+  SidebarSplitter->Disconnect(wxEVT_IDLE, wxIdleEventHandler(PackageWindow::SidebarSplitterOnIdle), NULL, this);
+  DisableSizeUpdates = false;
 }
 
 void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
@@ -378,7 +454,7 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
 	}
 
 	// TODO: enable if the object is fexp && !Package->IsReadOnly()
-	PropertyRootCategory->Enable(!Package->IsReadOnly() && object->GetPackage() == Package.get());
+	// PropertyRootCategory->Enable(!Package->IsReadOnly() && object->GetPackage() == Package.get());
 	CreateProperty(PropertiesCtrl, PropertyRootCategory, properties);
 	PropertiesCtrl->Thaw();
 
@@ -603,9 +679,16 @@ void PackageWindow::OnMoveEnd(wxMoveEvent& e)
 		Application->SetLastWindowPosition(GetPosition());
 
 		Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
-		Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		if (ContentSplitter->IsSplit())
+		{
+			Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		}
 		Application->SetLastWindowSize(GetSize());
 	}
+  if (ActiveEditor)
+  {
+    ActiveEditor->SetNeedsUpdate();
+  }
 	e.Skip();
 }
 
@@ -614,7 +697,10 @@ void PackageWindow::OnSize(wxSizeEvent& e)
 	if (!DisableSizeUpdates)
 	{
 		Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
-		Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		if (ContentSplitter->IsSplit())
+		{
+			Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+		}
 		if (!IsMaximized())
 		{
 			Application->SetLastWindowSize(GetSize());
@@ -884,6 +970,11 @@ void PackageWindow::OnPackageError(wxCommandEvent& e)
 	Close();
 }
 
+void PackageWindow::OnSelectObject(wxCommandEvent& e)
+{
+	SelectObject(e.GetString());
+}
+
 void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 {
 	e.Veto();
@@ -898,6 +989,14 @@ void PackageWindow::OnBulkCompositeExtract(wxCommandEvent&)
 void PackageWindow::OnHelpClicked(wxCommandEvent&)
 {
 	wxLaunchDefaultBrowser(HelpUrl);
+}
+
+void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
+{
+	if (!ContentSplitter->IsSashInvisible())
+	{
+		Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+	}
 }
 
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
@@ -918,6 +1017,7 @@ EVT_MENU(ControlElementId::Help, PackageWindow::OnHelpClicked)
 EVT_MENU(ControlElementId::DumpObjectsMap, PackageWindow::OnDumpCompositeObjectsClicked)
 EVT_MENU(ControlElementId::BulkCompositeExtract, PackageWindow::OnBulkCompositeExtract)
 EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
+EVT_SPLITTER_SASH_POS_CHANGED(ControlElementId::ContentSplitter, PackageWindow::OnPropertiesSplitter)
 EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
 EVT_DATAVIEW_ITEM_CONTEXT_MENU(wxID_ANY, PackageWindow::OnObjectTreeContextMenu)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)
@@ -926,6 +1026,7 @@ EVT_MAXIMIZE(PackageWindow::OnMaximized)
 EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
+EVT_COMMAND(wxID_ANY, SELECT_OBJECT, PackageWindow::OnSelectObject)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 

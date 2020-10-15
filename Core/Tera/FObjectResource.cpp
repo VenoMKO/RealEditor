@@ -59,12 +59,25 @@ FString FObjectImport::GetPackageName() const
     }
     else
     {
-      // Imports outer object is Export. Not sure what is the correct behaviour
+      // Imports outer object is Export. Not sure what is the correct behavior
       outer = Package->GetExportObject(outerIndex);
       outerIndex = 0;
     }
   }
   return outer ? outer->GetObjectName() : FString();
+}
+
+FString FObjectImport::GetObjectPath() const
+{
+  FObjectResource* outer = GetOuter();
+  FString path;
+  while (outer)
+  {
+    path = outer->GetObjectName() + "." + path;
+    outer = outer->GetOuter();
+  }
+  path += GetObjectName();
+  return path;
 }
 
 FObjectResource* FObjectResource::GetOuter() const

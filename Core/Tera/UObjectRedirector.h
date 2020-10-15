@@ -8,6 +8,11 @@ class UObjectRedirector : public UObject {
   {
     return Object;
   }
+
+  PACKAGE_INDEX GetObjectRefIndex() const
+  {
+    return ObjectRefIndex;
+  }
   
   void Serialize(FStream& s) override;
 

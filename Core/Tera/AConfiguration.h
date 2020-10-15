@@ -29,6 +29,7 @@ struct FAppConfig
     CFG_RootDir = 1,
     CFG_WindowRect,
     CFG_SashPos,
+    CFG_CompositeDumpPath,
 
     // Log
     CFG_LogBegin = 100,
@@ -45,6 +46,8 @@ struct FAppConfig
   FIntRect WindowRect = { { WIN_POS_CENTER, 0 }, { 1024, 700 } };
   // CFG_SashPos: Sash positions. Min - ObjTree, Max - Props. X - sash pos. Y - split width
   FIntRect SashPos = { { 230, 1008 }, { 540, 774 } };
+  // CFG_CompositeDumpPath: Last composite dump location
+  FString CompositeDumpPath;
 
 
   // CFG_LogBegin: Logger config

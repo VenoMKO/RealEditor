@@ -126,6 +126,32 @@ void ObjectTreeNode::Append(ObjectTreeNode* child)
 	Children.Add(child);
 }
 
+ObjectTreeNode* ObjectTreeNode::FindItemByObjectIndex(PACKAGE_INDEX index)
+{
+  if (index > 0)
+  {
+    if (Export && Export->ObjectIndex == index)
+    {
+      return this;
+    }
+  }
+  else if (index < 0)
+  {
+    if (Import && Import->ObjectIndex == index)
+    {
+      return this;
+    }
+  }
+  for (ObjectTreeNode* child : Children)
+  {
+    if (ObjectTreeNode* result = child->FindItemByObjectIndex(index))
+    {
+      return result;
+    }
+  }
+  return nullptr;
+}
+
 ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports)
 {
 	RootExport = new ObjectTreeNode(packageName, rootExports);
@@ -225,11 +251,24 @@ unsigned int ObjectTreeModel::GetChildren(const wxDataViewItem& parent, wxDataVi
 	return count;
 }
 
+ObjectTreeNode* ObjectTreeModel::FindItemByObjectIndex(PACKAGE_INDEX index)
+{
+	if (index > 0)
+	{
+		return RootExport->FindItemByObjectIndex(index);
+	}
+	else if (index < 0)
+	{
+		return RootImport->FindItemByObjectIndex(index);
+	}
+	return nullptr;
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
-	if (GetColumnCount())
+	if (GetColumnCount() && GetParent())
 	{
-		GetColumn(0)->SetWidth(e.GetSize().x - 4);
+		GetColumn(0)->SetWidth(GetParent()->GetSize().x - 30);
 	}
 	e.Skip();
 }

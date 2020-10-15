@@ -24,6 +24,8 @@ public:
 
   void OnExportClicked(wxCommandEvent&) override;
 
+  void SetNeedsUpdate() override;
+
 protected:
   void OnAlphaMaskChange();
 

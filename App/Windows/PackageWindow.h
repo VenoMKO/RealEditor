@@ -11,11 +11,13 @@
 #include <vector>
 
 wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
+wxDECLARE_EVENT(SELECT_OBJECT, wxCommandEvent);
 wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
 class App;
 class FPackage;
+class UObject;
 
 class PackageWindow : public wxFrame {
 public:
@@ -28,6 +30,7 @@ public:
   wxString GetPackagePath() const;
 
 	void SelectObject(const wxString& objectPath);
+	void SelectObject(UObject* object);
 
 	bool OnObjectLoaded(const std::string& id);
 	void OnUpdateProperties(wxCommandEvent&);
@@ -63,6 +66,7 @@ private:
 
 	void OnPackageReady(wxCommandEvent&);
 	void OnPackageError(wxCommandEvent& e);
+	void OnSelectObject(wxCommandEvent& e);
 
 	void SidebarSplitterOnIdle(wxIdleEvent&);
 	void OnObjectTreeStartEdit(wxDataViewEvent& e);
@@ -79,6 +83,8 @@ private:
 
 	void ShowEditor(GenericEditor* editor);
 	void UpdateProperties(UObject* object, std::vector<FPropertyTag*> properties);
+
+	void OnPropertiesSplitter(wxSplitterEvent& e);
 
 	void DebugOnTestCookObject(wxCommandEvent&);
 

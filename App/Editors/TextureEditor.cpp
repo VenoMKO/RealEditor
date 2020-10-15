@@ -548,3 +548,11 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
     LogI("Exported texture to: %s", path.ToStdString().c_str());
   }
 }
+
+void TextureEditor::SetNeedsUpdate()
+{
+  if (Renderer)
+  {
+    Renderer->requestRedraw();
+  }
+}

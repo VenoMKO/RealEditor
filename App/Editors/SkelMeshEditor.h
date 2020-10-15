@@ -18,6 +18,7 @@ public:
   void OnToolBarEvent(wxCommandEvent& e) override;
   void OnExportMenuClicked(wxCommandEvent& e);
   void OnExportClicked(wxCommandEvent&) override;
+  void SetNeedsUpdate() override;
 
 protected:
   void CreateRenderer();

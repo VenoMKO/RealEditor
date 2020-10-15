@@ -155,7 +155,7 @@ void PackageWindow::InitLayout()
 	wxBoxSizer* contentSizer;
 	contentSizer = new wxBoxSizer(wxHORIZONTAL);
 
-	ContentSplitter = new wxSplitterWindow(contentSplitterPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_NOBORDER | wxSP_THIN_SASH);
+	ContentSplitter = new wxSplitterWindow(contentSplitterPanel, ControlElementId::ContentSplitter, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_NOBORDER | wxSP_THIN_SASH);
 	ContentSplitter->SetSashGravity(1);
 	ContentSplitter->SetMinimumPaneSize(230);
 

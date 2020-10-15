@@ -85,6 +85,14 @@ void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
   }
 }
 
+void StaticMeshEditor::SetNeedsUpdate()
+{
+  if (Renderer)
+  {
+    Renderer->requestRedraw();
+  }
+}
+
 void StaticMeshEditor::CreateRenderer()
 {
   int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 8, WX_GL_STENCIL_SIZE, 8, 0 };

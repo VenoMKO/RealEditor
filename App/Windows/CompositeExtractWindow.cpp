@@ -145,6 +145,19 @@ CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, 
 	ImportButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CompositeExtractWindow::OnImportClicked), NULL, this);
 	ClearButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CompositeExtractWindow::OnImportClearClicked), NULL, this);
 	ExtractButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CompositeExtractWindow::OnExtractClicked), NULL, this);
+
+	FAppConfig& cfg = ((App*)wxTheApp)->GetConfig();
+	if (cfg.CompositeDumpPath.Size())
+	{
+		DumpTextField->SetValue(cfg.CompositeDumpPath.WString());
+		std::error_code err;
+		if (std::filesystem::exists(cfg.CompositeDumpPath.WString(), err))
+		{
+      ObjectClassTextField->Enable(true);
+      ObjectTextField->Enable(true);
+      ObjectTextField->SetFocus();
+		}
+	}
 }
 
 CompositeExtractWindow::~CompositeExtractWindow()
@@ -169,6 +182,9 @@ void CompositeExtractWindow::OnBrowseClicked(wxCommandEvent& event)
 		DumpTextField->SetValue(path);
 		ObjectClassTextField->Enable(true);
 		ObjectTextField->Enable(true);
+		FAppConfig& cfg = ((App*)wxTheApp)->GetConfig();
+		cfg.CompositeDumpPath = path.ToStdWstring();
+		((App*)wxTheApp)->SaveConfig();
 	}
 }
 

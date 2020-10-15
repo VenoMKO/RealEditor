@@ -17,6 +17,7 @@ public:
   void PopulateToolBar(wxToolBar* toolbar) override;
   void OnToolBarEvent(wxCommandEvent& e) override;
   void OnExportClicked(wxCommandEvent&) override;
+  void SetNeedsUpdate() override;
 
 protected:
   void CreateRenderer();
