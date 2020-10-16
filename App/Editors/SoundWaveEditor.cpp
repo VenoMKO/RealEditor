@@ -1,4 +1,8 @@
 #include "SoundWaveEditor.h"
+#include "../Windows/PackageWindow.h"
+#include "../App.h"
+
+#include <Utils/SoundTravaller.h>
 
 void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
 {
@@ -23,5 +27,69 @@ void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
   catch (...)
   {
     wxMessageBox(wxT("Failed to save the file!"), wxT("Error!"), wxICON_ERROR);
+  }
+}
+
+void SoundWaveEditor::OnImportClicked(wxCommandEvent&)
+{
+  wxString ext = "OGG files (*.ogg)|*.ogg";
+  wxString path = wxFileSelector("Import a sound file", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, Window);
+  if (path.empty())
+  {
+    return;
+  }
+  void* soundData = nullptr;
+  FILE_OFFSET size = 0;
+  SoundTravaller travaller;
+  
+  try
+  {
+    std::ifstream s(path.ToStdWstring(), std::ios::in | std::ios::binary);
+    size_t tmpPos = s.tellg();
+    s.seekg(0, std::ios::end);
+    size = (FILE_OFFSET)s.tellg();
+    s.seekg(tmpPos);
+    if (size > 0)
+    {
+      soundData = malloc(size);
+      s.read((char*)soundData, size);
+      travaller.SetData(soundData, size);
+    }
+  }
+  catch (...)
+  {
+    wxMessageBox(wxT("Failed to read the OGG file!"), wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  if (size <= 0)
+  {
+    wxMessageBox(wxT("Invalid OGG file size!"), wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  try
+  {
+    if (!travaller.Visit((USoundNodeWave*)Object))
+    {
+      wxMessageBox(travaller.GetError(), wxT("Error!"), wxICON_ERROR);
+      return;
+    }
+  }
+  catch (...)
+  {
+    wxMessageBox("Unexpected error!", wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+  
+  SendEvent(Window, UPDATE_PROPERTIES);
+}
+
+void SoundWaveEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  if (auto item = toolbar->FindById(eID_Import))
+  {
+    item->Enable(true);
   }
 }

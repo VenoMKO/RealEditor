@@ -58,6 +58,7 @@
     <ClCompile Include="Core\Tera\UTexture.cpp" />
     <ClCompile Include="Core\Utils\CompositePatcher.cpp" />
     <ClCompile Include="Core\Utils\FbxUtils.cpp" />
+    <ClCompile Include="Core\Utils\SoundTravaller.cpp" />
     <ClCompile Include="Core\Utils\TextureProcessor.cpp" />
     <ClCompile Include="Core\Utils\TextureTravaller.cpp" />
     <ClCompile Include="Extern\minilzo\minilzo.c" />
@@ -86,6 +87,7 @@
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
+    <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
@@ -198,7 +200,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>FREEIMAGE_LIB;OSG_LIBRARY_STATIC;_CRTDBG_MAP_ALLOC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;GLEW_STATIC;DUMP_PATH="C:\\Users\\VenoMKO\\Desktop\\ReDumps";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;$(OGGWIN)\include;$(VORBISWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -208,8 +210,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OSGWIN)\lib\debug\;$(FBXWIN)\lib\vs2017\x64\debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;libfbxsdk-mt.lib;libxml2-mt.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OGGWIN)\lib\$(Configuration)\;$(VORBISWIN)\win32\VS2010\x64\$(Configuration)\;$(OSGWIN)\lib\debug\;$(FBXWIN)\lib\vs2017\x64\debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;libfbxsdk-mt.lib;libxml2-mt.lib;wininet.lib;libogg.lib;libvorbis_static.lib;libvorbisfile_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>
       </StackReserveSize>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -228,7 +230,7 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>FREEIMAGE_LIB;OSG_LIBRARY_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;GLEW_STATIC;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;$(OGGWIN)\include;$(VORBISWIN)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -239,10 +241,10 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OSGWIN)\lib\release\;$(FBXWIN)\lib\vs2017\x64\release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(FREEIMAGEWIN)\lib\;$(OGGWIN)\lib\$(Configuration)\;$(VORBISWIN)\win32\VS2010\x64\$(Configuration)\;$(OSGWIN)\lib\release\;$(FBXWIN)\lib\vs2017\x64\release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>
       </StackReserveSize>
-      <AdditionalDependencies>OpenThreads.lib;osg.lib;osgAnimation.lib;osgDB.lib;osgFX.lib;osgGA.lib;osgManipulator.lib;osgParticle.lib;osgPresentation.lib;osgShadow.lib;osgSim.lib;osgTerrain.lib;osgText.lib;osgUI.lib;osgUtil.lib;osgViewer.lib;osgVolume.lib;osgWidget.lib;freetype.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2.lib;libpng16.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLib.lib;libfbxsdk-mt.lib;libxml2-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenThreads.lib;osg.lib;osgAnimation.lib;osgDB.lib;osgFX.lib;osgGA.lib;osgManipulator.lib;osgParticle.lib;osgPresentation.lib;osgShadow.lib;osgSim.lib;osgTerrain.lib;osgText.lib;osgUI.lib;osgUtil.lib;osgViewer.lib;osgVolume.lib;osgWidget.lib;freetype.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2.lib;libpng16.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLib.lib;libfbxsdk-mt.lib;libxml2-mt.lib;libogg.lib;libvorbis_static.lib;libvorbisfile_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)

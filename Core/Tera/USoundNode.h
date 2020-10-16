@@ -1,9 +1,16 @@
 #pragma once
 #include "UObject.h"
+#include <Utils/SoundTravaller.h>
 
 class USoundNodeWave : public UObject {
 public:
   DECL_UOBJ(USoundNodeWave, UObject);
+
+  UPROP(float, Duration, 0.);
+  UPROP(int32, NumChannels, 1);
+  UPROP(int32, SampleRate, 0);
+
+  bool RegisterProperty(FPropertyTag* property) override;
 
   void Serialize(FStream& s) override;
   void PostLoad() override;
@@ -20,8 +27,10 @@ public:
 
   ~USoundNodeWave() override
   {
-    delete ResourceData;
+    free(ResourceData);
   }
+
+  friend bool SoundTravaller::Visit(USoundNodeWave* texture);
 
 protected:
   FByteBulkData EditorData;
