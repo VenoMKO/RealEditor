@@ -23,9 +23,9 @@ Currently under development. Some features are not implemented yet or may not wo
 ### Features
 
 * Opening/Saving 64-bit packages
-* Textures export/import to *.png, *.tga, *.dds
-* 3D model export to *.fbx
-* Sound export to *.ogg
+* Textures export/import
+* Sounds export/import
+* 3D model export
 * Properties viewer
 * DXT texture viewer
 * 3D model viewer
