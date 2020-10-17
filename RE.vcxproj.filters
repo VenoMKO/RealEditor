@@ -167,6 +167,9 @@
     <ClCompile Include="Core\Utils\SoundTravaller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Misc\CompositeExtractModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -237,6 +240,7 @@
     <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="App\Editors\SoundWaveEditor.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
+    <ClInclude Include="App\Misc\CompositeExtractModel.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

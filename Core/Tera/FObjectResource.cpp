@@ -91,15 +91,12 @@ FObjectResource* FObjectResource::GetOuter() const
 
 FString FObjectResource::GetObjectPath() const
 {
-  FString path = Package->GetPackageName();
   FObjectResource* outer = GetOuter();
-  while (outer)
+  if (!outer)
   {
-    path += "." + outer->GetObjectName();
-    outer = outer->GetOuter();
+    return Package->GetPackageName() + "." + GetObjectName();
   }
-  path += "." + GetObjectName();
-  return path;
+  return outer->GetObjectPath() + "." + GetObjectName();
 }
 
 VObjectExport::VObjectExport(FPackage* pkg, const char* objName, const char* className)

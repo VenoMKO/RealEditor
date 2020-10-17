@@ -367,7 +367,8 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 {
 	// TODO: reset hidden message boxes here
-	wxMessageBox(wxS("UI Warnings were cleared!"), wxS("Done"), wxICON_INFORMATION);
+	NewConfig.CompositeDumpPath = FString();
+	wxMessageBox(wxS("UI Warnings were cleared!\nPress Apply to save changes."), wxS("Done"), wxICON_INFORMATION);
 }
 
 void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
@@ -442,6 +443,7 @@ EVT_BUTTON(ControlElementId::Unregister, SettingsWindow::OnUnregisterClicked)
 EVT_BUTTON(ControlElementId::Update, SettingsWindow::OnUpdateClicked)
 EVT_BUTTON(ControlElementId::DirCache, SettingsWindow::OnUpdateDirCacheClicked)
 EVT_BUTTON(ControlElementId::Mappers, SettingsWindow::OnUpdateMappersClicked)
+EVT_BUTTON(ControlElementId::Warnings, SettingsWindow::OnResetWarningClicked)
 EVT_TEXT(ControlElementId::Path, SettingsWindow::OnPathChanged)
 EVT_TEXT_ENTER(ControlElementId::Path, SettingsWindow::OnOkClicked)
 wxEND_EVENT_TABLE()

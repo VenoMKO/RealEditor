@@ -70,6 +70,8 @@ public:
 	static void UpdateDirCache();
 	// Create a composite mod package
 	static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author);
+	// Get all classes
+	static std::vector<UClass*> GetClasses();
 
 private:
 	// Packages must be loaded/created from the static methods

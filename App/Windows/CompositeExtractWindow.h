@@ -1,10 +1,14 @@
 #pragma once
 #include <wx/wx.h>
+#include <sstream>
+#include "../Misc/CompositeExtractModel.h"
 
+class wxDataViewCtrl;
 class CompositeExtractWindow : public wxDialog
 {
 public:
-	CompositeExtractWindow(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Extract composite packages"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(682, 296), long style = wxDEFAULT_DIALOG_STYLE);
+	CompositeExtractWindow(wxWindow* parent);
+	CompositeExtractWindow(wxWindow* parent, const wxString& objClass, const wxString objName);
 	~CompositeExtractWindow();
 
 protected:
@@ -16,6 +20,15 @@ protected:
 	void OnImportClicked(wxCommandEvent& event);
 	void OnImportClearClicked(wxCommandEvent& event);
 	void OnExtractClicked(wxCommandEvent& event);
+	void OnContextMenu(wxDataViewEvent& event);
+
+	void ExtractTextures();
+	void ExtractSounds();
+	void ExtractUntyped();
+
+	int GetResultsCount();
+	int GetEnabledResultsCount();
+	std::vector<CompositeExtractModelNode> GetSearchResult();
 
 private:
 	wxTextCtrl* DumpTextField = nullptr;
@@ -27,6 +40,10 @@ private:
 	wxButton* ImportButton = nullptr;
 	wxButton* ClearButton = nullptr;
 	wxStaticText* ResultLabel = nullptr;
+	wxDataViewCtrl* ResultList = nullptr;
 	wxButton* ExtractButton = nullptr;
-	std::vector<std::pair<std::string, int>> Found;
+	wxString LoadedPath;
+	std::stringstream LoadedBuffer;
+
+	wxDECLARE_EVENT_TABLE();
 };

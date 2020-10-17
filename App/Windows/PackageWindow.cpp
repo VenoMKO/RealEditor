@@ -57,7 +57,8 @@ enum ControlElementId {
 
 enum ObjTreeMenuId {
 	CopyName = wxID_HIGHEST + 1,
-	CopyPath
+	CopyPath,
+	Search
 };
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
@@ -340,6 +341,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 
 	wxMenu menu;
 	menu.SetClientData((void*)node);
+	menu.Append(ObjTreeMenuId::Search, wxT("Search object duplicates..."));
 	menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
 	menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
 	menu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(PackageWindow::OnObjectTreeContextMenuClick), NULL, this);
@@ -351,6 +353,12 @@ void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
 	ObjectTreeNode* node = (ObjectTreeNode*)static_cast<wxMenu*>(e.GetEventObject())->GetClientData();
 	switch (e.GetId())
 	{
+	case ObjTreeMenuId::Search:
+	{
+		CompositeExtractWindow extractor(this, node->GetClassName(), node->GetObjectName());
+		extractor.ShowModal();
+	}
+	break;
 	case ObjTreeMenuId::CopyName:
 		if (wxTheClipboard->Open())
 		{

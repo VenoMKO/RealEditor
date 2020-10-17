@@ -377,6 +377,20 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   write << metaSize;
 }
 
+std::vector<UClass*> FPackage::GetClasses()
+{
+  std::vector<UClass*> result;
+  result.reserve(ClassMap.size());
+  for (const auto& p : ClassMap)
+  {
+    if (UClass* cls = Cast<UClass>(p.second))
+    {
+      result.push_back(cls);
+    }
+  }
+  return result;
+}
+
 uint16 FPackage::GetCoreVersion()
 {
   return CoreVersion;

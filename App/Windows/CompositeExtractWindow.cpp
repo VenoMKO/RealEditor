@@ -4,19 +4,31 @@
 #include "CookingOptions.h"
 #include "../App.h"
 
+#include <wx/dataview.h>
 #include <wx/statline.h>
+#include <wx/clipbrd.h>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <thread>
 
 #include <Utils/TextureTravaller.h>
 #include <Utils/TextureProcessor.h>
+#include <Utils/SoundTravaller.h>
 #include <Tera/FPackage.h>
+#include <Tera/UClass.h>
+#include <Tera/USoundNode.h>
 #include <Tera/Cast.h>
 
-CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
-	: wxDialog(parent, id, title, pos, size, style)
+enum ObjTreeMenuId {
+  ObjectList = wxID_HIGHEST + 1,
+	ShowObject,
+  CopyPackage,
+	CopyPath,
+  Toggle
+};
+
+CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent)
+	: wxDialog(parent, wxID_ANY, wxT("Extract composite packages"), wxDefaultPosition, wxSize(682, 537), wxDEFAULT_DIALOG_STYLE)
 {
 	SetIcon(wxICON(#114));
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -64,7 +76,16 @@ CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, 
 
 	ObjectClassTextField = new wxTextCtrl(this, wxID_ANY, wxT("Texture2D"), wxDefaultPosition, wxDefaultSize, 0);
 	bSizer12->Add(ObjectClassTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+	ObjectClassTextField->SetMaxSize(wxSize(125, -1));
 	ObjectClassTextField->Enable(false);
+
+	wxArrayString classList;
+	std::vector<UClass*> classes = FPackage::GetClasses();
+	for (UClass* cls : classes)
+	{
+		classList.push_back(cls->GetObjectName().WString());
+	}
+	ObjectClassTextField->AutoComplete(classList);
 
 	wxStaticText* m_staticText72;
 	m_staticText72 = new wxStaticText(this, wxID_ANY, wxT("Object name:"), wxDefaultPosition, wxDefaultSize, 0);
@@ -107,9 +128,10 @@ CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, 
 
 	bSizer10->Add(bSizer121, 1, wxEXPAND, 5);
 
-	wxStaticLine* m_staticline41;
-	m_staticline41 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-	bSizer10->Add(m_staticline41, 0, wxEXPAND | wxALL, 5);
+  ResultList = new wxDataViewCtrl(this, ObjTreeMenuId::ObjectList, wxDefaultPosition, wxDefaultSize, wxDV_MULTIPLE);
+  ResultList->SetMinSize(wxSize(-1, 250));
+
+  bSizer10->Add(ResultList, 1, wxALL | wxEXPAND, 5);
 
 	wxBoxSizer* bSizer14;
 	bSizer14 = new wxBoxSizer(wxHORIZONTAL);
@@ -158,6 +180,24 @@ CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, wxWindowID id, 
       ObjectTextField->SetFocus();
 		}
 	}
+
+  ResultList->AppendToggleColumn(_(""), CompositeExtractModel::Col_Check, wxDATAVIEW_CELL_ACTIVATABLE, 25);
+	ResultList->AppendTextColumn(_("Package"), CompositeExtractModel::Col_Package, wxDATAVIEW_CELL_INERT, 150, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+	ResultList->AppendTextColumn(_("Object"), CompositeExtractModel::Col_Path, wxDATAVIEW_CELL_INERT, 250, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+}
+
+CompositeExtractWindow::CompositeExtractWindow(wxWindow* parent, const wxString& objClass, const wxString objName)
+  : CompositeExtractWindow(parent)
+{
+  ObjectClassTextField->SetValue(objClass);
+  ObjectTextField->SetValue(objName);
+
+  if (DumpTextField->GetValue().size() && objClass.size() && objName.size())
+  {
+    ObjectClassTextField->Enable(true);
+    ObjectTextField->Enable(true);
+    SearchButton->Enable(true);
+  }
 }
 
 CompositeExtractWindow::~CompositeExtractWindow()
@@ -190,19 +230,30 @@ void CompositeExtractWindow::OnBrowseClicked(wxCommandEvent& event)
 
 void CompositeExtractWindow::OnSearchClicked(wxCommandEvent& event)
 {
-	std::ifstream s(DumpTextField->GetValue().ToStdWstring());
-	Found.clear();
 	const std::string className = ObjectClassTextField->GetValue().ToStdString();
 	const std::string objectName = ObjectTextField->GetValue().ToStdString();
-	const std::string dupObjectName = objectName + "_dup";
+	const std::string dupObjectName = objectName + '_';
 	ProgressWindow progress(this, wxT("Searching..."));
 	wxString desc = "Looking for all " + className + " objects with " + objectName + " name";
 	progress.SetActionText(desc);
 	progress.SetCanCancel(false);
 	progress.SetCurrentProgress(-1);
+	std::stringstream& buffer = LoadedBuffer;
+	wxString& loadedPath = LoadedPath;
+	std::vector<CompositeExtractModelNode> found;
 	std::thread([&] {
-		std::stringstream buffer;
-		buffer << s.rdbuf();
+		if (DumpTextField->GetValue() != LoadedPath)
+		{
+			loadedPath = DumpTextField->GetValue();
+      std::ifstream s(loadedPath.ToStdWstring());
+			buffer = std::stringstream();
+      buffer << s.rdbuf();
+		}
+		else
+		{
+			buffer.clear();
+			buffer.seekg(0);
+		}
 		std::string line;
 		while (std::getline(buffer, line))
 		{
@@ -217,7 +268,7 @@ void CompositeExtractWindow::OnSearchClicked(wxCommandEvent& event)
 			}
 			PACKAGE_INDEX objIndex = INDEX_NONE;
 			std::string_view lineObjectName(&line[pos + 1]);
-			if (lineObjectName == objectName || lineObjectName == dupObjectName)
+			if (lineObjectName == objectName || lineObjectName._Starts_with(dupObjectName))
 			{
 				pos = line.find_first_of('\t');
 				if (pos == std::string::npos)
@@ -247,16 +298,19 @@ void CompositeExtractWindow::OnSearchClicked(wxCommandEvent& event)
 				{
 					continue;
 				}
-				Found.emplace_back(std::make_pair(std::string(&line[pos + 1], end - pos - 1), objIndex));
+				std::string objectPath(&line[end + 1], line.size() - end - 1);
+				std::replace(objectPath.begin(), objectPath.end(), '.', '\\');
+				found.push_back({ objectPath, true, std::string(&line[pos + 1], end - pos - 1), objIndex });
 			}
 		}
 		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
 	}).detach();
 	progress.ShowModal();
-	ResultLabel->SetLabelText(wxString::Format(wxT("Found: %Iu item(s)"), Found.size()));
+	ResultLabel->SetLabelText(wxString::Format(wxT("Found: %Iu item(s)"), found.size()));
+	ResultList->AssociateModel(new CompositeExtractModel(found));
 	ResultLabel->Show();
-	ImportButton->Enable(Found.size());
-	ExtractButton->Enable(Found.size());
+	ImportButton->Enable(found.size());
+	ExtractButton->Enable(found.size());
 	ClearButton->Enable(ImportTextField->GetValue().size());
 }
 
@@ -277,28 +331,42 @@ void CompositeExtractWindow::OnObjectClassText(wxCommandEvent& event)
 	}
 	else
 	{
-		ImportButton->Enable(Found.size());
+		ImportButton->Enable(GetResultsCount());
 		ClearButton->Enable(ImportTextField->GetValue().size());
 	}
-	Found.clear();
+	ResultList->AssociateModel(new CompositeExtractModel(std::vector<CompositeExtractModelNode>()));
 }
 
 void CompositeExtractWindow::OnObjectNameEnter(wxCommandEvent& event)
 {
 	SearchButton->Enable(ObjectTextField->GetValue().size() && ObjectClassTextField->GetValue().size());
 	ResultLabel->SetLabelText(wxEmptyString);
-	Found.clear();
+	ResultList->AssociateModel(new CompositeExtractModel(std::vector<CompositeExtractModelNode>()));
 }
 
 void CompositeExtractWindow::OnImportClicked(wxCommandEvent& event)
 {
-	wxString path = TextureImporter::LoadImageDialog(this);
-	if (path.empty())
-	{
-		return;
-	}
-	ImportTextField->SetValue(path);
-	ClearButton->Enable(true);
+  const std::string className = ObjectClassTextField->GetValue().ToStdString();
+  wxString path;
+  if (className == UTexture2D::StaticClassName())
+  {
+    path = TextureImporter::LoadImageDialog(this);
+  }
+  else if (className == USoundNodeWave::StaticClassName())
+  {
+    wxString ext = "OGG files (*.ogg)|*.ogg";
+    path = wxFileSelector("Import a sound file", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, this);
+  }
+  else
+  {
+    wxMessageBox(_("This class does not support bulk import! But you can extract packages anyway."), _("Can't import!"), wxICON_INFORMATION);
+    return;
+  }
+  if (path.size())
+  {
+    ImportTextField->SetValue(path);
+    ClearButton->Enable(true);
+  }
 }
 
 void CompositeExtractWindow::OnImportClearClicked(wxCommandEvent& event)
@@ -309,173 +377,512 @@ void CompositeExtractWindow::OnImportClearClicked(wxCommandEvent& event)
 
 void CompositeExtractWindow::OnExtractClicked(wxCommandEvent& event)
 {
-	if (Found.empty())
-	{
-		return;
-	}
-
-	wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
-	if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
-	{
-		return;
-	}
 	const std::string className = ObjectClassTextField->GetValue().ToStdString();
-	bool doImport = className == UTexture2D::StaticClassName() && ImportTextField->GetValue().size();
-	const std::filesystem::path destDir = dlg.GetPath().ToStdWstring();
-
-	PackageSaveContext ctx;
-	ctx.EmbedObjectPath = true;
-	ctx.DisableTextureCaching = true;
-
-	TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
-	if (doImport)
+	if (className == UTexture2D::StaticClassName())
 	{
-		wxString extension;
-		wxFileName::SplitPath(ImportTextField->GetValue(), nullptr, nullptr, nullptr, &extension);
-		extension.MakeLower();
-		if (extension == "tga")
-		{
-			inputFormat = TextureProcessor::TCFormat::TGA;
-		}
-		else if (extension == "png")
-		{
-			inputFormat = TextureProcessor::TCFormat::PNG;
-		}
+		ExtractTextures();
+	}
+	else if (className == USoundNodeWave::StaticClassName())
+	{
+    ExtractSounds();
+	}
+  else
+  {
+    ExtractUntyped();
+  }
+}
+
+void CompositeExtractWindow::OnContextMenu(wxDataViewEvent& event)
+{
+  if (!event.GetItem().IsOk())
+  {
+    return;
+  }
+	auto rows = GetSearchResult();
+	int idx = int(event.GetItem().GetID()) - 1;
+  if (idx < 0 || rows.size() <= idx)
+  {
+    return;
+  }
+
+  wxMenu menu;
+  menu.Append(ObjTreeMenuId::ShowObject, wxT("Show the object..."));
+  menu.Append(ObjTreeMenuId::Toggle, wxT("Toggle selected items"));
+  menu.Append(ObjTreeMenuId::CopyPackage, wxT("Copy package name")); 
+	menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
+
+	const int selectedMenuId = GetPopupMenuSelectionFromUser(menu);
+	if (selectedMenuId == ObjTreeMenuId::ShowObject)
+	{
+		std::string objectPath = rows[idx].ObjectPath.ToStdString();
+		std::replace(objectPath.begin(), objectPath.end(), '\\', '.');
+		((App*)wxTheApp)->OpenNamedPackage(rows[idx].PackageName, rows[idx].PackageName + '.' + objectPath);
+	}
+	else if (selectedMenuId == ObjTreeMenuId::CopyPackage)
+	{
+    if (wxTheClipboard->Open())
+    {
+      wxTheClipboard->Clear();
+      wxTheClipboard->SetData(new wxTextDataObject(rows[idx].PackageName));
+      wxTheClipboard->Flush();
+      wxTheClipboard->Close();
+    }
+	}
+  else if (selectedMenuId == ObjTreeMenuId::CopyPath)
+  {
+    if (wxTheClipboard->Open())
+    {
+      wxTheClipboard->Clear();
+      wxTheClipboard->SetData(new wxTextDataObject(rows[idx].ObjectPath));
+      wxTheClipboard->Flush();
+      wxTheClipboard->Close();
+    }
+  }
+  else if (selectedMenuId == ObjTreeMenuId::Toggle)
+  {
+    wxDataViewItemArray selection;
+    ResultList->GetSelections(selection);
+    if (!selection.GetCount())
+    {
+      return;
+    }
+    
+    auto results = GetSearchResult();
+    ResultList->Freeze();
+    for (auto& item : selection)
+    {
+      int idx = int(item.GetID()) - 1;
+      wxVariant value = !results[idx].Enabled;
+      ResultList->GetModel()->ChangeValue(value, item, CompositeExtractModel::Col_Check);
+    }
+    ResultList->Thaw();
+  }
+}
+
+void CompositeExtractWindow::ExtractTextures()
+{
+  int resultCount = GetEnabledResultsCount();
+  if (!resultCount)
+  {
+    wxMessageBox(_("There are no packages selected.\nPlease select packages you want to extract!"), _("Nothing to extract!"), wxICON_INFORMATION);
+    return;
+  }
+
+  wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+  if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
+  {
+    return;
+  }
+  const std::string className = ObjectClassTextField->GetValue().ToStdString();
+  bool doImport = className == UTexture2D::StaticClassName() && ImportTextField->GetValue().size();
+  const std::filesystem::path destDir = dlg.GetPath().ToStdWstring();
+
+  PackageSaveContext ctx;
+  ctx.EmbedObjectPath = true;
+  ctx.DisableTextureCaching = true;
+
+  TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+  if (doImport)
+  {
+    wxString extension;
+    wxFileName::SplitPath(ImportTextField->GetValue(), nullptr, nullptr, nullptr, &extension);
+    extension.MakeLower();
+    if (extension == "tga")
+    {
+      inputFormat = TextureProcessor::TCFormat::TGA;
+    }
+    else if (extension == "png")
+    {
+      inputFormat = TextureProcessor::TCFormat::PNG;
+    }
     else if (extension == "dds")
     {
       inputFormat = TextureProcessor::TCFormat::DDS;
     }
-		else
-		{
-			doImport = false;
-		}
-	}
-	
-	TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::None);
-	EPixelFormat processorFormat = PF_Unknown;
-	ProgressWindow progress(this, wxT("Extracting packages..."));
-	progress.SetActionText(wxT("Preparing..."));
-	progress.SetCanCancel(true);
-	progress.SetMaxProgress((int)Found.size());
-	progress.SetCurrentProgress(0);
-	if (doImport)
-	{
-		processor.SetInputPath(W2A(ImportTextField->GetValue().ToStdWstring()));
-	}
+    else
+    {
+      doImport = false;
+    }
+  }
 
-	bool canceled = false;
-	std::vector<std::pair<std::string, std::string>> failed;
-	std::thread([&] {
+  auto searchResult = GetSearchResult();
+
+  TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::None);
+  EPixelFormat processorFormat = PF_Unknown;
+  ProgressWindow progress(this, wxT("Extracting packages..."));
+  progress.SetActionText(wxT("Preparing..."));
+  progress.SetCanCancel(true);
+  progress.SetMaxProgress(resultCount);
+  progress.SetCurrentProgress(0);
+  if (doImport)
+  {
+    processor.SetInputPath(W2A(ImportTextField->GetValue().ToStdWstring()));
+  }
+
+  bool canceled = false;
+  std::vector<std::pair<std::string, std::string>> failed;
+  std::thread([&] {
 #define RetIfCancel if (progress.IsCanceled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); canceled = true; return; } //
-		
-		for (size_t idx = 0; idx < Found.size(); ++idx)
-		{
-			RetIfCancel;
-			wxString desc = "Extracting " + Found[idx].first + ".gpk";
-			SendEvent(&progress, UPDATE_PROGRESS_DESC, desc);
-			SendEvent(&progress, UPDATE_PROGRESS, (int)idx);
-			std::shared_ptr<FPackage> pkg = nullptr;
-			try
-			{
-				if ((pkg = FPackage::GetPackageNamed(Found[idx].first)))
-				{
-					pkg->Load();
 
-					if (doImport)
-					{
-						// TODO: allow to import anything
-						if (UTexture2D* tex = Cast<UTexture2D>(pkg->GetObject(Found[idx].second)))
-						{
-							bool isNormal = tex->CompressionSettings == TC_Normalmap ||
-								tex->CompressionSettings == TC_NormalmapAlpha ||
-								tex->CompressionSettings == TC_NormalmapUncompressed ||
-								tex->CompressionSettings == TC_NormalmapBC5;
-							
-							if (tex->Format != processorFormat)
-							{
-								switch ((processorFormat = tex->Format))
-								{
-								case PF_DXT1:
-									processor.SetOutputFormat(TextureProcessor::TCFormat::DXT1);
-									break;
-								case PF_DXT3:
-									processor.SetOutputFormat(TextureProcessor::TCFormat::DXT3);
-									break;
-								case PF_DXT5:
-									processor.SetOutputFormat(TextureProcessor::TCFormat::DXT5);
-									break;
-								default:
-									UThrow("Unsupported texture format!");
-								}
+    for (size_t idx = 0; idx < searchResult.size(); ++idx)
+    {
+      RetIfCancel;
+      if (!searchResult[idx].Enabled)
+      {
+        continue;
+      }
+      wxString desc = "Extracting " + searchResult[idx].PackageName + ".gpk";
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, desc);
+      SendEvent(&progress, UPDATE_PROGRESS, (int)idx);
+      std::shared_ptr<FPackage> pkg = nullptr;
+      try
+      {
+        if ((pkg = FPackage::GetPackageNamed(searchResult[idx].PackageName.ToStdWstring())))
+        {
+          pkg->Load();
 
-								processor.SetSrgb(tex->SRGB);
-								processor.SetNormal(isNormal);
-								processor.SetGenerateMips(false); //  TODO: change to true when mips don't crash the game
-								processor.SetAddressX(tex->AddressX);
-								processor.SetAddressY(tex->AddressY);
-								processor.ClearOutput();
-								if (!processor.Process())
-								{
-									UThrow(processor.GetError().c_str());
-								}
-							}
+          if (doImport)
+          {
+            // TODO: allow to import anything
+            if (UTexture2D* tex = Cast<UTexture2D>(pkg->GetObject(searchResult[idx].ObjectIndex)))
+            {
+              bool isNormal = tex->CompressionSettings == TC_Normalmap ||
+                tex->CompressionSettings == TC_NormalmapAlpha ||
+                tex->CompressionSettings == TC_NormalmapUncompressed ||
+                tex->CompressionSettings == TC_NormalmapBC5;
 
-							TextureTravaller travaller;
-							travaller.SetFormat(processorFormat);
-							travaller.SetAddressX(tex->AddressX);
-							travaller.SetAddressY(tex->AddressY);
+              if (tex->Format != processorFormat)
+              {
+                switch ((processorFormat = tex->Format))
+                {
+                case PF_DXT1:
+                  processor.SetOutputFormat(TextureProcessor::TCFormat::DXT1);
+                  break;
+                case PF_DXT3:
+                  processor.SetOutputFormat(TextureProcessor::TCFormat::DXT3);
+                  break;
+                case PF_DXT5:
+                  processor.SetOutputFormat(TextureProcessor::TCFormat::DXT5);
+                  break;
+                default:
+                  UThrow("Unsupported texture format!");
+                }
 
-							const auto& mips = processor.GetOutputMips();
-							for (const auto mip : mips)
-							{
-								travaller.AddMipMap(mip.SizeX, mip.SizeY, mip.Size, mip.Data);
-							}
+                processor.SetSrgb(tex->SRGB);
+                processor.SetNormal(isNormal);
+                processor.SetGenerateMips(false); //  TODO: change to true when mips don't crash the game
+                processor.SetAddressX(tex->AddressX);
+                processor.SetAddressY(tex->AddressY);
+                processor.ClearOutput();
+                if (!processor.Process())
+                {
+                  UThrow(processor.GetError().c_str());
+                }
+              }
 
-							if (!travaller.Visit(tex))
-							{
-								UThrow(travaller.GetError().c_str());
-							}
-						}
-						else
-						{
-							UThrow("Failed to load the object!");
-						}
-					}
+              TextureTravaller travaller;
+              travaller.SetFormat(processorFormat);
+              travaller.SetAddressX(tex->AddressX);
+              travaller.SetAddressY(tex->AddressY);
 
-					ctx.Path = W2A((destDir / (Found[idx].first + ".gpk")).wstring());
-					pkg->Save(ctx);
-					FPackage::UnloadPackage(pkg);
-				}
-				else
-				{
-					UThrow("Failed to open a package!");
-				}
-			}
-			catch (const std::exception& e)
-			{
-				failed.emplace_back(std::make_pair(Found[idx].first, e.what()));
-				FPackage::UnloadPackage(pkg);
-			}
-		}
-		SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-	}).detach();
+              const auto& mips = processor.GetOutputMips();
+              for (const auto mip : mips)
+              {
+                travaller.AddMipMap(mip.SizeX, mip.SizeY, mip.Size, mip.Data);
+              }
 
-	progress.ShowModal();
-	if (!canceled)
-	{
-		if (failed.size())
-		{
-			std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
-			for (const auto& pair : failed)
-			{
-				s << pair.first << ": " << pair.second << '\n';
-			}
-			wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
-		}
-		else
-		{
-			wxString msg = doImport ? wxS("Packages were extracted and patched successfuly!") : wxS("Packages were extracted successfuly!");
-			wxMessageBox(msg, _("Done!"), wxICON_INFORMATION);
-		}
-	}
+              if (!travaller.Visit(tex))
+              {
+                UThrow(travaller.GetError().c_str());
+              }
+            }
+            else
+            {
+              UThrow("Failed to load the object!");
+            }
+          }
+
+          ctx.Path = W2A((destDir / (searchResult[idx].PackageName.ToStdWstring() + L".gpk")).wstring());
+          pkg->Save(ctx);
+          FPackage::UnloadPackage(pkg);
+        }
+        else
+        {
+          UThrow("Failed to open a package!");
+        }
+      }
+      catch (const std::exception& e)
+      {
+        failed.emplace_back(std::make_pair(searchResult[idx].PackageName, e.what()));
+        FPackage::UnloadPackage(pkg);
+      }
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+  }).detach();
+
+  progress.ShowModal();
+  if (!canceled)
+  {
+    if (failed.size())
+    {
+      std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
+      for (const auto& pair : failed)
+      {
+        s << pair.first << ": " << pair.second << '\n';
+      }
+      wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
+    }
+    else
+    {
+      wxString msg = doImport ? wxS("Packages were extracted and patched successfuly!") : wxS("Packages were extracted successfuly!");
+      wxMessageBox(msg, _("Done!"), wxICON_INFORMATION);
+    }
+  }
 }
+
+void CompositeExtractWindow::ExtractSounds()
+{
+  int resultCount = GetEnabledResultsCount();
+  if (!resultCount)
+  {
+    wxMessageBox(_("There are no packages selected.\nPlease select packages you want to extract!"), _("Nothing to extract!"), wxICON_INFORMATION);
+    return;
+  }
+
+  wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+  if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
+  {
+    return;
+  }
+  const std::string className = ObjectClassTextField->GetValue().ToStdString();
+  bool doImport = className == USoundNodeWave::StaticClassName() && ImportTextField->GetValue().size();
+  const std::filesystem::path destDir = dlg.GetPath().ToStdWstring();
+
+  PackageSaveContext ctx;
+  ctx.EmbedObjectPath = true;
+  ctx.DisableTextureCaching = true;
+
+  auto searchResult = GetSearchResult();
+
+  ProgressWindow progress(this, wxT("Extracting packages..."));
+  progress.SetActionText(wxT("Preparing..."));
+  progress.SetCanCancel(true);
+  progress.SetMaxProgress(resultCount);
+  progress.SetCurrentProgress(0);
+  
+  SoundTravaller travaller;
+  if (doImport)
+  {
+    void* soundData = nullptr;
+    FILE_OFFSET size = 0;
+
+    std::ifstream s(ImportTextField->GetValue().ToStdWstring(), std::ios::in | std::ios::binary);
+    size_t tmpPos = s.tellg();
+    s.seekg(0, std::ios::end);
+    size = (FILE_OFFSET)s.tellg();
+    s.seekg(tmpPos);
+    if (size > 0)
+    {
+      soundData = malloc(size);
+      s.read((char*)soundData, size);
+      travaller.SetData(soundData, size);
+    }
+  }
+
+  bool canceled = false;
+  std::vector<std::pair<std::string, std::string>> failed;
+  std::thread([&] {
+#define RetIfCancel if (progress.IsCanceled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); canceled = true; return; } //
+
+    for (size_t idx = 0; idx < searchResult.size(); ++idx)
+    {
+      RetIfCancel;
+      if (!searchResult[idx].Enabled)
+      {
+        continue;
+      }
+      wxString desc = "Extracting " + searchResult[idx].PackageName + ".gpk";
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, desc);
+      SendEvent(&progress, UPDATE_PROGRESS, (int)idx);
+      std::shared_ptr<FPackage> pkg = nullptr;
+      try
+      {
+        if ((pkg = FPackage::GetPackageNamed(searchResult[idx].PackageName.ToStdWstring())))
+        {
+          pkg->Load();
+
+          if (doImport)
+          {
+            if (USoundNodeWave* obj = Cast<USoundNodeWave>(pkg->GetObject(searchResult[idx].ObjectIndex)))
+            {
+              if (!travaller.Visit(obj))
+              {
+                failed.emplace_back(std::make_pair(searchResult[idx].PackageName, "Failed to import data!"));
+              }
+            }
+            else
+            {
+              UThrow("Failed to load the object!");
+            }
+          }
+
+          ctx.Path = W2A((destDir / (searchResult[idx].PackageName.ToStdWstring() + L".gpk")).wstring());
+          pkg->Save(ctx);
+          FPackage::UnloadPackage(pkg);
+        }
+        else
+        {
+          UThrow("Failed to open a package!");
+        }
+      }
+      catch (const std::exception& e)
+      {
+        failed.emplace_back(std::make_pair(searchResult[idx].PackageName, e.what()));
+        FPackage::UnloadPackage(pkg);
+      }
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+  }).detach();
+
+  progress.ShowModal();
+  if (!canceled)
+  {
+    if (failed.size())
+    {
+      std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
+      for (const auto& pair : failed)
+      {
+        s << pair.first << ": " << pair.second << '\n';
+      }
+      wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
+    }
+    else
+    {
+      wxString msg = doImport ? wxS("Packages were extracted and patched successfuly!") : wxS("Packages were extracted successfuly!");
+      wxMessageBox(msg, _("Done!"), wxICON_INFORMATION);
+    }
+  }
+}
+
+void CompositeExtractWindow::ExtractUntyped()
+{
+  int resultCount = GetEnabledResultsCount();
+  if (!resultCount)
+  {
+    wxMessageBox(_("There are no packages selected.\nPlease select packages you want to extract!"), _("Nothing to extract!"), wxICON_INFORMATION);
+    return;
+  }
+
+  wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+  if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
+  {
+    return;
+  }
+  const std::string className = ObjectClassTextField->GetValue().ToStdString();
+  bool doImport = className == USoundNodeWave::StaticClassName() && ImportTextField->GetValue().size();
+  const std::filesystem::path destDir = dlg.GetPath().ToStdWstring();
+
+  PackageSaveContext ctx;
+  ctx.EmbedObjectPath = true;
+  ctx.DisableTextureCaching = true;
+
+  auto searchResult = GetSearchResult();
+
+  ProgressWindow progress(this, wxT("Extracting packages..."));
+  progress.SetActionText(wxT("Preparing..."));
+  progress.SetCanCancel(true);
+  progress.SetMaxProgress(resultCount);
+  progress.SetCurrentProgress(0);
+
+  bool canceled = false;
+  std::vector<std::pair<std::string, std::string>> failed;
+  std::thread([&] {
+#define RetIfCancel if (progress.IsCanceled()) {SendEvent(&progress, UPDATE_PROGRESS_FINISH); canceled = true; return; } //
+
+    for (size_t idx = 0; idx < searchResult.size(); ++idx)
+    {
+      RetIfCancel;
+      if (!searchResult[idx].Enabled)
+      {
+        continue;
+      }
+      wxString desc = "Extracting " + searchResult[idx].PackageName + ".gpk";
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, desc);
+      SendEvent(&progress, UPDATE_PROGRESS, (int)idx);
+      std::shared_ptr<FPackage> pkg = nullptr;
+      try
+      {
+        if ((pkg = FPackage::GetPackageNamed(searchResult[idx].PackageName.ToStdWstring())))
+        {
+          pkg->Load();
+          ctx.Path = W2A((destDir / (searchResult[idx].PackageName.ToStdWstring() + L".gpk")).wstring());
+          pkg->Save(ctx);
+          FPackage::UnloadPackage(pkg);
+        }
+        else
+        {
+          UThrow("Failed to open a package!");
+        }
+      }
+      catch (const std::exception& e)
+      {
+        failed.emplace_back(std::make_pair(searchResult[idx].PackageName, e.what()));
+        FPackage::UnloadPackage(pkg);
+      }
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+  }).detach();
+
+  progress.ShowModal();
+  if (!canceled)
+  {
+    if (failed.size())
+    {
+      std::ofstream s(destDir / "error_log.txt", std::ios::out | std::ios::binary);
+      for (const auto& pair : failed)
+      {
+        s << pair.first << ": " << pair.second << '\n';
+      }
+      wxMessageBox(_("Failed to process some of the packages.\nSee error_log.txt in the output folder for more details."), _("Warning!"), wxICON_WARNING);
+    }
+    else
+    {
+      wxString msg = doImport ? wxS("Packages were extracted and patched successfuly!") : wxS("Packages were extracted successfuly!");
+      wxMessageBox(msg, _("Done!"), wxICON_INFORMATION);
+    }
+  }
+}
+
+int CompositeExtractWindow::GetResultsCount()
+{
+	CompositeExtractModel* model = (CompositeExtractModel*)ResultList->GetModel();
+	return model ? model->GetCount() : 0;
+}
+
+int CompositeExtractWindow::GetEnabledResultsCount()
+{
+	if (CompositeExtractModel* model = (CompositeExtractModel*)ResultList->GetModel())
+	{
+		auto rows = model->GetRows();
+		int result = 0;
+		for (const auto& row : rows)
+		{
+			if (row.Enabled)
+			{
+				result++;
+			}
+		}
+		return result;
+	}
+	return 0;
+}
+
+std::vector<CompositeExtractModelNode> CompositeExtractWindow::GetSearchResult()
+{
+	CompositeExtractModel* model = (CompositeExtractModel*)ResultList->GetModel();
+	return model ? model->GetRows() : std::vector<CompositeExtractModelNode>();
+}
+
+wxBEGIN_EVENT_TABLE(CompositeExtractWindow, wxDialog)
+EVT_DATAVIEW_ITEM_CONTEXT_MENU(ObjTreeMenuId::ObjectList, CompositeExtractWindow::OnContextMenu)
+wxEND_EVENT_TABLE()
