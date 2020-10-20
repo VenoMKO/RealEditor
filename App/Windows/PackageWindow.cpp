@@ -5,6 +5,7 @@
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
 #include "CompositeExtractWindow.h"
+#include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
@@ -25,9 +26,6 @@
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
 #include <Tera/UClass.h>
-
-#define FAKE_IMPORT_ROOT MININT
-#define FAKE_EXPORT_ROOT MAXINT
 
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
@@ -288,6 +286,8 @@ void PackageWindow::OnUpdateProperties(wxCommandEvent&)
 void PackageWindow::LoadObjectTree()
 {
 	DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports());
+	DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
+	DataModel->GetRootImport()->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
 	ObjectTreeCtrl->AssociateModel(DataModel.get());
 	wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
 	ObjectTreeCtrl->AppendColumn(col);
@@ -311,8 +311,10 @@ void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
 void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
 {
 	ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
-	if (!node || !node->GetParent())
+	if (!node)
 	{
+    EditorContainer->Show(true);
+    PackageInfoView->Show(false);
 		OnNoneObjectSelected();
 		return;
 	}
@@ -385,27 +387,40 @@ void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
 void PackageWindow::OnImportObjectSelected(INT index)
 {
 	ShowEditor(nullptr);
+  if (PackageInfoView)
+  {
+		PackageInfoView->Show(false);
+		EditorContainer->Show(true);
+  }
 	if (index == FAKE_IMPORT_ROOT)
 	{
-		ObjectTitleLabel->SetLabelText("No selection");
+		ObjectTitleLabel->SetLabelText(GetPackage()->GetPackageName(true).WString() + L" imports");
 		SetPropertiesHidden(true);
 		SetContentHidden(true);
 		return;
 	}
 	FObjectImport* obj = Package->GetImportObject(index);
-	ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
+	ObjectTitleLabel->SetLabelText(wxString::Format(wxT("Import: %ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
 	SetPropertiesHidden(true);
 	SetContentHidden(true);
 }
 
 void PackageWindow::OnExportObjectSelected(INT index)
 {
-	if (index == FAKE_EXPORT_ROOT)
+	if (index == FAKE_EXPORT_ROOT || !index)
 	{
 		ShowEditor(nullptr);
-		ObjectTitleLabel->SetLabelText("No selection");
+		ObjectTitleLabel->SetLabelText(GetPackage()->GetPackageName(true).WString());
 		SetPropertiesHidden(true);
 		SetContentHidden(true);
+    if (!PackageInfoView)
+    {
+      PackageInfoView = new ArchiveInfoView(MainPanel, this, Package);
+      MainPanel->GetSizer()->Add(PackageInfoView, 1, wxEXPAND | wxALL, 0);
+    }
+    EditorContainer->Show(false);
+    PackageInfoView->Show(true);
+    MainPanel->GetSizer()->Layout();
 		return;
 	}
 	
@@ -969,6 +984,9 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	ObjectTreeCtrl->Thaw();
 	SaveMenu->Enable(false); // TODO: track package dirty state
 	SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
+	ObjectTreeCtrl->Select(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
+	OnExportObjectSelected(FAKE_EXPORT_ROOT);
+	ObjectTreeCtrl->Expand(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
 }
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)

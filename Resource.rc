@@ -76,6 +76,8 @@ IDB_ICO_TEXTURE         RCDATA                  "Resources\\Classes\\icon_t2d.pn
 
 IDB_REFRESH             RCDATA                  "Resources\\Btn_Refresh.png"
 
+IDB_ICO_IMPORT          RCDATA                  "Resources\\Classes\\icon_imp.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

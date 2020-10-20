@@ -9,6 +9,9 @@ class FObjectImport;
 class ObjectTreeNode;
 typedef signed int PACKAGE_INDEX;
 
+#define FAKE_EXPORT_ROOT 0x7FFFFFFF
+#define FAKE_IMPORT_ROOT 0x80000000
+
 WX_DEFINE_ARRAY_PTR(ObjectTreeNode*, ObjectTreeNodePtrArray);
 
 class ObjectTreeNode {
@@ -29,6 +32,11 @@ public:
 			ObjectTreeNode* child = Children[i];
 			delete child;
 		}
+	}
+
+	void SetCustomObjectIndex(PACKAGE_INDEX index)
+	{
+		CustomObjectIndex = index;
 	}
 
 	wxString GetObjectName() const;
@@ -53,6 +61,7 @@ private:
 	FObjectExport* Export = nullptr;
 	FObjectImport* Import = nullptr;
 	FObjectResource* Resource = nullptr;
+	PACKAGE_INDEX CustomObjectIndex = 0;
 
 	ObjectTreeNode* Parent = nullptr;
 	ObjectTreeNodePtrArray Children;
@@ -104,6 +113,16 @@ public:
 	unsigned int GetChildren(const wxDataViewItem& parent, wxDataViewItemArray& array) const override;
 
 	ObjectTreeNode* FindItemByObjectIndex(PACKAGE_INDEX index);
+
+	ObjectTreeNode* GetRootExport() const
+	{
+		return RootExport;
+	}
+
+  ObjectTreeNode* GetRootImport() const
+  {
+    return RootImport;
+  }
 
 private:
 	ObjectTreeNode* RootExport = nullptr;

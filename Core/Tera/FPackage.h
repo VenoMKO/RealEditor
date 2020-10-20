@@ -252,6 +252,11 @@ public:
 		return Summary.GetLicenseeVersion();
 	}
 
+	inline FPackageSummary GetSummary() const
+	{
+		return Summary;
+	}
+
 	inline FTextureAllocations& GetTextureAllocations()
 	{
 		return Summary.TextureAllocations;
@@ -264,6 +269,16 @@ public:
 
 	// Get package name
 	FString GetPackageName(bool extension = false) const;
+
+	inline std::vector<FString> GetNames() const
+	{
+		std::vector<FString> result;
+		for (const FNameEntry& name : Names)
+		{
+			result.push_back(name.GetString());
+		}
+		return result;
+	}
 
 	inline bool IsReadOnly() const
 	{

@@ -49,11 +49,16 @@ public:
     : Package(package)
   {}
 
+  // TODO: fixme
+  FName(const char* string)
+  {}
+
   FName(FPackage* package, const FString& value)
     : Package(package)
   {
     SetString(value);
   }
+  
 
   FName(const FName& n)
     : Index(n.Index)

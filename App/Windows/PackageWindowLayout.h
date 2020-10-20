@@ -418,6 +418,14 @@ void PackageWindow::SetContentHidden(bool hidden)
 
 void PackageWindow::ShowEditor(GenericEditor* editor)
 {
+	if (editor)
+	{
+		EditorContainer->Show();
+		if (PackageInfoView)
+    {
+      PackageInfoView->Show(false);
+		}
+	}
 	if (ActiveEditor && ActiveEditor != editor)
 	{
 		Toolbar->Unbind(wxEVT_TOOL, &GenericEditor::OnToolBarEvent, ActiveEditor);

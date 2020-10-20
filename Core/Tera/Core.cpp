@@ -538,6 +538,10 @@ FString ObjectFlagsToString(uint64 expFlag)
   {
     s = s.Substr(0, s.Size() - 2);
   }
+  else
+  {
+    s = "None";
+  }
   return s;
 }
 
@@ -559,6 +563,10 @@ FString ExportFlagsToString(uint32 flags)
   if (s.Size())
   {
     s = s.Substr(0, s.Size() - 2);
+  }
+  else
+  {
+    s = "None";
   }
   return s;
 }
@@ -726,6 +734,10 @@ FString PackageFlagsToString(uint32 flags)
   if (s.Size())
   {
     s = s.Substr(0, s.Size() - 2);
+  }
+  else
+  {
+    s = "None";
   }
   return s;
 }

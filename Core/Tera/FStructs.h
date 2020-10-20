@@ -73,6 +73,11 @@ public:
 		return FString::Sprintf("%08X%08X%08X%08X", A, B, C, D);
 	}
 
+  FString FormattedString() const
+  {
+    return FString::Sprintf("%08X-%08X-%08X-%08X", A, B, C, D);
+  }
+
 private:
 	uint32 A = 0;
 	uint32 B = 0;
@@ -133,14 +138,12 @@ struct FCompressedChunkInfo {
 };
 
 struct FPackageSummary {
-	FPackageSummary()
-	{}
-
 	uint32 Magic = PACKAGE_MAGIC;
 	uint32 FileVersion = 0;
 	int32 HeaderSize = 0;
 	FString FolderName = "None";
 	uint32 PackageFlags = 0;
+	uint32 OriginalPackageFlags = 0;
 	uint32 NamesCount = 0;
 	FILE_OFFSET NamesOffset = 0;
 	FILE_OFFSET NamesSize = 0;
@@ -158,6 +161,7 @@ struct FPackageSummary {
 	int32 EngineVersion = 4206;
 	int32 ContentVersion = 76;
 	uint32 CompressionFlags = 0;
+	uint32 OriginalCompressionFlags = 0;
 	uint32 PackageSource = 0;
 	std::vector<FCompressedChunk> CompressedChunks;
 	std::vector<FString> AdditionalPackagesToCook;

@@ -2,6 +2,7 @@
 #include <wx/artprov.h>
 #include <wx/mimetype.h>
 
+#include <Tera/Core.h>
 #include <Tera/FObjectResource.h>
 
 enum ClassIco : int {
@@ -12,7 +13,8 @@ enum ClassIco : int {
 	IcoTexture,
 	IcoMesh,
 	IcoSound,
-	IcoRedirector
+	IcoRedirector,
+	IcoPackageImp
 };
 
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
@@ -118,7 +120,7 @@ wxString ObjectTreeNode::GetClassName() const
 
 PACKAGE_INDEX ObjectTreeNode::GetObjectIndex() const
 {
-	return Resource->ObjectIndex;
+	return Resource ? Resource->ObjectIndex : CustomObjectIndex;
 }
 
 void ObjectTreeNode::Append(ObjectTreeNode* child)
@@ -191,6 +193,8 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 	// Redirector
 	IconList->Add(wxBitmap("#119", wxBITMAP_TYPE_PNG_RESOURCE));
 	
+	// Imp dir
+	IconList->Add(wxBitmap("#123", wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
@@ -199,7 +203,8 @@ void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, u
 	wxDataViewIconText value = wxDataViewIconText(node->GetObjectName());
 	if (!node->GetParent() || node->GetClassName() == wxS("Package"))
 	{
-		value.SetIcon(IconList->GetIcon(IcoPackage));
+		bool isImp = node->GetObjectIndex() == FAKE_IMPORT_ROOT;
+		value.SetIcon(IconList->GetIcon(isImp ? IcoPackageImp : IcoPackage));
 	}
 	else
 	{

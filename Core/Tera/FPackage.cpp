@@ -963,6 +963,8 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
+    sum.OriginalPackageFlags = sum.PackageFlags;
+    sum.OriginalCompressionFlags = sum.CompressionFlags;
     sum.PackageFlags &= ~PKG_StoreCompressed;
     sum.CompressionFlags = COMPRESS_None;
 

@@ -15,6 +15,7 @@
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp" />
+    <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="Core\Tera\FStream.cpp" />
     <ClCompile Include="Core\Tera\FString.cpp" />
     <ClCompile Include="Core\Tera\FStructs.cpp" />
+    <ClCompile Include="Core\Tera\UAnimSequence.cpp" />
     <ClCompile Include="Core\Tera\UClass.cpp" />
     <ClCompile Include="Core\Tera\UComponent.cpp" />
     <ClCompile Include="Core\Tera\UMaterial.cpp" />
@@ -66,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\Misc\ArchiveInfo.h" />
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
     <ClInclude Include="App\Editors\SoundWaveEditor.h" />
@@ -84,6 +87,7 @@
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
+    <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
@@ -139,6 +143,7 @@
     <Image Include="Resources\Btn_Texture2D_Green.png" />
     <Image Include="Resources\Btn_Texture2D_Red.png" />
     <Image Include="Resources\Classes\icon_class.png" />
+    <Image Include="Resources\Classes\icon_imp.png" />
     <Image Include="Resources\Classes\icon_mesh.png" />
     <Image Include="Resources\Classes\icon_redir.png" />
     <Image Include="Resources\Classes\icon_sound.png" />

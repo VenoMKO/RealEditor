@@ -16,6 +16,7 @@ wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
 class App;
+class ArchiveInfoView;
 class FPackage;
 class UObject;
 
@@ -118,6 +119,7 @@ private:
 	wxPanel* ObjectInfoPanel = nullptr;
 	wxImageList* ImageList = nullptr;
 	wxStatusBar* StatusBar = nullptr;
+	ArchiveInfoView* PackageInfoView = nullptr;
 
 	wxMenuItem* _DebugTestCookObject = nullptr;
 
