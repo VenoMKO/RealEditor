@@ -49,7 +49,7 @@ Currently under development. Some features are not implemented yet or may not wo
 ### System requirements
 
 * Windows 10 x64 (RE can run on previous Windows versions, but some features may not work)
-* CPU: Intel Haswell / AMD Excavator or anything newer with AVX2 instructions
+* CPU with AVX2 instructions (Intel Haswell / AMD Excavator or newer)
 
 ### Download
 
