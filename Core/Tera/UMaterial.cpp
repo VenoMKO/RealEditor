@@ -3,6 +3,67 @@
 #include "FPackage.h"
 #include "Cast.h"
 
+
+FStream& operator<<(FStream& s, FTextureLookup& l)
+{
+  s << l.TexCoordIndex;
+  s << l.TextureIndex;
+  s << l.UScale;
+  s << l.VScale;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FStaticSwitchParameter& p)
+{
+  return s << p.ParameterName << p.Value << p.bOverride << p.ExpressionGUID;
+}
+
+FStream& operator<<(FStream& s, FStaticComponentMaskParameter& p)
+{
+  return s << p.ParameterName << p.R << p.G << p.B << p.A << p.bOverride << p.ExpressionGUID;
+}
+
+FStream& operator<<(FStream& s, FNormalParameter& p)
+{
+  return s << p.ParameterName << p.CompressionSettings << p.bOverride << p.ExpressionGUID;
+}
+
+FStream& operator<<(FStream& s, FStaticTerrainLayerWeightParameter& p)
+{
+  return s << p.ParameterName << p.WeightmapIndex << p.bOverride << p.ExpressionGUID;
+}
+
+FStream& operator<<(FStream& s, FStaticParameterSet& ps)
+{
+  s << ps.BaseMaterialId;
+  s << ps.StaticSwitchParameters;
+  s << ps.StaticComponentMaskParameters;
+  s << ps.NormalParameters;
+  s << ps.TerrainLayerWeightParameters;
+  return s;
+}
+
+void FMaterial::Serialize(FStream& s)
+{
+  s << CompoilerErrors;
+  s << TextureDependencyLengthMap;
+  s << MaxTextureDependencyLength;
+  s << Id;
+  s << NumUserTexCoords;
+  s << UniformExpressionTextures;
+  s << bUsesSceneColor;
+  s << bUsesSceneDepth;
+  s << bUsesDynamicParameter;
+  s << bUsesLightmapUVs;
+  s << bUsesMaterialVertexPositionOffset;
+  s << UsingTransforms;
+  s << TextureLookups;
+  s << FallbackComponents;
+  s << Unk1;
+  s << Unk2;
+  s << Unk3;
+}
+
 bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
 {
   if (PROP_IS(property, TextureParameterValues))
@@ -85,4 +146,47 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
     }
   }
   return nullptr;
+}
+
+void UMaterial::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  MaterialResource.Serialize(s);
+
+  if ((GetPackage()->GetSummary().PackageFlags & PKG_ContainsInlinedShaders) != 0)
+  {
+    UThrow("%s material contains the shader map. Not implemented!", GetObjectName().UTF8().c_str());
+  }
+}
+
+void UMaterialInstance::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  if (!bHasStaticPermutationResource)
+  {
+    return;
+  }
+
+  StaticPermutationResource.Serialize(s);
+  s << StaticParameters;
+
+  if ((GetPackage()->GetSummary().PackageFlags & PKG_ContainsInlinedShaders) != 0)
+  {
+    UThrow("%s material contains the shader map. Not implemented!", GetObjectName().UTF8().c_str());
+  }
+}
+
+bool UMaterialInstance::RegisterProperty(FPropertyTag* property)
+{
+  if (Super::RegisterProperty(property))
+  {
+    return true;
+  }
+  if (PROP_IS(property, bHasStaticPermutationResource))
+  {
+    bHasStaticPermutationResource = property->BoolVal;
+    bHasStaticPermutationResourceProperty = property;
+    return true;
+  }
+  return false;
 }
