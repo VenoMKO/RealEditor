@@ -176,6 +176,9 @@
     <ClCompile Include="App\Misc\ArchiveInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\UPhysAsset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -249,6 +252,7 @@
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
+    <ClInclude Include="Core\Tera\UPhysAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -54,6 +54,7 @@
     <ClCompile Include="Core\Tera\UObjectFactory.cpp" />
     <ClCompile Include="Core\Tera\UObjectRedirector.cpp" />
     <ClCompile Include="Core\Tera\UPersistentCookerData.cpp" />
+    <ClCompile Include="Core\Tera\UPhysAsset.cpp" />
     <ClCompile Include="Core\Tera\UProperty.cpp" />
     <ClCompile Include="Core\Tera\USkeletalMesh.cpp" />
     <ClCompile Include="Core\Tera\USoundNode.cpp" />
@@ -88,6 +89,7 @@
     <ClInclude Include="App\Windows\TextureImporter.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
+    <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />

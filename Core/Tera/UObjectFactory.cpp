@@ -18,6 +18,7 @@
 #include "UStaticMesh.h"
 #include "USoundNode.h"
 #include "UAnimSequence.h"
+#include "UPhysAsset.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -50,6 +51,14 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UStaticMesh::StaticClassName())
   {
     result = new UStaticMesh(exp);
+  }
+  else if (c == URB_BodySetup::StaticClassName())
+  {
+    result = new URB_BodySetup(exp);
+  }
+  else if (c == UPhysicsAssetInstance::StaticClassName())
+  {
+    result = new UPhysicsAssetInstance(exp);
   }
   else if (c == UAnimSequence::StaticClassName())
   {
