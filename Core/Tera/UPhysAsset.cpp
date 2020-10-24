@@ -25,6 +25,7 @@ FStream& operator<<(FStream& s, FKCachedConvexDataElement& e)
     UThrow("Invalid ConvexElementDataElementSize %d", e.ConvexElementDataElementSize);
   }
   s << e.ConvexElementData;
+  return s;
 }
 
 FStream& operator<<(FStream& s, FKCachedConvexData& e)
