@@ -8,6 +8,7 @@
   uint32 GetStaticClassCastFlags() const override\
   { return StaticClassCastFlags | Super::GetStaticClassCastFlags(); }\
 
+UProperty* CreateProperty(const char* name, const  char* className, UStruct* parent);
 
 class FImplementedInterface {
 public:

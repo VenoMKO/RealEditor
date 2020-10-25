@@ -3,7 +3,9 @@
 #include "UClass.h"
 #include "FStream.h"
 #include "UProperty.h"
+
 #include "UStaticMesh.h"
+#include "ULevel.h"
 
 #include "Cast.h"
 
@@ -12,6 +14,24 @@
 #include "FPropertyTag.h"
 
 #define FUNC_Net 0x00000040
+
+UProperty* CreateProperty(const char* name, const  char* className, UStruct* parent)
+{
+  VObjectExport* exp = parent->GetPackage()->CreateVirtualExport(name, className);
+  parent->GetExportObject()->Inner.push_back(exp);
+  UProperty* prop = (UProperty*)UObject::Object(exp);
+  exp->SetObject(prop);
+  if (UField* field = parent->GetChildren())
+  {
+    for (; field->GetNext(); field = field->GetNext());
+    field->SetNext(prop);
+  }
+  else
+  {
+    parent->SetChildren(prop);
+  }
+  return prop;
+}
 
 void UTextBuffer::Serialize(FStream& s)
 {
@@ -376,6 +396,8 @@ void UClass::CreateBuiltInClasses(FPackage* package)
   {
     MAKE_CLASS(NAME_StaticMesh);
     UStaticMesh::ConfigureClassObject(obj);
+    MAKE_CLASS(NAME_Level);
+    ULevel::ConfigureClassObject(obj);
   }
   else if (pkgName == "UnrealEd")
   {

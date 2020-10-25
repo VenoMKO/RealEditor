@@ -21,6 +21,18 @@ FStream& operator<<(FStream& s, FCompressedChunk& c)
   return s << c.DecompressedOffset << c.DecompressedSize << c.CompressedOffset << c.CompressedSize;
 }
 
+FStream& operator<<(FStream& s, FURL& url)
+{
+  s << url.Protocol;
+  s << url.Host;
+  s << url.Map;
+  s << url.Portal;
+  s << url.Op;
+  s << url.Port;
+  s << url.Valid;
+  return s;
+}
+
 FStream& operator<<(FStream& s, FGeneration& g)
 {
   return s << g.Exports << g.Names << g.NetObjects;
@@ -158,6 +170,14 @@ FStream& operator<<(FStream& s, FCookedBulkDataInfo& i)
   s << i.SavedBulkDataOffsetInFile;
   s << i.SavedBulkDataSizeOnDisk;
   s << i.TextureFileCacheName;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FBox& b)
+{
+  s << b.Min;
+  s << b.Max;
+  s << b.IsValid;
   return s;
 }
 
@@ -583,5 +603,106 @@ FStream& operator<<(FStream& s, FRawIndexBuffer& b)
     b.AllocateBuffer(b.ElementCount, b.ElementSize);
   }
   s.SerializeBytes(b.Data, b.ElementSize * b.ElementCount);
+  return s;
+}
+
+FStream& operator<<(FStream& s, FSphere& sp)
+{
+  return s << sp.Center << sp.Radius;
+}
+
+FStream& operator<<(FStream& s, FStreamableTextureInstance& i)
+{
+  return s << i.BoundingSphere << i.TexelFactor;
+}
+
+FStream& operator<<(FStream& s, FDynamicTextureInstance& i)
+{
+  s << i.BoundingSphere;
+  s << i.TexelFactor;
+  s << i.Texture;
+  s << i.bAttached;
+  s << i.OriginalRadius;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCachedPhysSMData& d)
+{
+  return s << d.Scale3D << d.CachedDataIndex;
+}
+
+FStream& operator<<(FStream& s, FCachedPerTriPhysSMData& d)
+{
+  return s << d.Scale3D << d.CachedDataIndex;
+}
+
+FStream& operator<<(FStream& s, FKCachedPerTriData& d)
+{
+  s << d.CachedPerTriDataElementSize;
+  s << d.CachedPerTriData;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FVolumeLightingSample& ls)
+{
+  s << ls.Position;
+  s << ls.Radius;
+  s << ls.IndirectDirectionTheta;
+  s << ls.IndirectDirectionPhi;
+  s << ls.EnvironmentDirectionTheta;
+  s << ls.EnvironmentDirectionPhi;
+  s << ls.IndirectRadiance;
+  s << ls.EnvironmentRadiance;
+  s << ls.AmbientRadiance;
+  s << ls.bShadowedFromDominantLights;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FPrecomputedLightVolume& v)
+{
+  s << v.bInitialized;
+  if (v.bInitialized)
+  {
+    s << v.Bounds;
+    s << v.SampleSpacing;
+    s << v.Samples;
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FPrecomputedVisibilityCell& c)
+{
+  return s << c.Min << c.ChunkIndex << c.DataOffset;
+}
+
+FStream& operator<<(FStream& s, FCompressedVisibilityChunk& c)
+{
+  return s << c.bCompressed << c.UncompressedSize << c.Data;
+}
+
+FStream& operator<<(FStream& s, FPrecomputedVisibilityBucket& b)
+{
+  return s << b.CellDataSize << b.Cells << b.CellDataChunks;
+}
+
+FStream& operator<<(FStream& s, FPrecomputedVisibilityHandler& h)
+{
+  s << h.BucketOriginXY;
+  s << h.SizeXY;
+  s << h.SizeZ;
+  s << h.BucketSizeXY;
+  s << h.NumBuckets;
+  s << h.Buckets;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f)
+{
+  s << f.VolumeMaxDistance;
+  s << f.VolumeBox;
+  s << f.VolumeSizeX;
+  s << f.VolumeSizeY;
+  s << f.VolumeSizeZ;
+  s << f.Data;
   return s;
 }

@@ -5,24 +5,6 @@
 #include "FPackage.h"
 #include "FObjectResource.h"
 
-UProperty* CreateProperty(const char* name, const  char* className, UStruct* parent)
-{
-  VObjectExport* exp = parent->GetPackage()->CreateVirtualExport(name, className);
-  parent->GetExportObject()->Inner.push_back(exp);
-  UProperty* prop = (UProperty*)UObject::Object(exp);
-  exp->SetObject(prop);
-  if (UField* field = parent->GetChildren())
-  {
-    for (; field->GetNext(); field = field->GetNext());
-    field->SetNext(prop);
-  }
-  else
-  {
-    parent->SetChildren(prop);
-  }
-  return prop;
-}
-
 FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b)
 {
 #define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs ) \

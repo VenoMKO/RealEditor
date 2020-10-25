@@ -20,6 +20,9 @@
 #include "UAnimSequence.h"
 #include "UPhysAsset.h"
 
+#include "UActor.h"
+#include "ULevel.h"
+
 UObject* UObject::Object(FObjectExport* exp)
 {
   UObject* result = nullptr;
@@ -59,6 +62,14 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UPhysicsAssetInstance::StaticClassName())
   {
     result = new UPhysicsAssetInstance(exp);
+  }
+  else if (c == UActor::StaticClassName())
+  {
+    result = new UActor(exp);
+  }
+  else if (c == ULevel::StaticClassName())
+  {
+    result = new ULevel(exp);
   }
   else if (c == UAnimSequence::StaticClassName())
   {

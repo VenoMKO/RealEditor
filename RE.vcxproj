@@ -44,9 +44,12 @@
     <ClCompile Include="Core\Tera\FStream.cpp" />
     <ClCompile Include="Core\Tera\FString.cpp" />
     <ClCompile Include="Core\Tera\FStructs.cpp" />
+    <ClCompile Include="Core\Tera\UActor.cpp" />
+    <ClCompile Include="Core\Tera\UActorComponent.cpp" />
     <ClCompile Include="Core\Tera\UAnimSequence.cpp" />
     <ClCompile Include="Core\Tera\UClass.cpp" />
     <ClCompile Include="Core\Tera\UComponent.cpp" />
+    <ClCompile Include="Core\Tera\ULevel.cpp" />
     <ClCompile Include="Core\Tera\UMaterial.cpp" />
     <ClCompile Include="Core\Tera\UMetaData.cpp" />
     <ClCompile Include="Core\Tera\UNames.cpp" />
@@ -88,7 +91,10 @@
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
+    <ClInclude Include="Core\Tera\UActor.h" />
+    <ClInclude Include="Core\Tera\UActorComponent.h" />
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
+    <ClInclude Include="Core\Tera\ULevel.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />

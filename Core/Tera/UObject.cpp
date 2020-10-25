@@ -264,6 +264,11 @@ void UObject::Serialize(FStream& s)
       }
     }
     s.SerializeBytes(RawData, RawDataSize);
+    if (0)
+    {
+      DumpData(RawData, RawDataSize, GetObjectName().C_str());
+    }
+    
   }
 }
 

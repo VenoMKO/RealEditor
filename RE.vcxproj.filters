@@ -179,6 +179,15 @@
     <ClCompile Include="Core\Tera\UPhysAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\UActorComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UActor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\ULevel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -253,6 +262,9 @@
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
+    <ClInclude Include="Core\Tera\UActor.h" />
+    <ClInclude Include="Core\Tera\UActorComponent.h" />
+    <ClInclude Include="Core\Tera\ULevel.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -94,6 +94,18 @@ struct FCompressedChunk {
 	friend FStream& operator<<(FStream& s, FCompressedChunk& c);
 };
 
+struct FURL {
+	FString Protocol;
+	FString Host;
+	int32 Port = 0;
+	FString Map;
+	FString Op;
+	FString Portal;
+	int32 Valid = 0;
+
+	friend FStream& operator<<(FStream& s, FURL& url);
+};
+
 struct FGeneration {
 	int32 Exports = 0;
 	int32 Names = 0;
@@ -307,6 +319,14 @@ struct FBulkDataInfo
 	uint32 SavedBulkDataOffsetInFile = 0;
 	uint32 SavedBulkDataSizeOnDisk = 0;
 	FString	TextureFileCacheName;
+};
+
+struct FBox {
+	FVector Min;
+	FVector Max;
+	uint8 IsValid = 0;
+
+	friend FStream& operator<<(FStream& s, FBox& b);
 };
 
 struct FCookedTextureFileCacheInfo
@@ -924,4 +944,128 @@ protected:
 	uint32 ElementSize = 2;
 	uint32 ElementCount = 0;
 	void* Data = nullptr;
+};
+
+struct FSphere {
+	FVector Center;
+	float Radius = 1.;
+
+	friend FStream& operator<<(FStream& s, FSphere& sp);
+};
+
+struct FStreamableTextureInstance {
+  FSphere BoundingSphere;
+  float TexelFactor = 1.;
+
+	friend FStream& operator<<(FStream& s, FStreamableTextureInstance& i);
+};
+
+struct FDynamicTextureInstance : public FStreamableTextureInstance
+{
+	UObject* Texture = nullptr;
+	bool bAttached = false;
+	float OriginalRadius = 1.;
+
+	friend FStream& operator<<(FStream& s, FDynamicTextureInstance& i);
+};
+
+struct FCachedPhysSMData {
+  FVector Scale3D;
+  int32 CachedDataIndex = 0;
+
+	friend FStream& operator<<(FStream& s, FCachedPhysSMData& d);
+};
+
+struct FCachedPerTriPhysSMData {
+  FVector Scale3D;
+  int32 CachedDataIndex = 0;
+
+	friend FStream& operator<<(FStream& s, FCachedPerTriPhysSMData& d);
+};
+
+struct FKCachedPerTriData {
+  std::vector<uint8>	CachedPerTriData;
+	FILE_OFFSET CachedPerTriDataElementSize = 1;
+
+	friend FStream& operator<<(FStream& s, FKCachedPerTriData& d);
+};
+
+struct FVolumeLightingSampleInfo {
+	FBox Bounds;
+	float SampleSpacing = 0.;
+
+};
+
+struct FVolumeLightingSample {
+	FVector Position;
+	float Radius = 0;
+
+  uint8 IndirectDirectionTheta = 0;
+	uint8 IndirectDirectionPhi = 0;
+
+	uint8 EnvironmentDirectionTheta = 0;
+	uint8 EnvironmentDirectionPhi = 0;
+
+  FColor IndirectRadiance;
+  FColor EnvironmentRadiance;
+  FColor AmbientRadiance;
+
+	uint8 bShadowedFromDominantLights = 0;
+
+	friend FStream& operator<<(FStream& s, FVolumeLightingSample& ls);
+};
+
+struct FPrecomputedLightVolume {
+	bool bInitialized = false;
+  FBox Bounds;
+  float SampleSpacing = 0.;
+	std::vector<FVolumeLightingSample> Samples;
+
+	friend FStream& operator<<(FStream& s, FPrecomputedLightVolume& v);
+};
+
+struct FPrecomputedVisibilityCell {
+  FVector Min;
+  uint16 ChunkIndex = 0;
+	uint16 DataOffset = 0;
+
+	friend FStream& operator<<(FStream& s, FPrecomputedVisibilityCell& c);
+};
+
+struct FCompressedVisibilityChunk {
+  bool bCompressed = false;
+  int32 UncompressedSize = 0;
+  std::vector<uint8> Data;
+
+	friend FStream& operator<<(FStream& s, FCompressedVisibilityChunk& c);
+};
+
+struct FPrecomputedVisibilityBucket {
+  int32 CellDataSize = 0;
+  std::vector<FPrecomputedVisibilityCell> Cells;
+	std::vector<FCompressedVisibilityChunk> CellDataChunks;
+
+	friend FStream& operator<<(FStream& s, FPrecomputedVisibilityBucket& b);
+};
+
+struct FPrecomputedVisibilityHandler {
+  FVector2D BucketOriginXY;
+  float SizeXY = 0.;
+  float SizeZ = 0.;
+  int32	BucketSizeXY = 0;
+  int32	NumBuckets = 0;
+	std::vector<FPrecomputedVisibilityBucket> Buckets;
+
+	friend FStream& operator<<(FStream& s, FPrecomputedVisibilityHandler& h);
+};
+
+struct FPrecomputedVolumeDistanceField {
+  float VolumeMaxDistance = 0;
+  FBox VolumeBox;
+  int32 VolumeSizeX = 0;
+  int32 VolumeSizeY = 0;
+	int32 VolumeSizeZ = 0;
+	std::vector<FColor> Data;
+
+	friend FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f);
 };
