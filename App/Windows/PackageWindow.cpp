@@ -26,6 +26,7 @@
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
 #include <Tera/UClass.h>
+#include <Tera/ULevel.h>
 
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
@@ -984,9 +985,25 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	ObjectTreeCtrl->Thaw();
 	SaveMenu->Enable(false); // TODO: track package dirty state
 	SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
-	ObjectTreeCtrl->Select(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
-	OnExportObjectSelected(FAKE_EXPORT_ROOT);
-	ObjectTreeCtrl->Expand(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
+	
+	if (Package->GetSummary().PackageFlags & PKG_ContainsMap)
+	{
+		if (UObject* level = Package->GetObject(INDEX_NONE, "PersistentLevel", ULevel::StaticClassName()))
+		{
+			if (ObjectTreeNode* item = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(level->GetExportObject()->ObjectIndex))
+			{
+				ObjectTreeCtrl->Select(wxDataViewItem(item));
+				OnExportObjectSelected(item->GetObjectIndex());
+				ObjectTreeCtrl->EnsureVisible(wxDataViewItem(item));
+			}
+		}
+	}
+	else
+	{
+		ObjectTreeCtrl->Select(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
+		OnExportObjectSelected(FAKE_EXPORT_ROOT);
+		ObjectTreeCtrl->Expand(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
+	}
 }
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)
