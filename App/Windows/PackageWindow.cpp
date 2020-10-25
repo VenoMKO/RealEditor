@@ -985,20 +985,32 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 	ObjectTreeCtrl->Thaw();
 	SaveMenu->Enable(false); // TODO: track package dirty state
 	SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
-	
+	bool selected = false;
+
 	if (Package->GetSummary().PackageFlags & PKG_ContainsMap)
 	{
-		if (UObject* level = Package->GetObject(INDEX_NONE, "PersistentLevel", ULevel::StaticClassName()))
+		std::vector<FObjectExport*> exports = Package->GetAllExports();
+		PACKAGE_INDEX levelIndex = INDEX_NONE;
+		for (const FObjectExport* exp : exports)
 		{
-			if (ObjectTreeNode* item = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(level->GetExportObject()->ObjectIndex))
+			if (exp->GetClassName() == ULevel::StaticClassName() && exp->GetObjectName() == "PersistentLevel")
 			{
-				ObjectTreeCtrl->Select(wxDataViewItem(item));
-				OnExportObjectSelected(item->GetObjectIndex());
-				ObjectTreeCtrl->EnsureVisible(wxDataViewItem(item));
+				levelIndex = exp->ObjectIndex;
 			}
 		}
+		if (levelIndex != INDEX_NONE)
+		{
+      if (ObjectTreeNode* item = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(levelIndex))
+      {
+        ObjectTreeCtrl->Select(wxDataViewItem(item));
+        OnExportObjectSelected(levelIndex);
+        ObjectTreeCtrl->EnsureVisible(wxDataViewItem(item));
+				selected = true;
+      }
+		}
 	}
-	else
+
+	if (!selected)
 	{
 		ObjectTreeCtrl->Select(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport()));
 		OnExportObjectSelected(FAKE_EXPORT_ROOT);
