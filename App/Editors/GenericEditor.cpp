@@ -13,6 +13,12 @@
 #include "StaticMeshEditor.h"
 #include "SoundWaveEditor.h"
 
+enum ExportMode {
+  ExportProperties = wxID_HIGHEST + 1,
+  ExportObject,
+  ExportAll
+};
+
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
   GenericEditor* editor = nullptr;
@@ -133,6 +139,33 @@ void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
 
 void GenericEditor::OnExportClicked(wxCommandEvent& e)
 {
+  wxMenu menu;
+  wxMenuItem* mitem = nullptr;
+  bool hasData = Object->GetDataSize() > 0 && !Object->IsDirty();
+  mitem = menu.Append(ExportMode::ExportProperties, wxT("Properties"));
+  mitem = menu.Append(ExportMode::ExportObject, wxT("Object data"));
+  mitem->Enable(hasData);
+  mitem = menu.Append(ExportMode::ExportAll, wxT("All"));
+  mitem->Enable(hasData);
+  FILE_OFFSET start = 0;
+  FILE_OFFSET size = 0;
+  switch (GetPopupMenuSelectionFromUser(menu))
+  {
+  case ExportMode::ExportProperties:
+    start = Object->GetSerialOffset();
+    size = Object->GetPropertiesSize();
+    break;
+  case ExportMode::ExportObject:
+    start = Object->GetSerialOffset() + Object->GetPropertiesSize();
+    size = Object->GetDataSize();
+    break;
+  case ExportMode::ExportAll:
+    start = Object->GetSerialOffset();
+    size = Object->GetSerialSize();
+    break;
+  default:
+    return;
+  }
   wxString path = wxSaveFileSelector("raw object data", ".*", Object->GetObjectName().WString(), Window);
   if (path.empty())
   {
@@ -145,15 +178,24 @@ void GenericEditor::OnExportClicked(wxCommandEvent& e)
     wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
     return;
   }
-  void* data = Object->GetRawData();
-  if (data)
+  if (size <= 0)
   {
-    s.SerializeBytes(data, Object->GetDataSize());
-    if (!s.IsGood())
-    {
-      wxMessageBox("Failed to save data to \"" + path + "\"", "Error!", wxICON_ERROR);
-      return;
-    }
+    return;
+  }
+
+  FReadStream rs = FReadStream(A2W(Object->GetPackage()->GetDataPath()));
+  rs.SetPackage(Object->GetPackage());
+  rs.SetLoadSerializedObjects(Object->GetPackage()->GetStream().GetLoadSerializedObjects());
+  rs.SetPosition(start);
+
+  void* data = malloc(size);
+  rs.SerializeBytes(data, size);
+  s.SerializeBytes(data, size);
+
+  if (!s.IsGood())
+  {
+    wxMessageBox("Failed to save data to \"" + path + "\"", "Error!", wxICON_ERROR);
+    return;
   }
 }
 
