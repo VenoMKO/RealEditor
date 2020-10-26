@@ -188,6 +188,9 @@
     <ClCompile Include="Core\Tera\ULevel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\ClassEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -265,6 +268,7 @@
     <ClInclude Include="Core\Tera\UActor.h" />
     <ClInclude Include="Core\Tera\UActorComponent.h" />
     <ClInclude Include="Core\Tera\ULevel.h" />
+    <ClInclude Include="App\Editors\ClassEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -318,6 +322,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="Resources\Classes\icon_imp.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Btn_Class.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

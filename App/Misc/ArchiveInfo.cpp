@@ -130,7 +130,7 @@ private:
   std::vector<FGeneration> Data;
 };
 
-ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, std::shared_ptr<FPackage> package)
+ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackage* package)
   : wxPanel(parent, wxID_ANY)
   , Package(package)
   , Window(window)

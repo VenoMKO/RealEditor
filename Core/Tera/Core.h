@@ -153,6 +153,7 @@ FString ObjectFlagsToString(uint64 flags);
 FString ExportFlagsToString(uint32 flags);
 FString PixelFormatToString(uint32 pf);
 FString PackageFlagsToString(uint32 flags);
+FString ClassFlagsToString(uint32 flags);
 
 std::string GetAppVersion();
 

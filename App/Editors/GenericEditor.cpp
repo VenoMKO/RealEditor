@@ -12,6 +12,7 @@
 #include "SkelMeshEditor.h"
 #include "StaticMeshEditor.h"
 #include "SoundWaveEditor.h"
+#include "ClassEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -41,6 +42,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (object->GetClassName() == USoundNodeWave::StaticClassName())
   {
     editor = new SoundWaveEditor(parent, window);
+  }
+  else if (object->GetClassName() == NAME_Class)
+  {
+    editor = new ClassEditor(parent, window);
   }
   else
   {
@@ -115,6 +120,10 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
     {
       toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
     }
+    if (Object->GetClass() && !Object->GetClass()->IsBuiltIn())
+    {
+      toolbar->AddTool(eID_Class, "Class", wxBitmap("#124", wxBITMAP_TYPE_PNG_RESOURCE), "Show class object");
+    }
   }
 }
 
@@ -133,6 +142,11 @@ void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
   else if (e.GetId() == eID_Composite)
   {
     OnSourceClicked(e);
+    e.Skip(true);
+  }
+  else if (e.GetId() == eID_Class)
+  {
+    OnClassClicked(e);
     e.Skip(true);
   }
 }
@@ -214,4 +228,12 @@ void GenericEditor::OnSourceClicked(wxCommandEvent& e)
 {
   wxString pkg = CompositeObjectPath.substr(0, CompositeObjectPath.find('.'));
   ((App*)wxTheApp)->OpenNamedPackage(pkg, CompositeObjectPath);
+}
+
+void GenericEditor::OnClassClicked(wxCommandEvent& e)
+{
+  if (UClass* cls = Object->GetClass())
+  {
+    ((App*)wxTheApp)->OpenNamedPackage(cls->GetPackage()->GetPackageName().WString(), cls->GetObjectPath().WString());
+  }
 }

@@ -6,6 +6,7 @@ enum ToolEventID : int {
   eID_Export = 0,
   eID_Import,
   eID_Composite,
+  eID_Class,
   eID_Origin,
   eID_Refresh,
   eID_Texture2D_Channel_R,
@@ -55,6 +56,8 @@ public:
   virtual void OnImportClicked(wxCommandEvent& e);
 
   virtual void OnSourceClicked(wxCommandEvent& e);
+
+  virtual void OnClassClicked(wxCommandEvent& e);
 
 protected:
   virtual void OnObjectSet()

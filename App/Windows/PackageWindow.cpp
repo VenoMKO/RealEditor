@@ -416,7 +416,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 		SetContentHidden(true);
     if (!PackageInfoView)
     {
-      PackageInfoView = new ArchiveInfoView(MainPanel, this, Package);
+      PackageInfoView = new ArchiveInfoView(MainPanel, this, Package.get());
       MainPanel->GetSizer()->Add(PackageInfoView, 1, wxEXPAND | wxALL, 0);
     }
     EditorContainer->Show(false);

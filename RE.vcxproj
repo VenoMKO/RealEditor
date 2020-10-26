@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\Editors\ClassEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
@@ -72,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\Editors\ClassEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
@@ -142,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\AppIcon.ico" />
+    <Image Include="Resources\Btn_Class.png" />
     <Image Include="Resources\Btn_Export.png" />
     <Image Include="Resources\Btn_Forward.png" />
     <Image Include="Resources\Btn_Import.png" />

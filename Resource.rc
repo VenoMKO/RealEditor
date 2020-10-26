@@ -78,6 +78,8 @@ IDB_REFRESH             RCDATA                  "Resources\\Btn_Refresh.png"
 
 IDB_ICO_IMPORT          RCDATA                  "Resources\\Classes\\icon_imp.png"
 
+IDB_ICO_BCLASS          RCDATA                  "Resources\\Btn_Class.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

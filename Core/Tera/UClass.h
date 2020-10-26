@@ -32,7 +32,12 @@ protected:
 class UTextBuffer : public UObject {
 public:
   DECL_UOBJ(UTextBuffer, UObject);
-  void Serialize(FStream& s);
+  void Serialize(FStream& s) override;
+
+  inline FString GetText() const
+  {
+    return Text;
+  }
 
 protected:
   int32 Pos = 0;
@@ -165,6 +170,21 @@ public:
     Children = field;
   }
 
+  inline UTextBuffer* GetCppText() const
+  {
+    return CppText;
+  }
+
+  inline UTextBuffer* GetScriptText() const
+  {
+    return ScriptText;
+  }
+
+  inline UProperty* GetPropertyLink() const
+  {
+    return PropertyLink;
+  }
+
   virtual void Link();
 
   void Serialize(FStream& s) override;
@@ -194,7 +214,7 @@ public:
     return (UState*)SuperStruct;
   }
 
-  UStruct* GetInheritanceSuper() const
+  UStruct* GetInheritanceSuper() const override
   {
     return GetSuperState();
   }
@@ -215,8 +235,9 @@ public:
 
   static void CreateBuiltInClasses(FPackage* package);
 
-  UClass(FObjectExport* exp)
+  UClass(FObjectExport* exp, bool builtin = false)
     : UState(exp)
+    , BuiltIn(builtin)
   {}
 
   UObject* GetClassDefaultObject()
@@ -233,7 +254,7 @@ public:
     return (UClass*)SuperStruct;
   }
 
-  UStruct* GetInheritanceSuper() const
+  UStruct* GetInheritanceSuper() const override
   {
     return GetSuperClass();
   }
@@ -247,6 +268,23 @@ public:
   {
     return (ClassCastFlags & FlagsToCheck) == FlagsToCheck;
   }
+
+  inline FString GetClassHeaderFilename() const
+  {
+    return ClassHeaderFilename;
+  }
+
+  inline uint32 GetClassFlags() const
+  {
+    return ClassFlags;
+  }
+
+  inline bool IsBuiltIn() const
+  {
+    return BuiltIn;
+  }
+
+  FString GetDLLBindName() const;
 
   void Serialize(FStream& s) override;
 
@@ -266,6 +304,7 @@ protected:
   FString ClassHeaderFilename;
   FName DLLBindName;
   DECL_UREF(UObject, ClassDefaultObject);
+  bool BuiltIn = false;
 
   uint32 ClassCastFlags = CASTCLASS_None;
 };

@@ -9,8 +9,7 @@ class PackageWindow;
 class ArchiveInfoView : public wxPanel
 {
 public:
-  ArchiveInfoView(wxPanel* parent, PackageWindow* window, std::shared_ptr<FPackage> package);
-
+  ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackage* package);
   void UpdateInfo();
 
 protected:
@@ -19,7 +18,7 @@ protected:
   void OnNameContextMenu(wxDataViewEvent& e);
 
 protected:
-  std::shared_ptr<FPackage> Package = nullptr;
+  FPackage* Package = nullptr;
   PackageWindow* Window = nullptr;
   wxDataViewCtrl* NamesTable = nullptr;
   wxStaticText* FileVersion = nullptr;

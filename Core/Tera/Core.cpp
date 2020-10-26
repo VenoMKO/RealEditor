@@ -742,6 +742,55 @@ FString PackageFlagsToString(uint32 flags)
   return s;
 }
 
+FString ClassFlagsToString(uint32 flags)
+{
+#define PARSE_CLASS_FLAGS(name) if (flags & CLASS_##name) s += #name + FString(", ")
+  FString s;
+  PARSE_CLASS_FLAGS(Abstract);
+  PARSE_CLASS_FLAGS(Compiled);
+  PARSE_CLASS_FLAGS(Config);
+  PARSE_CLASS_FLAGS(Transient);
+  PARSE_CLASS_FLAGS(Parsed);
+  PARSE_CLASS_FLAGS(Localized);
+  PARSE_CLASS_FLAGS(SafeReplace);
+  PARSE_CLASS_FLAGS(Localized);
+  PARSE_CLASS_FLAGS(SafeReplace);
+  PARSE_CLASS_FLAGS(Native);
+  PARSE_CLASS_FLAGS(NoExport);
+  PARSE_CLASS_FLAGS(Placeable);
+  PARSE_CLASS_FLAGS(PerObjectConfig);
+  PARSE_CLASS_FLAGS(NativeReplication);
+  PARSE_CLASS_FLAGS(EditInlineNew);
+  PARSE_CLASS_FLAGS(CollapseCategories);
+  PARSE_CLASS_FLAGS(Interface);
+  PARSE_CLASS_FLAGS(HasInstancedProps);
+  PARSE_CLASS_FLAGS(NeedsDefProps);
+  PARSE_CLASS_FLAGS(HasComponents);
+  PARSE_CLASS_FLAGS(Hidden);
+  PARSE_CLASS_FLAGS(Deprecated);
+  PARSE_CLASS_FLAGS(HideDropDown);
+  PARSE_CLASS_FLAGS(Exported);
+  PARSE_CLASS_FLAGS(Intrinsic);
+  PARSE_CLASS_FLAGS(NativeOnly);
+  PARSE_CLASS_FLAGS(PerObjectLocalized);
+  PARSE_CLASS_FLAGS(HasCrossLevelRefs);
+  PARSE_CLASS_FLAGS(IsAUProperty);
+  PARSE_CLASS_FLAGS(IsAUObjectProperty);
+  PARSE_CLASS_FLAGS(IsAUBoolProperty);
+  PARSE_CLASS_FLAGS(IsAUState);
+  PARSE_CLASS_FLAGS(IsAUFunction);
+  PARSE_CLASS_FLAGS(IsAUStructProperty);
+  if (s.Size())
+  {
+    s = s.Substr(0, s.Size() - 2);
+  }
+  else
+  {
+    s = "None";
+  }
+  return s;
+}
+
 std::string GetAppVersion()
 {
   std::stringstream stream;

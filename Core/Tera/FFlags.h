@@ -128,6 +128,44 @@ enum EPixelFormat : uint32
   PF_Max = 28
 };
 
+enum EClassFlags : uint32
+{
+  CLASS_None = 0x00000000,
+  CLASS_Abstract = 0x00000001,
+  CLASS_Compiled = 0x00000002,
+  CLASS_Config = 0x00000004,
+  CLASS_Transient = 0x00000008,
+  CLASS_Parsed = 0x00000010,
+  CLASS_Localized = 0x00000020,
+  CLASS_SafeReplace = 0x00000040,
+  CLASS_Native = 0x00000080,
+  CLASS_NoExport = 0x00000100,
+  CLASS_Placeable = 0x00000200,
+  CLASS_PerObjectConfig = 0x00000400,
+  CLASS_NativeReplication = 0x00000800,
+  CLASS_EditInlineNew = 0x00001000,
+  CLASS_CollapseCategories = 0x00002000,
+  CLASS_Interface = 0x00004000,
+  CLASS_HasInstancedProps = 0x00200000,
+  CLASS_NeedsDefProps = 0x00400000,
+  CLASS_HasComponents = 0x00800000,
+  CLASS_Hidden = 0x01000000,
+  CLASS_Deprecated = 0x02000000,
+  CLASS_HideDropDown = 0x04000000,
+  CLASS_Exported = 0x08000000,
+  CLASS_Intrinsic = 0x10000000,
+  CLASS_NativeOnly = 0x20000000,
+  CLASS_PerObjectLocalized = 0x40000000,
+  CLASS_HasCrossLevelRefs = 0x80000000,
+  CLASS_IsAUProperty = 0x00008000,
+  CLASS_IsAUObjectProperty = 0x00010000,
+  CLASS_IsAUBoolProperty = 0x00020000,
+  CLASS_IsAUState = 0x00040000,
+  CLASS_IsAUFunction = 0x00080000,
+  CLASS_IsAUStructProperty = 0x00100000,
+  CLASS_AllFlags = 0xFFFFFFFF
+};
+
 enum EClassCastFlag : uint32
 {
   CASTCLASS_None = 0x00000000,
