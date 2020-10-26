@@ -315,7 +315,10 @@ void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
 	if (!node)
 	{
     EditorContainer->Show(true);
-    PackageInfoView->Show(false);
+		if (PackageInfoView)
+		{
+			PackageInfoView->Show(false);
+		}
 		OnNoneObjectSelected();
 		return;
 	}
