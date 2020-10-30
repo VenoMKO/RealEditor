@@ -8,6 +8,8 @@
 #include <osg/Depth>
 #include <osg/PositionAttitudeTransform>
 
+#include <Tera/FPackage.h>
+#include <Tera/ULevelStreaming.h>
 #include <Tera/UStaticMesh.h>
 #include <Tera/USkeletalMesh.h>
 #include <Tera/Cast.h>
@@ -35,7 +37,6 @@ void LevelEditor::OnObjectLoaded()
   {
     LevelNodes.clear();
     Level = (ULevel*)Object;
-    LevelActors = Level->GetActors();
     Root = new osg::Geode;
     Bind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
   }
@@ -84,14 +85,25 @@ void LevelEditor::CreateRenderer()
   Renderer->setThreadingModel(osgViewer::Viewer::DrawThreadPerContext);
 }
 
-void LevelEditor::OnIdle(wxIdleEvent& e)
+void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
 {
-  Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
+  if (!level)
+  {
+    return;
+  }
 
-  const osg::Vec3d yawAxis(0.0, 0.0, -1.0);
-  const osg::Vec3d pitchAxis(-1.0, 0.0, 0.0);
-  const osg::Vec3d rollAxis(0.0, -1.0, 0.0);
-  for (UActor* actor : LevelActors)
+  auto actors = level->GetActors();
+
+  if (actors.empty())
+  {
+    return;
+  }
+
+  static const osg::Vec3d yawAxis(0.0, 0.0, -1.0);
+  static const osg::Vec3d pitchAxis(-1.0, 0.0, 0.0);
+  static const osg::Vec3d rollAxis(0.0, -1.0, 0.0);
+
+  for (UActor* actor : actors)
   {
     if (!actor)
     {
@@ -114,11 +126,11 @@ void LevelEditor::OnIdle(wxIdleEvent& e)
       osg::PositionAttitudeTransform* transform = new osg::PositionAttitudeTransform;
       transform->addChild(geode);
       transform->setPosition(osg::Vec3(actor->Location.X + compTranslation.X,
-                                     -(actor->Location.Y + compTranslation.Y),
-                                       actor->Location.Z + compTranslation.Z));
+        -(actor->Location.Y + compTranslation.Y),
+        actor->Location.Z + compTranslation.Z));
       transform->setScale(osg::Vec3(actor->DrawScale3D.X * actor->DrawScale * compScale3D.X * compScale,
-                                    actor->DrawScale3D.Y * actor->DrawScale * compScale3D.Y * compScale,
-                                    actor->DrawScale3D.Z * actor->DrawScale * compScale3D.Z * compScale));
+        actor->DrawScale3D.Y * actor->DrawScale * compScale3D.Y * compScale,
+        actor->DrawScale3D.Z * actor->DrawScale * compScale3D.Z * compScale));
 
       osg::Quat quat;
       FRotator rot = actor->Rotation + compRotation;
@@ -129,9 +141,35 @@ void LevelEditor::OnIdle(wxIdleEvent& e)
         euler.Z * M_PI / 180., yawAxis
       );
       transform->setAttitude(quat);
-      Root->addChild(transform);
+      root->addChild(transform);
     }
   }
+}
+
+void LevelEditor::OnIdle(wxIdleEvent& e)
+{
+  Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
+
+  CreateLevel(Level, Root.get());
+  
+  UObject* world = Level->GetOuter();
+  auto worldInner = world->GetInner();
+
+  for (UObject* inner : worldInner)
+  {
+    if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
+    {
+      level->Load();
+      if (level->Level)
+      {
+        osg::Geode* geode = new osg::Geode;
+        geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
+        CreateLevel(level->Level, geode);
+        Root->addChild(geode);
+      }
+    }
+  }
+  
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
 }
@@ -229,5 +267,38 @@ osg::Geode* LevelEditor::CreateStaticActor(UStaticMeshActor* actor, FVector& tra
     }
     result->addDrawable(geo);
   }
+  return result;
+}
+
+osg::Geode* LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor)
+{
+  if (!actor || actor->StreamingLevels.empty())
+  {
+    return nullptr;
+  }
+
+  std::vector<ULevelStreaming*> aliveLevels;
+  for (ULevelStreaming* level : actor->StreamingLevels)
+  {
+    if (level && level->Level)
+    {
+      aliveLevels.push_back(level);
+    }
+  }
+
+  if (aliveLevels.empty())
+  {
+    return nullptr;
+  }
+
+  osg::Geode* result = new osg::Geode;
+  for (ULevelStreaming* level : aliveLevels)
+  {
+    osg::Geode* lgeode = new osg::Geode;
+    lgeode->setName(level->PackageName.UTF8().c_str());
+    result->addChild(lgeode);
+    CreateLevel(level->Level, lgeode);
+  }
+
   return result;
 }

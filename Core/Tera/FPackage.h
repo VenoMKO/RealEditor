@@ -290,6 +290,8 @@ public:
 		return Composite;
 	}
 
+	void RetainPackage(std::shared_ptr<FPackage> package);
+
 private:
 	void _DebugDump() const;
 

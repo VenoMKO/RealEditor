@@ -462,6 +462,11 @@ public:
     return Data.find_first_of(ch, off);
   }
 
+  size_t FindLastOf(char ch, size_t off = std::string::npos)
+  {
+    return Data.find_last_of(ch, off);
+  }
+
   static FString Sprintf(const char* fmt, ...)
   {
     int final_n, n = ((int)strlen(fmt)) * 2;

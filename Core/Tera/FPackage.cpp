@@ -2455,6 +2455,12 @@ FObjectImport* FPackage::GetImportObject(const FString& objectName, const FStrin
   return nullptr;
 }
 
+void FPackage::RetainPackage(std::shared_ptr<FPackage> package)
+{
+  std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+  ExternalPackages.push_back(package);
+}
+
 void FPackage::_DebugDump() const
 {
 #if DUMP_PACKAGES

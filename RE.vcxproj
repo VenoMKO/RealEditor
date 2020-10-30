@@ -53,6 +53,7 @@
     <ClCompile Include="Core\Tera\UClass.cpp" />
     <ClCompile Include="Core\Tera\UComponent.cpp" />
     <ClCompile Include="Core\Tera\ULevel.cpp" />
+    <ClCompile Include="Core\Tera\ULevelStreaming.cpp" />
     <ClCompile Include="Core\Tera\UMaterial.cpp" />
     <ClCompile Include="Core\Tera\UMetaData.cpp" />
     <ClCompile Include="Core\Tera\UNames.cpp" />
@@ -101,6 +102,7 @@
     <ClInclude Include="Core\Tera\UActorComponent.h" />
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="Core\Tera\ULevel.h" />
+    <ClInclude Include="Core\Tera\ULevelStreaming.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />

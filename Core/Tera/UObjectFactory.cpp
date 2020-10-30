@@ -19,6 +19,7 @@
 #include "USoundNode.h"
 #include "UAnimSequence.h"
 #include "UPhysAsset.h"
+#include "ULevelStreaming.h"
 
 #include "UActor.h"
 #include "ULevel.h"
@@ -67,9 +68,53 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UActor(exp);
   }
+  else if (c == UBrush::StaticClassName())
+  {
+    result = new UBrush(exp);
+  }
   else if (c == ULevel::StaticClassName())
   {
     result = new ULevel(exp);
+  }
+  else if (c == ULevelStreamingAlwaysLoaded::StaticClassName())
+  {
+    result = new ULevelStreamingAlwaysLoaded(exp);
+  }
+  else if (c == ULevelStreamingDistance::StaticClassName())
+  {
+    result = new ULevelStreamingDistance(exp);
+  }
+  else if (c == ULevelStreamingKismet::StaticClassName())
+  {
+    result = new ULevelStreamingKismet(exp);
+  }
+  else if (c == ULevelStreamingPersistent::StaticClassName())
+  {
+    result = new ULevelStreamingPersistent(exp);
+  }
+  else if (c == US1LevelStreamingDistance::StaticClassName())
+  {
+    result = new US1LevelStreamingDistance(exp);
+  }
+  else if (c == US1LevelStreamingBaseLevel::StaticClassName())
+  {
+    result = new US1LevelStreamingBaseLevel(exp);
+  }
+  else if (c == US1LevelStreamingSound::StaticClassName())
+  {
+    result = new US1LevelStreamingSound(exp);
+  }
+  else if (c == US1LevelStreamingSuperLow::StaticClassName())
+  {
+    result = new US1LevelStreamingSuperLow(exp);
+  }
+  else if (c == US1LevelStreamingVOID::StaticClassName())
+  {
+    result = new US1LevelStreamingVOID(exp);
+  }
+  else if (c == ULevelStreamingVolume::StaticClassName())
+  {
+    result = new ULevelStreamingVolume(exp);
   }
   else if (c == UStaticMeshActor::StaticClassName())
   {

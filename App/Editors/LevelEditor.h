@@ -10,6 +10,7 @@
 class UActor;
 class ULevel;
 class UStaticMeshActor;
+class ULevelStreamingVolume;
 class LevelEditor : public GenericEditor {
 public:
   using GenericEditor::GenericEditor;
@@ -27,13 +28,14 @@ public:
 
 protected:
   void CreateRenderer();
+  void CreateLevel(ULevel* level, osg::Geode* root);
   void OnIdle(wxIdleEvent& e);
 
   osg::Geode* CreateStaticActor(UStaticMeshActor* actor, FVector& translation, FVector& scale3d, FRotator& rotation, float& scale);
+  osg::Geode* CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
 
 protected:
   ULevel* Level = nullptr;
-  std::vector<UActor*> LevelActors;
   std::unordered_map<UActor*, osg::Geode*> LevelNodes;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   OSGCanvas* Canvas = nullptr;

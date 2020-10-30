@@ -197,6 +197,9 @@
     <ClCompile Include="App\Editors\StaticMeshActorEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\ULevelStreaming.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -278,6 +281,7 @@
     <ClInclude Include="Core\Tera\UTerrain.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
+    <ClInclude Include="Core\Tera\ULevelStreaming.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
