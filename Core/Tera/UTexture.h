@@ -1,8 +1,11 @@
 #pragma once
 #include "UObject.h"
 #include <Utils/TextureTravaller.h>
-#include <../Extern/glew/glew.h>
-#include <osg/Image>
+
+namespace osg
+{
+  class Image;
+}
 
 class UTexture : public UObject {
 public:
@@ -18,7 +21,6 @@ public:
 protected:
   FByteBulkData SourceArt;
 };
-
 
 class UTexture2D : public UTexture {
 public:
@@ -66,6 +68,4 @@ protected:
   std::vector<FTexture2DMipMap*> CachedEtcMips;
   FGuid TextureFileCacheGuid;
   int32 MaxCachedResolution = 0;
-
-  osg::ref_ptr<osg::Image> TextureResource = nullptr;
 };

@@ -4,6 +4,8 @@
 #include "FStructs.h"
 #include "kDOP.h"
 
+#include "UActorComponent.h"
+
 struct FStaticMeshTriangle
 {
   FVector Vertices[3];
@@ -306,4 +308,15 @@ protected:
 
   FILE_OFFSET UnkSize = 8;
   void* Unk = nullptr;
+};
+
+class UStaticMeshComponent : public UMeshComponent {
+public:
+  DECL_UOBJ(UStaticMeshComponent, UMeshComponent);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  UPROP(UStaticMesh*, StaticMesh, nullptr);
+
+  void PostLoad() override;
 };

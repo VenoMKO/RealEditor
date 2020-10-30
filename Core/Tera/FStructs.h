@@ -234,6 +234,12 @@ struct FVector {
 	FVector()
 	{}
 
+	FVector(const FVector& v)
+		: X(v.X)
+		, Y(v.Y)
+		, Z(v.Z)
+	{}
+
 	FVector(float a)
 		: X(a)
 		, Y(a)
@@ -265,6 +271,11 @@ struct FVector {
 	{
 		return FVector(X * s, Y * s, Z * s);
 	}
+
+  FVector operator+(const FVector& v) const
+  {
+    return FVector(X + v.X, Y + v.Y, Z + v.Z);
+  }
 
 	friend FStream& operator<<(FStream& s, FVector& v);
 
@@ -613,23 +624,91 @@ struct FBoxSphereBounds {
 	friend FStream& operator<<(FStream& s, FBoxSphereBounds& bounds);
 };
 
-struct FRotator
-{
-	int32 Pitch = 0; // Looking up and down (0=Straight Ahead, +Up, -Down).
-	int32 Yaw = 0;   // Rotating around (running in circles), 0=East, +North, -South.
-	int32 Roll = 0;  // Rotation about axis of screen, 0=Straight, +Clockwise, -CCW.
+struct FPlane : FVector {
+	FPlane() = default;
 
-	friend FStream& operator<<(FStream& s, FRotator& r);
+	FPlane(float x, float y, float z, float w)
+		: FVector(x, y, z)
+		, W(w)
+	{}
+
+	float W = 0;
 };
 
-struct FQuat
-{
+struct FMatrix {
+	static const FMatrix Identity;
+	FMatrix() = default;
+	FMatrix(const FPlane& x, const FPlane& y, const FPlane& z, const FPlane& w);
+
+  inline FVector FMatrix::GetAxis(int32 i) const
+  {
+    return FVector(M[i][0], M[i][1], M[i][2]);
+  }
+
+	float M[4][4];
+};
+
+struct FRotator;
+struct FRotationTranslationMatrix : FMatrix {
+	FRotationTranslationMatrix(const FRotator& Rot, const FVector& Origin);
+};
+
+struct FRotationMatrix : FRotationTranslationMatrix {
+  FRotationMatrix(const FRotator& Rot)
+		: FRotationTranslationMatrix(Rot, FVector())
+  {}
+};
+
+struct FQuat {
 	float X = 0;
 	float Y = 0;
 	float Z = 0;
 	float W = 0;
 
+	FQuat() = default;
+
+	FQuat(const FMatrix& matrix);
+
 	friend FStream& operator<<(FStream& s, FQuat& f);
+};
+
+struct FRotator
+{
+  int32 Pitch = 0; // Looking up and down (0=Straight Ahead, +Up, -Down).
+  int32 Yaw = 0;   // Rotating around (running in circles), 0=East, +North, -South.
+  int32 Roll = 0;  // Rotation about axis of screen, 0=Straight, +Clockwise, -CCW.
+
+	FRotator() = default;
+
+	FRotator(int32 pitch, int32 yaw, int32 roll)
+		: Pitch(pitch)
+		, Yaw(yaw)
+		, Roll(roll)
+	{}
+
+	FRotator(const FRotator& r) = default;
+
+  FRotator operator+(const FRotator& r) const
+  {
+    return FRotator(Pitch + r.Pitch, Yaw + r.Yaw, Roll + r.Roll);
+  }
+
+  static int32 NormalizeAxis(int32 a)
+  {
+    a &= 0xFFFF;
+    if (a > 32767)
+    {
+      a -= 0x10000;
+    }
+    return a;
+  }
+
+	FRotator Normalized() const;
+	FRotator Denormalized() const;
+	FVector Euler() const;
+  FQuat Quaternion() const;
+
+  friend FStream& operator<<(FStream& s, FRotator& r);
 };
 
 struct FPackedNormal

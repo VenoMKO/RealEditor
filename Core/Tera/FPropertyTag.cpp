@@ -47,3 +47,67 @@ FPropertyValue::~FPropertyValue()
 		}
 	}
 }
+
+bool FPropertyTag::GetVector(FVector& output) const
+{
+	if (!Value || Value->Type != FPropertyValue::VID::Struct)
+	{
+		return false;
+	}
+	std::vector<FPropertyValue*> arr = Value->GetArray();
+	for (FPropertyValue* v : arr)
+	{
+		if (v->Field)
+		{
+      if (v->Field->GetObjectName() == "X")
+      {
+        output.X = v->GetArray()[0]->GetFloat();
+      }
+      else if (v->Field->GetObjectName() == "Y")
+      {
+        output.Y = v->GetArray()[0]->GetFloat();
+      }
+      else if (v->Field->GetObjectName() == "Z")
+      {
+        output.Z = v->GetArray()[0]->GetFloat();
+      }
+			else
+			{
+				DBreak();
+			}
+		}
+	}
+	return true;
+}
+
+bool FPropertyTag::GetRotator(FRotator& output) const
+{
+  if (!Value || Value->Type != FPropertyValue::VID::Struct)
+  {
+    return false;
+  }
+  std::vector<FPropertyValue*> arr = Value->GetArray();
+  for (FPropertyValue* v : arr)
+  {
+    if (v->Field)
+    {
+      if (v->Field->GetObjectName() == "Pitch")
+      {
+        output.Pitch = v->GetArray()[0]->GetInt();
+      }
+      else if (v->Field->GetObjectName() == "Yaw")
+      {
+        output.Yaw = v->GetArray()[0]->GetInt();
+      }
+      else if (v->Field->GetObjectName() == "Roll")
+      {
+        output.Roll = v->GetArray()[0]->GetInt();
+      }
+      else
+      {
+        DBreak();
+      }
+    }
+  }
+  return true;
+}

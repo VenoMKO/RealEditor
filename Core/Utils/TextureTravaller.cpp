@@ -131,7 +131,6 @@ bool TextureTravaller::Visit(UTexture2D* texture)
   texture->Export->ExportFlags &= ~EF_ForcedExport;
 
   texture->DeleteStorage();
-  texture->TextureResource = nullptr;
 
   for (TMipMap& tmip : Mips)
   {

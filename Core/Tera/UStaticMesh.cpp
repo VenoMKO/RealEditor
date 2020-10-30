@@ -1,6 +1,7 @@
 #include "UStaticMesh.h"
 #include "UClass.h"
 #include "UProperty.h"
+#include "Cast.h"
 
 #include "FPackage.h"
 #include "FObjectResource.h"
@@ -268,7 +269,6 @@ void UStaticMesh::Serialize(FStream& s)
   {
     int32 unk = 0;
     s << unk;
-    DBreakIf(s.IsReading() && unk);
   }
   
   int32 cnt = (int32)LODModels.size();
@@ -403,4 +403,25 @@ FStaticMeshPositionBuffer::~FStaticMeshPositionBuffer()
 FStaticMeshVertexColorBuffer::~FStaticMeshVertexColorBuffer()
 {
   delete[] Data;
+}
+
+bool UStaticMeshComponent::RegisterProperty(FPropertyTag* property)
+{
+  if (Super::RegisterProperty(property))
+  {
+    return true;
+  }
+  if (PROP_IS(property, StaticMesh))
+  {
+    StaticMeshProperty = property;
+    StaticMesh = Cast<UStaticMesh>(GetPackage()->GetObject(property->Value->GetObjectIndex(), false));
+    return true;
+  }
+  return false;
+}
+
+void UStaticMeshComponent::PostLoad()
+{
+  LoadObject(StaticMesh);
+  Super::PostLoad();
 }

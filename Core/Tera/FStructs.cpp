@@ -2,6 +2,8 @@
 #include "FStream.h"
 #include "UObject.h"
 
+const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
+
 FStream& operator<<(FStream& s, FGuid& g)
 {
   return s << g.A << g.B << g.C << g.D;
@@ -705,4 +707,118 @@ FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f)
   s << f.VolumeSizeZ;
   s << f.Data;
   return s;
+}
+
+FRotator FRotator::Normalized() const
+{
+  FRotator result;
+  result.Pitch = NormalizeAxis(Pitch);
+  result.Roll = NormalizeAxis(Roll);
+  result.Yaw = NormalizeAxis(Yaw);
+  return result;
+}
+
+FRotator FRotator::Denormalized() const
+{
+  FRotator result(*this);
+  result.Pitch = result.Pitch & 0xFFFF;
+  result.Yaw = result.Yaw & 0xFFFF;
+  result.Roll = result.Roll & 0xFFFF;
+  return result;
+}
+
+FVector FRotator::Euler() const
+{
+  return FVector(Roll * (180.f / 32768.f), Pitch * (180.f / 32768.f), Yaw * (180.f / 32768.f));
+}
+
+FQuat FRotator::Quaternion() const
+{
+  return FQuat(FRotationMatrix(*this));
+}
+
+FMatrix::FMatrix(const FPlane& x, const FPlane& y, const FPlane& z, const FPlane& w)
+{
+  M[0][0] = x.X; M[0][1] = x.Y;  M[0][2] = x.Z;  M[0][3] = x.W;
+  M[1][0] = y.X; M[1][1] = y.Y;  M[1][2] = y.Z;  M[1][3] = y.W;
+  M[2][0] = z.X; M[2][1] = z.Y;  M[2][2] = z.Z;  M[2][3] = z.W;
+  M[3][0] = w.X; M[3][1] = w.Y;  M[3][2] = w.Z;  M[3][3] = w.W;
+}
+
+FQuat::FQuat(const FMatrix& matrix)
+{
+  const float tr = matrix.M[0][0] + matrix.M[1][1] + matrix.M[2][2];
+  if (tr > 0.0f)
+  {
+    float invS = 1. / sqrtf(tr + 1.f);
+    W = 0.5f * (1.f / invS);
+    float s = 0.5f * invS;
+    X = (matrix.M[1][2] - matrix.M[2][1]) * s;
+    Y = (matrix.M[2][0] - matrix.M[0][2]) * s;
+    Z = (matrix.M[0][1] - matrix.M[1][0]) * s;
+  }
+  else
+  {
+    int32 i = 0;
+    if (matrix.M[1][1] > matrix.M[0][0])
+    {
+      i = 1;
+    }
+    if (matrix.M[2][2] > matrix.M[i][i])
+    {
+      i = 2;
+    }
+
+    static const int32 nxt[3] = { 1, 2, 0 };
+    const int32 j = nxt[i];
+    const int32 k = nxt[j];
+
+    float s = matrix.M[i][i] - matrix.M[j][j] - matrix.M[k][k] + 1.0f;
+
+    float invS = 1. / sqrtf(s);
+
+    float qt[4];
+    qt[i] = 0.5f * (1.f / invS);
+
+    s = 0.5f * invS;
+
+    qt[3] = (matrix.M[j][k] - matrix.M[k][j]) * s;
+    qt[j] = (matrix.M[i][j] + matrix.M[j][i]) * s;
+    qt[k] = (matrix.M[i][k] + matrix.M[k][i]) * s;
+
+    X = qt[0];
+    Y = qt[1];
+    Z = qt[2];
+    W = qt[3];
+  }
+}
+
+FRotationTranslationMatrix::FRotationTranslationMatrix(const FRotator& rotation, const FVector& origin)
+{
+  const float	sr = sin(rotation.Roll);
+  const float	cr = cos(rotation.Roll);
+  const float	sp = sin(rotation.Pitch);
+  const float	cp = cos(rotation.Pitch);
+  const float	sy = sin(rotation.Yaw);
+  const float	cy = cos(rotation.Yaw);
+
+  M[0][0] = cp * cy;
+  M[0][1] = cp * sy;
+  M[0][2] = sp;
+  M[0][3] = 0.f;
+
+  M[1][0] = sr * sp * cy - cr * sy;
+  M[1][1] = sr * sp * sy + cr * cy;
+  M[1][2] = -sr * cp;
+  M[1][3] = 0.f;
+
+  M[2][0] = -(cr * sp * cy + sr * sy);
+  M[2][1] = cy * sr - cr * sp * sy;
+  M[2][2] = cr * cp;
+  M[2][3] = 0.f;
+
+  M[3][0] = origin.X;
+  M[3][1] = origin.Y;
+  M[3][2] = origin.Z;
+  M[3][3] = 1.f;
 }

@@ -26,6 +26,14 @@ public:
     return StaticClassCastFlags;
   }
 
+  static void LoadObject(UObject* object)
+  {
+    if (object)
+    {
+      object->Load();
+    }
+  }
+
   // Object factory
   static UObject* Object(FObjectExport* exp);
 

@@ -29,7 +29,7 @@ UObject* UObject::Object(FObjectExport* exp)
   const FString c = exp->GetClassName();
   if (c == UClass::StaticClassName())
   {
-    result = new UClass(exp);
+    result = new UClass(exp, false);
   }
   else if (c == UTexture2D::StaticClassName())
   {
@@ -70,6 +70,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == ULevel::StaticClassName())
   {
     result = new ULevel(exp);
+  }
+  else if (c == UStaticMeshActor::StaticClassName())
+  {
+    result = new UStaticMeshActor(exp);
   }
   else if (c == UAnimSequence::StaticClassName())
   {
@@ -187,6 +191,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UComponent(exp);
   }
+  else if (c == UStaticMeshComponent::StaticClassName())
+  {
+    result = new UStaticMeshComponent(exp);
+  }
   else if (c == UDominantDirectionalLightComponent::StaticClassName())
   {
     result = new UDominantDirectionalLightComponent(exp);
@@ -202,6 +210,11 @@ UObject* UObject::Object(FObjectExport* exp)
         (c.Find("Distribution") != std::string::npos))
     {
       result = new UComponent(exp);
+    }
+    // Fallback for all *Actor classes except components
+    else if (c.Find(NAME_Actor) != std::string::npos && c != NAME_ActorFactory)
+    {
+      result = new UActor(exp);
     }
     else
     {

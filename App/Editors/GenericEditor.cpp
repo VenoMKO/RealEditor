@@ -11,8 +11,10 @@
 #include "TextureEditor.h"
 #include "SkelMeshEditor.h"
 #include "StaticMeshEditor.h"
+#include "StaticMeshActorEditor.h"
 #include "SoundWaveEditor.h"
 #include "ClassEditor.h"
+#include "LevelEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -46,6 +48,14 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (object->GetClassName() == NAME_Class)
   {
     editor = new ClassEditor(parent, window);
+  }
+  else if (object->GetClassName() == ULevel::StaticClassName())
+  {
+    editor = new LevelEditor(parent, window);
+  }
+  else if (object->GetClassName() == UStaticMeshActor::StaticClassName())
+  {
+    editor = new StaticMeshActorEditor(parent, window);
   }
   else
   {

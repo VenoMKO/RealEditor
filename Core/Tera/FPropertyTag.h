@@ -200,6 +200,9 @@ struct FPropertyTag {
 		return Value ? Value->Data : nullptr;
 	}
 
+	bool GetVector(FVector& output) const;
+	bool GetRotator(FRotator& output) const;
+
 	friend FStream& operator<<(FStream& s, FPropertyTag& tag)
 	{
 		s << tag.Name;

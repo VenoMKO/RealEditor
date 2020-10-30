@@ -4,6 +4,9 @@
 
 #include "ALog.h"
 
+#include <../Extern/glew/glew.h>
+#include <osg/Image>
+
 struct PF_Info {
   uint32 BlockSizeX = 0;
   uint32 BlockSizeY = 0;
