@@ -1,5 +1,7 @@
 #include "LevelEditor.h"
+#include "../App.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/ProgressWindow.h"
 
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
@@ -82,7 +84,7 @@ void LevelEditor::CreateRenderer()
   manipulator->setAllowThrow(false);
   manipulator->setVerticalAxisFixed(true);
   Renderer->setCameraManipulator(manipulator);
-  Renderer->setThreadingModel(osgViewer::Viewer::DrawThreadPerContext);
+  Renderer->setThreadingModel(osgViewer::Viewer::AutomaticSelection);
 }
 
 void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
@@ -150,28 +152,38 @@ void LevelEditor::OnIdle(wxIdleEvent& e)
 {
   Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
 
-  CreateLevel(Level, Root.get());
-  
-  UObject* world = Level->GetOuter();
-  auto worldInner = world->GetInner();
+  ProgressWindow progress(Window, "Please, wait...");
+  progress.SetCurrentProgress(-1);
+  progress.SetCanCancel(false);
+  progress.SetActionText("Loading the level");
+  progress.Layout();
 
-  for (UObject* inner : worldInner)
-  {
-    if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
+  std::thread([&] {
+    CreateLevel(Level, Root.get());
+    UObject* world = Level->GetOuter();
+    auto worldInner = world->GetInner();
+
+    for (UObject* inner : worldInner)
     {
-      level->Load();
-      if (level->Level)
+      if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
       {
-        osg::Geode* geode = new osg::Geode;
-        geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
-        CreateLevel(level->Level, geode);
-        Root->addChild(geode);
+        level->Load();
+        if (level->Level)
+        {
+          osg::Geode* geode = new osg::Geode;
+          geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
+          CreateLevel(level->Level, geode);
+          Root->addChild(geode);
+        }
       }
     }
-  }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
+  }).detach();
+
+  progress.ShowModal();
   
-  Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+  Renderer->setSceneData(Root.get());
 }
 
 osg::Geode* LevelEditor::CreateStaticActor(UStaticMeshActor* actor, FVector& translation, FVector& scale3d, FRotator& rotation, float& scale)
