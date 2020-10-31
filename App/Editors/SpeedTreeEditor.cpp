@@ -39,6 +39,7 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
   wxString path = wxSaveFileSelector("SpeedTree", ".spt", Object->GetObjectName().WString(), this);
   if (path.empty())
   {
+    free(sptData);
     return;
   }
 
@@ -46,8 +47,10 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
   if (!s.IsGood())
   {
     wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+    free(sptData);
     return;
   }
 
   s.SerializeBytes(sptData, sptDataSize);
+  free(sptData);
 }
