@@ -27,6 +27,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * Textures export/import
 * Sounds export/import
 * 3D model export
+* GMP Map viewer
 * Properties viewer
 * DXT texture viewer
 * 3D model viewer
@@ -41,7 +42,6 @@ Currently under development. Some features are not implemented yet or may not wo
 
 * Mesh import from *.fbx
 * Materials support
-* Map renderer
 * Map export to UE4 via *.t3d or custom Datasmith plugin
 * Animation renderer / exporter to *.fbx
 * HiDPI screen support
