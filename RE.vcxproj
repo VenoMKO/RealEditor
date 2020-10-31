@@ -16,6 +16,7 @@
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
+    <ClCompile Include="App\Editors\SpeedTreeEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshActorEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp" />
     <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
@@ -65,6 +66,7 @@
     <ClCompile Include="Core\Tera\UProperty.cpp" />
     <ClCompile Include="Core\Tera\USkeletalMesh.cpp" />
     <ClCompile Include="Core\Tera\USoundNode.cpp" />
+    <ClCompile Include="Core\Tera\USpeedTree.cpp" />
     <ClCompile Include="Core\Tera\UStaticMesh.cpp" />
     <ClCompile Include="Core\Tera\UTexture.cpp" />
     <ClCompile Include="Core\Utils\CompositePatcher.cpp" />
@@ -78,6 +80,7 @@
     <ClInclude Include="App\App.h" />
     <ClInclude Include="App\Editors\ClassEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
+    <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
     <ClInclude Include="App\Editors\ObjectRedirectorEditor.h" />
@@ -106,6 +109,7 @@
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />
+    <ClInclude Include="Core\Tera\USpeedTree.h" />
     <ClInclude Include="Core\Tera\UTerrain.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DDS.h" />

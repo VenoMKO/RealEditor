@@ -200,6 +200,12 @@
     <ClCompile Include="Core\Tera\ULevelStreaming.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\USpeedTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\SpeedTreeEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -282,6 +288,8 @@
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
+    <ClInclude Include="Core\Tera\USpeedTree.h" />
+    <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

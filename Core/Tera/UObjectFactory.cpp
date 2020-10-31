@@ -20,6 +20,7 @@
 #include "UAnimSequence.h"
 #include "UPhysAsset.h"
 #include "ULevelStreaming.h"
+#include "USpeedTree.h"
 
 #include "UActor.h"
 #include "ULevel.h"
@@ -63,6 +64,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UPhysicsAssetInstance::StaticClassName())
   {
     result = new UPhysicsAssetInstance(exp);
+  }
+  else if (c == USpeedTree::StaticClassName())
+  {
+    result = new USpeedTree(exp);
   }
   else if (c == UActor::StaticClassName())
   {
