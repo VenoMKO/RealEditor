@@ -364,6 +364,26 @@ void UObject::SerializeDefaultObject(FStream& s)
   }
 }
 
+void UObject::SerializeTrailingData(FStream& s)
+{
+  if (s.IsReading())
+  {
+    if (TrailingData)
+    {
+      // Should be called once per instance
+      DBreak();
+      free(TrailingData);
+      TrailingData = nullptr;
+    }
+    TrailingDataSize = std::max(GetExportObject()->SerialOffset + GetExportObject()->SerialSize - s.GetPosition(), 0);
+    if (TrailingDataSize)
+    {
+      TrailingData = malloc(TrailingDataSize);
+    }
+  }
+  s.SerializeBytes(TrailingData, TrailingDataSize);
+}
+
 bool UObject::IsA(const char* base) const
 {
   const auto thisClassName = GetStaticClassName();

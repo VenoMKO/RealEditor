@@ -24,6 +24,7 @@
 
 #include "UActor.h"
 #include "ULevel.h"
+#include "UTerrain.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -72,6 +73,14 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UActor::StaticClassName())
   {
     result = new UActor(exp);
+  }
+  else if (c == UTerrain::StaticClassName())
+  {
+    result = new UTerrain(exp);
+  }
+  else if (c == UTerrainWeightMapTexture::StaticClassName())
+  {
+    result = new UTerrainWeightMapTexture(exp);
   }
   else if (c == UBrush::StaticClassName())
   {

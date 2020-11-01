@@ -152,11 +152,7 @@ void UMaterial::Serialize(FStream& s)
 {
   Super::Serialize(s);
   MaterialResource.Serialize(s);
-
-  if ((GetPackage()->GetSummary().PackageFlags & PKG_ContainsInlinedShaders) != 0)
-  {
-    UThrow("%s material contains the shader map. Not implemented!", GetObjectName().UTF8().c_str());
-  }
+  SerializeTrailingData(s);
 }
 
 void UMaterialInstance::Serialize(FStream& s)
@@ -170,10 +166,7 @@ void UMaterialInstance::Serialize(FStream& s)
   StaticPermutationResource.Serialize(s);
   s << StaticParameters;
 
-  if ((GetPackage()->GetSummary().PackageFlags & PKG_ContainsInlinedShaders) != 0)
-  {
-    UThrow("%s material contains the shader map. Not implemented!", GetObjectName().UTF8().c_str());
-  }
+  SerializeTrailingData(s);
 }
 
 bool UMaterialInstance::RegisterProperty(FPropertyTag* property)

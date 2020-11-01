@@ -196,10 +196,12 @@ private:
   virtual void SerializeScriptProperties(FStream& s);
 
 protected:
-  // Handle object initializtion for derrived classes
+  // Handle object initialization for derived classes
   virtual void PostLoad();
 
-  void  SerializeDefaultObject(FStream& s);
+  void SerializeDefaultObject(FStream& s);
+
+  void SerializeTrailingData(FStream& s);
 
 protected:
   bool Loaded = false;
@@ -218,6 +220,9 @@ protected:
   FILE_OFFSET RawDataOffset = 0;
   FILE_OFFSET RawDataSize = 0;
   char* RawData = nullptr;
+
+  void* TrailingData = nullptr;
+  FILE_OFFSET TrailingDataSize = 0;
 #ifdef _DEBUG
   std::string Description;
 #endif

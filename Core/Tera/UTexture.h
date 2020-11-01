@@ -69,3 +69,8 @@ protected:
   FGuid TextureFileCacheGuid;
   int32 MaxCachedResolution = 0;
 };
+
+class UTerrainWeightMapTexture : public UTexture2D {
+public:
+  DECL_UOBJ(UTerrainWeightMapTexture, UTexture2D);
+};

@@ -68,6 +68,7 @@
     <ClCompile Include="Core\Tera\USoundNode.cpp" />
     <ClCompile Include="Core\Tera\USpeedTree.cpp" />
     <ClCompile Include="Core\Tera\UStaticMesh.cpp" />
+    <ClCompile Include="Core\Tera\UTerrain.cpp" />
     <ClCompile Include="Core\Tera\UTexture.cpp" />
     <ClCompile Include="Core\Utils\CompositePatcher.cpp" />
     <ClCompile Include="Core\Utils\FbxUtils.cpp" />
