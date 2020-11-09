@@ -4,6 +4,16 @@
 #include "UClass.h"
 #include "FString.h"
 #include "FName.h"
+#include "FPackage.h"
+
+UObject* FPropertyValue::GetObjectValuePtr(bool load)
+{
+	if (Type == VID::Object)
+	{
+		return Property->Owner->GetPackage()->GetObject(GetObjectIndex(), load);
+	}
+	return nullptr;
+}
 
 FPropertyValue::~FPropertyValue()
 {
@@ -110,4 +120,40 @@ bool FPropertyTag::GetRotator(FRotator& output) const
     }
   }
   return true;
+}
+
+bool FPropertyTag::GetLinearColor(FLinearColor& output) const
+{
+	if (!Value || Value->Type != FPropertyValue::VID::Struct)
+	{
+		return false;
+	}
+	std::vector<FPropertyValue*> arr = Value->GetArray();
+	for (FPropertyValue* v : arr)
+	{
+		if (v->Field)
+		{
+			if (v->Field->GetObjectName() == "R")
+			{
+				output.R = v->GetArray()[0]->GetFloat();
+			}
+			else if (v->Field->GetObjectName() == "G")
+			{
+				output.G = v->GetArray()[0]->GetFloat();
+			}
+			else if (v->Field->GetObjectName() == "B")
+			{
+				output.B = v->GetArray()[0]->GetFloat();
+			}
+			else if (v->Field->GetObjectName() == "A")
+			{
+				output.A = v->GetArray()[0]->GetFloat();
+			}
+			else
+			{
+				DBreak();
+			}
+		}
+	}
+	return true;
 }

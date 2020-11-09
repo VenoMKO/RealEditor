@@ -1,4 +1,6 @@
+#include "FObjectResource.h"
 #include "UMaterial.h"
+#include "UMaterialExpression.h"
 #include "UTexture.h"
 #include "FPackage.h"
 #include "Cast.h"
@@ -151,8 +153,37 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
 void UMaterial::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  MaterialResource.Serialize(s);
+  // TODO: Fix resource serialization for S1_MI.Mat.MaterialTemplate0012A
+  // MaterialResource.Serialize(s);
   SerializeTrailingData(s);
+}
+
+bool UMaterial::RegisterProperty(FPropertyTag* property)
+{
+  if (Super::RegisterProperty(property))
+  {
+    return true;
+  }
+  if (property->StructName.String().Find("MaterialInput") != std::string::npos)
+  {
+    MaterialInputs.push_back(property);
+  }
+  return false;
+}
+
+std::vector<class UMaterialExpression*> UMaterial::GetExpressions() const
+{
+  std::vector<UMaterialExpression*> result;
+  auto inner = GetInner();
+  for (UObject* i : inner)
+  {
+    if (UMaterialExpression* exp = Cast<UMaterialExpression>(i))
+    {
+      exp->Load();
+      result.push_back(exp);
+    }
+  }
+  return result;
 }
 
 void UMaterialInstance::Serialize(FStream& s)

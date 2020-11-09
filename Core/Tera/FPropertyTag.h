@@ -7,6 +7,7 @@
 #include "FName.h"
 
 struct FPropertyTag;
+class UObject;
 class UField;
 class UProperty;
 struct FPropertyValue {
@@ -141,6 +142,8 @@ struct FPropertyValue {
 		return *(std::vector<FPropertyValue*>*)Data;
 	}
 
+	UObject* GetObjectValuePtr(bool load = true);
+
 	~FPropertyValue();
 
 	VID Type = VID::None;
@@ -195,6 +198,66 @@ struct FPropertyTag {
 		Value = new FPropertyValue(this);
 	}
 
+	inline uint8& GetBool()
+	{
+		return BoolVal;
+	}
+
+	inline uint8& GetByte()
+	{
+		return Value->GetByte();
+	}
+
+	inline uint32& GetInt()
+	{
+		return Value->GetInt();
+	}
+
+	inline float& GetFloat()
+	{
+		return Value->GetFloat();
+	}
+
+	inline FName& GetName()
+	{
+		return Value->GetName();
+	}
+
+	inline FString& GetString()
+	{
+		return Value->GetString();
+	}
+
+	inline PACKAGE_INDEX& GetObjectIndex()
+	{
+		return Value->GetObjectIndex();
+	}
+
+	inline FScriptDelegate& GetScriptDelegate()
+	{
+		return Value->GetScriptDelegate();
+	}
+
+	inline FPropertyTag& GetPropertyTag()
+	{
+		return Value->GetPropertyTag();
+	}
+
+	inline std::vector<FPropertyValue*>& GetArray()
+	{
+		return Value->GetArray();
+	}
+
+	inline FPropertyTag* GetPropertyTagPtr()
+	{
+		return Value->GetPropertyTagPtr();
+	}
+
+	inline UObject* GetObjectValuePtr()
+	{
+		return Value->GetObjectValuePtr();
+	}
+
 	void* GetValueData()
 	{
 		return Value ? Value->Data : nullptr;
@@ -202,6 +265,7 @@ struct FPropertyTag {
 
 	bool GetVector(FVector& output) const;
 	bool GetRotator(FRotator& output) const;
+	bool GetLinearColor(FLinearColor& output) const;
 
 	friend FStream& operator<<(FStream& s, FPropertyTag& tag)
 	{

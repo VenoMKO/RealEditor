@@ -16,6 +16,7 @@ public:\
 
 #define __GLUE_PROP(TName, Suffix) TName##Suffix
 #define UPROP(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
+#define UPROP_NOINIT(TType, TName) TType TName; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
 #define PROP_IS(prop, TName) (prop->Name == P_##TName)
 
 class UObject {

@@ -209,6 +209,15 @@
     <ClCompile Include="Core\Tera\UTerrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\MaterialView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\MaterialEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UMaterialExpression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -293,6 +302,9 @@
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
     <ClInclude Include="Core\Tera\USpeedTree.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
+    <ClInclude Include="App\Windows\MaterialView.h" />
+    <ClInclude Include="App\Editors\MaterialEditor.h" />
+    <ClInclude Include="Core\Tera\UMaterialExpression.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -349,6 +361,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="Resources\Btn_Class.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_mat.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

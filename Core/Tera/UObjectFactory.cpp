@@ -12,6 +12,7 @@
 // Objects
 #include "UObjectRedirector.h"
 #include "UMaterial.h"
+#include "UMaterialExpression.h"
 #include "UPersistentCookerData.h"
 #include "UTexture.h"
 #include "USkeletalMesh.h"
@@ -242,10 +243,6 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UPersistentCookerData(exp);
   }
-  else if (c == UMaterialExpressionComponentMask::StaticClassName())
-  {
-    result = new UMaterialExpressionComponentMask(exp);
-  }
   else if (c == UComponent::StaticClassName())
   {
     result = new UComponent(exp);
@@ -264,8 +261,13 @@ UObject* UObject::Object(FObjectExport* exp)
   }
   else
   {
+    // MaterialExpressions must be before the UComponent due to UMaterialExpressionComponentMask
+    if (c.StartWith("MaterialExpression"))
+    {
+      result = UMaterialExpression::StaticFactory(exp);
+    }
     // Fallback for unimplemented components. *Component => UComponent
-    if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
+    else if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
         (c.Find("Distribution") != std::string::npos))
     {
       result = new UComponent(exp);

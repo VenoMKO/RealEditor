@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="App\Editors\ClassEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditor.cpp" />
+    <ClCompile Include="App\Editors\MaterialEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
@@ -30,6 +31,7 @@
     <ClCompile Include="App\Windows\CompositePatcherWindow.cpp" />
     <ClCompile Include="App\Windows\CookingOptions.cpp" />
     <ClCompile Include="App\Windows\CreateModWindow.cpp" />
+    <ClCompile Include="App\Windows\MaterialView.cpp" />
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
@@ -56,6 +58,7 @@
     <ClCompile Include="Core\Tera\ULevel.cpp" />
     <ClCompile Include="Core\Tera\ULevelStreaming.cpp" />
     <ClCompile Include="Core\Tera\UMaterial.cpp" />
+    <ClCompile Include="Core\Tera\UMaterialExpression.cpp" />
     <ClCompile Include="Core\Tera\UMetaData.cpp" />
     <ClCompile Include="Core\Tera\UNames.cpp" />
     <ClCompile Include="Core\Tera\UObject.cpp" />
@@ -81,6 +84,7 @@
     <ClInclude Include="App\App.h" />
     <ClInclude Include="App\Editors\ClassEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
+    <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
@@ -98,6 +102,7 @@
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
     <ClInclude Include="App\Windows\CookingOptions.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
+    <ClInclude Include="App\Windows\MaterialView.h" />
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
@@ -107,6 +112,7 @@
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="Core\Tera\ULevel.h" />
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
+    <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />
@@ -167,6 +173,7 @@
     <Image Include="Resources\Btn_Texture2D_Red.png" />
     <Image Include="Resources\Classes\icon_class.png" />
     <Image Include="Resources\Classes\icon_imp.png" />
+    <Image Include="Resources\Classes\icon_mat.png" />
     <Image Include="Resources\Classes\icon_mesh.png" />
     <Image Include="Resources\Classes\icon_redir.png" />
     <Image Include="Resources\Classes\icon_sound.png" />

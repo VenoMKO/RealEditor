@@ -16,6 +16,7 @@
 #include "ClassEditor.h"
 #include "LevelEditor.h"
 #include "SpeedTreeEditor.h"
+#include "MaterialEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -61,6 +62,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (object->GetClassName() == USpeedTree::StaticClassName())
   {
     editor = new SpeedTreeEditor(parent, window);
+  }
+  else if (object->GetClassName() == UMaterial::StaticClassName())
+  {
+    editor = new MaterialEditor(parent, window);
   }
   else
   {

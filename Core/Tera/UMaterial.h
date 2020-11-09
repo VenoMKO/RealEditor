@@ -2,6 +2,7 @@
 #include "UObject.h"
 
 class UTexture2D;
+class UMaterialExpression;
 
 struct FTextureLookup
 {
@@ -106,8 +107,12 @@ protected:
 class UMaterial : public UMaterialInterface {
 public:
   DECL_UOBJ(UMaterial, UMaterialInterface);
+  std::vector<FPropertyTag*> MaterialInputs;
 
   void Serialize(FStream& s) override;
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  std::vector<UMaterialExpression*> GetExpressions() const;
 
 protected:
   FMaterial MaterialResource;
@@ -130,12 +135,4 @@ public:
 class UMaterialInstanceConstant : public UMaterialInstance {
 public:
   DECL_UOBJ(UMaterialInstanceConstant, UMaterialInstance);
-};
-
-// UObjectFactory uses 'Component' keyword to detect UComponents but
-// UMaterialExpressionComponentMask is not a component. Define it here as a UObject
-// to fix incorrect class construction
-class UMaterialExpressionComponentMask : public UObject {
-public:
-  DECL_UOBJ(UMaterialExpressionComponentMask, UObject);
 };
