@@ -31,6 +31,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * Properties viewer
 * DXT texture viewer
 * 3D model viewer
+* Material graph viewer
 * Bulk composite extraction and modding
 * Dumping table of contents of composite packages
 * Combining composite mods to a single mod file
