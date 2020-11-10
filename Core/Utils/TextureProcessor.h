@@ -9,7 +9,7 @@ public:
     DXT1, 
     DXT3,
     DXT5,
-    RGBA8,
+    ARGB8,
     PNG,
     TGA,
     DDS

@@ -69,7 +69,10 @@ struct TPOutputHandler : public nvtt::OutputHandler {
     mip.Size = size;
     mip.SizeX = width;
     mip.SizeY = height;
-    mip.Data = malloc(size);
+    if (size)
+    {
+      mip.Data = malloc(size);
+    }
     DBreakIf(depth != 1);
     MipsCount++;
   }
@@ -213,12 +216,12 @@ bool TextureProcessor::BytesToFile()
       return false;
     }
   }
-  else if (InputFormat == TCFormat::RGBA8)
+  else if (InputFormat == TCFormat::ARGB8)
   {
     if (!surface.setImage(nvtt::InputFormat_BGRA_8UB, InputDataSizeX, InputDataSizeY, 1, InputData))
     {
       Error = "Texture Processor: failed to create input surface (";
-      Error += "RGBA8:" + std::to_string(InputDataSizeX) + "x" + std::to_string(InputDataSizeY) + ")";
+      Error += "ARGB8:" + std::to_string(InputDataSizeX) + "x" + std::to_string(InputDataSizeY) + ")";
       return false;
     }
   }
@@ -434,6 +437,10 @@ bool TextureProcessor::FileToBytes()
   {
     outFmt = nvtt::Format_DXT5;
   }
+  else if (OutputFormat == TCFormat::ARGB8)
+  {
+    outFmt = nvtt::Format_RGBA;
+  }
 
   try
   {
@@ -469,6 +476,10 @@ bool TextureProcessor::FileToBytes()
   else if (outFmt == nvtt::Format_DXT1a)
   {
     compressionOptions.setQuantization(false, true, true, 127);
+  }
+  else if (outFmt == nvtt::Format_RGBA)
+  {
+    compressionOptions.setPixelFormat(32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
   }
 
   TPOutputHandler ohandler;

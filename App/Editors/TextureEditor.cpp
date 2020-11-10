@@ -58,7 +58,7 @@ void TextureEditor::PopulateToolBar(wxToolBar* toolbar)
   GenericEditor::PopulateToolBar(toolbar);
   if (auto item = toolbar->FindById(eID_Import))
   {
-    item->Enable((Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5));
+    item->Enable((Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5 || Texture->Format == PF_A8R8G8B8));
   }
   toolbar->AddSeparator();
   toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
@@ -313,6 +313,9 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     case PF_DXT5:
       outputFormat = TextureProcessor::TCFormat::DXT5;
       break;
+    case PF_A8R8G8B8:
+      outputFormat = TextureProcessor::TCFormat::ARGB8;
+      break;
     default:
     {
       std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
@@ -479,6 +482,10 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   else if (Texture->Format == PF_DXT5)
   {
     inputFormat = TextureProcessor::TCFormat::DXT5;
+  }
+  else if (Texture->Format == PF_A8R8G8B8)
+  {
+    inputFormat = TextureProcessor::TCFormat::ARGB8;
   }
   else
   {
