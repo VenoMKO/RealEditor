@@ -13,6 +13,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Create a composite mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
+* [Export SpeedTrees](https://github.com/VenoMKO/RealEditor/wiki/Export-trees-foliage(SpeedTree)-3D-models)
 * [Troubleshooting](https://github.com/VenoMKO/RealEditor/wiki/Troubleshooting)
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
 * [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
@@ -27,6 +28,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * Textures export/import
 * Sounds export/import
 * 3D model export
+* SpeedTree export
 * GMP Map viewer
 * Properties viewer
 * DXT texture viewer
