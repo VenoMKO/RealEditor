@@ -20,12 +20,12 @@ PF_Info PixelFormatInfo[] = {
   //BsX     BsY     BsZ     Bb      Comps   GL_Format           //  Format
   { 0,			0,			0,			0,			0, 			GL_NONE},           //	PF_Unknown
   { 1,			1,			1,			16,			4, 			GL_RGBA},           //	PF_A32B32G32R32F
-  { 1,			1,			1,			4,			4, 			GL_BGRA_EXT},       //	PF_A8R8G8B8
+  { 1,			1,			1,			4,			4, 			GL_BGRA},           //	PF_A8R8G8B8
   { 1,			1,			1,			1,			1, 			GL_LUMINANCE},      //	PF_G8
   { 1,			1,			1,			2,			1, 			GL_NONE},           //	PF_G16
-  { 4,			4,			1,			8,			3, 			GL_RGBA},           //	PF_DXT1
-  { 4,			4,			1,			16,			4, 			GL_RGBA},           //	PF_DXT3
-  { 4,			4,			1,			16,			4, 			GL_RGBA},           //	PF_DXT5
+  { 4,			4,			1,			8,			3, 			GL_COMPRESSED_RGB_S3TC_DXT1_EXT},           //	PF_DXT1
+  { 4,			4,			1,			16,			4, 			GL_COMPRESSED_RGBA_S3TC_DXT3_EXT},           //	PF_DXT3
+  { 4,			4,			1,			16,			4, 			GL_COMPRESSED_RGBA_S3TC_DXT5_EXT},           //	PF_DXT5
   { 2,			1,			1,			4,			4, 			GL_NONE},           //	PF_UYVY
   { 1,			1,			1,			8,			3, 			GL_RGB},            //	PF_FloatRGB
   { 1,			1,			1,			8,			4, 			GL_RGBA},           //	PF_FloatRGBA
@@ -57,8 +57,8 @@ inline bool FindInternalFormatAndType(uint32 pixelFormat, GLenum& outFormat, GLe
     outType = GL_UNSIGNED_NORMALIZED_ARB;
     return true;
   case PF_A8R8G8B8:
-    outFormat = bSRGB ? GL_SRGB8_ALPHA8_EXT : GL_RGBA8;
-    outType = GL_UNSIGNED_INT_8_8_8_8_REV;
+    outFormat = bSRGB ? GL_SRGB8_ALPHA8_EXT : GL_RGBA;
+    outType = GL_UNSIGNED_BYTE;
     return true;
   case PF_DXT1:
     outFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
@@ -233,7 +233,8 @@ bool UTexture2D::RenderTo(osg::Image* target)
 {
   GLenum type = 0;
   GLenum format = PixelFormatInfo[Format].Format;
-  if (!Mips.size() || !FindInternalFormatAndType(Format, format, type, SRGB) || format == GL_NONE)
+  GLenum inFormat = format;
+  if (!Mips.size() || !FindInternalFormatAndType(Format, inFormat, type, SRGB) || inFormat == GL_NONE || format == GL_NONE)
   {
     return false;
   }
@@ -242,7 +243,7 @@ bool UTexture2D::RenderTo(osg::Image* target)
   {
     if (mip->SizeX && mip->SizeY && mip->Data->GetAllocation())
     {
-      target->setImage(mip->SizeX, mip->SizeY, 0, format, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
+      target->setImage(mip->SizeX, mip->SizeY, 0, inFormat, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
       return true;
     }
   }
