@@ -24,6 +24,8 @@ inline int PixelFormatToWx(EPixelFormat fmt)
     return 2;
 	case PF_A8R8G8B8:
 		return 3;
+	case PF_G8:
+		return 4;
   }
 }
 
@@ -37,6 +39,8 @@ inline EPixelFormat WxToPixelFormat(int fmt)
     return PF_DXT3;
 	case 3:
 		return PF_A8R8G8B8;
+	case 4:
+		return PF_G8;
   default:
   case 2:
     return PF_DXT5;
@@ -137,6 +141,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 	PixelFormatChoices.Add("DXT3");
 	PixelFormatChoices.Add("DXT5");
 	PixelFormatChoices.Add("A8R8G8B8");
+	PixelFormatChoices.Add("G8");
 	PixelFormat = new wxChoice(m_panel1, ControlElementId::Format, wxDefaultPosition, wxDefaultSize, PixelFormatChoices, 0);
 	PixelFormat->SetSelection(PixelFormatToWx(fmt));
 	bSizer2->Add(PixelFormat, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);

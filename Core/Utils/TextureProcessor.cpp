@@ -225,64 +225,77 @@ bool TextureProcessor::BytesToFile()
       return false;
     }
   }
+  else if (InputFormat == TCFormat::G8)
+  {
+    hasAlpha = false;
+    // Don't use nvtt for G8. Feed InputData directly to the FreeImage
+  }
   else
   {
-    // TODO: export G8 as a luminance R8
-    // TODO: export A8R8G8B8
     Error = "Texture Processor: unsupported input " + std::to_string((int)InputFormat);
     return false;
   }
 
-  if (surface.isNull() || !surface.width() || !surface.height())
+
+  FreeImageHolder holder(true);
+  int bits = hasAlpha ? 32 : 24;
+  if (InputFormat == TCFormat::G8)
   {
-    Error = "Texture Processor: NVTT failed to create the surface!";
-    return false;
+    bits = 8;
+    holder.bmp = FreeImage_Allocate(InputDataSizeX, InputDataSizeY, bits);
+    memcpy(FreeImage_GetBits(holder.bmp), InputData, InputDataSize);
+    FreeImage_FlipVertical(holder.bmp);
   }
-
-  surface.flipY();
-  nvtt::CompressionOptions compressionOptions;
-  compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
-  compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
-
-  nvtt::OutputOptions outputOptions;
-  outputOptions.setSrgbFlag(SRGB);
-
-  TPOutputHandler ohandler;
-  outputOptions.setOutputHandler(&ohandler);
-
-  LogI("Texture Processor: Decompress DXT data");
-  nvtt::Context ctx;
-
-  try
+  else
   {
-    if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
+    if (surface.isNull() || !surface.width() || !surface.height())
     {
-      Error = "Texture Processor: Failed to decompress texture to RGBA!";
+      Error = "Texture Processor: NVTT failed to create the surface!";
       return false;
     }
-  }
-  catch (...)
-  {
-    Error = "Texture Processor: NVTT failed to decompress texture to RGBA!";
-    return false;
-  }
 
-  if (!ohandler.MipsCount)
-  {
-    Error = "Texture Processor: Failed to decompress DXT texture to RGBA!";
-    return false;
-  }
+    surface.flipY();
+    nvtt::CompressionOptions compressionOptions;
+    compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
+    compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
 
-  if (!ohandler.Mips[0].Size)
-  {
-    Error = "Texture Processor: NVTT failed to decompress the texture!";
-    return false;
-  }
+    nvtt::OutputOptions outputOptions;
+    TPOutputHandler ohandler;
+    outputOptions.setSrgbFlag(SRGB);
+    outputOptions.setOutputHandler(&ohandler);
 
-  LogI("Texture Processor: Preparing to convert the buffer to FreeImage format");
-  FreeImageHolder holder(true);
-  holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, hasAlpha ? 32 : 24);
-  memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
+    LogI("Texture Processor: Decompress DXT data");
+    nvtt::Context ctx;
+
+    try
+    {
+      if (!ctx.compress(surface, 0, 0, compressionOptions, outputOptions))
+      {
+        Error = "Texture Processor: Failed to decompress texture to RGBA!";
+        return false;
+      }
+    }
+    catch (...)
+    {
+      Error = "Texture Processor: NVTT failed to decompress texture to RGBA!";
+      return false;
+    }
+
+    if (!ohandler.MipsCount)
+    {
+      Error = "Texture Processor: Failed to decompress DXT texture to RGBA!";
+      return false;
+    }
+
+    if (!ohandler.Mips[0].Size)
+    {
+      Error = "Texture Processor: NVTT failed to decompress the texture!";
+      return false;
+    }
+
+    holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, bits);
+    memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
+  }
   holder.mem = FreeImage_OpenMemory();
 
   LogI("Texture Processor: Convert the buffer to FreeImage format");
@@ -290,7 +303,7 @@ bool TextureProcessor::BytesToFile()
   {
     if (!FreeImage_SaveToMemory(FIF_TARGA, holder.bmp, holder.mem, 0))
     {
-      Error = "Texture Processor: Failed to create a FreeImage(TARGA:" + std::to_string(hasAlpha ? 32 : 24) + ")";
+      Error = "Texture Processor: Failed to create a FreeImage(TARGA:" + std::to_string(bits) + ")";
       return false;
     }
   }
@@ -298,7 +311,7 @@ bool TextureProcessor::BytesToFile()
   {
     if (!FreeImage_SaveToMemory(FIF_PNG, holder.bmp, holder.mem, 0))
     {
-      Error = "Texture Processor: Failed to create a FreeImage(PNG:" + std::to_string(hasAlpha ? 32 : 24) + ")";
+      Error = "Texture Processor: Failed to create a FreeImage(PNG:" + std::to_string(bits) + ")";
       return false;
     }
   }

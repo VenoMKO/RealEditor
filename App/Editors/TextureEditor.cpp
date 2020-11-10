@@ -316,6 +316,9 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     case PF_A8R8G8B8:
       outputFormat = TextureProcessor::TCFormat::ARGB8;
       break;
+    case PF_G8:
+      outputFormat = TextureProcessor::TCFormat::G8;
+      break;
     default:
     {
       std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
@@ -486,6 +489,10 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   else if (Texture->Format == PF_A8R8G8B8)
   {
     inputFormat = TextureProcessor::TCFormat::ARGB8;
+  }
+  else if (Texture->Format == PF_G8)
+  {
+    inputFormat = TextureProcessor::TCFormat::G8;
   }
   else
   {

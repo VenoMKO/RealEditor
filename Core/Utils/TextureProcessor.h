@@ -10,6 +10,7 @@ public:
     DXT3,
     DXT5,
     ARGB8,
+    G8,
     PNG,
     TGA,
     DDS
