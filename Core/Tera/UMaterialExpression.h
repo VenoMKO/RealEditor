@@ -279,7 +279,7 @@ public:
   DECL_UOBJ(UMaterialExpressionDesaturation, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   UPROP_NOINIT(FExpressionInput, Percent);
-  UPROP_NOINIT(FLinearColor, LuminanceFactors);
+  UPROP(FLinearColor, LuminanceFactors, FLinearColor(.3, .59, .11, 1.));
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
