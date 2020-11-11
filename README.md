@@ -31,7 +31,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * SpeedTree export
 * GMP Map viewer
 * Properties viewer
-* DXT texture viewer
+* Texture viewer
 * 3D model viewer
 * Material graph viewer
 * Bulk composite extraction and modding
@@ -44,7 +44,6 @@ Currently under development. Some features are not implemented yet or may not wo
 ### Plans
 
 * Mesh import from *.fbx
-* Materials support
 * Map export to UE4 via *.t3d or custom Datasmith plugin
 * Animation renderer / exporter to *.fbx
 * HiDPI screen support
