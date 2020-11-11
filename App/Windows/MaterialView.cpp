@@ -432,12 +432,15 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	
 	int posX = CanvasOffsetX;
 	int posY = CanvasOffsetY + dc.GetTextExtent(Material->GetObjectName().WString()).y + 4;
+	dc.SetPen(wxPen(wxColor(0, 0, 0), 2));
+	dc.SetBrush(wxBrush(wxColor(120, 120, 120)));
 	dc.DrawRectangle(wxPoint(posX, CanvasOffsetY), wxSize(matWidth + 4, posY - CanvasOffsetY));
 	drawLabelFunc(Material->GetObjectName().WString(), wxPoint(CanvasOffsetX + 2, CanvasOffsetY + 2), matWidth);
 
 	posY += 2;
 	dc.DrawRectangle(wxPoint(posX, posY), wxSize(matWidth + 4, std::min<int>(MaterialInputs.size() * outputNodeHeight * 3, 300)));
 	dc.SetBrush(wxBrush(wxColor(0, 0, 0)));
+	dc.SetPen(wxPen(wxColor(), 0, wxPENSTYLE_TRANSPARENT));
 	for (FExpressionInput& input : MaterialInputs)
 	{
 		wxSize extent = dc.GetTextExtent(input.Title.WString());
