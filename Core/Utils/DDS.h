@@ -297,6 +297,10 @@ namespace DDS
     // Calculate size of the first mipmap
     FILE_OFFSET CalculateMipmapSize() const
     {
+      if (D3D9.ddspf.dwFlags & DDPF_RGB || D3D9.ddspf.dwFlags & DDPF_LUMINANCE)
+      {
+        return (D3D9.dwWidth * D3D9.ddspf.dwRGBBitCount + 7) / 8 * D3D9.dwHeight;
+      }
       const FILE_OFFSET blockSize = 4;
       const FILE_OFFSET blockBytes = GetPixelFormat() == PF_DXT1 ? 8 : 16;
       return (D3D9.dwWidth / blockSize) * (D3D9.dwHeight / blockSize) * blockBytes;
@@ -314,6 +318,24 @@ namespace DDS
 
     EPixelFormat GetPixelFormat() const
     {
+      if (D3D9.ddspf.dwFlags & DDPF_RGB)
+      {
+        if (D3D9.ddspf.dwRGBBitCount == 32 &&
+            D3D9.ddspf.dwRBitMask == 0x00ff0000 &&
+            D3D9.ddspf.dwGBitMask == 0x0000ff00 &&
+            D3D9.ddspf.dwBBitMask == 0x000000ff &&
+            D3D9.ddspf.dwABitMask == 0xff000000)
+        {
+          return PF_A8R8G8B8;
+        }
+      }
+      if (D3D9.ddspf.dwFlags & DDPF_LUMINANCE)
+      {
+        if (D3D9.ddspf.dwRGBBitCount == 8)
+        {
+          return PF_G8;
+        }
+      }
       if (D3D9.dwFlags & DDPF_FOURCC)
       {
         if (D3D9.ddspf.dwFourCC == FCC_DX10)
@@ -332,6 +354,14 @@ namespace DDS
           case DXGI_FORMAT_BC3_UNORM:
           case DXGI_FORMAT_BC3_UNORM_SRGB:
             return PF_DXT5;
+          case DXGI_FORMAT_B8G8R8A8_UNORM:
+          case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+          case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+            return PF_A8R8G8B8;
+          case DXGI_FORMAT_R8_TYPELESS:
+          case DXGI_FORMAT_R8_UNORM:
+          case DXGI_FORMAT_A8_UNORM:
+            return PF_G8;
           }
         }
         else

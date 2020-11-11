@@ -58,7 +58,8 @@ void TextureEditor::PopulateToolBar(wxToolBar* toolbar)
   GenericEditor::PopulateToolBar(toolbar);
   if (auto item = toolbar->FindById(eID_Import))
   {
-    item->Enable((Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5 || Texture->Format == PF_A8R8G8B8));
+    item->Enable(Texture->Format == PF_DXT1 || Texture->Format == PF_DXT3 || Texture->Format == PF_DXT5 ||
+                 Texture->Format == PF_A8R8G8B8 || Texture->Format == PF_G8);
   }
   toolbar->AddSeparator();
   toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
@@ -337,6 +338,12 @@ void TextureEditor::OnImportClicked(wxCommandEvent&)
     case PF_DXT3:
     case PF_DXT5:
       outputFormat = TextureProcessor::TCFormat::DXT;
+      break;
+    case PF_A8R8G8B8:
+      outputFormat = TextureProcessor::TCFormat::ARGB8;
+      break;
+    case PF_G8:
+      outputFormat = TextureProcessor::TCFormat::G8;
       break;
     default:
     {

@@ -368,6 +368,23 @@ bool TextureProcessor::BytesToDDS()
   case TextureProcessor::TCFormat::DXT5:
     header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC3_TYPELESS;
     break;
+  case TextureProcessor::TCFormat::ARGB8:
+    header.D3D9.ddspf.dwFlags = DDS::DDPF_RGB | DDS::DDPF_ALPHAPIXELS;
+    header.D3D9.ddspf.dwFourCC = 0;
+    header.D3D9.ddspf.dwRGBBitCount = 32;
+    header.D3D9.ddspf.dwRBitMask = 0x00ff0000;
+    header.D3D9.ddspf.dwGBitMask = 0x0000ff00;
+    header.D3D9.ddspf.dwBBitMask = 0x000000ff;
+    header.D3D9.ddspf.dwABitMask = 0xff000000;
+    break;
+  case TextureProcessor::TCFormat::G8:
+    header.D3D9.ddspf.dwFlags = DDS::DDPF_LUMINANCE;
+    header.D3D9.ddspf.dwFourCC = 0;
+    header.D3D9.ddspf.dwRGBBitCount = 8;
+    header.D3D9.ddspf.dwRBitMask = 0x000000ff;
+    header.D3D9.ddspf.dwGBitMask = 0x000000ff;
+    header.D3D9.ddspf.dwBBitMask = 0x000000ff;
+    break;
   default:
     Error = "Texture Processor: pixel format is not supported!";
     return false;
@@ -454,6 +471,11 @@ bool TextureProcessor::FileToBytes()
   {
     outFmt = nvtt::Format_RGBA;
   }
+  else if (OutputFormat == TCFormat::G8)
+  {
+    outFmt = nvtt::Format_RGBA;
+    Alpha = false;
+  }
 
   try
   {
@@ -492,7 +514,14 @@ bool TextureProcessor::FileToBytes()
   }
   else if (outFmt == nvtt::Format_RGBA)
   {
-    compressionOptions.setPixelFormat(32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    if (OutputFormat == TCFormat::G8)
+    {
+      compressionOptions.setPixelFormat(8, 0xff, 0, 0, 0);
+    }
+    else
+    {
+      compressionOptions.setPixelFormat(32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    }
   }
 
   TPOutputHandler ohandler;
@@ -610,6 +639,16 @@ bool TextureProcessor::DDSToBytes()
   {
     OutputFormat = TCFormat::DXT5;
     Alpha = true;
+  }
+  else if (fmt == PF_A8R8G8B8)
+  {
+    OutputFormat = TCFormat::ARGB8;
+    Alpha = true;
+  }
+  else if (fmt == PF_G8)
+  {
+    OutputFormat = TCFormat::G8;
+    Alpha = false;
   }
   FILE_OFFSET mipSize = header.CalculateMipmapSize();
   if (!mipSize)
