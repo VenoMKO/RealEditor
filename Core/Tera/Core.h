@@ -8,7 +8,7 @@
 // Build configuration
 // --------------------------------------------------------------------
 
-static const float APP_VER = 1.51f;
+static const float APP_VER = 1.52f;
 //#define CUSTOM_BUILD " RC"
 
 #define WIN_POS_FULLSCREEN INT_MIN
@@ -155,6 +155,7 @@ FString ExportFlagsToString(uint32 flags);
 FString PixelFormatToString(uint32 pf);
 FString PackageFlagsToString(uint32 flags);
 FString ClassFlagsToString(uint32 flags);
+FString TextureCompressionSettingsToString(uint8 flags);
 
 std::string GetAppVersion();
 

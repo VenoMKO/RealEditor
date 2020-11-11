@@ -218,6 +218,9 @@
     <ClCompile Include="Core\Tera\UMaterialExpression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -305,6 +308,7 @@
     <ClInclude Include="App\Windows\MaterialView.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
+    <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -364,6 +368,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="Resources\Classes\icon_mat.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_mi.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

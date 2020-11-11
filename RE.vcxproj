@@ -14,6 +14,7 @@
     <ClCompile Include="App\Editors\ClassEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditor.cpp" />
     <ClCompile Include="App\Editors\MaterialEditor.cpp" />
+    <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
@@ -85,6 +86,7 @@
     <ClInclude Include="App\Editors\ClassEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
+    <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
@@ -175,6 +177,7 @@
     <Image Include="Resources\Classes\icon_imp.png" />
     <Image Include="Resources\Classes\icon_mat.png" />
     <Image Include="Resources\Classes\icon_mesh.png" />
+    <Image Include="Resources\Classes\icon_mi.png" />
     <Image Include="Resources\Classes\icon_redir.png" />
     <Image Include="Resources\Classes\icon_sound.png" />
     <Image Include="Resources\Classes\icon_t2d.png" />

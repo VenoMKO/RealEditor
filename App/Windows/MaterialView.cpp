@@ -124,6 +124,7 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
 	}
 
 	SetSize(canvasWidth, canvasHeight);
+	((wxScrolledWindow*)parent)->Scroll(CanvasOffsetX / 50, CanvasOffsetY / 50);
 }
 
 void UDKMaterialGraph::OnPaint(wxPaintEvent& e)

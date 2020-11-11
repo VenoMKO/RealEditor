@@ -17,6 +17,7 @@ protected:
   void BuildGraph();
 
 protected:
+  bool NeedsGraph = true;
   wxScrolledWindow* Canvas = nullptr;
   int32 CanvasOffsetX = 0;
   int32 CanvasOffsetY = 0;

@@ -61,7 +61,7 @@ struct FStaticComponentMaskParameter {
 
 struct FNormalParameter {
   FName ParameterName;
-  uint8 CompressionSettings = 0;
+  uint8 CompressionSettings = 1;
   bool bOverride = false;
   FGuid ExpressionGUID;
 

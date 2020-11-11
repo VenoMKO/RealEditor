@@ -20,8 +20,9 @@ MaterialEditor::MaterialEditor(wxPanel* parent, PackageWindow* window)
 
 void MaterialEditor::OnObjectLoaded()
 {
-  if (Loading && Cast<UMaterial>(Object))
+  if ((Loading || NeedsGraph) && Cast<UMaterial>(Object))
   {
+    NeedsGraph = false;
     BuildGraph();
   }
   GenericEditor::OnObjectLoaded();

@@ -17,6 +17,7 @@
 #include "LevelEditor.h"
 #include "SpeedTreeEditor.h"
 #include "MaterialEditor.h"
+#include "MaterialInstanceEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -27,45 +28,50 @@ enum ExportMode {
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
   GenericEditor* editor = nullptr;
-  if (object->GetClassName() == UObjectRedirector::StaticClassName())
+  const FString c = object->GetClassName();
+  if (c == UObjectRedirector::StaticClassName())
   {
     editor = new ObjectRedirectorEditor(parent, window);
   }
-  else if (object->GetClassName() == UTexture2D::StaticClassName() || object->GetClassName() == UTerrainWeightMapTexture::StaticClassName())
+  else if (c == UTexture2D::StaticClassName() || c == UTerrainWeightMapTexture::StaticClassName())
   {
     editor = new TextureEditor(parent, window);
   }
-  else if (object->GetClassName() == USkeletalMesh::StaticClassName())
+  else if (c == USkeletalMesh::StaticClassName())
   {
     editor = new SkelMeshEditor(parent, window);
   }
-  else if (object->GetClassName() == UStaticMesh::StaticClassName())
+  else if (c == UStaticMesh::StaticClassName())
   {
     editor = new StaticMeshEditor(parent, window);
   }
-  else if (object->GetClassName() == USoundNodeWave::StaticClassName())
+  else if (c == USoundNodeWave::StaticClassName())
   {
     editor = new SoundWaveEditor(parent, window);
   }
-  else if (object->GetClassName() == NAME_Class)
+  else if (c == NAME_Class)
   {
     editor = new ClassEditor(parent, window);
   }
-  else if (object->GetClassName() == ULevel::StaticClassName())
+  else if (c == ULevel::StaticClassName())
   {
     editor = new LevelEditor(parent, window);
   }
-  else if (object->GetClassName() == UStaticMeshActor::StaticClassName())
+  else if (c == UStaticMeshActor::StaticClassName())
   {
     editor = new StaticMeshActorEditor(parent, window);
   }
-  else if (object->GetClassName() == USpeedTree::StaticClassName())
+  else if (c == USpeedTree::StaticClassName())
   {
     editor = new SpeedTreeEditor(parent, window);
   }
-  else if (object->GetClassName() == UMaterial::StaticClassName())
+  else if (c == UMaterial::StaticClassName())
   {
     editor = new MaterialEditor(parent, window);
+  }
+  else if (c == UMaterialInstance::StaticClassName() || c == UMaterialInstanceConstant::StaticClassName())
+  {
+    editor = new MaterialInstanceEditor(parent, window);
   }
   else
   {

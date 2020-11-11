@@ -82,6 +82,8 @@ IDB_ICO_BCLASS          RCDATA                  "Resources\\Btn_Class.png"
 
 IDB_ICO_MAT             RCDATA                  "Resources\\Classes\\icon_mat.png"
 
+IDB_ICO_MI              RCDATA                  "Resources\\Classes\\icon_mi.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -101,8 +103,8 @@ FILE_ICON               ICON                    "Resources\\FileIcon.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,5,1,0
- PRODUCTVERSION 1,5,1,0
+ FILEVERSION 1,5,2,0
+ PRODUCTVERSION 1,5,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -119,12 +121,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Yupi"
             VALUE "FileDescription", "Real Editor by Yupi"
-            VALUE "FileVersion", "1.5.1.0"
+            VALUE "FileVersion", "1.5.2.0"
             VALUE "InternalName", "Real Editor.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "Real Editor.exe"
             VALUE "ProductName", "Real Editor"
-            VALUE "ProductVersion", "1.5.1.0"
+            VALUE "ProductVersion", "1.5.2.0"
         END
     END
     BLOCK "VarFileInfo"

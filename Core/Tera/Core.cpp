@@ -791,6 +791,55 @@ FString ClassFlagsToString(uint32 flags)
   return s;
 }
 
+FString TextureCompressionSettingsToString(uint8 flags)
+{
+  FString result;
+  switch (flags)
+  {
+  default:
+  case TC_Default:
+    result = "TC_Default";
+    break;
+  case TC_Normalmap:
+    result = "TC_Normalmap";
+    break;
+  case TC_Displacementmap:
+    result = "TC_Displacementmap";
+    break;
+  case TC_NormalmapAlpha:
+    result = "TC_NormalmapAlpha";
+    break;
+  case TC_Grayscale:
+    result = "TC_Grayscale";
+    break;
+  case TC_HighDynamicRange:
+    result = "TC_HighDynamicRange";
+    break;
+  case TC_OneBitAlpha:
+    result = "TC_OneBitAlpha";
+    break;
+  case TC_NormalmapUncompressed:
+    result = "TC_NormalmapUncompressed";
+    break;
+  case TC_NormalmapBC5:
+    result = "TC_NormalmapBC5";
+    break;
+  case TC_OneBitMonochrome:
+    result = "TC_OneBitMonochrome";
+    break;
+  case TC_SimpleLightmapModification:
+    result = "TC_SimpleLightmapModification";
+    break;
+  case TC_VectorDisplacementmap:
+    result = "TC_VectorDisplacementmap";
+    break;
+  case TC_MAX:
+    result = "MAX";
+    break;
+  }
+  return result;
+}
+
 std::string GetAppVersion()
 {
   std::stringstream stream;

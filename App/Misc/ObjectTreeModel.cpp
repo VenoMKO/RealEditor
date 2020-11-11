@@ -15,7 +15,8 @@ enum ClassIco : int {
 	IcoSound,
 	IcoRedirector,
 	IcoPackageImp,
-	IcoMat
+	IcoMat,
+	IcoMi,
 };
 
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
@@ -65,6 +66,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
 	if (className == wxT("Material"))
 	{
 		return IcoMat;
+	}
+	if (className == wxT("MaterialInstanceConstant") || className == wxT("MaterialInstance"))
+	{
+		return IcoMi;
 	}
 	return IcoGeneric;
 }
@@ -203,6 +208,9 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 
 	// Material icon
 	IconList->Add(wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE));
+
+	// MaterialInstance icon
+	IconList->Add(wxBitmap("#126", wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
