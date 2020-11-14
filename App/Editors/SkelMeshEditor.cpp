@@ -159,8 +159,8 @@ void SkelMeshEditor::CreateRenderModel()
   for (int32 idx = 0; idx < uvertices.size(); ++idx)
   {
     FVector normal = uvertices[idx].TangentZ;
-    normals->push_back(osg::Vec3(normal.X, normal.Y, normal.Z));
-    vertices->push_back(osg::Vec3(uvertices[idx].Position.X, uvertices[idx].Position.Y, uvertices[idx].Position.Z));
+    normals->push_back(osg::Vec3(normal.X, -normal.Y, normal.Z));
+    vertices->push_back(osg::Vec3(uvertices[idx].Position.X, -uvertices[idx].Position.Y, uvertices[idx].Position.Z));
     uvs->push_back(osg::Vec2(uvertices[idx].UVs[0].X, uvertices[idx].UVs[0].Y));
   }
 
@@ -173,8 +173,8 @@ void SkelMeshEditor::CreateRenderModel()
     for (int32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
     {
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 0));
-      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 2));
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 2));
     }
     geo->addPrimitiveSet(indices.get());
     geo->setVertexArray(vertices.get());
@@ -204,7 +204,6 @@ void SkelMeshEditor::CreateRenderModel()
     }
     Root->addDrawable(geo.get());
   }
-
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
 }
