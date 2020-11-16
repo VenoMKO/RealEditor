@@ -8,7 +8,7 @@ FRigidBodyIndexPair::FRigidBodyIndexPair(int32 idx1, int32 idx2)
 
 bool FRigidBodyIndexPair::operator<(const FRigidBodyIndexPair& b) const
 {
-  return Indices[0] < b.Indices[0] || Indices[1] < b.Indices[1];
+  return std::tie(Indices[0], Indices[1]) < std::tie(b.Indices[0], b.Indices[1]);
 }
 
 
