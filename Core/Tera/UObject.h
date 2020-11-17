@@ -19,6 +19,72 @@ public:\
 #define UPROP_NOINIT(TType, TName) TType TName; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
 #define PROP_IS(prop, TName) (prop->Name == P_##TName)
 
+#define __REGISTER_PROP(TName, TType)\
+if (PROP_IS(property, TName))\
+{\
+	__GLUE_PROP(TName,Property) = property;\
+	TName = property->__GLUE_PROP(Get,TType)();\
+	return true;\
+}\
+//
+
+#define __REGISTER_TYPED_PROP(TName, TCast, TType)\
+if (PROP_IS(property, TName))\
+{\
+	__GLUE_PROP(TName,Property) = property;\
+	TName = (TCast)property->__GLUE_PROP(Get,TType)();\
+	return true;\
+}\
+//
+
+#define REGISTER_ENUM_STR_PROP(TName)\
+if (PROP_IS(property, TName))\
+{\
+	__GLUE_PROP(TName,Property) = property;\
+	if (property->Value->Enum)\
+	{\
+		TName = property->Value->Enum->GetEnum(property->GetByte()).String().String();\
+	}\
+	else\
+	{\
+		TName = FString::Sprintf("%d", int(property->GetByte()));\
+	}\
+	return true;\
+}\
+//
+
+#define REGISTER_FLOAT_PROP(TName) __REGISTER_PROP(TName, Float)
+
+#define REGISTER_INT_PROP(TName) __REGISTER_PROP(TName, Int)
+
+#define REGISTER_BOOL_PROP(TName) __REGISTER_PROP(TName, Bool)
+
+#define REGISTER_BYTE_PROP(TName) __REGISTER_PROP(TName, Byte)
+
+#define REGISTER_STR_PROP(TName) __REGISTER_PROP(TName, String)
+
+#define REGISTER_OBJ_PROP(TName) __REGISTER_PROP(TName, ObjectValuePtr)
+
+#define REGISTER_TOBJ_PROP(TName, TType) __REGISTER_TYPED_PROP(TName, TType, ObjectValuePtr)
+
+#define REGISTER_NAME_PROP(TName) __REGISTER_PROP(TName, Name)
+
+#define REGISTER_LCOL_PROP(TName)\
+if (PROP_IS(property, TName))\
+{\
+	__GLUE_PROP(TName,Property) = property;\
+	property->GetLinearColor(TName);\
+	return true;\
+}\
+//
+
+#define SUPER_REGISTER_PROP()\
+if (Super::RegisterProperty(property))\
+{\
+	return true;\
+}\
+//
+
 class UObject {
 public:
   enum { StaticClassCastFlags = CASTCLASS_None };

@@ -464,3 +464,39 @@ EPixelFormat UTexture2D::GetEffectivePixelFormat(const EPixelFormat format, bool
   }
   return format;
 }
+
+bool UTextureCube::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(FacePosX, UTexture2D*);
+  REGISTER_TOBJ_PROP(FaceNegX, UTexture2D*);
+  REGISTER_TOBJ_PROP(FacePosY, UTexture2D*);
+  REGISTER_TOBJ_PROP(FaceNegY, UTexture2D*);
+  REGISTER_TOBJ_PROP(FacePosZ, UTexture2D*);
+  REGISTER_TOBJ_PROP(FaceNegZ, UTexture2D*);
+  return false;
+}
+
+bool UTextureCube::RenderTo(std::array<osg::Image*, 6>& targets)
+{
+  std::array<UTexture2D*, 6> faces = GetFaces();
+  for (int32 idx = 0; idx < faces.size(); ++idx)
+  {
+    if (!faces[idx] || !faces[idx]->RenderTo(targets[idx]))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void UTextureCube::PostLoad()
+{
+  Super::PostLoad();
+  LoadObject(FacePosX);
+  LoadObject(FaceNegX);
+  LoadObject(FacePosY);
+  LoadObject(FaceNegY);
+  LoadObject(FacePosZ);
+  LoadObject(FaceNegZ);
+}

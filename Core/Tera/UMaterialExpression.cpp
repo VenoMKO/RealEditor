@@ -13,54 +13,6 @@ if (PROP_IS(property, TName))\
 }\
 //
 
-#define __REGISTER_PROP(TName, TType)\
-if (PROP_IS(property, TName))\
-{\
-	__GLUE_PROP(TName,Property) = property;\
-	TName = property->__GLUE_PROP(Get,TType)();\
-	return true;\
-}\
-//
-
-#define REGISTER_ENUM(TName)\
-if (PROP_IS(property, TName))\
-{\
-	__GLUE_PROP(TName,Property) = property;\
-	if (property->Value->Enum)\
-	{\
-		TName = property->Value->Enum->GetEnum(property->GetByte()).String().String();\
-	}\
-	else\
-	{\
-		TName = FString::Sprintf("%d", int(property->GetByte()));\
-	}\
-	return true;\
-}\
-//
-
-#define REGISTER_FLOAT(TName) __REGISTER_PROP(TName, Float)
-
-#define REGISTER_INT(TName) __REGISTER_PROP(TName, Int)
-
-#define REGISTER_BOOL(TName) __REGISTER_PROP(TName, Bool)
-
-#define REGISTER_BYTE(TName) __REGISTER_PROP(TName, Byte)
-
-#define REGISTER_STR(TName) __REGISTER_PROP(TName, String)
-
-#define REGISTER_OBJECT(TName) __REGISTER_PROP(TName, ObjectValuePtr)
-
-#define REGISTER_NAME(TName) __REGISTER_PROP(TName, Name)
-
-#define REGISTER_LCOLOR(TName)\
-if (PROP_IS(property, TName))\
-{\
-	__GLUE_PROP(TName,Property) = property;\
-	property->GetLinearColor(TName);\
-	return true;\
-}\
-//
-
 #define SUPER_ACCEPT()\
 if (!visitor)\
 {\
@@ -68,18 +20,8 @@ if (!visitor)\
 }\
 Super::AcceptVisitor(visitor)
 
-#define I(TInput)\
-TInput.GetDescription()
-
 #define SET_INPUT(...)\
 visitor->SetInput({ __VA_ARGS__ });
-
-#define SUPER_REGISTER()\
-if (Super::RegisterProperty(property))\
-{\
-	return true;\
-}\
-//
 
 FExpressionInput::FExpressionInput(FPropertyTag * property)
 {
@@ -557,10 +499,10 @@ UMaterialExpression* UMaterialExpression::StaticFactory(FObjectExport* exp)
 
 bool UMaterialExpression::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_INT(MaterialExpressionEditorX);
-	REGISTER_INT(MaterialExpressionEditorY);
-	REGISTER_STR(Desc);
+	SUPER_REGISTER_PROP();
+	REGISTER_INT_PROP(MaterialExpressionEditorX);
+	REGISTER_INT_PROP(MaterialExpressionEditorY);
+	REGISTER_STR_PROP(Desc);
 	return false;
 }
 
@@ -592,7 +534,7 @@ void UMaterialExpression::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 
 bool UMaterialExpressionAbs::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -605,7 +547,7 @@ void UMaterialExpressionAbs::AcceptVisitor(UMaterialExpressionViewVisitor* visit
 
 bool UMaterialExpressionAdd::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -619,7 +561,7 @@ void UMaterialExpressionAdd::AcceptVisitor(UMaterialExpressionViewVisitor* visit
 
 bool UMaterialExpressionAppendVector::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -633,11 +575,11 @@ void UMaterialExpressionAppendVector::AcceptVisitor(UMaterialExpressionViewVisit
 
 bool UMaterialExpressionBumpOffset::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinate);
 	REGISTER_INPUT(Height);
-	REGISTER_FLOAT(HeightRatio);
-	REGISTER_FLOAT(ReferencePlane);
+	REGISTER_FLOAT_PROP(HeightRatio);
+	REGISTER_FLOAT_PROP(ReferencePlane);
 	return false;
 }
 
@@ -650,7 +592,7 @@ void UMaterialExpressionBumpOffset::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionCeil::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -663,7 +605,7 @@ void UMaterialExpressionCeil::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 
 bool UMaterialExpressionClamp::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	REGISTER_INPUT(Min);
 	REGISTER_INPUT(Max);
@@ -678,12 +620,12 @@ void UMaterialExpressionClamp::AcceptVisitor(UMaterialExpressionViewVisitor* vis
 
 bool UMaterialExpressionComment::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_INT(PosX);
-	REGISTER_INT(PosY);
-	REGISTER_INT(SizeX);
-	REGISTER_INT(SizeY);
-	REGISTER_STR(Text);
+	SUPER_REGISTER_PROP();
+	REGISTER_INT_PROP(PosX);
+	REGISTER_INT_PROP(PosY);
+	REGISTER_INT_PROP(SizeX);
+	REGISTER_INT_PROP(SizeY);
+	REGISTER_STR_PROP(Text);
 	return false;
 }
 
@@ -696,12 +638,12 @@ void UMaterialExpressionComment::AcceptVisitor(UMaterialExpressionViewVisitor* v
 
 bool UMaterialExpressionComponentMask::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_BOOL(R);
-	REGISTER_BOOL(G);
-	REGISTER_BOOL(B);
-	REGISTER_BOOL(A);
+	REGISTER_BOOL_PROP(R);
+	REGISTER_BOOL_PROP(G);
+	REGISTER_BOOL_PROP(B);
+	REGISTER_BOOL_PROP(A);
 	return false;
 }
 
@@ -736,7 +678,7 @@ void UMaterialExpressionComponentMask::AcceptVisitor(UMaterialExpressionViewVisi
 
 bool UMaterialExpressionCompound::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	if (PROP_IS(property, MaterialExpressions))
 	{
 		MaterialExpressionsProperty = property;
@@ -746,8 +688,8 @@ bool UMaterialExpressionCompound::RegisterProperty(FPropertyTag* property)
 		}
 		return true;
 	}
-	REGISTER_STR(Caption);
-	REGISTER_BOOL(bExpanded);
+	REGISTER_STR_PROP(Caption);
+	REGISTER_BOOL_PROP(bExpanded);
 	return false;
 }
 
@@ -765,8 +707,8 @@ void UMaterialExpressionCompound::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionConstant::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(R);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(R);
 	return false;
 }
 
@@ -778,9 +720,9 @@ void UMaterialExpressionConstant::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionConstant2Vector::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(R);
-	REGISTER_FLOAT(G);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(R);
+	REGISTER_FLOAT_PROP(G);
 	return false;
 }
 
@@ -792,10 +734,10 @@ void UMaterialExpressionConstant2Vector::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionConstant3Vector::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(R);
-	REGISTER_FLOAT(G);
-	REGISTER_FLOAT(B);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(R);
+	REGISTER_FLOAT_PROP(G);
+	REGISTER_FLOAT_PROP(B);
 	return false;
 }
 
@@ -807,11 +749,11 @@ void UMaterialExpressionConstant3Vector::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionConstant4Vector::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(R);
-	REGISTER_FLOAT(G);
-	REGISTER_FLOAT(B);
-	REGISTER_FLOAT(A);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(R);
+	REGISTER_FLOAT_PROP(G);
+	REGISTER_FLOAT_PROP(B);
+	REGISTER_FLOAT_PROP(A);
 	return false;
 }
 
@@ -823,10 +765,10 @@ void UMaterialExpressionConstant4Vector::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionConstantBiasScale::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_FLOAT(Bias);
-	REGISTER_FLOAT(Scale);
+	REGISTER_FLOAT_PROP(Bias);
+	REGISTER_FLOAT_PROP(Scale);
 	return false;
 }
 
@@ -839,10 +781,10 @@ void UMaterialExpressionConstantBiasScale::AcceptVisitor(UMaterialExpressionView
 
 bool UMaterialExpressionConstantClamp::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_FLOAT(Min);
-	REGISTER_FLOAT(Max);
+	REGISTER_FLOAT_PROP(Min);
+	REGISTER_FLOAT_PROP(Max);
 	return false;
 }
 
@@ -855,9 +797,9 @@ void UMaterialExpressionConstantClamp::AcceptVisitor(UMaterialExpressionViewVisi
 
 bool UMaterialExpressionCosine::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_FLOAT(Period);
+	REGISTER_FLOAT_PROP(Period);
 	return false;
 }
 
@@ -870,7 +812,7 @@ void UMaterialExpressionCosine::AcceptVisitor(UMaterialExpressionViewVisitor* vi
 
 bool UMaterialExpressionCrossProduct::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -884,8 +826,8 @@ void UMaterialExpressionCrossProduct::AcceptVisitor(UMaterialExpressionViewVisit
 
 bool UMaterialExpressionCustomTexture::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_OBJECT(Texture);
+	SUPER_REGISTER_PROP();
+	REGISTER_OBJ_PROP(Texture);
 	return false;
 }
 
@@ -897,9 +839,9 @@ void UMaterialExpressionCustomTexture::AcceptVisitor(UMaterialExpressionViewVisi
 
 bool UMaterialExpressionDepthBiasedAlpha::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bNormalize);
-	REGISTER_FLOAT(BiasScale);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bNormalize);
+	REGISTER_FLOAT_PROP(BiasScale);
 	REGISTER_INPUT(Alpha);
 	REGISTER_INPUT(Bias);
 	return false;
@@ -914,9 +856,9 @@ void UMaterialExpressionDepthBiasedAlpha::AcceptVisitor(UMaterialExpressionViewV
 
 bool UMaterialExpressionDepthBiasedBlend::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bNormalize);
-	REGISTER_FLOAT(BiasScale);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bNormalize);
+	REGISTER_FLOAT_PROP(BiasScale);
 	REGISTER_INPUT(RGB);
 	REGISTER_INPUT(Alpha);
 	REGISTER_INPUT(Bias);
@@ -932,8 +874,8 @@ void UMaterialExpressionDepthBiasedBlend::AcceptVisitor(UMaterialExpressionViewV
 
 bool UMaterialExpressionDepthOfFieldFunction::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BYTE(FunctionValue);
+	SUPER_REGISTER_PROP();
+	REGISTER_BYTE_PROP(FunctionValue);
 	REGISTER_INPUT(Depth);
 	return false;
 }
@@ -947,7 +889,7 @@ void UMaterialExpressionDepthOfFieldFunction::AcceptVisitor(UMaterialExpressionV
 
 bool UMaterialExpressionDeriveNormalZ::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(InXY);
 	return false;
 }
@@ -960,10 +902,10 @@ void UMaterialExpressionDeriveNormalZ::AcceptVisitor(UMaterialExpressionViewVisi
 
 bool UMaterialExpressionDesaturation::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	REGISTER_INPUT(Percent);
-	REGISTER_LCOLOR(LuminanceFactors);
+	REGISTER_LCOL_PROP(LuminanceFactors);
 	return false;
 }
 
@@ -976,8 +918,8 @@ void UMaterialExpressionDesaturation::AcceptVisitor(UMaterialExpressionViewVisit
 
 bool UMaterialExpressionDestDepth::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bNormalize);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bNormalize);
 	return false;
 }
 
@@ -989,7 +931,7 @@ void UMaterialExpressionDestDepth::AcceptVisitor(UMaterialExpressionViewVisitor*
 
 bool UMaterialExpressionDistance::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1003,7 +945,7 @@ void UMaterialExpressionDistance::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionDivide::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1017,7 +959,7 @@ void UMaterialExpressionDivide::AcceptVisitor(UMaterialExpressionViewVisitor* vi
 
 bool UMaterialExpressionDotProduct::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1031,7 +973,7 @@ void UMaterialExpressionDotProduct::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionDynamicParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	if (PROP_IS(property, ParamNames))
 	{
 		ParamNamesProperty = property;
@@ -1057,7 +999,7 @@ void UMaterialExpressionDynamicParameter::AcceptVisitor(UMaterialExpressionViewV
 
 bool UMaterialExpressionFloor::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -1070,7 +1012,7 @@ void UMaterialExpressionFloor::AcceptVisitor(UMaterialExpressionViewVisitor* vis
 
 bool UMaterialExpressionFluidNormal::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinates);
 	return false;
 }
@@ -1083,7 +1025,7 @@ void UMaterialExpressionFluidNormal::AcceptVisitor(UMaterialExpressionViewVisito
 
 bool UMaterialExpressionFmod::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1097,9 +1039,9 @@ void UMaterialExpressionFmod::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 
 bool UMaterialExpressionFontSample::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_OBJECT(Font);
-	REGISTER_INT(FontTexturePage);
+	SUPER_REGISTER_PROP();
+	REGISTER_OBJ_PROP(Font);
+	REGISTER_INT_PROP(FontTexturePage);
 	return false;
 }
 
@@ -1111,8 +1053,8 @@ void UMaterialExpressionFontSample::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionFontSampleParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_NAME(ParameterName);
+	SUPER_REGISTER_PROP();
+	REGISTER_NAME_PROP(ParameterName);
 	return false;
 }
 
@@ -1124,7 +1066,7 @@ void UMaterialExpressionFontSampleParameter::AcceptVisitor(UMaterialExpressionVi
 
 bool UMaterialExpressionFrac::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -1137,8 +1079,8 @@ void UMaterialExpressionFrac::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 
 bool UMaterialExpressionFresnel::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(Exponent);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(Exponent);
 	REGISTER_INPUT(Normal);
 	return false;
 }
@@ -1152,7 +1094,7 @@ void UMaterialExpressionFresnel::AcceptVisitor(UMaterialExpressionViewVisitor* v
 
 bool UMaterialExpressionIf::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	REGISTER_INPUT(AGreaterThanB);
@@ -1169,7 +1111,7 @@ void UMaterialExpressionIf::AcceptVisitor(UMaterialExpressionViewVisitor* visito
 
 bool UMaterialExpressionLightmassReplace::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Realtime);
 	REGISTER_INPUT(Lightmass);
 	return false;
@@ -1183,7 +1125,7 @@ void UMaterialExpressionLightmassReplace::AcceptVisitor(UMaterialExpressionViewV
 
 bool UMaterialExpressionLinearInterpolate::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	REGISTER_INPUT(Alpha);
@@ -1198,7 +1140,7 @@ void UMaterialExpressionLinearInterpolate::AcceptVisitor(UMaterialExpressionView
 
 bool UMaterialExpressionMultiply::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1212,7 +1154,7 @@ void UMaterialExpressionMultiply::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionNormalize::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(VectorInput);
 	return false;
 }
@@ -1225,7 +1167,7 @@ void UMaterialExpressionNormalize::AcceptVisitor(UMaterialExpressionViewVisitor*
 
 bool UMaterialExpressionOneMinus::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -1238,11 +1180,11 @@ void UMaterialExpressionOneMinus::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionPanner::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinate);
 	REGISTER_INPUT(Time);
-	REGISTER_FLOAT(SpeedX);
-	REGISTER_FLOAT(SpeedY);
+	REGISTER_FLOAT_PROP(SpeedX);
+	REGISTER_FLOAT_PROP(SpeedY);
 	return false;
 }
 
@@ -1255,8 +1197,8 @@ void UMaterialExpressionPanner::AcceptVisitor(UMaterialExpressionViewVisitor* vi
 
 bool UMaterialExpressionParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_NAME(ParameterName);
+	SUPER_REGISTER_PROP();
+	REGISTER_NAME_PROP(ParameterName);
 	return false;
 }
 
@@ -1268,8 +1210,8 @@ void UMaterialExpressionParameter::AcceptVisitor(UMaterialExpressionViewVisitor*
 
 bool UMaterialExpressionScalarParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(DefaultValue);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(DefaultValue);
 	return false;
 }
 
@@ -1281,12 +1223,12 @@ void UMaterialExpressionScalarParameter::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionStaticComponentMaskParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_BOOL(DefaultR);
-	REGISTER_BOOL(DefaultG);
-	REGISTER_BOOL(DefaultB);
-	REGISTER_BOOL(DefaultA);
+	REGISTER_BOOL_PROP(DefaultR);
+	REGISTER_BOOL_PROP(DefaultG);
+	REGISTER_BOOL_PROP(DefaultB);
+	REGISTER_BOOL_PROP(DefaultA);
 	return false;
 }
 
@@ -1316,9 +1258,9 @@ void UMaterialExpressionStaticComponentMaskParameter::AcceptVisitor(UMaterialExp
 
 bool UMaterialExpressionStaticSwitchParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(DefaultValue);
-	REGISTER_BOOL(ExtendedCaptionDisplay);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(DefaultValue);
+	REGISTER_BOOL_PROP(ExtendedCaptionDisplay);
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1333,8 +1275,8 @@ void UMaterialExpressionStaticSwitchParameter::AcceptVisitor(UMaterialExpression
 
 bool UMaterialExpressionVectorParameter::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_LCOLOR(DefaultValue);
+	SUPER_REGISTER_PROP();
+	REGISTER_LCOL_PROP(DefaultValue);
 	return false;
 }
 
@@ -1346,8 +1288,8 @@ void UMaterialExpressionVectorParameter::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionParticleMacroUV::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bUseViewSpace);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bUseViewSpace);
 	return false;
 }
 
@@ -1359,8 +1301,8 @@ void UMaterialExpressionParticleMacroUV::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionPixelDepth::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bNormalize);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bNormalize);
 	return false;
 }
 
@@ -1372,7 +1314,7 @@ void UMaterialExpressionPixelDepth::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionPower::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Base);
 	REGISTER_INPUT(Exponent);
 	return false;
@@ -1386,7 +1328,7 @@ void UMaterialExpressionPower::AcceptVisitor(UMaterialExpressionViewVisitor* vis
 
 bool UMaterialExpressionRotateAboutAxis::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(NormalizedRotationAxisAndAngle);
 	REGISTER_INPUT(PositionOnAxis);
 	REGISTER_INPUT(Position);
@@ -1401,12 +1343,12 @@ void UMaterialExpressionRotateAboutAxis::AcceptVisitor(UMaterialExpressionViewVi
 
 bool UMaterialExpressionRotator::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinate);
 	REGISTER_INPUT(Time);
-	REGISTER_FLOAT(CenterX);
-	REGISTER_FLOAT(CenterY);
-	REGISTER_FLOAT(Speed);
+	REGISTER_FLOAT_PROP(CenterX);
+	REGISTER_FLOAT_PROP(CenterY);
+	REGISTER_FLOAT_PROP(Speed);
 	return false;
 }
 
@@ -1419,9 +1361,9 @@ void UMaterialExpressionRotator::AcceptVisitor(UMaterialExpressionViewVisitor* v
 
 bool UMaterialExpressionSceneDepth::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinates);
-	REGISTER_BOOL(bNormalize);
+	REGISTER_BOOL_PROP(bNormalize);
 	return false;
 }
 
@@ -1433,10 +1375,10 @@ void UMaterialExpressionSceneDepth::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionSceneTexture::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinates);
-	REGISTER_BYTE(SceneTextureType);
-	REGISTER_BOOL(ScreenAlign);
+	REGISTER_BYTE_PROP(SceneTextureType);
+	REGISTER_BOOL_PROP(ScreenAlign);
 	return false;
 }
 
@@ -1449,8 +1391,8 @@ void UMaterialExpressionSceneTexture::AcceptVisitor(UMaterialExpressionViewVisit
 
 bool UMaterialExpressionScreenPosition::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(ScreenAlign);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(ScreenAlign);
 	return false;
 }
 
@@ -1462,9 +1404,9 @@ void UMaterialExpressionScreenPosition::AcceptVisitor(UMaterialExpressionViewVis
 
 bool UMaterialExpressionSine::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_FLOAT(Period);
+	REGISTER_FLOAT_PROP(Period);
 	return false;
 }
 
@@ -1477,11 +1419,11 @@ void UMaterialExpressionSine::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 
 bool UMaterialExpressionSphereMask::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
-	REGISTER_FLOAT(AttenuationRadius);
-	REGISTER_FLOAT(HardnessPercent);
+	REGISTER_FLOAT_PROP(AttenuationRadius);
+	REGISTER_FLOAT_PROP(HardnessPercent);
 	return false;
 }
 
@@ -1494,7 +1436,7 @@ void UMaterialExpressionSphereMask::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionSquareRoot::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
 	return false;
 }
@@ -1507,7 +1449,7 @@ void UMaterialExpressionSquareRoot::AcceptVisitor(UMaterialExpressionViewVisitor
 
 bool UMaterialExpressionSubtract::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(A);
 	REGISTER_INPUT(B);
 	return false;
@@ -1521,12 +1463,12 @@ void UMaterialExpressionSubtract::AcceptVisitor(UMaterialExpressionViewVisitor* 
 
 bool UMaterialExpressionTerrainLayerCoords::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_ENUM(MappingType);
-	REGISTER_FLOAT(MappingScale);
-	REGISTER_FLOAT(MappingRotation);
-	REGISTER_FLOAT(MappingPanU);
-	REGISTER_FLOAT(MappingPanV);
+	SUPER_REGISTER_PROP();
+	REGISTER_ENUM_STR_PROP(MappingType);
+	REGISTER_FLOAT_PROP(MappingScale);
+	REGISTER_FLOAT_PROP(MappingRotation);
+	REGISTER_FLOAT_PROP(MappingPanU);
+	REGISTER_FLOAT_PROP(MappingPanV);
 	return false;
 }
 
@@ -1538,10 +1480,10 @@ void UMaterialExpressionTerrainLayerCoords::AcceptVisitor(UMaterialExpressionVie
 
 bool UMaterialExpressionTerrainLayerWeight::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Base);
 	REGISTER_INPUT(Layer);
-	REGISTER_NAME(ParameterName);
+	REGISTER_NAME_PROP(ParameterName);
 	return false;
 }
 
@@ -1554,12 +1496,12 @@ void UMaterialExpressionTerrainLayerWeight::AcceptVisitor(UMaterialExpressionVie
 
 bool UMaterialExpressionTextureCoordinate::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_INT(CoordinateIndex);
-	REGISTER_FLOAT(UTiling);
-	REGISTER_FLOAT(VTiling);
-	REGISTER_BOOL(UnMirrorU);
-	REGISTER_BOOL(UnMirrorV);
+	SUPER_REGISTER_PROP();
+	REGISTER_INT_PROP(CoordinateIndex);
+	REGISTER_FLOAT_PROP(UTiling);
+	REGISTER_FLOAT_PROP(VTiling);
+	REGISTER_BOOL_PROP(UnMirrorU);
+	REGISTER_BOOL_PROP(UnMirrorV);
 	return false;
 }
 
@@ -1571,9 +1513,9 @@ void UMaterialExpressionTextureCoordinate::AcceptVisitor(UMaterialExpressionView
 
 bool UMaterialExpressionTextureSample::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Coordinates);
-	REGISTER_OBJECT(Texture);
+	REGISTER_OBJ_PROP(Texture);
 	return false;
 }
 
@@ -1586,10 +1528,10 @@ void UMaterialExpressionTextureSample::AcceptVisitor(UMaterialExpressionViewVisi
 
 bool UMaterialExpressionDepthBiasBlend::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Bias);
-	REGISTER_BOOL(bNormalize);
-	REGISTER_FLOAT(BiasScale);
+	REGISTER_BOOL_PROP(bNormalize);
+	REGISTER_FLOAT_PROP(BiasScale);
 	return false;
 }
 
@@ -1602,9 +1544,9 @@ void UMaterialExpressionDepthBiasBlend::AcceptVisitor(UMaterialExpressionViewVis
 
 bool UMaterialExpressionAntialiasedTextureMask::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_FLOAT(Threshold);
-	REGISTER_ENUM(Channel);
+	SUPER_REGISTER_PROP();
+	REGISTER_FLOAT_PROP(Threshold);
+	REGISTER_ENUM_STR_PROP(Channel);
 	return false;
 }
 
@@ -1616,8 +1558,8 @@ void UMaterialExpressionAntialiasedTextureMask::AcceptVisitor(UMaterialExpressio
 
 bool UMaterialExpressionTime::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
-	REGISTER_BOOL(bIgnorePause);
+	SUPER_REGISTER_PROP();
+	REGISTER_BOOL_PROP(bIgnorePause);
 	return false;
 }
 
@@ -1629,10 +1571,10 @@ void UMaterialExpressionTime::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 
 bool UMaterialExpressionTransform::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_ENUM(TransformSourceType);
-	REGISTER_ENUM(TransformType);
+	REGISTER_ENUM_STR_PROP(TransformSourceType);
+	REGISTER_ENUM_STR_PROP(TransformType);
 	return false;
 }
 
@@ -1645,9 +1587,9 @@ void UMaterialExpressionTransform::AcceptVisitor(UMaterialExpressionViewVisitor*
 
 bool UMaterialExpressionTransformPosition::RegisterProperty(FPropertyTag* property)
 {
-	SUPER_REGISTER();
+	SUPER_REGISTER_PROP();
 	REGISTER_INPUT(Input);
-	REGISTER_ENUM(TransformType);
+	REGISTER_ENUM_STR_PROP(TransformType);
 	return false;
 }
 

@@ -2,6 +2,8 @@
 #include "UObject.h"
 #include <Utils/TextureTravaller.h>
 
+#include <array>
+
 namespace osg
 {
   class Image;
@@ -73,4 +75,28 @@ protected:
 class UTerrainWeightMapTexture : public UTexture2D {
 public:
   DECL_UOBJ(UTerrainWeightMapTexture, UTexture2D);
+};
+
+class UTextureCube : public UTexture {
+public:
+  DECL_UOBJ(UTextureCube, UTexture);
+  UPROP(UTexture2D*, FacePosX, nullptr);
+  UPROP(UTexture2D*, FaceNegX, nullptr);
+  UPROP(UTexture2D*, FacePosY, nullptr);
+  UPROP(UTexture2D*, FaceNegY, nullptr);
+  UPROP(UTexture2D*, FacePosZ, nullptr);
+  UPROP(UTexture2D*, FaceNegZ, nullptr);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  // targets order: FacePosX, FaceNegX, FacePosY, FaceNegY, FacePosZ, FaceNegZ
+  bool RenderTo(std::array<osg::Image*, 6>& targets);
+
+  std::array<UTexture2D*, 6> GetFaces()
+  {
+    return { FacePosX, FaceNegX, FacePosY, FaceNegY, FacePosZ, FaceNegZ };
+  }
+
+protected:
+  void PostLoad() override;
 };

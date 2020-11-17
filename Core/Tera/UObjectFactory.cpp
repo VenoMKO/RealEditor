@@ -39,6 +39,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTexture2D(exp);
   }
+  else if (c == UTextureCube::StaticClassName())
+  {
+    result = new UTextureCube(exp);
+  }
   else if (c == USkeletalMesh::StaticClassName())
   {
     result = new USkeletalMesh(exp);
