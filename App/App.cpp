@@ -221,6 +221,22 @@ void App::OnShowSettings(wxCommandEvent& e)
   }
 }
 
+PackageWindow* App::GetPackageWindow(FPackage* package) const
+{
+  if (!package)
+  {
+    return nullptr;
+  }
+  for (PackageWindow* window : PackageWindows)
+  {
+    if (window->GetPackage().get() == package)
+    {
+      return window;
+    }
+  }
+  return nullptr;
+}
+
 App::~App()
 {
   delete InstanceChecker;
@@ -254,13 +270,17 @@ wxString App::ShowOpenCompositeDialog(wxWindow* parent)
   return wxString();
 }
 
-bool App::OpenPackage(const wxString& path)
+bool App::OpenPackage(const wxString& path, const wxString selection)
 {
   for (const auto window : PackageWindows)
   {
     if (window->GetPackagePath() == path)
     {
       window->Raise();
+      if (selection.size())
+      {
+        window->SelectObject(selection);
+      }
       return true;
     }
   }
@@ -328,6 +348,10 @@ bool App::OpenPackage(const wxString& path)
   else
   {
     SendEvent(window, PACKAGE_READY);
+    if (selection.size())
+    {
+      SendEvent(window, SELECT_OBJECT, selection);
+    }
   }
   return true;
 }

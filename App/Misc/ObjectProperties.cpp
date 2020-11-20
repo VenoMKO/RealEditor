@@ -1,4 +1,6 @@
 #include "ObjectProperties.h"
+#include "../App.h"
+#include "../Windows/ObjectPicker.h"
 
 #include <Tera/FObjectResource.h>
 #include <Tera/FPackage.h>
@@ -77,7 +79,7 @@ inline wxString GetObjectNameForIndex(FPropertyValue* value)
 {
   if (PACKAGE_INDEX idx = value->GetObjectIndex())
   {
-    return value->Property->Owner->GetPackage()->GetResourceObject(idx)->GetFullObjectName().WString();
+    return value->Property->Owner->GetPackage()->GetResourceObject(idx)->GetObjectName().WString();
   }
   return wxT("NULL");
 }
@@ -329,7 +331,72 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   }
 }
 
+class ObjPropEditDialog : public wxDialog {
+public:
+  ObjPropEditDialog(wxWindow* parent, 
+    wxWindowID id = wxID_ANY, 
+    const wxString& title = wxEmptyString, 
+    const wxPoint& pos = wxDefaultPosition, 
+    const wxSize& size = wxSize(193, 149), 
+    long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+    : wxDialog(parent, id, title, pos, size, style)
+  {
+    SetSizeHints(wxDefaultSize, wxDefaultSize);
 
+    wxBoxSizer* bSizer12;
+    bSizer12 = new wxBoxSizer(wxVERTICAL);
+
+    ShowButton = new wxButton(this, wxID_ANY, wxT("Show"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(ShowButton, 0, wxALL | wxEXPAND, 5);
+
+    ChangeButton = new wxButton(this, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(ChangeButton, 0, wxALL | wxEXPAND, 5);
+
+    CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, 5);
+
+
+    bSizer12->Add(0, 0, 1, wxEXPAND, 5);
+
+
+    SetSizer(bSizer12);
+    Layout();
+
+    Centre(wxBOTH);
+
+    // Connect Events
+    ShowButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnShowClicked), NULL, this);
+    ChangeButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnChangeClicked), NULL, this);
+    CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnCancelClicked), NULL, this);
+  }
+
+  ~ObjPropEditDialog()
+  {
+    ShowButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnShowClicked), NULL, this);
+    ChangeButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnChangeClicked), NULL, this);
+    CancelButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjPropEditDialog::OnCancelClicked), NULL, this);
+  }
+
+protected:
+  wxButton* ShowButton = nullptr;
+  wxButton* ChangeButton = nullptr;
+  wxButton* CancelButton = nullptr;
+
+  void OnShowClicked(wxCommandEvent& event)
+  {
+    EndModal(wxID_MORE);
+  }
+  
+  void OnChangeClicked(wxCommandEvent& event)
+  {
+    EndModal(wxID_OK);
+  }
+
+  void OnCancelClicked(wxCommandEvent& event)
+  {
+    EndModal(wxID_CANCEL);
+  }
+};
 
 AIntProperty::AIntProperty(FPropertyValue* value, int32 idx)
   : wxIntProperty(GetPropertyName(value, idx), GetPropertyId(value), value->GetInt())
@@ -505,9 +572,10 @@ void AEnumProperty::OnSetValue()
 }
 
 AObjectProperty::AObjectProperty(FPropertyValue* value, int32 idx)
-  : wxStringProperty(GetPropertyName(value, idx), GetPropertyId(value), GetObjectNameForIndex(value))
+  : wxLongStringProperty(GetPropertyName(value, idx), GetPropertyId(value), GetObjectNameForIndex(value))
   , Value(value)
 {
+  AllowChanges = false;
   if (value->Field && value->Field->GetToolTip().Size())
   {
     SetHelpString(value->Field->GetToolTip().WString());
@@ -516,4 +584,97 @@ AObjectProperty::AObjectProperty(FPropertyValue* value, int32 idx)
   {
     SetHelpString(value->Field->GetToolTip().WString());
   }
+}
+
+bool AObjectProperty::ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const
+{
+  return AllowChanges;
+}
+
+bool AObjectProperty::DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value)
+{
+  if (Value)
+  {
+    if (!Value->GetObjectIndex())
+    {
+      OnChangeObjectClicked(pg);
+      return false;
+    }
+    ObjPropEditDialog dlg = ObjPropEditDialog(pg->GetPanel(), wxID_ANY, GetLabel());
+    dlg.Move(pg->GetGoodEditorDialogPosition(this, dlg.GetSize()));
+    switch (dlg.ShowModal())
+    {
+    case wxID_OK:
+      OnChangeObjectClicked(pg);
+      break;
+    case wxID_MORE:
+      OnShowObjectClicked();
+      break;
+    default:
+      return false;
+    }
+  }
+  return false;
+}
+
+void AObjectProperty::OnShowObjectClicked()
+{
+  if (UObject* obj = Value->Property->Owner->GetPackage()->GetObject(Value->GetObjectIndex()))
+  {
+    App::GetSharedApp()->OpenPackage(obj->GetPackage()->GetSourcePath().WString(), obj->GetObjectPath().WString());
+  }
+}
+
+void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
+{
+  AllowChanges = true;
+  PACKAGE_INDEX idx = Value->GetObjectIndex();
+  FPackage* thisPackage = Value->Property->Owner->GetPackage();
+  UObject* selection =thisPackage->GetObject(idx);
+  ObjectPicker picker = ObjectPicker(pg->GetPanel(), GetLabel(), true, selection ? selection->GetPackage()->GetPackageName().WString() : thisPackage->GetPackageName().WString(), selection ? selection->GetExportObject()->ObjectIndex : 0);
+  if (!picker.IsValid() || picker.ShowModal() != wxID_OK)
+  {
+    AllowChanges = false;
+    return;
+  }
+
+  selection = picker.GetSelectedObject();
+
+  if (!selection)
+  {
+    if (idx)
+    {
+      Value->GetObjectIndex() = 0;
+      Value->Property->Owner->MarkDirty();
+    }
+    AllowChanges = false;
+    return;
+  }
+  if (selection->GetPackage() != thisPackage)
+  {
+    FObjectImport* imp = nullptr;
+    thisPackage->AddImport(selection, imp);
+    if (!imp)
+    {
+      AllowChanges = false;
+      return;
+    }
+  }
+  PACKAGE_INDEX newIdx = idx;
+  try
+  {
+    newIdx = thisPackage->GetObjectIndex(selection);
+  }
+  catch (const std::exception& e)
+  {
+    AllowChanges = false;
+    return;
+  }
+  if (newIdx != idx)
+  {
+    Value->GetObjectIndex() = newIdx;
+    Value->Property->Owner->MarkDirty();
+    SetValueFromString(selection->GetObjectName().WString());
+  }
+  AllowChanges = false;
 }

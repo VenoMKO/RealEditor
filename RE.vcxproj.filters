@@ -221,6 +221,9 @@
     <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\ObjectPicker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -309,6 +312,7 @@
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
+    <ClInclude Include="App\Windows\ObjectPicker.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

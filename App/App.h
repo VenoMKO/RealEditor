@@ -49,13 +49,19 @@ wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 class ProgressWindow;
 class App : public wxApp {
 public:
+  static App* GetSharedApp()
+  {
+    return (App*)wxTheApp;
+  }
+
   ~App();
-  bool OpenPackage(const wxString& path);
+  bool OpenPackage(const wxString& path, const wxString selection = wxEmptyString);
   bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   wxString ShowOpenCompositeDialog(wxWindow* parent);
   void OnOpenPackage(wxCommandEvent& e);
   void OnShowSettings(wxCommandEvent& e);
+  PackageWindow* GetPackageWindow(FPackage* package) const;
 
   void PackageWindowWillClose(const PackageWindow* frame);
   void OnRpcOpenFile(const wxString& path);

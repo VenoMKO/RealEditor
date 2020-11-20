@@ -78,9 +78,17 @@ protected:
 };
 
 // Temporary solution
-class AObjectProperty : public wxStringProperty {
+class AObjectProperty : public wxLongStringProperty {
 public:
   AObjectProperty(FPropertyValue* value, int32 idx);
+  bool ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const override;
+
+protected:
+  bool DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value) override;
+  void OnShowObjectClicked();
+  void OnChangeObjectClicked(wxPropertyGrid* pg);
+
 protected:
   FPropertyValue* Value = nullptr;
+  bool AllowChanges = false;
 };

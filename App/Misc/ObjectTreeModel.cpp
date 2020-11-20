@@ -167,7 +167,10 @@ ObjectTreeNode* ObjectTreeNode::FindItemByObjectIndex(PACKAGE_INDEX index)
 ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports)
 {
 	RootExport = new ObjectTreeNode(packageName, rootExports);
-	RootImport = new ObjectTreeNode(rootImports);
+	if (rootImports.size())
+	{
+		RootImport = new ObjectTreeNode(rootImports);
+	}
 	IconList = new wxImageList(16, 16, true, 2);
 	
 	// ORDER MATTERS!!!
@@ -256,8 +259,11 @@ unsigned int ObjectTreeModel::GetChildren(const wxDataViewItem& parent, wxDataVi
 	if (!node)
 	{
 		array.Add(wxDataViewItem((void*)RootExport));
-		array.Add(wxDataViewItem((void*)RootImport));
-		return 2;
+		if (RootImport)
+		{
+			array.Add(wxDataViewItem((void*)RootImport));
+		}
+		return array.size();
 	}
 	if (!node->GetChildren().GetCount())
 	{
@@ -278,7 +284,7 @@ ObjectTreeNode* ObjectTreeModel::FindItemByObjectIndex(PACKAGE_INDEX index)
 	{
 		return RootExport->FindItemByObjectIndex(index);
 	}
-	else if (index < 0)
+	else if (index < 0 && RootImport)
 	{
 		return RootImport->FindItemByObjectIndex(index);
 	}
