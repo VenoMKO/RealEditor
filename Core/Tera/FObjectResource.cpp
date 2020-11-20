@@ -2,6 +2,7 @@
 #include "FStream.h"
 #include "FPackage.h"
 #include "UObject.h"
+#include "UClass.h"
 
 FStream& operator<<(FStream& s, FObjectImport& i)
 {
@@ -44,6 +45,18 @@ FStream& operator<<(FStream& s, FObjectExport& e)
 FString FObjectExport::GetClassName() const
 {
   return ClassIndex ? Package->GetResourceObject(ClassIndex)->GetObjectName() : "Class";
+}
+
+FObjectImport* FObjectImport::CreateImport(FPackage* package, const FString& objectName, UClass* objectClass)
+{
+  if (!package || objectName.Empty())
+  {
+    return nullptr;
+  }
+  FObjectImport* result = new FObjectImport(package, objectName);
+  result->ClassName = FName(package, objectClass ? objectClass->GetObjectName() : "Class");
+  result->ClassPackage = FName(package, objectClass ? objectClass->GetPackage()->GetPackageName() : "Core");
+  return result;
 }
 
 FString FObjectImport::GetPackageName() const

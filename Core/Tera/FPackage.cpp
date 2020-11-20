@@ -2375,6 +2375,63 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
   return nullptr;
 }
 
+UClass* FPackage::GetClass(const FString& className)
+{
+  if (ClassMap.count(className))
+  {
+    return Cast<UClass>(ClassMap[className]);
+  }
+  return nullptr;
+}
+
+PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
+{
+  if (cls->GetPackage() == this)
+  {
+    return cls->GetExportObject()->ObjectIndex;
+  }
+
+  FObjectImport* classPackageImport = nullptr;
+  const FString classPackage = cls->GetPackage()->GetPackageName();
+  for (FObjectImport* imp : Imports)
+  {
+    if (imp->GetObjectName() == cls->GetObjectName())
+    {
+      int x = 1;
+    }
+    if (imp->GetClassName() == UClass::StaticClassName() && imp->GetObjectName() == cls->GetObjectName())
+    {
+      return imp->ObjectIndex;
+    }
+    if (imp->GetClassName() == NAME_Package && imp->GetObjectName() == classPackage)
+    {
+      classPackageImport = imp;
+    }
+  }
+
+  if (!classPackageImport)
+  {
+    classPackageImport = FObjectImport::CreateImport(this, classPackage, (UClass*)ClassMap[NAME_Package]);
+    if (!classPackageImport)
+    {
+      return 0;
+    }
+    classPackageImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
+    Imports.push_back(classPackageImport);
+    MarkDirty();
+  }
+
+  FObjectImport* classImport = FObjectImport::CreateImport(this, cls->GetObjectName(), nullptr);
+  if (classImport)
+  {
+    classImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
+    Imports.push_back(classImport);
+    MarkDirty();
+    return classImport->ObjectIndex;
+  }
+  return 0;
+}
+
 void FPackage::AddNetObject(UObject* object)
 {
   NetIndexMap[object->GetNetIndex()] = object;
@@ -2453,6 +2510,98 @@ FObjectImport* FPackage::GetImportObject(const FString& objectName, const FStrin
     }
   }
   return nullptr;
+}
+
+bool FPackage::AddImport(UObject* object, FObjectImport*& output)
+{
+  if (!object || !object->GetPackage() || object->GetPackage() == this)
+  {
+    output = nullptr;
+    return false;
+  }
+
+  FObjectImport* outerPackage = nullptr;
+  FString outerPackageName = object->GetPackage()->GetPackageName();
+  for (FObjectImport* imp : Imports)
+  {
+    if (imp->GetObjectName() == object->GetObjectName() &&
+      imp->GetClassName() == object->GetClassName() &&
+      imp->GetObjectPath() == object->GetObjectPath())
+    {
+      output = imp;
+      return false;
+    }
+    if (imp->GetObjectName() == outerPackageName && imp->GetClassName() == NAME_Package)
+    {
+      outerPackage = imp;
+    }
+  }
+
+  std::vector<UObject*> pathChain;
+  {
+    UObject* outer = object->GetOuter();
+    while (outer)
+    {
+      pathChain.insert(pathChain.begin(), outer);
+      outer = outer->GetOuter();
+    }
+  }
+
+  if (!outerPackage)
+  {
+    FObjectImport* importObject = new FObjectImport(this, outerPackageName);
+    importObject->ClassName.SetPackage(this);
+    importObject->ClassName.SetString(NAME_Package);
+    importObject->ClassPackage.SetPackage(this);
+    importObject->ClassPackage.SetString("Core");
+    Imports.push_back(importObject);
+    outerPackage = importObject;
+  }
+
+  FObjectImport* outerImp = outerPackage;
+  for (UObject* obj : pathChain)
+  {
+    obj->Load();
+    if (!obj->GetClass())
+    {
+      LogE("Can't import %s! Outer object %s has no UClass!", object->GetObjectName().UTF8().c_str(), obj->GetObjectName().UTF8().c_str());
+      output = nullptr;
+      return false;
+    }
+
+    FObjectImport* imp = nullptr;
+    bool added = AddImport(obj, imp);
+    if (!imp)
+    {
+      output = nullptr;
+      return false;
+    }
+
+    if (added && outerImp)
+    {
+      outerImp->Inner.push_back(imp);
+      imp->OuterIndex = outerImp->ObjectIndex;
+    }
+    outerImp = imp;
+  }
+
+  FObjectImport* importObject = new FObjectImport(this, object->GetObjectName());
+  importObject->ClassName.SetPackage(this);
+  importObject->ClassName.SetString(object->GetClassName());
+  importObject->ClassPackage.SetPackage(this);
+  importObject->ClassPackage.SetString(object->GetClass() ? object->GetClass()->GetPackage()->GetPackageName() : "Core");
+
+  if (outerImp)
+  {
+    outerImp->Inner.push_back(importObject);
+    importObject->OuterIndex = outerImp->ObjectIndex;
+  }
+
+  Imports.push_back(importObject);
+  importObject->ObjectIndex = -(PACKAGE_INDEX)Imports.size();
+  output = importObject;
+  ImportObjects[importObject->ObjectIndex] = object;
+  return true;
 }
 
 void FPackage::RetainPackage(std::shared_ptr<FPackage> package)

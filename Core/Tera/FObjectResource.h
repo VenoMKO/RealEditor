@@ -11,6 +11,11 @@ public:
     : Package(package)
   {}
 
+  FObjectResource(FPackage* package, const FString& name)
+    : Package(package)
+    , ObjectName(package, name)
+  {}
+
   virtual ~FObjectResource()
   {}
 
@@ -45,8 +50,13 @@ protected:
 
 class FObjectImport : public FObjectResource {
 public:
+  using FObjectResource::FObjectResource;
+
+  static FObjectImport* CreateImport(FPackage* package, const FString& objectName, UClass* objectClass);
+
   FObjectImport(FPackage* p)
     : FObjectResource(p)
+    , ClassName(p)
   {}
 
   FString GetClassName() const override

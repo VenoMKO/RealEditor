@@ -101,8 +101,14 @@ public:
 
 	PACKAGE_INDEX GetNameIndex(const FString& name, bool insert = false);
 
-	// Get a UClass with idx;
+	// Get a UClass with idx
 	UClass* LoadClass(PACKAGE_INDEX index);
+
+	// Get a UClass by name
+	UClass* GetClass(const FString& className);
+
+	// Add an import object for a UClass
+	PACKAGE_INDEX ImportClass(UClass* cls);
 
 	// Cache UObject with a netIndex to NetIndexMap
 	void AddNetObject(UObject* object);
@@ -168,6 +174,9 @@ public:
 		const PACKAGE_INDEX i = index - 1;
 		return Exports[i];
 	}
+
+	// Add an object to package imports. Returns true if added
+	bool AddImport(UObject* object, FObjectImport*& output);
 
 	// Get package read stream
 	inline FStream& GetStream()
