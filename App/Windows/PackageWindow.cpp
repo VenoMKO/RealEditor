@@ -361,8 +361,7 @@ void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
 	{
 	case ObjTreeMenuId::Search:
 	{
-		CompositeExtractWindow extractor(this, node->GetClassName(), node->GetObjectName());
-		extractor.ShowModal();
+		App::GetSharedApp()->ShowBulkImport(this, node->GetClassName(), node->GetObjectName());
 	}
 	break;
 	case ObjTreeMenuId::CopyName:
@@ -1040,6 +1039,8 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 
 void PackageWindow::OnBulkCompositeExtract(wxCommandEvent&)
 {
+	App::GetSharedApp()->ShowBulkImport(this);
+	return;
 	CompositeExtractWindow extractor(this);
 	extractor.ShowModal();
 }

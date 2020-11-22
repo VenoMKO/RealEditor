@@ -224,6 +224,12 @@
     <ClCompile Include="App\Windows\ObjectPicker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\BulkImportWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Misc\BulkImportOperation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -313,6 +319,8 @@
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
     <ClInclude Include="App\Windows\ObjectPicker.h" />
+    <ClInclude Include="App\Windows\BulkImportWindow.h" />
+    <ClInclude Include="App\Misc\BulkImportOperation.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

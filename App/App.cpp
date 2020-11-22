@@ -2,6 +2,7 @@
 #include "Windows/ProgressWindow.h"
 #include "Windows/SettingsWindow.h"
 #include "Windows/CompositePackagePicker.h"
+#include "Windows/BulkImportWindow.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -268,6 +269,20 @@ wxString App::ShowOpenCompositeDialog(wxWindow* parent)
     return picker.GetResult();
   }
   return wxString();
+}
+
+void App::ShowBulkImport(wxWindow* parent, const wxString& className, const wxString& objectName)
+{
+  if (!BulkImporter)
+  {
+    BulkImporter = new BulkImportWindow(parent, className, objectName);
+    BulkImporter->Show();
+  }
+  else
+  {
+    BulkImporter->SetFocus();
+    BulkImporter->AddOperation(className, objectName);
+  }
 }
 
 bool App::OpenPackage(const wxString& path, const wxString selection)

@@ -22,11 +22,13 @@
     <ClCompile Include="App\Editors\StaticMeshActorEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp" />
     <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
+    <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
     <ClCompile Include="App\Misc\ObjectProperties.cpp" />
     <ClCompile Include="App\Misc\ObjectTreeModel.cpp" />
+    <ClCompile Include="App\Windows\BulkImportWindow.cpp" />
     <ClCompile Include="App\Windows\CompositeExtractWindow.cpp" />
     <ClCompile Include="App\Windows\CompositePackagePicker.cpp" />
     <ClCompile Include="App\Windows\CompositePatcherWindow.cpp" />
@@ -95,11 +97,13 @@
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
     <ClInclude Include="App\Editors\SoundWaveEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
+    <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Misc\ObjectProperties.h" />
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
+    <ClInclude Include="App\Windows\BulkImportWindow.h" />
     <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />

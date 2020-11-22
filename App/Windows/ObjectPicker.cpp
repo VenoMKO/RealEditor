@@ -1,6 +1,7 @@
 #include "ObjectPicker.h"
 #include "../App.h"
 #include "../Misc/ObjectTreeModel.h"
+#include "CompositePackagePicker.h"
 
 #include <Tera/FPackage.h>
 #include <Tera/UObject.h>
@@ -133,25 +134,63 @@ void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
 
 void ObjectPicker::OnPackageClicked(wxCommandEvent& event)
 {
-	wxString path = App::GetSharedApp()->ShowOpenDialog();
-	if (path.empty())
-	{
-		return;
-	}
+	wxMenu menu;
+	menu.Append(1, wxT("Open a normal package..."));
+	menu.Append(2, wxT("Open a composite package..."));
 
-	try
+	const int selectedMenuId = GetPopupMenuSelectionFromUser(menu);
+
+	if (selectedMenuId == 1)
 	{
-		if (auto pkg = FPackage::GetPackage(path.ToStdWstring()))
+		wxString path = App::GetSharedApp()->ShowOpenDialog();
+		if (path.empty())
 		{
-			pkg->Load();
-			Package = pkg;
+			return;
+		}
+
+		try
+		{
+			if (auto pkg = FPackage::GetPackage(path.ToStdWstring()))
+			{
+				pkg->Load();
+				FPackage::UnloadPackage(Package);
+				Package = pkg;
+			}
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+			return;
 		}
 	}
-	catch (const std::exception& e)
+	else if (selectedMenuId == 2)
 	{
-		wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+		CompositePackagePicker picker(this, wxT("Open a package"));
+		if (picker.ShowModal() != wxID_OK || picker.GetResult().empty())
+		{
+			return;
+		}
+
+		try
+		{
+			if (auto pkg = FPackage::GetPackageNamed(picker.GetResult().ToStdWstring()))
+			{
+				pkg->Load();
+				FPackage::UnloadPackage(Package);
+				Package = pkg;
+			}
+		}
+		catch (const std::exception& e)
+		{
+			wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+			return;
+		}
+	}
+	else
+	{
 		return;
 	}
+	
 	Selection = nullptr;
 	LoadObjectTree();
 }
@@ -183,7 +222,7 @@ void ObjectPicker::UpdateTableTitle()
 	if (Selection)
 	{
 		wxString title = TableTitle.empty() ? wxT("Selected object: ") : TableTitle;
-		ObjectTreeCtrl->GetColumn(0)->SetTitle(title + wxT(":") + Selection->GetObjectName().WString());
+		ObjectTreeCtrl->GetColumn(0)->SetTitle(title + wxT(": ") + Selection->GetObjectName().WString());
 	}
 	else
 	{

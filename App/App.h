@@ -47,6 +47,7 @@ wxDECLARE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 
 class ProgressWindow;
+class BulkImportWindow;
 class App : public wxApp {
 public:
   static App* GetSharedApp()
@@ -59,6 +60,11 @@ public:
   bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   wxString ShowOpenCompositeDialog(wxWindow* parent);
+  void ShowBulkImport(wxWindow* parent, const wxString& className = wxEmptyString, const wxString& objectName = wxEmptyString);
+  void ResetBulkImport()
+  {
+    BulkImporter = nullptr;
+  }
   void OnOpenPackage(wxCommandEvent& e);
   void OnShowSettings(wxCommandEvent& e);
   PackageWindow* GetPackageWindow(FPackage* package) const;
@@ -109,6 +115,7 @@ private:
   wxDECLARE_EVENT_TABLE();
 private:
   FAppConfig Config;
+  BulkImportWindow* BulkImporter = nullptr;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;
