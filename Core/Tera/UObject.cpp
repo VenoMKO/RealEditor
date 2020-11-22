@@ -119,6 +119,24 @@ void* UObject::GetRawData()
   return result;
 }
 
+void UObject::SetRawData(void* data, FILE_OFFSET size)
+{
+  if (RawData)
+  {
+    free(RawData);
+    RawData = nullptr;
+    MarkDirty();
+  }
+  if (size)
+  {
+    RawData = (char*)malloc(size);
+    memcpy(RawData, data, size);
+    Export->SerialSize = RawDataOffset - GetSerialOffset() + size;
+    MarkDirty();
+  }
+  
+}
+
 void UObject::SerializeScriptProperties(FStream& s)
 {
   if (Class && s.GetFV() == FPackage::GetCoreVersion())

@@ -256,6 +256,8 @@ public:
 
   void* GetRawData();
 
+  void SetRawData(void* data, FILE_OFFSET size);
+
   // Serialize the object from a stream. Should not be called outside of the Load
   virtual void Serialize(FStream& s);
 
