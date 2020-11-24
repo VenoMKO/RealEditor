@@ -9,6 +9,7 @@
 #include <filesystem>
 
 #include <Tera/FPackage.h>
+#include <Tera/FObjectResource.h>
 #include <Tera/UClass.h>
 #include <Tera/USoundNode.h>
 #include <Tera/UTexture.h>
@@ -32,7 +33,7 @@ public:
 		Col_Max
 	};
 
-	BulkImportOperationEntryModel(std::vector<BulkImportOperationData::Entry> entries)
+	BulkImportOperationEntryModel(std::vector<BulkImportAction::Entry> entries)
 		: Rows(entries)
 	{}
 
@@ -86,13 +87,13 @@ public:
 		return false;
 	}
 
-	std::vector<BulkImportOperationData::Entry> GetRows() const
+	std::vector<BulkImportAction::Entry> GetRows() const
 	{
 		return Rows;
 	}
 
 private:
-	std::vector<BulkImportOperationData::Entry> Rows;
+	std::vector<BulkImportAction::Entry> Rows;
 };
 
 class BulkImportModel : public wxDataViewVirtualListModel {
@@ -105,7 +106,7 @@ public:
 		Col_Max
 	};
 
-	BulkImportModel(std::vector<BulkImportOperationData> ops)
+	BulkImportModel(std::vector<BulkImportAction> ops)
 		: Rows(ops)
 	{}
 
@@ -150,13 +151,13 @@ public:
 		return false;
 	}
 
-	std::vector<BulkImportOperationData> GetRows() const
+	std::vector<BulkImportAction> GetRows() const
 	{
 		return Rows;
 	}
 
 private:
-	std::vector<BulkImportOperationData> Rows;
+	std::vector<BulkImportAction> Rows;
 };
 
 
@@ -164,7 +165,7 @@ class AddImportOperationDialog : public wxDialog {
 public:
 
 	AddImportOperationDialog(wxWindow* parent, std::stringstream& objectDumpBuffer, const wxString& confirmTitle = wxT("Add"), const wxString& objectClass = wxT("Texture2D"), const wxString& objectName = wxEmptyString)
-		: wxDialog(parent, wxID_ANY, wxT("Add operation"), wxDefaultPosition, wxSize(605, 619))
+		: wxDialog(parent, wxID_ANY, wxT("Add bulk action"), wxDefaultPosition, wxSize(605, 619))
 		, ObjectDumpBuffer(objectDumpBuffer)
 	{
 		SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -248,7 +249,7 @@ public:
 		bSizer20->Add(m_panel9, 0, wxEXPAND | wxALL, 5);
 
 		wxStaticText* m_staticText172;
-		m_staticText172 = new wxStaticText(this, wxID_ANY, wxT("Operation"), wxDefaultPosition, wxDefaultSize, 0);
+		m_staticText172 = new wxStaticText(this, wxID_ANY, wxT("Action"), wxDefaultPosition, wxDefaultSize, 0);
 		m_staticText172->Wrap(-1);
 		m_staticText172->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
@@ -422,12 +423,13 @@ public:
 		UpdateControls();
 	}
 
-	AddImportOperationDialog(wxWindow* parent, std::stringstream& objectDumpBuffer, const BulkImportOperationData& op, const wxString& confirmTitle = wxT("Apply"))
+	AddImportOperationDialog(wxWindow* parent, std::stringstream& objectDumpBuffer, const BulkImportAction& op, const wxString& confirmTitle = wxT("Apply"))
 		: AddImportOperationDialog(parent, objectDumpBuffer, confirmTitle, op.ClassName, op.ObjectName)
 	{
 		List->AssociateModel(new BulkImportOperationEntryModel(op.Entries));
 		ImportTextField->SetValue(op.ImportPath);
 		RedirectTextField->SetValue(op.RedirectPath);
+		RedirectIndex = op.RedirectIndex;
 		if (op.RedirectPath.size())
 		{
 			OperationView->SetSelection(1);
@@ -467,20 +469,22 @@ public:
 		}
 	}
 
-	void ConfigureOperation(BulkImportOperationData& op)
+	void ConfigureOperation(BulkImportAction& op)
 	{
 		op.ClassName = ObjectClassTextField->GetValue();
 		op.ObjectName = ObjectNameTextField->GetValue();
-		op.Entries = List->GetModel() ? ((BulkImportOperationEntryModel*)List->GetModel())->GetRows() : std::vector<BulkImportOperationData::Entry>();
+		op.Entries = List->GetModel() ? ((BulkImportOperationEntryModel*)List->GetModel())->GetRows() : std::vector<BulkImportAction::Entry>();
 		if (OperationView->GetSelection())
 		{
 			op.RedirectPath = RedirectTextField->GetValue();
+			op.RedirectIndex = RedirectIndex;
 			op.ImportPath.clear();
 		}
 		else
 		{
 			op.ImportPath = ImportTextField->GetValue();
 			op.RedirectPath.clear();
+			op.RedirectIndex = 0;
 		}
 	}
 
@@ -518,7 +522,7 @@ protected:
 		progress.SetCanCancel(false);
 		progress.SetCurrentProgress(-1);
 		std::stringstream& buffer = ObjectDumpBuffer;
-		std::vector<BulkImportOperationData::Entry> found;
+		std::vector<BulkImportAction::Entry> found;
 		std::thread([&] {
 			buffer.clear();
 			buffer.seekg(0);
@@ -619,6 +623,7 @@ protected:
 			return;
 		}
 		RedirectTextField->SetValue(picker.GetSelectedObject()->GetObjectPath().WString());
+		RedirectIndex = picker.GetSelectedObject()->GetExportObject()->ObjectIndex;
 		UpdateControls();
 	}
 
@@ -750,6 +755,7 @@ protected:
 	wxButton* CancelButton = nullptr;
 
 	std::stringstream& ObjectDumpBuffer;
+	PACKAGE_INDEX RedirectIndex = 0;
 	bool AutoSearch = false;
 };
 
@@ -802,7 +808,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 	bSizer10->Add(m_panel6, 0, wxEXPAND | wxALL, 5);
 
 	wxStaticText* m_staticText101;
-	m_staticText101 = new wxStaticText(this, wxID_ANY, wxT("Imports"), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText101 = new wxStaticText(this, wxID_ANY, wxT("Actions"), wxDefaultPosition, wxDefaultSize, 0);
 	m_staticText101->Wrap(-1);
 	m_staticText101->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
@@ -814,7 +820,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 	bSizer15 = new wxBoxSizer(wxVERTICAL);
 
 	wxStaticText* m_staticText15;
-	m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import operations. Each entry represents a single operation. Press Add to create an import operation."), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import actions. Each entry represents a single action. Press Add to create an import action."), wxDefaultPosition, wxDefaultSize, 0);
 	m_staticText15->Wrap(650);
 	bSizer15->Add(m_staticText15, 0, wxALL, 5);
 
@@ -896,7 +902,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 	Connect(wxEVT_IDLE, wxIdleEventHandler(BulkImportWindow::OnFirstIdle), NULL, this);
 
 	OperationsList->AppendTextColumn(_("Object"), BulkImportModel::Col_Object, wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
-	OperationsList->AppendTextColumn(_("Operation"), BulkImportModel::Col_Type, wxDATAVIEW_CELL_INERT, 100);
+	OperationsList->AppendTextColumn(_("Action"), BulkImportModel::Col_Type, wxDATAVIEW_CELL_INERT, 100);
 	OperationsList->AppendTextColumn(_("Change"), BulkImportModel::Col_Mod, wxDATAVIEW_CELL_INERT, 150, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
 
 	FAppConfig& cfg = App::GetSharedApp()->GetConfig();
@@ -906,7 +912,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 		PathPicker->SetPath(PreviousStreamPath);
 	}
 
-	OperationsList->AssociateModel(new BulkImportModel(Operations));
+	OperationsList->AssociateModel(new BulkImportModel(Actions));
 }
 
 BulkImportWindow::BulkImportWindow(wxWindow* parent, const wxString& className, const wxString& objectName)
@@ -935,9 +941,9 @@ void BulkImportWindow::AddOperation(const wxString& className, const wxString& o
 			return;
 		}
 
-		BulkImportOperationData& op = Operations.emplace_back();
+		BulkImportAction& op = Actions.emplace_back();
 		dlg.ConfigureOperation(op);
-		OperationsList->AssociateModel(new BulkImportModel(Operations));
+		OperationsList->AssociateModel(new BulkImportModel(Actions));
 
 		UpdateControls();
 	}
@@ -966,6 +972,9 @@ void BulkImportWindow::OnFirstIdle(wxIdleEvent&)
 		LoadBuffer();
 		UpdateControls();
 	}
+	else
+	{
+	}
 	if (FirstStartName.size() && FirstStartClass.size() && AddOperationButton->IsEnabled())
 	{
 		AddImportOperationDialog dlg(this, ObjectDumpBuffer, wxT("Add"), FirstStartClass, FirstStartName);
@@ -975,9 +984,9 @@ void BulkImportWindow::OnFirstIdle(wxIdleEvent&)
 			return;
 		}
 
-		BulkImportOperationData& op = Operations.emplace_back();
+		BulkImportAction& op = Actions.emplace_back();
 		dlg.ConfigureOperation(op);
-		OperationsList->AssociateModel(new BulkImportModel(Operations));
+		OperationsList->AssociateModel(new BulkImportModel(Actions));
 
 		UpdateControls();
 	}
@@ -1018,9 +1027,9 @@ void BulkImportWindow::OnAddOperationClicked(wxCommandEvent& event)
 		return;
 	}
 
-	BulkImportOperationData& op = Operations.emplace_back();
+	BulkImportAction& op = Actions.emplace_back();
 	dlg.ConfigureOperation(op);
-	OperationsList->AssociateModel(new BulkImportModel(Operations));
+	OperationsList->AssociateModel(new BulkImportModel(Actions));
 
 	UpdateControls();
 }
@@ -1032,14 +1041,14 @@ void BulkImportWindow::OnEditOperationClicked(wxCommandEvent& event)
 		return;
 	}
 	int idx = int(OperationsList->GetCurrentItem().GetID()) - 1;
-	BulkImportOperationData& op = Operations[idx];
+	BulkImportAction& op = Actions[idx];
 	AddImportOperationDialog dlg(this, ObjectDumpBuffer, op);
 	if (dlg.ShowModal() != wxID_OK)
 	{
 		return;
 	}
 	dlg.ConfigureOperation(op);
-	OperationsList->AssociateModel(new BulkImportModel(Operations));
+	OperationsList->AssociateModel(new BulkImportModel(Actions));
 
 	UpdateControls();
 }
@@ -1051,15 +1060,15 @@ void BulkImportWindow::OnRemoveOperationClicked(wxCommandEvent& event)
 		return;
 	}
 	int idx = int(OperationsList->GetCurrentItem().GetID()) - 1;
-	Operations.erase(Operations.begin() + idx);
-	OperationsList->AssociateModel(new BulkImportModel(Operations));
+	Actions.erase(Actions.begin() + idx);
+	OperationsList->AssociateModel(new BulkImportModel(Actions));
 	UpdateControls();
 }
 
 void BulkImportWindow::OnClearOperationsClicked(wxCommandEvent& event)
 {
-	Operations.clear();
-	OperationsList->AssociateModel(new BulkImportModel(Operations));
+	Actions.clear();
+	OperationsList->AssociateModel(new BulkImportModel(Actions));
 	UpdateControls();
 }
 
@@ -1070,7 +1079,7 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 	{
 		return;
 	}
-	BulkImportOperation operation(Operations, dlg.GetPath());
+	BulkImportOperation operation(Actions, dlg.GetPath());
 	ProgressWindow progress(this, wxT("Please wait..."));
 	progress.SetCanCancel(false);
 	progress.SetCurrentProgress(-1);
@@ -1121,9 +1130,9 @@ void BulkImportWindow::OnOperationsListContextMenu(wxDataViewEvent& event)
 void BulkImportWindow::UpdateControls()
 {
 	AddOperationButton->Enable(BufferLoaded);
-	ClearOperationsButton->Enable(Operations.size());
-	ContinueButton->Enable(Operations.size());
-	if (Operations.size() && OperationsList->GetSelectedItemsCount())
+	ClearOperationsButton->Enable(Actions.size());
+	ContinueButton->Enable(Actions.size());
+	if (Actions.size() && OperationsList->GetSelectedItemsCount())
 	{
 		RemoveOperationButton->Enable(true);
 		EditOperationButton->Enable(true);
@@ -1164,12 +1173,12 @@ bool BulkImportWindow::LoadBuffer()
 	{
 		PathPicker->SetPath(wxEmptyString);
 		UpdateControls();
-		Operations.clear();
+		Actions.clear();
 		BufferLoaded = false;
 		return false;
 	}
 	UpdateControls();
-	Operations.clear();
+	Actions.clear();
 	BufferLoaded = true;
 	FAppConfig& cfg = App::GetSharedApp()->GetConfig();
 	cfg.CompositeDumpPath = PathPicker->GetPath().ToStdWstring();

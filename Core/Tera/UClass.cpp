@@ -360,7 +360,7 @@ void UStruct::SerializeBinProperty(UProperty* property, FPropertyValue* value, F
 
 void UClass::CreateBuiltInClasses(FPackage* package)
 {
-#define MAKE_CLASS(NAME) exp = package->CreateVirtualExport(##NAME, NAME_Class); exp->SetObject(new UClass(exp, true)); obj = (UClass*)exp->GetObject(); obj->Loaded = true
+#define MAKE_CLASS(NAME) exp = package->CreateVirtualExport(##NAME, NAME_Class); exp->SetObject(new UClass(exp, true)); obj = (UClass*)exp->GetObject(); obj->Loaded = true; FPackage::RegisterClass((UClass*)obj)
   const auto pkgName = package->GetPackageName();
   VObjectExport* exp = nullptr;
   UClass* obj = nullptr;

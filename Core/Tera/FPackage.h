@@ -72,6 +72,8 @@ public:
 	static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author);
 	// Get all classes
 	static std::vector<UClass*> GetClasses();
+	// Register a built-in class
+	static void RegisterClass(UClass* classObject);
 
 private:
 	// Packages must be loaded/created from the static methods
@@ -177,6 +179,11 @@ public:
 
 	// Add an object to package imports. Returns true if added
 	bool AddImport(UObject* object, FObjectImport*& output);
+
+	// Convert source object to a UObjectRedirector pointing to the target object
+	// Dangerous!!!
+	// After this call all old pointers to the source object will point to a freed region of memory!!!
+	void ConvertObjectToRedirector(UObject*& source, UObject* targer);
 
 	// Get package read stream
 	inline FStream& GetStream()

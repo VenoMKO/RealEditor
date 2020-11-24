@@ -21,7 +21,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
   // Load all packages
   int total = 0;
   std::vector<std::shared_ptr<FPackage>> packages;
-  for (auto& operation : Operations)
+  for (auto& operation : Actions)
   {
     if (!operation.IsValid())
     {
@@ -81,11 +81,11 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
   }
 
   SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
-  SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format(wxT("Executing %d operation(s)...", total)));
+  SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format(wxT("Executing %d operation(s)..."), total));
   std::this_thread::sleep_for(std::chrono::seconds(1));
   
   int idx = 0;
-  for (const auto& operation : Operations)
+  for (const auto& operation : Actions)
   {
     if (!operation.IsValid())
     {
@@ -139,7 +139,41 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
       }
       else if (operation.RedirectPath.size())
       {
+        auto start = operation.RedirectPath.find('.');
+        wxString packageName;
+        if (start != wxString::npos)
+        {
+          packageName = operation.RedirectPath.substr(0, start);
+        }
+        if (packageName.empty())
+        {
+          AddError(item.Package->GetPackageName().WString(), "Failed to get target package!");
+          continue;
+        }
 
+        try
+        {
+          if (std::shared_ptr<FPackage> targetPackage = FPackage::GetPackageNamed(packageName.ToStdWstring()))
+          {
+            targetPackage->Load();
+            if (UObject* target = targetPackage->GetObject(operation.RedirectIndex))
+            {
+              target->Load();
+              item.Package->ConvertObjectToRedirector(object, target);
+            }
+            else
+            {
+              AddError(item.Package->GetPackageName().WString(), "Failed to get redirected object!");
+              FPackage::UnloadPackage(targetPackage);
+              continue;
+            }
+            FPackage::UnloadPackage(targetPackage);
+          }
+        }
+        catch (const std::exception& e)
+        {
+          AddError(item.Package->GetPackageName().WString(), e.what());
+        }
       }
     }
   }

@@ -47,7 +47,7 @@ protected:
 	std::stringstream ObjectDumpBuffer;
 	bool BufferLoaded = false;
 
-	std::vector<BulkImportOperationData> Operations;
+	std::vector<BulkImportAction> Actions;
 
 	wxString FirstStartClass;
 	wxString FirstStartName;

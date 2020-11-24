@@ -6,7 +6,7 @@
 
 #include <Tera/Core.h>
 
-struct BulkImportOperationData {
+struct BulkImportAction {
 	struct Entry {
 		wxString ObjectPath;
 		wxString PackageName;
@@ -26,6 +26,7 @@ struct BulkImportOperationData {
 
 	wxString ImportPath;
 	wxString RedirectPath;
+	PACKAGE_INDEX RedirectIndex = 0;
 
 	inline wxString GetChangeString() const
 	{
@@ -62,9 +63,9 @@ struct BulkImportOperationData {
 
 class BulkImportOperation {
 public:
-	BulkImportOperation(const std::vector<BulkImportOperationData>& ops, const wxString& path)
+	BulkImportOperation(const std::vector<BulkImportAction>& ops, const wxString& path)
 		: Path(path)
-		, Operations(ops)
+		, Actions(ops)
 	{}
 
 	bool Execute(ProgressWindow& progress);
@@ -87,6 +88,6 @@ protected:
 
 protected:
 	wxString Path;
-	std::vector<BulkImportOperationData> Operations;
+	std::vector<BulkImportAction> Actions;
 	std::vector<std::pair<wxString, wxString>> Errors;
 };

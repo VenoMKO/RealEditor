@@ -3,6 +3,7 @@
 #include "FStream.h"
 #include "FObjectResource.h"
 #include "UObject.h"
+#include "UObjectRedirector.h"
 #include "UClass.h"
 #include "UMetaData.h"
 #include "UPersistentCookerData.h"
@@ -389,6 +390,11 @@ std::vector<UClass*> FPackage::GetClasses()
     }
   }
   return result;
+}
+
+void FPackage::RegisterClass(UClass* classObject)
+{
+  ClassMap[classObject->GetObjectName()] = classObject;
 }
 
 uint16 FPackage::GetCoreVersion()
@@ -2554,8 +2560,12 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     importObject->ClassName.SetString(NAME_Package);
     importObject->ClassPackage.SetPackage(this);
     importObject->ClassPackage.SetString("Core");
+    importObject->OuterIndex = 0;
     Imports.push_back(importObject);
+    importObject->ObjectIndex = -(PACKAGE_INDEX)Imports.size();
+    RootImports.push_back(importObject);
     outerPackage = importObject;
+    MarkDirty();
   }
 
   FObjectImport* outerImp = outerPackage;
@@ -2601,7 +2611,41 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   importObject->ObjectIndex = -(PACKAGE_INDEX)Imports.size();
   output = importObject;
   ImportObjects[importObject->ObjectIndex] = object;
+  MarkDirty();
   return true;
+}
+
+void FPackage::ConvertObjectToRedirector(UObject*& source, UObject* targer)
+{
+  UClass* cls = GetClass(UObjectRedirector::StaticClassName());
+  
+  FObjectImport* imp = nullptr;
+  AddImport(cls, imp);
+  
+  FObjectExport* exp = source->GetExportObject();
+  exp->ClassIndex = imp->ObjectIndex;
+  exp->ExportFlags = EF_None;
+  exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit | RF_Standalone;
+
+  free(ExportObjects[source->GetExportObject()->ObjectIndex]);
+  ExportObjects[exp->ObjectIndex] = UObject::Object(exp);
+
+  source = ExportObjects[exp->ObjectIndex];
+  UObjectRedirector* redirector = (UObjectRedirector*)source;
+  redirector->Loaded = true;
+
+  imp = nullptr;
+  AddImport(targer, imp);
+  
+  redirector->Object = targer;
+  redirector->ObjectRefIndex = imp->ObjectIndex;
+
+  FPropertyTag* tag = new FPropertyTag(redirector);
+  tag->Name.SetPackage(this);
+  tag->Name = NAME_None;
+  redirector->AddProperty(tag);
+  
+  redirector->MarkDirty();
 }
 
 void FPackage::RetainPackage(std::shared_ptr<FPackage> package)
