@@ -236,7 +236,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     if (arr.size() && arr[0]->Type == FPropertyValue::VID::Byte && !arr[0]->Enum)
     {
       // Special case for byte arrays
-      wxStringProperty* pgp = new wxStringProperty(_GetPropertyName(value), GetPropertyId(value), wxString::Format("%lluKb", arr.size() / 1024));
+      AByteArrayProperty* pgp = new AByteArrayProperty(value, idx);
       pgp->Enable(cat->IsEnabled());
       if (value->Field && value->Field->GetToolTip().Size())
       {
@@ -395,6 +395,80 @@ protected:
   void OnCancelClicked(wxCommandEvent& event)
   {
     EndModal(wxID_CANCEL);
+  }
+};
+
+class BArrayPropEditDialog : public wxDialog {
+public:
+
+  enum ButtonID {
+    Export = 0,
+    Import,
+    Cancel
+  };
+
+  BArrayPropEditDialog(wxWindow* parent,
+    wxWindowID id = wxID_ANY,
+    const wxString& title = wxEmptyString,
+    const wxPoint& pos = wxDefaultPosition,
+    const wxSize& size = wxSize(193, 149),
+    long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+    : wxDialog(parent, id, title, pos, size, style)
+  {
+    SetSizeHints(wxDefaultSize, wxDefaultSize);
+
+    wxBoxSizer* bSizer12;
+    bSizer12 = new wxBoxSizer(wxVERTICAL);
+
+    ExportButton = new wxButton(this, wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(ExportButton, 0, wxALL | wxEXPAND, 5);
+
+    ImportButton = new wxButton(this, wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(ImportButton, 0, wxALL | wxEXPAND, 5);
+
+    CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, 5);
+
+
+    bSizer12->Add(0, 0, 1, wxEXPAND, 5);
+
+
+    SetSizer(bSizer12);
+    Layout();
+
+    Centre(wxBOTH);
+
+    // Connect Events
+    ExportButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnExportClicked), NULL, this);
+    ImportButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnImportClicked), NULL, this);
+    CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnCancelClicked), NULL, this);
+  }
+
+  ~BArrayPropEditDialog()
+  {
+    ExportButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnExportClicked), NULL, this);
+    ImportButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnImportClicked), NULL, this);
+    CancelButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BArrayPropEditDialog::OnCancelClicked), NULL, this);
+  }
+
+protected:
+  wxButton* ExportButton = nullptr;
+  wxButton* ImportButton = nullptr;
+  wxButton* CancelButton = nullptr;
+
+  void OnExportClicked(wxCommandEvent& event)
+  {
+    EndModal(ButtonID::Export);
+  }
+
+  void OnImportClicked(wxCommandEvent& event)
+  {
+    EndModal(ButtonID::Import);
+  }
+
+  void OnCancelClicked(wxCommandEvent& event)
+  {
+    EndModal(ButtonID::Cancel);
   }
 };
 
@@ -588,6 +662,10 @@ AObjectProperty::AObjectProperty(FPropertyValue* value, int32 idx)
 
 bool AObjectProperty::ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const
 {
+  if (!AllowChanges)
+  {
+    validationInfo.SetFailureBehavior(0);
+  }
   return AllowChanges;
 }
 
@@ -676,5 +754,132 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
     Value->Property->Owner->MarkDirty();
     SetValueFromString(selection->GetObjectName().WString());
   }
+  AllowChanges = false;
+}
+
+AByteArrayProperty::AByteArrayProperty(FPropertyValue* value, int32 idx)
+  : wxLongStringProperty(GetPropertyName(value, idx), GetPropertyId(value), wxString::Format("%lluKb", value->GetArray().size() / 1024))
+  , Value(value)
+{
+  AllowChanges = false;
+  if (value->Field && value->Field->GetToolTip().Size())
+  {
+    SetHelpString(value->Field->GetToolTip().WString());
+  }
+  else if (value->Struct && value->Struct->GetToolTip().Size())
+  {
+    SetHelpString(value->Field->GetToolTip().WString());
+  }
+}
+
+bool AByteArrayProperty::ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const
+{
+  if (!AllowChanges)
+  {
+    validationInfo.SetFailureBehavior(0);
+  }
+  return AllowChanges;
+}
+
+bool AByteArrayProperty::DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value)
+{
+  if (Value)
+  {
+    BArrayPropEditDialog dlg = BArrayPropEditDialog(pg->GetPanel(), wxID_ANY, GetPropertyName(Value));
+    dlg.Move(pg->GetGoodEditorDialogPosition(this, dlg.GetSize()));
+    switch ((BArrayPropEditDialog::ButtonID)dlg.ShowModal())
+    {
+    case BArrayPropEditDialog::ButtonID::Export:
+      OnExportClicked(pg);
+      break;
+    case BArrayPropEditDialog::ButtonID::Import:
+      OnImportClicked(pg);
+      break;
+    default:
+      return false;
+    }
+  }
+  return false;
+}
+
+void AByteArrayProperty::OnExportClicked(wxPropertyGrid* pg)
+{
+  wxString path = wxSaveFileSelector("property data", wxT(".* any file|*.*"), Value->Property->Owner->GetObjectName().WString() + L"." + GetLabel() + L".bin", pg->GetPanel());
+  if (path.IsEmpty())
+  {
+    return;
+  }
+  size_t size = Value->GetArray().size();
+
+  if (size)
+  {
+    uint8* bytes = new uint8[size];
+    for (size_t idx = 0; idx < size; ++idx)
+    {
+      bytes[idx] = Value->GetArray()[idx]->GetByte();
+    }
+
+    FWriteStream s(path.ToStdWstring());
+    if (!s.IsGood())
+    {
+      wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+      delete[] bytes;
+      return;
+    }
+
+    s.SerializeBytes(bytes, size);
+    delete[] bytes;
+  }
+}
+
+void AByteArrayProperty::OnImportClicked(wxPropertyGrid* pg)
+{
+  wxString ext = wxT("Any files (*.*)|*.*");
+  wxString path = wxFileSelector("Import property data", wxEmptyString, Value->Property->Owner->GetObjectName().WString() + L"." + GetLabel() + L".bin", ext, ext, wxFD_OPEN, pg->GetPanel());
+  if (path.IsEmpty())
+  {
+    return;
+  }
+
+  FReadStream s(path.ToStdWstring());
+  if (!s.IsGood())
+  {
+    wxMessageBox("Failed to open \"" + path + "\"", "Error!", wxICON_ERROR);
+    return;
+  }
+  
+  auto& arr = Value->GetArray();
+  UField* field = nullptr;
+  for (FPropertyValue* v : arr)
+  {
+    if (!field && v->Field)
+    {
+      field = v->Field;
+    }
+    delete v;
+  }
+  FILE_OFFSET size = s.GetSize();
+  arr.resize(size);
+
+  if (size)
+  {
+    uint8* impData = new uint8[size];
+    s.SerializeBytes(impData, size);
+
+    for (FILE_OFFSET idx = 0; idx < size; ++idx)
+    {
+      arr[idx] = new FPropertyValue(Value->Property, field);
+      arr[idx]->Data = new uint8;
+      arr[idx]->GetByte() = impData[idx];
+    }
+
+    delete[] impData;
+  }
+
+  Value->Property->Size = size + 4;
+  Value->Property->Owner->MarkDirty();
+
+  AllowChanges = true;
+  SetValueFromString(wxString::Format("%lluKb", arr.size() / 1024));
   AllowChanges = false;
 }

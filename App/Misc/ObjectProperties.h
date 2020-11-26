@@ -77,7 +77,6 @@ protected:
   FPropertyValue* Value = nullptr;
 };
 
-// Temporary solution
 class AObjectProperty : public wxLongStringProperty {
 public:
   AObjectProperty(FPropertyValue* value, int32 idx);
@@ -87,6 +86,21 @@ protected:
   bool DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value) override;
   void OnShowObjectClicked();
   void OnChangeObjectClicked(wxPropertyGrid* pg);
+
+protected:
+  FPropertyValue* Value = nullptr;
+  bool AllowChanges = false;
+};
+
+class AByteArrayProperty : public wxLongStringProperty {
+public:
+  AByteArrayProperty(FPropertyValue* value, int32 idx);
+  bool ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const override;
+
+protected:
+  bool DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value) override;
+  void OnExportClicked(wxPropertyGrid* pg);
+  void OnImportClicked(wxPropertyGrid* pg);
 
 protected:
   FPropertyValue* Value = nullptr;
