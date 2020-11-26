@@ -935,6 +935,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   sum.DataPath = path;
   sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   (*stream) << sum;
+  sum.OriginalPackageFlags = sum.PackageFlags;
   if (CoreVersion && sum.GetFileVersion() != CoreVersion)
   {
     if (sum.GetFileVersion() == VER_TERA_CLASSIC)
@@ -969,7 +970,6 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
-    sum.OriginalPackageFlags = sum.PackageFlags;
     sum.OriginalCompressionFlags = sum.CompressionFlags;
     sum.PackageFlags &= ~PKG_StoreCompressed;
     sum.CompressionFlags = COMPRESS_None;

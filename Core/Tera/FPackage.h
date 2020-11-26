@@ -151,6 +151,23 @@ public:
 		return Imports;
 	}
 
+	inline bool GetPackageFlag(EPackageFlags flag)
+	{
+		return Summary.PackageFlags & flag;
+	}
+
+	inline void SetPackageFlag(EPackageFlags flag, bool state = true)
+	{
+		if (state)
+		{
+			Summary.PackageFlags |= flag;
+		}
+		else
+		{
+			Summary.PackageFlags &= ~flag;
+		}
+	}
+
 	// Get import/export object at index
 	inline FObjectResource* GetResourceObject(PACKAGE_INDEX index) const
 	{

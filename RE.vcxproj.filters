@@ -140,9 +140,6 @@
     <ClCompile Include="App\Windows\CookingOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Windows\CompositeExtractWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Tera\USkeletalMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -290,7 +287,6 @@
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
     <ClInclude Include="App\Windows\CookingOptions.h" />
-    <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />

@@ -967,14 +967,25 @@ BulkImportWindow::~BulkImportWindow()
 void BulkImportWindow::OnFirstIdle(wxIdleEvent&)
 {
 	this->Disconnect(wxEVT_IDLE, wxIdleEventHandler(BulkImportWindow::OnFirstIdle));
+
+	if (FirstStartName.size() && FirstStartClass.size() && PathPicker->GetPath().empty())
+	{
+		wxString extensions = wxS("Objects dump file (*.txt)|*.txt");
+		wxString path = wxFileSelector("Select a composite dump...", wxEmptyString, wxT("ObjectDump.txt"), extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+		if (path.empty())
+		{
+			Close();
+			return;
+		}
+		PathPicker->SetPath(path);
+	}
+
 	if (PathPicker->GetPath().size())
 	{
 		LoadBuffer();
 		UpdateControls();
 	}
-	else
-	{
-	}
+
 	if (FirstStartName.size() && FirstStartClass.size() && AddOperationButton->IsEnabled())
 	{
 		AddImportOperationDialog dlg(this, ObjectDumpBuffer, wxT("Add"), FirstStartClass, FirstStartName);

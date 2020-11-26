@@ -33,7 +33,9 @@ struct BulkImportAction {
 		wxString fname;
 		if (ImportPath.size())
 		{
-			wxFileName::SplitPath(ImportPath, nullptr, nullptr, &fname, nullptr);
+			wxString ext;
+			wxFileName::SplitPath(ImportPath, nullptr, nullptr, &fname, &ext);
+			fname += wxT(".") + ext;
 		}
 		else
 		{

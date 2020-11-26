@@ -160,6 +160,10 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
             {
               target->Load();
               item.Package->ConvertObjectToRedirector(object, target);
+              if (item.Package->GetPackageFlag(PKG_RequireImportsAlreadyLoaded))
+              {
+                item.Package->SetPackageFlag(PKG_RequireImportsAlreadyLoaded, false);
+              }
             }
             else
             {

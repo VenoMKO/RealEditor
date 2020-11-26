@@ -29,7 +29,6 @@
     <ClCompile Include="App\Misc\ObjectProperties.cpp" />
     <ClCompile Include="App\Misc\ObjectTreeModel.cpp" />
     <ClCompile Include="App\Windows\BulkImportWindow.cpp" />
-    <ClCompile Include="App\Windows\CompositeExtractWindow.cpp" />
     <ClCompile Include="App\Windows\CompositePackagePicker.cpp" />
     <ClCompile Include="App\Windows\CompositePatcherWindow.cpp" />
     <ClCompile Include="App\Windows\CookingOptions.cpp" />
@@ -104,7 +103,6 @@
     <ClInclude Include="App\Misc\ObjectProperties.h" />
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
     <ClInclude Include="App\Windows\BulkImportWindow.h" />
-    <ClInclude Include="App\Windows\CompositeExtractWindow.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
     <ClInclude Include="App\Windows\CookingOptions.h" />

@@ -4,7 +4,6 @@
 #include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
-#include "CompositeExtractWindow.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -347,7 +346,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 
 	wxMenu menu;
 	menu.SetClientData((void*)node);
-	menu.Append(ObjTreeMenuId::Search, wxT("Search object duplicates..."));
+	menu.Append(ObjTreeMenuId::Search, wxT("Bulk import..."));
 	menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
 	menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
 	menu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(PackageWindow::OnObjectTreeContextMenuClick), NULL, this);
@@ -1040,9 +1039,6 @@ void PackageWindow::OnObjectTreeStartEdit(wxDataViewEvent& e)
 void PackageWindow::OnBulkCompositeExtract(wxCommandEvent&)
 {
 	App::GetSharedApp()->ShowBulkImport(this);
-	return;
-	CompositeExtractWindow extractor(this);
-	extractor.ShowModal();
 }
 
 void PackageWindow::OnHelpClicked(wxCommandEvent&)
