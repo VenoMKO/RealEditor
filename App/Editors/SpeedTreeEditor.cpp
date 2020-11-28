@@ -5,6 +5,15 @@ enum ExportMode {
   ExportSptAndMaterials
 };
 
+void SpeedTreeEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  if (auto toolbarItem = toolbar->FindById(eID_Import))
+  {
+    toolbarItem->Enable(true);
+  }
+}
+
 void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
 {
   wxMenu menu;
@@ -52,5 +61,26 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
   }
 
   s.SerializeBytes(sptData, sptDataSize);
+  free(sptData);
+}
+
+void SpeedTreeEditor::OnImportClicked(wxCommandEvent& e)
+{
+  wxString ext = wxT("SPT files (*.spt)|*.spt");
+  wxString path = wxFileSelector("Import a SpeedTree", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, this);
+  if (path.IsEmpty())
+  {
+    return;
+  }
+  FReadStream s(path.ToStdWstring());
+  if (!s.IsGood())
+  {
+    wxMessageBox("Failed to open \"" + path + "\"", "Error!", wxICON_ERROR);
+    return;
+  }
+  FILE_OFFSET size = s.GetSize();
+  void* sptData = malloc(size);
+  s.SerializeBytes(sptData, size);
+  ((USpeedTree*)Object)->SetSptData(sptData, size);
   free(sptData);
 }

@@ -1,6 +1,8 @@
 #include "USpeedTree.h"
 #include "FPackage.h"
 
+#include "ALog.h"
+
 bool USpeedTree::RegisterProperty(FPropertyTag* property)
 {
   if (Super::RegisterProperty(property))
@@ -111,4 +113,28 @@ bool USpeedTree::GetSptData(void** output, FILE_OFFSET* outputSize, bool embedMa
     return true;
   }
   return false;
+}
+
+void USpeedTree::SetSptData(void* data, FILE_OFFSET size)
+{
+  if (!SpeedTreeData)
+  {
+    SpeedTreeData = malloc(size);
+  }
+  else if (SpeedTreeDataSize != size)
+  {
+    if (void* tmp = realloc(SpeedTreeData, size))
+    {
+      SpeedTreeData = tmp;
+      SpeedTreeDataSize = size;
+    }
+    else
+    {
+      LogE("Failed to allocate SPT data!");
+      return;
+    }
+  }
+
+  memcpy(SpeedTreeData, data, size);
+  MarkDirty();
 }

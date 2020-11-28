@@ -24,6 +24,7 @@ public:
   void PostLoad() override;
   void Serialize(FStream& s) override;
   bool GetSptData(void** output, FILE_OFFSET* outputSize, bool embedMaterialInfo);
+  void SetSptData(void* data, FILE_OFFSET size);
 
 protected:
   FILE_OFFSET SpeedTreeDataSize = 0;
