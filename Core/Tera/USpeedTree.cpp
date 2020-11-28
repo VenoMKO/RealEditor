@@ -120,6 +120,7 @@ void USpeedTree::SetSptData(void* data, FILE_OFFSET size)
   if (!SpeedTreeData)
   {
     SpeedTreeData = malloc(size);
+    SpeedTreeDataSize = size;
   }
   else if (SpeedTreeDataSize != size)
   {
