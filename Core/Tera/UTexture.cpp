@@ -270,6 +270,22 @@ void UTexture2D::Serialize(FStream& s)
   }
 }
 
+unsigned int UTexture2D::Hash() const
+{
+  if (!Loaded)
+  {
+    return 0;
+  }
+  for (FTexture2DMipMap* mip : Mips)
+  {
+    if (mip->Data && mip->Data->ElementCount)
+    {
+      return CalculateDataCRC(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
+    }
+  }
+  return 0;
+}
+
 void UTexture2D::DisableCaching()
 {
   Load();

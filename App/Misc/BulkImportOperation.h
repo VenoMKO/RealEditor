@@ -82,6 +82,11 @@ public:
 		return Errors.size();
 	}
 
+	inline void SetTfcName(const wxString& tfcName)
+	{
+		TfcName = tfcName;
+	}
+
 protected:
 	void AddError(const wxString& source, const wxString& error);
 	void ImportTexture(FPackage* package, class UTexture2D* tobject, const wxString& source);
@@ -90,6 +95,7 @@ protected:
 
 protected:
 	wxString Path;
+	wxString TfcName;
 	std::vector<BulkImportAction> Actions;
 	std::vector<std::pair<wxString, wxString>> Errors;
 };

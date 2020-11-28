@@ -427,12 +427,9 @@ void FPackage::LoadClassPackage(const FString& name)
   LogI("Loading %s", name.C_str());
   if (auto package = GetPackageNamed(name))
   {
-    package->AllowEdit = false;
-    package->AllowForcedExportResolving = false;
-    package->Load();
-    DefaultClassPackages.push_back(package);
     if (name == "Core.u")
     {
+      InitCRCTable();
       CoreVersion = package->GetFileVersion();
       if (CoreVersion == VER_TERA_CLASSIC)
       {
@@ -444,6 +441,11 @@ void FPackage::LoadClassPackage(const FString& name)
     {
       UThrow("Package %s has different version %d/%d ", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
     }
+
+    package->AllowEdit = false;
+    package->AllowForcedExportResolving = false;
+    package->Load();
+    DefaultClassPackages.push_back(package);
 
     UClass::CreateBuiltInClasses(package.get());
 
@@ -2626,6 +2628,7 @@ void FPackage::ConvertObjectToRedirector(UObject*& source, UObject* targer)
   exp->ClassIndex = imp->ObjectIndex;
   exp->ExportFlags = EF_None;
   exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit | RF_Standalone;
+  exp->SerialSize = 0x10;
 
   free(ExportObjects[source->GetExportObject()->ObjectIndex]);
   ExportObjects[exp->ObjectIndex] = UObject::Object(exp);

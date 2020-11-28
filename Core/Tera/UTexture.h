@@ -52,6 +52,8 @@ public:
 
   void Serialize(FStream& s) override;
 
+  unsigned int Hash() const;
+
   // Disable texture caching, pull max mipmap, delete smaller mips
   // Needed for cross-region mods
   void DisableCaching();

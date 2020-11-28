@@ -159,6 +159,10 @@ FString TextureCompressionSettingsToString(uint8 flags);
 
 std::string GetAppVersion();
 
+void InitCRCTable();
+uint32 CalculateStringCRC(const uint8* data, int32 size);
+uint32 CalculateDataCRC(const void* data, int32 size, uint32 crc = 0);
+
 // Check if the CPU has AVX2 instructions set. Mandatory for TGA and PNG export/import
 bool HasAVX2();
 

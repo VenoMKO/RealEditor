@@ -227,6 +227,9 @@
     <ClCompile Include="App\Misc\BulkImportOperation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Utils\TfcBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -317,6 +320,7 @@
     <ClInclude Include="App\Windows\ObjectPicker.h" />
     <ClInclude Include="App\Windows\BulkImportWindow.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
+    <ClInclude Include="Core\Utils\TfcBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

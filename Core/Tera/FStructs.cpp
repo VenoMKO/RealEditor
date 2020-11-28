@@ -2,6 +2,8 @@
 #include "FStream.h"
 #include "UObject.h"
 
+#include "ALog.h"
+
 const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
 
 FStream& operator<<(FStream& s, FGuid& g)
@@ -460,6 +462,7 @@ void FUntypedBulkData::SerializeSeparate(FStream& s, UObject* owner, int32 idx)
   }
   catch (const std::exception& e)
   {
+    LogW("%s", e.what());
     if (s.IsReading())
     {
       free(BulkData);

@@ -48,6 +48,46 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 #define COMPRESSION_FLAGS_TYPE_MASK		0x0F
 #define COMPRESSION_FLAGS_OPTIONS_MASK	0xF0
 
+#define CRC32_POLY 0x04C11DB7
+
+unsigned int CRCLookUpTable[256];
+
+void InitCRCTable()
+{
+  for (unsigned int iCRC = 0; iCRC < 256; iCRC++)
+  {
+    for (unsigned int c = iCRC << 24, j = 8; j != 0; j--)
+    {
+      CRCLookUpTable[iCRC] = c = c & 0x80000000 ? (c << 1) ^ CRC32_POLY : (c << 1);
+    }
+  }
+}
+
+uint32 CalculateStringCRC(const uint8* data, int32 size)
+{
+  uint32 crc = 0xFFFFFFFF;
+  for (int i = 0; i < size; i++)
+  {
+    char c = toupper(data[i]);
+    int32 cl = (c & 0xFF);
+    crc = (crc << 8) ^ CRCLookUpTable[(crc >> 24) ^ cl];
+    int32 ch = (c >> 8) & 0xFF;
+    crc = (crc << 8) ^ CRCLookUpTable[(crc >> 24) ^ ch];
+  }
+  return ~crc;
+}
+
+uint32 CalculateDataCRC(const void* data, int32 size, uint32 crc)
+{
+  crc = ~crc;
+  const uint8* ptr = (const uint8*)data;
+  for (int i = 0; i < size; i++)
+  {
+    crc = (crc << 8) ^ CRCLookUpTable[(crc >> 24) ^ ptr[i]];
+  }
+  return ~crc;
+}
+
 bool _HasAVX2()
 {
   std::array<int, 4> cpui;

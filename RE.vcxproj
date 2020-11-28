@@ -81,6 +81,7 @@
     <ClCompile Include="Core\Utils\SoundTravaller.cpp" />
     <ClCompile Include="Core\Utils\TextureProcessor.cpp" />
     <ClCompile Include="Core\Utils\TextureTravaller.cpp" />
+    <ClCompile Include="Core\Utils\TfcBuilder.cpp" />
     <ClCompile Include="Extern\minilzo\minilzo.c" />
   </ItemGroup>
   <ItemGroup>
@@ -129,6 +130,7 @@
     <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />
+    <ClInclude Include="Core\Utils\TfcBuilder.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />

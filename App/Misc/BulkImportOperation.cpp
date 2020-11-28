@@ -4,6 +4,7 @@
 #include <filesystem>
 
 #include <Tera/Cast.h>
+#include <Tera/FObjectResource.h>
 #include <Tera/FPackage.h>
 #include <Tera/UTexture.h>
 #include <Tera/USoundNode.h>
@@ -11,6 +12,7 @@
 #include <Utils/TextureTravaller.h>
 #include <Utils/TextureProcessor.h>
 #include <Utils/SoundTravaller.h>
+#include <Utils/TfcBuilder.h>
 
 #include <thread>
 
@@ -83,7 +85,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
   SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
   SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format(wxT("Executing %d operation(s)..."), total));
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  
+
   int idx = 0;
   for (const auto& operation : Actions)
   {
@@ -182,9 +184,49 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
     }
   }
 
+  bool disableTextureCaching = true;
+  if (TfcName.size())
+  {
+    TfcBuilder tfc(TfcName.ToStdWstring());
+    for (std::shared_ptr<FPackage> pkg : packages)
+    {
+      auto exports = pkg->GetAllExports();
+      for (FObjectExport* exp : exports)
+      {
+        if (exp->GetClassName() == UTexture2D::StaticClassName())
+        {
+          try
+          {
+            UTexture2D* tex = Cast<UTexture2D>(pkg->GetObject(exp));
+            tfc.AddTexture(tex);
+          }
+          catch (...)
+          {
+          }
+        }
+      }
+    }
+
+    if (tfc.Compile())
+    {
+      FILE_OFFSET tfcSize = 0;
+      void* tfcData = nullptr;
+      if ((tfcData = tfc.GetAllocation(tfcSize)) && tfcSize)
+      {
+        FWriteStream s(W2A((std::filesystem::path(Path.ToStdWstring()) / TfcName.ToStdWstring()).wstring()) + ".tfc");
+        s.SerializeBytes(tfcData, tfcSize);
+        if (s.IsGood())
+        {
+          disableTextureCaching = false;
+        }
+      }
+    }
+  }
+  
+
   PackageSaveContext ctx;
   ctx.EmbedObjectPath = true;
-  ctx.DisableTextureCaching = true;
+  ctx.DisableTextureCaching = disableTextureCaching;
   SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Saving..."));
   for (std::shared_ptr<FPackage> pkg : packages)
   {
