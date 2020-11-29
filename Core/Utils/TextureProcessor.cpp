@@ -543,7 +543,7 @@ bool TextureProcessor::FileToBytes()
     return false;
   }
 
-  while (sizeX >= minX && sizeY >= minY && idx < TPOutputHandler::MaxMipCount)
+  while (idx < TPOutputHandler::MaxMipCount)
   {
     if (!context.compress(surface, 0, idx, compressionOptions, outputOptions))
     {
@@ -555,7 +555,7 @@ bool TextureProcessor::FileToBytes()
 
     if (GenerateMips)
     {
-      if (!surface.buildNextMipmap(MipFilterTypeToNvtt(MipFilter), minX))
+      if (!surface.buildNextMipmap(MipFilterTypeToNvtt(MipFilter)))
       {
         break;
       }
