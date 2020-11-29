@@ -4,6 +4,7 @@
 #include "FObjectResource.h"
 #include "UClass.h"
 #include "UComponent.h"
+#include "UProperty.h"
 
 #include "ALog.h"
 
@@ -75,6 +76,42 @@ FILE_OFFSET UObject::GetPropertiesSize() const
 FILE_OFFSET UObject::GetDataSize() const
 {
   return RawDataOffset ? (GetSerialOffset() + GetSerialSize() - RawDataOffset) : -1;
+}
+
+void UObject::AddProperty(FPropertyTag* property)
+{
+  if (!property)
+  {
+    return;
+  }
+
+  if (property->ClassProperty)
+  {
+    // Try to insert the property at the correct index
+    UField* field = property->ClassProperty->GetNext();
+    while (field)
+    {
+      const FString fieldName = field->GetObjectName();
+      for (int32 i = 0; i < Properties.size(); ++i)
+      {
+        if (Properties[i]->Name == fieldName)
+        {
+          Properties.insert(Properties.begin() + i, property);
+          return;
+        }
+      }
+      field = field->GetNext();
+    }
+  }
+
+  if (property->Name != NAME_None && Properties.size() && Properties.back()->Name == NAME_None)
+  {
+    Properties.insert(Properties.end() - 1, property);
+  }
+  else
+  {
+    Properties.push_back(property);
+  }
 }
 
 void UObject::RemoveProperty(FPropertyTag* tag)

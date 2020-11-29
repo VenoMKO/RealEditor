@@ -14,6 +14,7 @@ public:\
   std::string GetStaticClassChain() const override { return Super::GetStaticClassChain() + "." + ThisClass::StaticClassName(); }\
   using TSuper::TSuper
 
+// Common property helpers for faster property definition and registration
 #define __GLUE_PROP(TName, Suffix) TName##Suffix
 #define UPROP(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
 #define UPROP_NOINIT(TType, TName) TType TName; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
@@ -87,12 +88,39 @@ if (Super::RegisterProperty(property))\
 
 class UObject {
 public:
+  // =========================================================================
+  // Specialized methods used by DECL_UOBJ, ClassCast, etc. Don't override!!!
+  // =========================================================================
+
   enum { StaticClassCastFlags = CASTCLASS_None };
   virtual uint32 GetStaticClassCastFlags() const
   {
     return StaticClassCastFlags;
   }
 
+  // Cpp class name. Use ONLY with a class (e.g., UObject::StaticClass())
+  static const char* StaticClassName()
+  {
+    return "Object";
+  }
+
+  // Get cpp class name from an instance
+  virtual const char* GetStaticClassName() const
+  {
+    return StaticClassName();
+  }
+
+  // Internal method used for safe casting
+  virtual std::string GetStaticClassChain() const
+  {
+    return StaticClassName();
+  }
+
+  // =========================================================================
+  // Normal UObject methods
+  // =========================================================================
+
+  // Helper for loading nonull objects
   static void LoadObject(UObject* object)
   {
     if (object)
@@ -104,36 +132,22 @@ public:
   // Object factory
   static UObject* Object(FObjectExport* exp);
 
-  // Cpp class name. Use ONLY with a class (e.g. UObject::StaticClass())
-  static const char* StaticClassName()
-  {
-    return "Object";
-  }
-
   UObject() = delete;
   UObject(const UObject&) = delete;
   UObject(FObjectExport* exp);
 
-  // Get cpp class name from an instance
-  virtual const char* GetStaticClassName() const
-  {
-    return StaticClassName();
-  }
-
-  virtual std::string GetStaticClassChain() const
-  {
-    return StaticClassName();
-  }
-
   virtual ~UObject();
 
-  // Load the object from its package
+  // Load the object from its package. Creates a copy of package's stream
   virtual void Load();
+
+  // Load the object from the provided stream. Will set correct stream offset.
   virtual void Load(FStream& s);
 
   // Serialize object by an index
   friend FStream& operator<<(FStream& s, UObject*& obj);
 
+  // Used to collect properties during serialization.
   virtual bool RegisterProperty(FPropertyTag* property);
 
   FString GetObjectPath() const;
@@ -160,11 +174,13 @@ public:
 
   FPackage* GetPackage() const;
 
+  // Is UComponent?
   virtual bool IsComponent() const
   {
     return false;
   }
 
+  // Check if UObject has any object flags
   inline bool HasAnyFlags(uint64 flags) const;
 
   UObject* GetOuter() const
@@ -225,28 +241,22 @@ public:
     return Loaded;
   }
 
+  // Get object's class object
   inline UClass* GetClass() const
   {
     return Class;
   }
 
+  // Get object's root properties
   std::vector<FPropertyTag*> GetProperties() const
   {
     return Properties;
   }
 
-  void AddProperty(FPropertyTag* property)
-  {
-    if (property->Name != NAME_None && Properties.size() && Properties.back()->Name == NAME_None)
-    {
-      Properties.insert(Properties.end() - 1, property);
-    }
-    else
-    {
-      Properties.push_back(property);
-    }
-  }
+  // Add root property to the object. Don't call this with a struct/array element property!
+  void AddProperty(FPropertyTag* property);
 
+  // Remove root property
   void RemoveProperty(FPropertyTag* tag);
   
   // Object initialization. Wont modify package's object tree!
@@ -261,8 +271,10 @@ public:
     Inner.push_back(inner);
   }
 
+  // Get objects raw binary data. The data is unmodifed unless SetRawData was called.
   void* GetRawData();
 
+  // Set raw binary data
   void SetRawData(void* data, FILE_OFFSET size);
 
   // Serialize the object from a stream. Should not be called outside of the Load
@@ -275,8 +287,10 @@ protected:
   // Handle object initialization for derived classes
   virtual void PostLoad();
 
+  // Special serialization for class default objects
   void SerializeDefaultObject(FStream& s);
 
+  // Helper to serialize object data leftovers(e.g., incomplete implementation). Should be called in the Serialize method of a derived class
   void SerializeTrailingData(FStream& s);
 
 protected:
