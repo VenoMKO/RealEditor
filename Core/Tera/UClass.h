@@ -185,6 +185,8 @@ public:
     return PropertyLink;
   }
 
+  UProperty* GetProperty(const FString& name) const;
+
   virtual void Link();
 
   void Serialize(FStream& s) override;

@@ -58,6 +58,16 @@ FPropertyValue::~FPropertyValue()
 	}
 }
 
+FPropertyTag::FPropertyTag(UObject* owner, const FString& name, const FString& type)
+{
+	Owner = owner;
+	Type.SetPackage(owner->GetPackage());
+	Name.SetPackage(owner->GetPackage());
+	Type.SetString(type);
+	Name.SetString(name);
+	NewValue();
+}
+
 bool FPropertyTag::GetVector(FVector& output) const
 {
 	if (!Value || Value->Type != FPropertyValue::VID::Struct)

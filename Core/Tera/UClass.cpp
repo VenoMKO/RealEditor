@@ -62,6 +62,20 @@ UStruct::~UStruct()
   }
 }
 
+UProperty* UStruct::GetProperty(const FString& name) const
+{
+  UProperty* propertyLinkPtr = PropertyLink;
+  for (TFieldIterator<UProperty> it(this); it; ++it)
+  {
+    UProperty* property = *it;
+    if (property->GetObjectName() == name)
+    {
+      return property;
+    }
+  }
+  return nullptr;
+}
+
 void UStruct::Link()
 {
   for (TFieldIterator<UStruct> it(this); it; ++it)

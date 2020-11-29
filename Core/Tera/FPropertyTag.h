@@ -181,6 +181,8 @@ struct FPropertyTag {
 		NewValue();
 	}
 
+	FPropertyTag(UObject* owner, const FString& name, const FString& type);
+
 	~FPropertyTag()
 	{
 		if (Value)
