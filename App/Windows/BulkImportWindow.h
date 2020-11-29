@@ -26,9 +26,6 @@ protected:
 	void OnEditOperationClicked(wxCommandEvent& event);
 	void OnRemoveOperationClicked(wxCommandEvent& event);
 	void OnClearOperationsClicked(wxCommandEvent& event);
-	void OnToggleTfc(wxCommandEvent& event);
-	void OnTfcText(wxCommandEvent& event);
-	void OnTfcEnter(wxCommandEvent& event);
 	void OnContinueClicked(wxCommandEvent& event);
 	void OnCancelClicked(wxCommandEvent& event);
 	void OnOperationsListContextMenu(wxDataViewEvent& event);
@@ -44,7 +41,6 @@ protected:
 	wxButton* RemoveOperationButton = nullptr;
 	wxButton* ClearOperationsButton = nullptr;
 	wxCheckBox* EnableTfc = nullptr;
-	wxTextCtrl* TfcNameTextField = nullptr;
 	wxButton* ContinueButton = nullptr;
 	wxButton* CancelButton = nullptr;
 

@@ -760,7 +760,7 @@ protected:
 };
 
 BulkImportWindow::BulkImportWindow(wxWindow* parent)
-	: wxFrame(parent, wxID_ANY, wxT("Bulk Import"), wxDefaultPosition, wxSize(667, 618))
+	: wxFrame(parent, wxID_ANY, wxT("Bulk Import"), wxDefaultPosition, wxSize(667, 631))
 {
 	SetIcon(wxICON(#114));
 	SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -878,24 +878,13 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 	bSizer19 = new wxBoxSizer(wxVERTICAL);
 
 	EnableTfc = new wxCheckBox(m_panel8, wxID_ANY, wxT("Generate Texture File Cache (TFC)"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer19->Add(EnableTfc, 0, wxALL, 5);
+	EnableTfc->SetValue(false);
+	bSizer19->Add(EnableTfc, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
-	wxBoxSizer* bSizer20;
-	bSizer20 = new wxBoxSizer(wxHORIZONTAL);
-
-	wxStaticText* m_staticText21;
-	m_staticText21 = new wxStaticText(m_panel8, wxID_ANY, wxT("TFC Name:"), wxDefaultPosition, wxDefaultSize, 0);
-	m_staticText21->Wrap(-1);
-	bSizer20->Add(m_staticText21, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-
-	TfcNameTextField = new wxTextCtrl(m_panel8, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-	TfcNameTextField->SetMaxLength(255);
-	TfcNameTextField->Enable(EnableTfc->GetValue());
-	bSizer20->Add(TfcNameTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-
-
-	bSizer19->Add(bSizer20, 1, wxEXPAND, 5);
-
+	wxStaticText* m_staticText22;
+	m_staticText22 = new wxStaticText(m_panel8, wxID_ANY, wxT("This option helps to reduce mod size by combining textures to a single TFC file. If disabled, all cached textures will be resaved to their packages. Check this option if you have at least two GPK files across all actions."), wxDefaultPosition, wxDefaultSize, 0);
+	m_staticText22->Wrap(650);
+	bSizer19->Add(m_staticText22, 1, wxALL, 5);
 
 	m_panel8->SetSizer(bSizer19);
 	m_panel8->Layout();
@@ -933,9 +922,6 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 	EditOperationButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnEditOperationClicked), NULL, this);
 	RemoveOperationButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnRemoveOperationClicked), NULL, this);
 	ClearOperationsButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnClearOperationsClicked), NULL, this);
-	EnableTfc->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(BulkImportWindow::OnToggleTfc), NULL, this);
-	TfcNameTextField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(BulkImportWindow::OnTfcText), NULL, this);
-	TfcNameTextField->Connect(wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler(BulkImportWindow::OnTfcEnter), NULL, this);
 	ContinueButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnContinueClicked), NULL, this);
 	CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnCancelClicked), NULL, this);
 	OperationsList->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler(BulkImportWindow::OnOperationsListContextMenu), NULL, this);
@@ -998,9 +984,6 @@ BulkImportWindow::~BulkImportWindow()
 	EditOperationButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnEditOperationClicked), NULL, this);
 	RemoveOperationButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnRemoveOperationClicked), NULL, this);
 	ClearOperationsButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnClearOperationsClicked), NULL, this);
-	EnableTfc->Disconnect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(BulkImportWindow::OnToggleTfc), NULL, this);
-	TfcNameTextField->Disconnect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(BulkImportWindow::OnTfcText), NULL, this);
-	TfcNameTextField->Disconnect(wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler(BulkImportWindow::OnTfcEnter), NULL, this);
 	ContinueButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnContinueClicked), NULL, this);
 	CancelButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnCancelClicked), NULL, this);
 	OperationsList->Disconnect(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler(BulkImportWindow::OnOperationsListContextMenu), NULL, this);
@@ -1126,11 +1109,6 @@ void BulkImportWindow::OnClearOperationsClicked(wxCommandEvent& event)
 	UpdateControls();
 }
 
-void BulkImportWindow::OnToggleTfc(wxCommandEvent& event)
-{
-	UpdateControls();
-}
-
 void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 {
 	wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
@@ -1142,7 +1120,7 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 
 	if (EnableTfc->GetValue())
 	{
-		operation.SetTfcName(TfcNameTextField->GetValue());
+		operation.SetTfcName(wxT("WorldTextures999"));
 	}
 
 	ProgressWindow progress(this, wxT("Please wait..."));
@@ -1158,6 +1136,16 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 
 	progress.ShowModal();
 
+	if (operation.HasErrors())
+	{
+		auto failed = operation.GetErrors();
+		std::ofstream s(std::filesystem::path(dlg.GetPath().ToStdWstring()) / "Errors.txt", std::ios::out | std::ios::binary);
+		for (const auto& pair : failed)
+		{
+			s << pair.first << " - " << pair.second << '\n';
+		}
+	}
+
 	if (result)
 	{
 		auto icon = wxICON_INFORMATION;
@@ -1166,13 +1154,6 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 		{
 			msg += wxT("\nSome operations have failed. See Errors.txt in the otput folder.");
 			icon = wxICON_WARNING;
-
-			auto failed = operation.GetErrors();
-			std::ofstream s(std::filesystem::path(dlg.GetPath().ToStdWstring()) / "Errors.txt", std::ios::out | std::ios::binary);
-			for (const auto& pair : failed)
-			{
-				s << pair.first << " - " << pair.second << '\n';
-			}
 		}
 		wxMessageBox(msg, wxT("Finished"), icon);
 	}
@@ -1192,22 +1173,11 @@ void BulkImportWindow::OnOperationsListContextMenu(wxDataViewEvent& event)
 	// Do nothing
 }
 
-void BulkImportWindow::OnTfcText(wxCommandEvent& event)
-{
-	UpdateControls();
-}
-
-void BulkImportWindow::OnTfcEnter(wxCommandEvent& event)
-{
-	UpdateControls();
-}
-
 void BulkImportWindow::UpdateControls()
 {
 	AddOperationButton->Enable(BufferLoaded);
 	ClearOperationsButton->Enable(Actions.size());
-	TfcNameTextField->Enable(EnableTfc->GetValue());
-	ContinueButton->Enable(Actions.size() && (EnableTfc->GetValue() ? TfcNameTextField->GetValue().size() : true));
+	ContinueButton->Enable(Actions.size());
 	if (Actions.size() && OperationsList->GetSelectedItemsCount())
 	{
 		RemoveOperationButton->Enable(true);

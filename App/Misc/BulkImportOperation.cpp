@@ -326,7 +326,7 @@ void BulkImportOperation::ImportTexture(FPackage* package, UTexture2D* texture, 
 
   processor.SetSrgb(texture->SRGB);
   processor.SetNormal(isNormal);
-  processor.SetGenerateMips(false); //  TODO: change to true when mips don't crash the game
+  processor.SetGenerateMips(TfcName.size() && HasAVX2() && inputFormat != TextureProcessor::TCFormat::DDS);
   processor.SetAddressX(texture->AddressX);
   processor.SetAddressY(texture->AddressY);
   processor.ClearOutput();
