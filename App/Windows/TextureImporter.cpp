@@ -208,7 +208,7 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
 
 	GenMips = new wxCheckBox(m_panel9, ControlElementId::MipGen, wxT("Generate mipmaps"), wxDefaultPosition, wxDefaultSize, 0);
 	GenMips->SetValue(false);
-	GenMips->Enable(false);
+	GenMips->Enable(HasAVX2());
 	bSizer14->Add(GenMips, 0, wxALL, 5);
 
 	wxStaticText* m_staticText20;

@@ -2,6 +2,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
+#include <Tera/UClass.h>
 
 void TextureTravaller::SetFormat(EPixelFormat format)
 {
@@ -140,7 +141,7 @@ bool TextureTravaller::Visit(UTexture2D* texture)
 
     void* data = malloc(tmip.Size);
     memcpy(data, tmip.Data, tmip.Size);
-    mip->Data = new FByteBulkData(texture->GetPackage(), BULKDATA_None, tmip.Size, data, true);
+    mip->Data = new FByteBulkData(texture->GetPackage(), BULKDATA_SerializeCompressedLZO, tmip.Size, data, true);
     texture->Mips.push_back(mip);
   }
   
