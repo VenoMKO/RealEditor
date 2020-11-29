@@ -44,6 +44,7 @@ public:
   UPROP(int32, MipTailBaseIdx, 0);
   UPROP(int32, FirstResourceMemMip, 0);
   UPROP(bool, bNoTiling, false);
+  UPROP(bool, NeverStream, false);
   UPROP(FName*, TextureFileCacheName, nullptr);
 
   bool RenderTo(osg::Image* target);

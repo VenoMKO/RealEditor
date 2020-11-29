@@ -225,6 +225,13 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   {
     TextureFileCacheName = property->Value->GetNamePtr();
     TextureFileCacheNameProperty = property;
+    //return true; Let subclasses get this value
+  }
+  else if (PROP_IS(property, NeverStream))
+  {
+    NeverStream = property->Value->GetBool();
+    NeverStreamProperty = property;
+    return true;
   }
   return false;
 }
