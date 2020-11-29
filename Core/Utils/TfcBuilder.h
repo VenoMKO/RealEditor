@@ -25,6 +25,11 @@ public:
     return Error;
   }
 
+  inline size_t GetCount() const
+  {
+    return Textures.size();
+  }
+
   bool AddTexture(UTexture2D* texture);
   bool Compile();
 

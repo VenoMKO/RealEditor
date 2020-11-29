@@ -102,7 +102,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
 
       idx++;
       SendEvent(&progress, UPDATE_PROGRESS, idx);
-      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Processing: ") + item.Package->GetPackageName(true).WString());
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Processing: ") + item.Package->GetPackageName(true).WString() + wxString::Format("(%d/%d)", idx, total));
 
       UObject* object = nullptr;
       try
@@ -187,6 +187,8 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
   bool disableTextureCaching = true;
   if (TfcName.size())
   {
+    SendEvent(&progress, UPDATE_PROGRESS, -1);
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Building texture cached..."));
     TfcBuilder tfc(TfcName.ToStdWstring());
     for (std::shared_ptr<FPackage> pkg : packages)
     {
@@ -197,11 +199,11 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
         {
           try
           {
-            UTexture2D* tex = Cast<UTexture2D>(pkg->GetObject(exp));
-            tfc.AddTexture(tex);
+            tfc.AddTexture(Cast<UTexture2D>(pkg->GetObject(exp)));
           }
           catch (...)
           {
+            AddError("TFC", wxString::Format("Failed to add texture %s", exp->GetObjectName().UTF8().c_str()));
           }
         }
       }
@@ -220,6 +222,10 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
           disableTextureCaching = false;
         }
       }
+    }
+    else if (tfc.GetCount())
+    {
+      AddError("TFC", tfc.GetError().WString());
     }
   }
   

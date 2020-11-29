@@ -33,7 +33,7 @@ bool TfcBuilder::Compile()
   for (UTexture2D* tex : Textures)
   {
     tex->Load();
-    if (tex->NeverStream || tex->Mips.size() < 4 || tex->SizeX <= 64 || tex->SizeY <= 64)
+    if (tex->NeverStream || tex->Mips.size() < 2 || tex->SizeX <= 64 || tex->SizeY <= 64)
     {
       continue;
     }
@@ -83,6 +83,10 @@ bool TfcBuilder::Compile()
             flags[midx] = mip->Data->BulkDataFlags;
           }
         }
+      }
+      else
+      {
+        LogE("Failed to open %s", tex->TextureFileCacheName->String().UTF8().c_str());
       }
     }
     else
@@ -134,7 +138,7 @@ bool TfcBuilder::Compile()
           tex->FirstResourceMemMip = tex->FirstResourceMemMipProperty->GetInt();
           tex->AddProperty(tex->FirstResourceMemMipProperty);
         }
-        else if (!tex->FirstResourceMemMip)
+        else if (tex->FirstResourceMemMip != offsets.size())
         {
           tex->FirstResourceMemMipProperty->GetInt() = int32(offsets.size());
           tex->FirstResourceMemMip = tex->FirstResourceMemMipProperty->GetInt();
@@ -156,8 +160,9 @@ bool TfcBuilder::Compile()
             mip->Data->BulkDataFlags = flags[midx];
           }
         }
+
+        tex->MarkDirty();
       }
-      tex->MarkDirty();
     }
   }
 
