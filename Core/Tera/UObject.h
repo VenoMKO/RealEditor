@@ -237,7 +237,14 @@ public:
 
   void AddProperty(FPropertyTag* property)
   {
-    Properties.push_back(property);
+    if (property->Name != NAME_None && Properties.size() && Properties.back()->Name == NAME_None)
+    {
+      Properties.insert(Properties.end() - 1, property);
+    }
+    else
+    {
+      Properties.push_back(property);
+    }
   }
 
   void RemoveProperty(FPropertyTag* tag);
