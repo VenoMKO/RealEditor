@@ -197,6 +197,16 @@ public:
     return FString(FilenameString(extension));
   }
 
+  inline FString FileExtension() const
+  {
+    auto pos = Data.find_last_of('.');
+    if (pos != std::string::npos && pos < Data.size() - 1)
+    {
+      return Data.substr(pos + 1);
+    }
+    return FString();
+  }
+
   inline bool operator==(const FString& a) const
   {
     if (Data.empty())

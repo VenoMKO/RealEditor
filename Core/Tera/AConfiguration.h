@@ -30,6 +30,7 @@ struct FAppConfig
     CFG_WindowRect,
     CFG_SashPos,
     CFG_CompositeDumpPath,
+    CFG_LastModAuthor,
 
     // Log
     CFG_LogBegin = 100,
@@ -48,6 +49,8 @@ struct FAppConfig
   FIntRect SashPos = { { 230, 1008 }, { 540, 774 } };
   // CFG_CompositeDumpPath: Last composite dump location
   FString CompositeDumpPath;
+  // CFG_LastModAuthor: Last composite mod author
+  FString LastModAuthor;
 
 
   // CFG_LogBegin: Logger config

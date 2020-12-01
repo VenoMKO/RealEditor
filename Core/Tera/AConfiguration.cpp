@@ -120,6 +120,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_CompositeDumpPath:
         s << c.CompositeDumpPath;
         break;
+      case FAppConfig::CFG_LastModAuthor:
+        s << c.LastModAuthor;
+        break;
       case FAppConfig::CFG_LogBegin:
         s << c.LogConfig;
         CheckKey(FAppConfig::CFG_LogEnd);
@@ -140,6 +143,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_WindowRect, c.WindowRect);
     SerializeKeyValue(FAppConfig::CFG_SashPos, c.SashPos);
     SerializeKeyValue(FAppConfig::CFG_CompositeDumpPath, c.CompositeDumpPath);
+    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastModAuthor);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

@@ -27,8 +27,6 @@ const char* PersistentDataName = "GlobalPersistentCookerData";
 const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
 const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
 
-const std::vector<FString> DefaultClassPackageNames = { "Core.u", "Engine.u", "S1Game.u", "GameFramework.u", "GFxUI.u" };
-
 FString FPackage::RootDir;
 std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
@@ -277,8 +275,34 @@ void FPackage::UpdateDirCache()
 void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author)
 {
   std::vector<FString> objects;
+  std::vector<std::pair<FString, int32>> tfcs;
+
   for (const FString& path : items)
   {
+    if (path.FileExtension().ToUpper() == "TFC")
+    {
+      FString fname = path.Filename();
+      if (!fname.StartWith(NAME_WorldTextures) || fname.Size() < strlen(NAME_WorldTextures) + 3)
+      {
+        UThrow("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+      }
+      int32 idx = 0;
+      try
+      {
+        idx = std::stoi(fname.Substr(strlen(NAME_WorldTextures)).C_str());
+      }
+      catch (...)
+      {
+        idx = -1;
+      }
+      if (idx <= 0)
+      {
+        UThrow("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+      }
+      tfcs.push_back(std::make_pair(path, idx));
+      continue;
+    }
+
     FReadStream s(path);
     FPackageSummary sum;
     s << sum;
@@ -305,10 +329,19 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
     objects.push_back(objName);
   }
 
+  if (objects.empty())
+  {
+    UThrow("You did not select any valid GPK file!");
+  }
+
   std::vector<FILE_OFFSET> offsets;
   FWriteStream write(destination);
   for (const FString& path : items)
   {
+    if (path.FileExtension().ToUpper() == "TFC")
+    {
+      continue;
+    }
     FReadStream read(path);
     FILE_OFFSET size = read.GetSize();
     void* data = malloc(size);
@@ -318,6 +351,22 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
     free(data);
   }
 
+  FILE_OFFSET gpkEndOffset = write.GetPosition();
+
+  std::vector<std::tuple<FILE_OFFSET, FILE_OFFSET, int32>> tfcOffsets;
+  for (const auto& tfc : tfcs)
+  {
+    FReadStream read(tfc.first);
+    FILE_OFFSET tfcOffset = write.GetPosition();
+    FILE_OFFSET tfcSize = read.GetSize();
+    void* data = malloc(tfcSize);
+    read.SerializeBytes(data, tfcSize);
+    write.SerializeBytes(data, tfcSize);
+    free(data);
+    tfcOffsets.push_back({ tfcOffset, tfcSize, tfc.second });
+  }
+  FILE_OFFSET tfcEnd = write.GetPosition();
+
   // Save metadata
 
   // MAGIC
@@ -326,8 +375,20 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   // Name
   // Container(Filename)
   // Composite offsets...
+  // if VER_TERA_FILEMOD >= 2
+  //  Tfc offsets... { offset, size, idx }
+  // endif
 
   // MAGIC
+
+  // if VER_TERA_FILEMOD >= 2
+  //  Tfc end offset
+  //  Tfc offsets offset
+  //  Tfc count
+  //  Composite end offset
+  // endif
+
+  // Version (exists since V2. TMM 1.0 will read MAGIC instead)
 
   // Region-lock
   // Author offset
@@ -357,8 +418,28 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   {
     write << offset;
   }
+
+  FILE_OFFSET tfcOffsetsOffset = write.GetPosition();
+  for (const auto& tpl : tfcOffsets)
+  {
+    FILE_OFFSET tmp = std::get<0>(tpl);
+    write << tmp;
+
+    tmp = std::get<1>(tpl);
+    write << tmp;
+    
+    int32 idx = std::get<2>(tpl);
+    write << idx;
+  }
   
   tmp = PACKAGE_MAGIC;
+  write << tmp;
+  write << tfcEnd;
+  write << tfcOffsetsOffset;
+  tmp = tfcOffsets.size();
+  write << tmp;
+  write << gpkEndOffset;
+  tmp = VER_TERA_FILEMOD;
   write << tmp;
   tmp = 0; // Region-lock (unused): 1 - direct object path search, 0 - incomplete object path search
   write << tmp;

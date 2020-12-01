@@ -72,3 +72,5 @@ DECL_NAME(StaticMesh);
 DECL_NAME(Level);
 DECL_NAME(PersistentCookerData);
 DECL_NAME(Class);
+
+DECL_NAME(WorldTextures);

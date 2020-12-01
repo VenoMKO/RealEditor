@@ -1,4 +1,5 @@
 #include "CreateModWindow.h"
+#include "../App.h"
 
 #include <Tera/FString.h>
 
@@ -31,7 +32,7 @@ CreateModWindow::CreateModWindow(wxWindow* parent, wxWindowID id, const wxString
 	m_staticText2->Wrap(-1);
 	bSizer2->Add(m_staticText2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
-	AuthorField = new wxTextCtrl(this, ControlElementId::Author, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+	AuthorField = new wxTextCtrl(this, ControlElementId::Author, App::GetSharedApp()->GetConfig().LastModAuthor.WString(), wxDefaultPosition, wxDefaultSize, 0);
 	bSizer2->Add(AuthorField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
 

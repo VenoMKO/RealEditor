@@ -547,7 +547,7 @@ void PackageWindow::OnNewClicked(wxCommandEvent&)
 void PackageWindow::OnCreateModClicked(wxCommandEvent&)
 {
 	wxFileDialog fileDialog(this, wxT("Select modded packages"), wxEmptyString,
-		wxEmptyString, wxT("Tera Game Package (*.gpk, *.gmp)|*.gpk;*.gmp"),
+		wxEmptyString, wxT("Tera Game Package (*.gpk, *.tfc)|*.gpk;*.tfc"),
 		wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE);
 
 	if (fileDialog.ShowModal() != wxID_OK)
@@ -577,6 +577,9 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
 	{
 		return;
 	}
+
+	App::GetSharedApp()->GetConfig().LastModAuthor = modInfo.GetAuthor().ToStdWstring();
+	App::GetSharedApp()->SaveConfig();
 
 	try
 	{
