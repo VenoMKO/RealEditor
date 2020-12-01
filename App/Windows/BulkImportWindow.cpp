@@ -916,6 +916,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 
 	// Connect Events
 	PathPicker->Connect(wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler(BulkImportWindow::OnPathChanged), NULL, this);
+	OperationsList->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(BulkImportWindow::OnOperationDoubleClick), NULL, this);
 	OperationsList->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_START_EDITING, wxDataViewEventHandler(BulkImportWindow::OnStartEditingOperation), NULL, this);
 	OperationsList->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(BulkImportWindow::OnOperationSelected), NULL, this);
 	AddOperationButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnAddOperationClicked), NULL, this);
@@ -978,6 +979,7 @@ void BulkImportWindow::AddOperation(const wxString& className, const wxString& o
 BulkImportWindow::~BulkImportWindow()
 {
 	PathPicker->Disconnect(wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler(BulkImportWindow::OnPathChanged), NULL, this);
+	OperationsList->Disconnect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(BulkImportWindow::OnOperationDoubleClick), NULL, this);
 	OperationsList->Disconnect(wxEVT_COMMAND_DATAVIEW_ITEM_START_EDITING, wxDataViewEventHandler(BulkImportWindow::OnStartEditingOperation), NULL, this);
 	OperationsList->Disconnect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(BulkImportWindow::OnOperationSelected), NULL, this);
 	AddOperationButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(BulkImportWindow::OnAddOperationClicked), NULL, this);
@@ -1171,6 +1173,11 @@ void BulkImportWindow::OnCancelClicked(wxCommandEvent& event)
 void BulkImportWindow::OnOperationsListContextMenu(wxDataViewEvent& event)
 {
 	// Do nothing
+}
+
+void BulkImportWindow::OnOperationDoubleClick(wxDataViewEvent& event)
+{
+	OnEditOperationClicked(event);
 }
 
 void BulkImportWindow::UpdateControls()

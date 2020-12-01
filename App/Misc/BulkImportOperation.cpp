@@ -188,7 +188,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
   if (TfcName.size())
   {
     SendEvent(&progress, UPDATE_PROGRESS, -1);
-    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Building texture cached..."));
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Building texture cache..."));
     TfcBuilder tfc(TfcName.ToStdWstring());
     for (std::shared_ptr<FPackage> pkg : packages)
     {

@@ -29,6 +29,7 @@ protected:
 	void OnContinueClicked(wxCommandEvent& event);
 	void OnCancelClicked(wxCommandEvent& event);
 	void OnOperationsListContextMenu(wxDataViewEvent& event);
+	void OnOperationDoubleClick(wxDataViewEvent& event);
 
 	void UpdateControls();
 	bool LoadBuffer();
