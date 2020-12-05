@@ -1,6 +1,6 @@
 #pragma once
 #include <wx/wx.h>
-#include <Tera/AConfiguration.h>
+#include <Utils/AConfiguration.h>
 
 class SettingsWindow : public wxDialog
 {

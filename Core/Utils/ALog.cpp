@@ -1,6 +1,6 @@
 #include "../../App/Windows/LogWindow.h"
 #include "../../App/App.h"
-#include "ALog.h"
+#include "Utils/ALog.h"
 
 ALog* SharedLogger = nullptr;
 

@@ -20,7 +20,7 @@
 #include <wx/evtloop.h>
 #include <wx/clipbrd.h>
 
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>

@@ -6,7 +6,7 @@
 #include "UComponent.h"
 #include "UProperty.h"
 
-#include "ALog.h"
+#include "Utils/ALog.h"
 
 #if DUMP_OBJECTS
 #include <filesystem>

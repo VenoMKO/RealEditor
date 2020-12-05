@@ -1,6 +1,6 @@
 #pragma once
-#include "Core.h"
-#include "FStructs.h"
+#include <Tera\Core.h>
+#include <Tera\FStructs.h>
 
 #include <fstream>
 

@@ -1,6 +1,6 @@
 #include "TextureProcessor.h"
 
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 #include <Tera/FStream.h>
 
 #include <nvtt/nvtt.h>

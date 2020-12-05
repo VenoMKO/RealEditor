@@ -1,5 +1,5 @@
 #include "AConfiguration.h"
-#include "FStream.h"
+#include <Tera\FStream.h>
 
 #define SerializeKey(key) { uint16 k = key; s << k; } //
 #define SerializeKeyValue(key, value) { uint16 k = key; s << k << value; } //

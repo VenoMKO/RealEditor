@@ -50,12 +50,6 @@
     <ClCompile Include="App\Misc\OSGWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\AConfiguration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\ALog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Tera\Core.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -230,6 +224,12 @@
     <ClCompile Include="Core\Utils\TfcBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Utils\AConfiguration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\ALog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -256,8 +256,6 @@
     <ClInclude Include="App\Misc\ObjectProperties.h" />
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
-    <ClInclude Include="Core\Tera\AConfiguration.h" />
-    <ClInclude Include="Core\Tera\ALog.h" />
     <ClInclude Include="Core\Tera\Cast.h" />
     <ClInclude Include="Core\Tera\Core.h" />
     <ClInclude Include="Core\Tera\FFlags.h" />
@@ -321,6 +319,8 @@
     <ClInclude Include="App\Windows\BulkImportWindow.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="Core\Utils\TfcBuilder.h" />
+    <ClInclude Include="Core\Utils\AConfiguration.h" />
+    <ClInclude Include="Core\Utils\ALog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

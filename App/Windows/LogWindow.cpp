@@ -2,7 +2,7 @@
 #include "LogWindow.h"
 #include <wx/richtext/richtextctrl.h>
 
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 
 wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
 

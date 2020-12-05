@@ -10,7 +10,7 @@
 #include <wx/fileconf.h>
 #include <wx/mstream.h>
 
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
 

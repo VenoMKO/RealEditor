@@ -9,7 +9,7 @@
 #include "Windows/PackageWindow.h"
 
 #include <Tera/Core.h>
-#include <Tera/AConfiguration.h>
+#include <Utils/AConfiguration.h>
 
 class wxEventHandler;
 inline void SendEvent(wxEvtHandler* obj, wxEventType type)

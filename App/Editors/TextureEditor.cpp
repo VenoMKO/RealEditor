@@ -10,7 +10,7 @@
 #include "../Windows/TextureImporter.h"
 #include "../Windows/ProgressWindow.h"
 
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Utils/TextureProcessor.h>
 #include <Utils/TextureTravaller.h>

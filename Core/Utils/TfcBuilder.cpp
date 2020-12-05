@@ -1,5 +1,5 @@
 #include "TfcBuilder.h"
-#include <Tera/ALog.h>
+#include <Utils/ALog.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/FPackage.h>
 #include <Tera/UTexture.h>
