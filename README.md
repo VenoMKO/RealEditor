@@ -25,6 +25,7 @@ Currently under development. Some features are not implemented yet or may not wo
 ### Features
 
 * Opening/Saving 64-bit packages
+* GPK/GMP bulk export
 * Textures export/import
 * Sounds export/import
 * 3D model export
