@@ -56,7 +56,8 @@ enum ControlElementId {
 enum ObjTreeMenuId {
 	CopyName = wxID_HIGHEST + 1,
 	CopyPath,
-	Search
+	BulkImport,
+	BulkExport,
 };
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
@@ -339,31 +340,39 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 		return;
 	}
 	ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
-	if (!node || !node->GetParent())
+	if (!node)
 	{
 		return;
 	}
 
 	wxMenu menu;
 	menu.SetClientData((void*)node);
-	menu.Append(ObjTreeMenuId::Search, wxT("Bulk import..."));
-	menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
-	menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
-	menu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(PackageWindow::OnObjectTreeContextMenuClick), NULL, this);
-	PopupMenu(&menu);
-}
-
-void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
-{
-	ObjectTreeNode* node = (ObjectTreeNode*)static_cast<wxMenu*>(e.GetEventObject())->GetClientData();
-	switch (e.GetId())
+	
+	if (node->GetObjectIndex() >= 0)
 	{
-	case ObjTreeMenuId::Search:
-	{
-		App::GetSharedApp()->ShowBulkImport(this, node->GetClassName(), node->GetObjectName());
+		if (node->GetClassName() == NAME_Package || node->GetObjectIndex() == FAKE_EXPORT_ROOT)
+		{
+			menu.Append(ObjTreeMenuId::BulkExport, wxT("Export package..."));
+		}
+		else
+		{
+			menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
+		}
 	}
-	break;
-	case ObjTreeMenuId::CopyName:
+	if (node->GetParent())
+	{
+		menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
+		menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
+	}
+	
+	if (!menu.GetMenuItemCount())
+	{
+		return;
+	}
+
+	switch (GetPopupMenuSelectionFromUser(menu))
+	{
+	case CopyName:
 		if (wxTheClipboard->Open())
 		{
 			wxTheClipboard->Clear();
@@ -372,7 +381,7 @@ void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
 			wxTheClipboard->Close();
 		}
 		break;
-	case ObjTreeMenuId::CopyPath:
+	case CopyPath:
 		if (wxTheClipboard->Open())
 		{
 			wxTheClipboard->Clear();
@@ -380,6 +389,12 @@ void PackageWindow::OnObjectTreeContextMenuClick(wxCommandEvent& e)
 			wxTheClipboard->Flush();
 			wxTheClipboard->Close();
 		}
+		break;
+	case BulkImport:
+		App::GetSharedApp()->ShowBulkImport(this, node->GetClassName(), node->GetObjectName());
+		break;
+	case BulkExport:
+		OnBulkPackageExport(node->GetObjectIndex());
 		break;
 	default:
 		break;

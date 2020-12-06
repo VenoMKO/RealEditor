@@ -35,6 +35,7 @@
     <ClCompile Include="App\Windows\CreateModWindow.cpp" />
     <ClCompile Include="App\Windows\MaterialView.cpp" />
     <ClCompile Include="App\Windows\ObjectPicker.cpp" />
+    <ClCompile Include="App\Windows\PackageWindowExport.cpp" />
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
