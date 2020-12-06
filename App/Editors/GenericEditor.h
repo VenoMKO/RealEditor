@@ -12,7 +12,8 @@ enum ToolEventID : int {
   eID_Texture2D_Channel_R,
   eID_Texture2D_Channel_G,
   eID_Texture2D_Channel_B,
-  eID_Texture2D_Channel_A
+  eID_Texture2D_Channel_A,
+  eID_Level_Load,
 };
 
 class UObject;

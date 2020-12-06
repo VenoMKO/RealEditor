@@ -45,6 +45,27 @@ void LevelEditor::OnObjectLoaded()
   GenericEditor::OnObjectLoaded();
 }
 
+void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  toolbar->AddSeparator();
+  toolbar->AddTool(eID_Level_Load, "Load", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
+}
+
+void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
+{
+  GenericEditor::OnToolBarEvent(event);
+  if (event.GetSkipped())
+  {
+    event.Skip(false);
+    return;
+  }
+  if (event.GetId() == eID_Level_Load)
+  {
+    LoadPersistentLevel();
+  }
+}
+
 void LevelEditor::SetNeedsUpdate()
 {
   if (Renderer)
@@ -85,6 +106,48 @@ void LevelEditor::CreateRenderer()
   manipulator->setVerticalAxisFixed(true);
   Renderer->setCameraManipulator(manipulator);
   Renderer->setThreadingModel(osgViewer::Viewer::AutomaticSelection);
+}
+
+void LevelEditor::LoadPersistentLevel()
+{
+  if (LevelLoaded)
+  {
+    wxMessageBox("Level is already loaded!", wxEmptyString, wxICON_INFORMATION);
+    return;
+  }
+  ProgressWindow progress(Window, "Please, wait...");
+  progress.SetCurrentProgress(-1);
+  progress.SetCanCancel(false);
+  progress.SetActionText("Loading the level");
+  progress.Layout();
+
+  std::thread([&] {
+    CreateLevel(Level, Root.get());
+    UObject* world = Level->GetOuter();
+    auto worldInner = world->GetInner();
+
+    for (UObject* inner : worldInner)
+    {
+      if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
+      {
+        level->Load();
+        if (level->Level)
+        {
+          osg::Geode* geode = new osg::Geode;
+          geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
+          CreateLevel(level->Level, geode);
+          Root->addChild(geode);
+        }
+      }
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
+  }).detach();
+
+  progress.ShowModal();
+
+  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+  Renderer->setSceneData(Root.get());
+  LevelLoaded = true;
 }
 
 void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
@@ -151,39 +214,6 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
 void LevelEditor::OnIdle(wxIdleEvent& e)
 {
   Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
-
-  ProgressWindow progress(Window, "Please, wait...");
-  progress.SetCurrentProgress(-1);
-  progress.SetCanCancel(false);
-  progress.SetActionText("Loading the level");
-  progress.Layout();
-
-  std::thread([&] {
-    CreateLevel(Level, Root.get());
-    UObject* world = Level->GetOuter();
-    auto worldInner = world->GetInner();
-
-    for (UObject* inner : worldInner)
-    {
-      if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
-      {
-        level->Load();
-        if (level->Level)
-        {
-          osg::Geode* geode = new osg::Geode;
-          geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
-          CreateLevel(level->Level, geode);
-          Root->addChild(geode);
-        }
-      }
-    }
-    SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
-  }).detach();
-
-  progress.ShowModal();
-  
-  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
-  Renderer->setSceneData(Root.get());
 }
 
 osg::Geode* LevelEditor::CreateStaticActor(UStaticMeshActor* actor, FVector& translation, FVector& scale3d, FRotator& rotation, float& scale)

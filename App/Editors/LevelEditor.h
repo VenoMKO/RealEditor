@@ -24,10 +24,15 @@ public:
   void OnTick() override;
   void OnObjectLoaded() override;
 
+  void PopulateToolBar(wxToolBar* toolbar) override;
+
+  void OnToolBarEvent(wxCommandEvent& event) override;
+
   void SetNeedsUpdate() override;
 
 protected:
   void CreateRenderer();
+  void LoadPersistentLevel();
   void CreateLevel(ULevel* level, osg::Geode* root);
   void OnIdle(wxIdleEvent& e);
 
@@ -36,6 +41,7 @@ protected:
 
 protected:
   ULevel* Level = nullptr;
+  bool LevelLoaded = false;
   std::unordered_map<UActor*, osg::Geode*> LevelNodes;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   OSGCanvas* Canvas = nullptr;
