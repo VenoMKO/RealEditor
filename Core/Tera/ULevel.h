@@ -24,6 +24,11 @@ public:
 
   std::vector<UActor*> GetActors() const;
 
+  int GetActorsCount() const
+  {
+    return (int)Actors.size();
+  }
+
 protected:
   DECL_UREF(UObject, ActorsArrayOwner);
   std::vector<PACKAGE_INDEX> Actors;

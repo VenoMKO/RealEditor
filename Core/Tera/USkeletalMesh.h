@@ -3,6 +3,8 @@
 #include "kDOP.h"
 #include <unordered_map>
 
+#include "UActorComponent.h"
+
 enum { MAX_INFLUENCES = 4 };
 
 enum ETriangleSortOption : uint8
@@ -535,4 +537,15 @@ private:
 	std::vector<PACKAGE_INDEX> ApexClothing;
 	std::vector<float> CachedStreamingTextureFactors;
 	uint32 Unk1 = 0;
+};
+
+class USkeletalMeshComponent : public UMeshComponent {
+public:
+	DECL_UOBJ(USkeletalMeshComponent, UMeshComponent);
+
+	bool RegisterProperty(FPropertyTag* property) override;
+
+	UPROP(USkeletalMesh*, SkeletalMesh, nullptr);
+
+	void PostLoad() override;
 };

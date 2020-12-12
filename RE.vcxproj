@@ -39,6 +39,7 @@
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
+    <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Utils\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
     <ClCompile Include="App\Editors\GenericEditor.cpp" />
@@ -120,6 +121,7 @@
     <ClInclude Include="Core\Tera\UAnimSequence.h" />
     <ClInclude Include="Core\Tera\ULevel.h" />
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
+    <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
@@ -130,6 +132,7 @@
     <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
+    <ClInclude Include="Core\Utils\T3DUtils.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />
     <ClInclude Include="Core\Utils\TfcBuilder.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />

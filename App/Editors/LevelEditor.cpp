@@ -10,13 +10,20 @@
 #include <osg/Depth>
 #include <osg/PositionAttitudeTransform>
 
+#include <Tera/Cast.h>
 #include <Tera/FPackage.h>
+#include <Tera/FObjectResource.h>
+#include <Tera/UObject.h>
 #include <Tera/ULevelStreaming.h>
 #include <Tera/UStaticMesh.h>
 #include <Tera/USkeletalMesh.h>
-#include <Tera/Cast.h>
+#include <Tera/USpeedTree.h>
 #include <Tera/UMaterial.h>
 #include <Tera/UTexture.h>
+#include <Tera/ULight.h>
+
+#include <Utils/T3DUtils.h>
+#include <Utils/FbxUtils.h>
 
 LevelEditor::LevelEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
@@ -64,6 +71,48 @@ void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
   {
     LoadPersistentLevel();
   }
+}
+
+void LevelEditor::OnExportClicked(wxCommandEvent& e)
+{
+  LevelExportContext ctx;
+  ctx.StaticMeshes = true;
+  ctx.SkeletalMeshes = true;
+  ctx.SpeedTrees = true;
+  ctx.Root = "C:\\Users\\VenoMKO\\Desktop\\test_map";
+  UObject* world = Level->GetOuter();
+  auto worldInner = world->GetInner();
+  std::vector<ULevel*> levels = { Level };
+  int maxProgress = Level->GetActorsCount();
+  for (UObject* inner : worldInner)
+  {
+    if (ULevelStreaming* streamedLevel = Cast<ULevelStreaming>(inner))
+    {
+      streamedLevel->Load();
+      if (streamedLevel->Level && streamedLevel->Level != Level)
+      {
+        levels.push_back(streamedLevel->Level);
+        maxProgress += streamedLevel->Level->GetActorsCount();
+      }
+    }
+  }
+  ProgressWindow progress(this, "Exporting");
+  progress.SetMaxProgress(maxProgress);
+
+  std::thread([&] {
+    for (ULevel* level : levels)
+    {
+      ExportLevel(level, ctx, &progress);
+      if (progress.IsCanceled())
+      {
+        SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+        return;
+      }
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+  }).detach();
+
+  progress.ShowModal();
 }
 
 void LevelEditor::SetNeedsUpdate()
@@ -187,12 +236,13 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
 
     if (geode)
     {
+      FVector location = actor->GetLocation();
       geode->setName(actor->GetObjectName().UTF8().c_str());
       osg::PositionAttitudeTransform* transform = new osg::PositionAttitudeTransform;
       transform->addChild(geode);
-      transform->setPosition(osg::Vec3(actor->Location.X + compTranslation.X,
-        -(actor->Location.Y + compTranslation.Y),
-        actor->Location.Z + compTranslation.Z));
+      transform->setPosition(osg::Vec3(location.X + compTranslation.X,
+        -(location.Y + compTranslation.Y),
+        location.Z + compTranslation.Z));
       transform->setScale(osg::Vec3(actor->DrawScale3D.X * actor->DrawScale * compScale3D.X * compScale,
         actor->DrawScale3D.Y * actor->DrawScale * compScale3D.Y * compScale,
         actor->DrawScale3D.Z * actor->DrawScale * compScale3D.Z * compScale));
@@ -209,6 +259,539 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
       root->addChild(transform);
     }
   }
+}
+
+void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWindow* progress)
+{
+  auto AddCommonActorParameters = [](T3DFile& f, UActor* actor) {
+    f.AddString("ActorLabel", actor->GetObjectName().UTF8().c_str());
+    f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
+  };
+
+  auto AddCommonActorComponentParameters = [](T3DFile& f, UActor* actor, UActorComponent* component) {
+    FVector position = actor->GetLocation();
+    f.AddPosition(position + component->Translation);
+    f.AddRotation(actor->Rotation + component->Rotation);
+    f.AddScale(actor->DrawScale3D * component->Scale3D, actor->DrawScale * component->Scale);
+  };
+
+  auto AddCommonPrimitiveComponentParameters = [](T3DFile& f, UPrimitiveComponent* component) {
+    if (component->MinDrawDistance)
+    {
+      f.AddFloat("MinDrawDistance", component->MinDrawDistance);
+    }
+    if (component->MaxDrawDistance)
+    {
+      f.AddFloat("LDMaxDrawDistance", component->MaxDrawDistance);
+    }
+    if (component->CachedMaxDrawDistance)
+    {
+      f.AddFloat("CachedMaxDrawDistance", component->CachedMaxDrawDistance);
+    }
+    f.AddBool("CastShadow", component->CastShadow);
+    f.AddBool("bCastDynamicShadow", component->bCastDynamicShadow);
+    f.AddBool("bCastStaticShadow", component->bCastStaticShadow);
+  };
+
+  auto AddCommonLightComponentParameters = [](T3DFile& f, ULightComponent* component) {
+    f.AddGuid("LightGuid", component->LightGuid);
+    f.AddColor("LightColor", component->LightColor);
+    f.AddBool("CastShadows", component->CastShadows);
+    f.AddBool("CastStaticShadows", component->CastStaticShadows);
+    f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+  };
+
+  auto GetLocalDir = [](UObject* obj, const char* sep = "\\") {
+    std::string path;
+    FObjectExport* outer = obj->GetExportObject()->Outer;
+    while (outer)
+    {
+      path = (outer->GetObjectName().UTF8() + sep + path);
+      outer = outer->Outer;
+    }
+    if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
+    {
+      path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
+    }
+    return path;
+  };
+
+  std::vector<UActor*> actors = level->GetActors();
+
+  if (actors.empty())
+  {
+    return;
+  }
+
+  std::vector<UInterpActor*> interpActors;
+  T3DFile f;
+  f.InitializeMap();
+  size_t initialSize = f.GetBody().size();
+  for (UActor* actor : actors)
+  {
+    if (progress)
+    {
+      if (progress->IsCanceled())
+      {
+        return;
+      }
+      ctx.CurrentProgress++;
+      SendEvent(progress, UPDATE_PROGRESS, ctx.CurrentProgress);
+      if (actor)
+      {
+        FString name = level->GetPackage()->GetPackageName() + "/" + actor->GetObjectName();
+        SendEvent(progress, UPDATE_PROGRESS_DESC, wxString(L"Exporting: " + name.WString()));
+      }
+    }
+    if (!actor)
+    {
+      continue;
+    }
+
+    const FString className = actor->GetClassName();
+    if (className == UStaticMeshActor::StaticClassName())
+    {
+      if (!ctx.StaticMeshes)
+      {
+        continue;
+      }
+      UStaticMeshActor* staticMeshActor = Cast<UStaticMeshActor>(actor);
+      if (!staticMeshActor || !staticMeshActor->StaticMeshComponent)
+      {
+        continue;
+      }
+      staticMeshActor->StaticMeshComponent->Load();
+      if (!staticMeshActor->StaticMeshComponent->StaticMesh && !staticMeshActor->StaticMeshComponent->ReplacementPrimitive)
+      {
+        continue;
+      }
+      UStaticMeshComponent* component = staticMeshActor->StaticMeshComponent->ReplacementPrimitive ? Cast<UStaticMeshComponent>(staticMeshActor->StaticMeshComponent->ReplacementPrimitive) : staticMeshActor->StaticMeshComponent;
+
+      if (!component)
+      {
+        component = staticMeshActor->StaticMeshComponent;
+      }
+      else
+      {
+        component->Load();
+      }
+
+      f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "StaticMeshComponent0");
+        {
+          if (component->StaticMesh)
+          {
+            std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
+            std::error_code err;
+            if (!std::filesystem::exists(path, err))
+            {
+              std::filesystem::create_directories(path, err);
+            }
+            if (std::filesystem::exists(path, err))
+            {
+              path /= component->StaticMesh->GetObjectName().UTF8();
+              path.replace_extension("fbx");
+              if (!std::filesystem::exists(path, err))
+              {
+                FbxUtils utils;
+                FbxExportContext fbxCtx;
+                fbxCtx.Path = path.wstring();
+                utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
+              }
+              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + component->StaticMesh->GetObjectName().UTF8()).c_str());
+            }
+          }
+          AddCommonPrimitiveComponentParameters(f, component);
+          AddCommonActorComponentParameters(f, actor, component);
+        }
+        f.End();
+        f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+        f.AddString("RootComponent", "StaticMeshComponent0");
+        AddCommonActorParameters(f, staticMeshActor);
+      }
+      f.End();
+      continue;
+    }
+    if (className == USkeletalMeshActor::StaticClassName())
+    {
+      if (!ctx.SkeletalMeshes)
+      {
+        continue;
+      }
+      USkeletalMeshActor* skeletalMeshActor = Cast<USkeletalMeshActor>(actor);
+      if (!skeletalMeshActor || !skeletalMeshActor->SkeletalMeshComponent)
+      {
+        continue;
+      }
+
+      if (!skeletalMeshActor->SkeletalMeshComponent->SkeletalMesh && !skeletalMeshActor->SkeletalMeshComponent->ReplacementPrimitive)
+      {
+        continue;
+      }
+      USkeletalMeshComponent* component = skeletalMeshActor->SkeletalMeshComponent->ReplacementPrimitive ? Cast<USkeletalMeshComponent>(skeletalMeshActor->SkeletalMeshComponent->ReplacementPrimitive) : skeletalMeshActor->SkeletalMeshComponent;
+
+      if (!component)
+      {
+        component = skeletalMeshActor->SkeletalMeshComponent;
+      }
+      else
+      {
+        component->Load();
+      }
+
+      f.Begin("Actor", "SkeletalMeshActor", FString::Sprintf("SkeletalMeshActor_%d", ctx.SkeletalMeshActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "SkeletalMeshComponent", "SkeletalMeshComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "SkeletalMeshComponent0");
+        {
+          if (component->SkeletalMesh)
+          {
+            std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
+            std::error_code err;
+            if (!std::filesystem::exists(path, err))
+            {
+              std::filesystem::create_directories(path, err);
+            }
+            if (std::filesystem::exists(path, err))
+            {
+              path /= component->SkeletalMesh->GetObjectName().UTF8();
+              path.replace_extension("fbx");
+              if (!std::filesystem::exists(path, err))
+              {
+                FbxUtils utils;
+                FbxExportContext fbxCtx;
+                fbxCtx.Path = path.wstring();
+                utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
+              }
+              f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + component->SkeletalMesh->GetObjectName().UTF8()).c_str());
+            }
+          }
+          f.AddCustom("ClothingSimulationFactory", "Class'\"/Script/ClothingSystemRuntimeNv.ClothingSimulationFactoryNv\"'");
+          AddCommonPrimitiveComponentParameters(f, component);
+          AddCommonActorComponentParameters(f, actor, component);
+        }
+        f.End();
+        f.AddString("SkeletalMeshComponent", "SkeletalMeshComponent0");
+        f.AddString("RootComponent", "SkeletalMeshComponent0");
+        AddCommonActorParameters(f, skeletalMeshActor);
+      }
+      f.End();
+
+      continue;
+    }
+    if (className == UInterpActor::StaticClassName())
+    {
+      if (!ctx.InterpActors)
+      {
+        continue;
+      }
+      UInterpActor* interpActor = Cast<UInterpActor>(actor);
+      if (!interpActor || !interpActor->StaticMeshComponent)
+      {
+        continue;
+      }
+
+      if (!interpActor->StaticMeshComponent->StaticMesh && !interpActor->StaticMeshComponent->ReplacementPrimitive)
+      {
+        continue;
+      }
+      UStaticMeshComponent* component = interpActor->StaticMeshComponent->ReplacementPrimitive ? Cast<UStaticMeshComponent>(interpActor->StaticMeshComponent->ReplacementPrimitive) : interpActor->StaticMeshComponent;
+
+      if (!component)
+      {
+        component = interpActor->StaticMeshComponent;
+      }
+      else
+      {
+        component->Load();
+      }
+
+      interpActors.push_back(interpActor);
+
+      f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "StaticMeshComponent0");
+        {
+          UStaticMesh* mesh = component->StaticMesh;
+          bool replicated = false;
+          if (interpActor->ReplicatedMesh)
+          {
+            mesh = interpActor->ReplicatedMesh;
+            replicated = true;
+          }
+          if (mesh)
+          {
+            std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(mesh);
+            std::error_code err;
+            if (!std::filesystem::exists(path, err))
+            {
+              std::filesystem::create_directories(path, err);
+            }
+            if (std::filesystem::exists(path, err))
+            {
+              path /= mesh->GetObjectName().UTF8();
+              path.replace_extension("fbx");
+              if (!std::filesystem::exists(path, err))
+              {
+                FbxUtils utils;
+                FbxExportContext fbxCtx;
+                fbxCtx.Path = path.wstring();
+                utils.ExportStaticMesh(mesh, fbxCtx);
+              }
+              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(mesh, "/") + mesh->GetObjectName().UTF8()).c_str());
+            }
+          }
+          AddCommonPrimitiveComponentParameters(f, component);
+          if (replicated)
+          {
+            FVector vec = actor->Location;
+            if (interpActor->ReplicatedMeshTranslationProperty)
+            {
+              vec = vec + interpActor->ReplicatedMeshTranslation;
+            }
+            else
+            {
+              vec = vec + component->Translation;
+            }
+            f.AddPosition(vec);
+
+            vec = actor->DrawScale3D;
+            if (interpActor->ReplicatedMeshScale3DProperty)
+            {
+              vec = vec * (interpActor->ReplicatedMeshScale3D / 100.);
+            }
+            else
+            {
+              vec = vec * interpActor->DrawScale3D;
+            }
+            f.AddScale(vec, actor->DrawScale* component->Scale);
+
+            FRotator rot = actor->Rotation;
+            if (interpActor->ReplicatedMeshRotationProperty)
+            {
+              rot = rot + interpActor->ReplicatedMeshRotation;
+            }
+            else
+            {
+              rot = rot + component->Rotation;
+            }
+            f.AddRotation(rot);
+          }
+          else
+          {
+            AddCommonActorComponentParameters(f, actor, component);
+          }
+        }
+        f.End();
+        f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+        f.AddString("RootComponent", "StaticMeshComponent0");
+        AddCommonActorParameters(f, interpActor);
+      }
+      f.End();
+      continue;
+    }
+    if (className == USpeedTreeActor::StaticClassName())
+    {
+      if (!ctx.SpeedTrees)
+      {
+        continue;
+      }
+      USpeedTreeActor* speedTreeActor = Cast<USpeedTreeActor>(actor);
+      if (!speedTreeActor || !speedTreeActor->SpeedTreeComponent)
+      {
+        continue;
+      }
+
+      if (!speedTreeActor->SpeedTreeComponent->SpeedTree && !speedTreeActor->SpeedTreeComponent->ReplacementPrimitive)
+      {
+        continue;
+      }
+      USpeedTreeComponent* component = speedTreeActor->SpeedTreeComponent->ReplacementPrimitive ? Cast<USpeedTreeComponent>(speedTreeActor->SpeedTreeComponent->ReplacementPrimitive) : speedTreeActor->SpeedTreeComponent;
+
+      if (!component)
+      {
+        component = speedTreeActor->SpeedTreeComponent;
+      }
+      else
+      {
+        component->Load();
+      }
+
+      f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.SpeedTreeActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "StaticMeshComponent0");
+        {
+          if (component->SpeedTree)
+          {
+            std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
+            std::error_code err;
+            if (!std::filesystem::exists(path, err))
+            {
+              std::filesystem::create_directories(path, err);
+            }
+            if (std::filesystem::exists(path, err))
+            {
+              path /= component->SpeedTree->GetObjectName().UTF8();
+              path.replace_extension("spt");
+              if (!std::filesystem::exists(path, err))
+              {
+                void* sptData = nullptr;
+                FILE_OFFSET sptDataSize = 0;
+                component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
+                std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
+                s.write((const char*)sptData, sptDataSize);
+                free(sptData);
+              }
+              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
+            }
+          }
+          AddCommonPrimitiveComponentParameters(f, component);
+          AddCommonActorComponentParameters(f, actor, component);
+        }
+        f.End();
+        f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+        f.AddString("RootComponent", "StaticMeshComponent0");
+        AddCommonActorParameters(f, speedTreeActor);
+      }
+      f.End();
+      continue;
+    }
+    if (className == UPointLight::StaticClassName())
+    {
+      if (!ctx.PointLights)
+      {
+        continue;
+      }
+      UPointLight* pointLightActor = Cast<UPointLight>(actor);
+      if (!pointLightActor || !pointLightActor->LightComponent)
+      {
+        continue;
+      }
+
+      UPointLightComponent* component = Cast<UPointLightComponent>(pointLightActor->LightComponent);
+      if (!component)
+      {
+        continue;
+      }
+
+      f.Begin("Actor", "PointLight", FString::Sprintf("PointLight_%d", ctx.PointLightActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "PointLightComponent", "LightComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "LightComponent0");
+        {
+          f.AddFloat("LightFalloffExponent", component->FalloffExponent);
+          f.AddFloat("Intensity", component->Brightness * ctx.PointLightMultiplier);
+          f.AddBool("bUseInverseSquaredFalloff", ctx.InvSqrtLightFalloff);
+          f.AddFloat("AttenuationRadius", component->Radius);
+          f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
+          AddCommonLightComponentParameters(f, component);
+          f.AddCustom("Mobility", "Static");
+        }
+        f.End();
+        f.AddString("PointLightComponent", "LightComponent0");
+        f.AddString("LightComponent", "LightComponent0");
+        f.AddString("RootComponent", "LightComponent0");
+        AddCommonActorParameters(f, actor);
+      }
+      f.End();
+      continue;
+    }
+    if (className == USpotLight::StaticClassName())
+    {
+      if (!ctx.SpotLights)
+      {
+        continue;
+      }
+      USpotLight* spotLightActor = Cast<USpotLight>(actor);
+      if (!spotLightActor || !spotLightActor->LightComponent)
+      {
+        continue;
+      }
+
+      USpotLightComponent* component = Cast<USpotLightComponent>(spotLightActor->LightComponent);
+      if (!component)
+      {
+        continue;
+      }
+
+      f.Begin("Actor", "SpotLight", FString::Sprintf("SpotLight_%d", ctx.SpotLightActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "SpotLightComponent", "LightComponent0");
+        f.End();
+        f.Begin("Object", "ArrowComponent", "ArrowComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "LightComponent0");
+        {
+          f.AddFloat("LightFalloffExponent", component->FalloffExponent);
+          f.AddFloat("Intensity", component->Brightness * ctx.PointLightMultiplier);
+          f.AddFloat("InnerConeAngle", component->InnerConeAngle);
+          f.AddFloat("OuterConeAngle", component->OuterConeAngle);
+          f.AddBool("bUseInverseSquaredFalloff", ctx.InvSqrtLightFalloff);
+          f.AddFloat("AttenuationRadius", component->Radius);
+          f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
+          AddCommonLightComponentParameters(f, component);
+          f.AddCustom("Mobility", "Static");
+        }
+        f.End();
+        f.AddString("SpotLightComponent", "LightComponent0");
+        f.AddString("ArrowComponent", "ArrowComponent0");
+        f.AddString("LightComponent", "LightComponent0");
+        f.AddString("RootComponent", "LightComponent0");
+        AddCommonActorParameters(f, actor);
+      }
+      f.End();
+      continue;
+    }
+    if (className == UEmitter::StaticClassName())
+    {
+      if (!ctx.Emitters)
+      {
+        continue;
+      }
+      UEmitter* emitter = Cast<UEmitter>(actor);
+      if (!emitter)
+      {
+        continue;
+      }
+      f.Begin("Actor", "Actor", FString::Sprintf("Actor_%d", ctx.UntypedActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+        f.End();
+        f.Begin("Object", nullptr, "DefaultSceneRoot");
+        {
+          f.AddPosition(emitter->Location);
+          f.AddBool("bVisualizeComponent", true);
+          f.AddCustom("CreationMethod", "Instance");
+        }
+        f.End();
+        f.AddCustom("RootComponent", "SceneComponent'\"DefaultSceneRoot\"'");
+        AddCommonActorParameters(f, emitter);
+        f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      }
+      f.End();
+      continue;
+    }
+  }
+
+  if (initialSize == f.GetBody().size())
+  {
+    // Don't save empty T3D
+    return;
+  }
+
+  f.FinalizeMap();
+  std::filesystem::path dst = ctx.Root / level->GetPackage()->GetPackageName().WString();
+  dst.replace_extension("t3d");
+  f.Save(dst);
 }
 
 void LevelEditor::OnIdle(wxIdleEvent& e)

@@ -26,6 +26,7 @@
 #include "UActor.h"
 #include "ULevel.h"
 #include "UTerrain.h"
+#include "ULight.h"
 
 UObject* UObject::Object(FObjectExport* exp)
 {
@@ -139,6 +140,34 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UStaticMeshActor(exp);
   }
+  else if (c == USkeletalMeshActor::StaticClassName())
+  {
+    result = new USkeletalMeshActor(exp);
+  }
+  else if (c == USpeedTreeActor::StaticClassName())
+  {
+    result = new USpeedTreeActor(exp);
+  }
+  else if (c == ULight::StaticClassName())
+  {
+    result = new ULight(exp);
+  }
+  else if (c == UPointLight::StaticClassName())
+  {
+    result = new UPointLight(exp);
+  }
+  else if (c == USpotLight::StaticClassName())
+  {
+    result = new USpotLight(exp);
+  }
+  else if (c == UInterpActor::StaticClassName())
+  {
+    result = new UInterpActor(exp);
+  }
+  else if (c == UEmitter::StaticClassName())
+  {
+    result = new UEmitter(exp);
+  }
   else if (c == UAnimSequence::StaticClassName())
   {
     result = new UAnimSequence(exp);
@@ -247,6 +276,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UPersistentCookerData(exp);
   }
+  else if (c == UDynamicSMActor::StaticClassName())
+  {
+    result = new UDynamicSMActor(exp);
+  }
   else if (c == UComponent::StaticClassName())
   {
     result = new UComponent(exp);
@@ -254,6 +287,26 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UStaticMeshComponent::StaticClassName())
   {
     result = new UStaticMeshComponent(exp);
+  }
+  else if (c == USkeletalMeshComponent::StaticClassName())
+  {
+    result = new USkeletalMeshComponent(exp);
+  }
+  else if (c == USpeedTreeComponent::StaticClassName())
+  {
+    result = new USpeedTreeComponent(exp);
+  }
+  else if (c == ULightComponent::StaticClassName())
+  {
+    result = new ULightComponent(exp);
+  }
+  else if (c == UPointLightComponent::StaticClassName())
+  {
+    result = new UPointLightComponent(exp);
+  }
+  else if (c == USpotLightComponent::StaticClassName())
+  {
+    result = new USpotLightComponent(exp);
   }
   else if (c == UDominantDirectionalLightComponent::StaticClassName())
   {

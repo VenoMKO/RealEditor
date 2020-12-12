@@ -139,3 +139,16 @@ void USpeedTree::SetSptData(void* data, FILE_OFFSET size)
   memcpy(SpeedTreeData, data, size);
   MarkDirty();
 }
+
+bool USpeedTreeComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(SpeedTree, USpeedTree*);
+  return false;
+}
+
+void USpeedTreeComponent::PostLoad()
+{
+  LoadObject(SpeedTree);
+  Super::PostLoad();
+}

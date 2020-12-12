@@ -6,6 +6,34 @@
 
 const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
 
+void VectorMatrixMultiply(void* output, const void* m1, const void* m2)
+{
+  typedef float Float4x4[4][4];
+  const Float4x4& A = *((const Float4x4*)m1);
+  const Float4x4& B = *((const Float4x4*)m2);
+  Float4x4 tmp;
+  tmp[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0] + A[0][2] * B[2][0] + A[0][3] * B[3][0];
+  tmp[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1] + A[0][2] * B[2][1] + A[0][3] * B[3][1];
+  tmp[0][2] = A[0][0] * B[0][2] + A[0][1] * B[1][2] + A[0][2] * B[2][2] + A[0][3] * B[3][2];
+  tmp[0][3] = A[0][0] * B[0][3] + A[0][1] * B[1][3] + A[0][2] * B[2][3] + A[0][3] * B[3][3];
+
+  tmp[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0] + A[1][2] * B[2][0] + A[1][3] * B[3][0];
+  tmp[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1] + A[1][2] * B[2][1] + A[1][3] * B[3][1];
+  tmp[1][2] = A[1][0] * B[0][2] + A[1][1] * B[1][2] + A[1][2] * B[2][2] + A[1][3] * B[3][2];
+  tmp[1][3] = A[1][0] * B[0][3] + A[1][1] * B[1][3] + A[1][2] * B[2][3] + A[1][3] * B[3][3];
+
+  tmp[2][0] = A[2][0] * B[0][0] + A[2][1] * B[1][0] + A[2][2] * B[2][0] + A[2][3] * B[3][0];
+  tmp[2][1] = A[2][0] * B[0][1] + A[2][1] * B[1][1] + A[2][2] * B[2][1] + A[2][3] * B[3][1];
+  tmp[2][2] = A[2][0] * B[0][2] + A[2][1] * B[1][2] + A[2][2] * B[2][2] + A[2][3] * B[3][2];
+  tmp[2][3] = A[2][0] * B[0][3] + A[2][1] * B[1][3] + A[2][2] * B[2][3] + A[2][3] * B[3][3];
+
+  tmp[3][0] = A[3][0] * B[0][0] + A[3][1] * B[1][0] + A[3][2] * B[2][0] + A[3][3] * B[3][0];
+  tmp[3][1] = A[3][0] * B[0][1] + A[3][1] * B[1][1] + A[3][2] * B[2][1] + A[3][3] * B[3][1];
+  tmp[3][2] = A[3][0] * B[0][2] + A[3][1] * B[1][2] + A[3][2] * B[2][2] + A[3][3] * B[3][2];
+  tmp[3][3] = A[3][0] * B[0][3] + A[3][1] * B[1][3] + A[3][2] * B[2][3] + A[3][3] * B[3][3];
+  memcpy(output, &tmp, 16 * sizeof(float));
+}
+
 FStream& operator<<(FStream& s, FGuid& g)
 {
   return s << g.A << g.B << g.C << g.D;
@@ -748,6 +776,34 @@ FMatrix::FMatrix(const FPlane& x, const FPlane& y, const FPlane& z, const FPlane
   M[3][0] = w.X; M[3][1] = w.Y;  M[3][2] = w.Z;  M[3][3] = w.W;
 }
 
+void FMatrix::operator*=(const FMatrix& b)
+{
+  VectorMatrixMultiply(&M, &M, &b.M);
+}
+
+FVector FMatrix::Rotate(FVector& v)
+{
+  double d[] = { v.X, v.Y, v.Z, 0 };
+  double dx = M[0][0] * d[0] + M[1][0] * d[1] + M[2][0] * d[2] + M[3][0] * d[3];
+
+  double dy = M[0][1] * d[0] + M[1][1] * d[1] + M[2][1] * d[2] + M[3][1] * d[3];
+  double dz = M[0][2] * d[0] + M[0][2] * d[1] + M[2][2] * d[2] + M[3][2] * d[3];
+
+  if (abs(dx) < 0.00001)
+  {
+    dx = 0;
+  }
+  if (abs(dy) < 0.00001)
+  {
+    dy = 0;
+  }
+  if (abs(dz) < 0.00001)
+  {
+    dz = 0;
+  }
+  return FVector(dx, dy, dz);
+}
+
 FQuat::FQuat(const FMatrix& matrix)
 {
   const float tr = matrix.M[0][0] + matrix.M[1][1] + matrix.M[2][2];
@@ -825,3 +881,9 @@ FRotationTranslationMatrix::FRotationTranslationMatrix(const FRotator& rotation,
   M[3][2] = origin.Z;
   M[3][3] = 1.f;
 }
+
+FVector::FVector(const FVector4& v)
+  : X(v.X)
+  , Y(v.Y)
+  , Z(v.Z)
+{}

@@ -21,6 +21,11 @@ public:
 
   UPROP(UPrimitiveComponent*, ReplacementPrimitive, nullptr);
   UPROP(bool, CastShadow, true);
+  UPROP(bool, bCastDynamicShadow, true);
+  UPROP(bool, bCastStaticShadow, true);
+  UPROP(float, MinDrawDistance, 0);
+  UPROP(float, MaxDrawDistance, 0);
+  UPROP(float, CachedMaxDrawDistance, 0);
 
   void PostLoad() override;
 };

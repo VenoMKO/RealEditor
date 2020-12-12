@@ -70,6 +70,31 @@ if (PROP_IS(property, TName))\
 
 #define REGISTER_NAME_PROP(TName) __REGISTER_PROP(TName, Name)
 
+#define REGISTER_VEC_PROP(TName)\
+if (PROP_IS(property, TName))\
+{\
+__GLUE_PROP(TName, Property) = property; \
+return property->GetVector(TName); \
+}\
+//
+
+#define REGISTER_ROT_PROP(TName)\
+if (PROP_IS(property, TName))\
+{\
+__GLUE_PROP(TName, Property) = property; \
+return property->GetRotator(TName); \
+}\
+//
+
+#define REGISTER_COL_PROP(TName)\
+if (PROP_IS(property, TName))\
+{\
+	__GLUE_PROP(TName,Property) = property;\
+	property->GetColor(TName);\
+	return true;\
+}\
+//
+
 #define REGISTER_LCOL_PROP(TName)\
 if (PROP_IS(property, TName))\
 {\

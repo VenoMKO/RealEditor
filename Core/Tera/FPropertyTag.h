@@ -268,6 +268,7 @@ struct FPropertyTag {
 	bool GetVector(FVector& output) const;
 	bool GetRotator(FRotator& output) const;
 	bool GetLinearColor(FLinearColor& output) const;
+	bool GetColor(FColor& output) const;
 
 	friend FStream& operator<<(FStream& s, FPropertyTag& tag)
 	{

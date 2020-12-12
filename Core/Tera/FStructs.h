@@ -230,6 +230,7 @@ struct FVector2D {
 	friend FStream& operator<<(FStream& s, FVector2D& v);
 };
 
+struct FVector4;
 struct FVector {
 	FVector()
 	{}
@@ -239,6 +240,8 @@ struct FVector {
 		, Y(v.Y)
 		, Z(v.Z)
 	{}
+
+	FVector(const FVector4& v);
 
 	FVector(float a)
 		: X(a)
@@ -272,6 +275,40 @@ struct FVector {
 		return FVector(X * s, Y * s, Z * s);
 	}
 
+	FVector& operator-=(FVector v)
+	{
+		X -= v.X;
+		Y -= v.Y;
+		Z -= v.Z;
+		return *this;
+	}
+
+	FVector& operator*=(float s)
+	{
+		X *= s;
+		Y *= s;
+		Z *= s;
+		return *this;
+	}
+
+	FVector operator*(const FVector& v) const
+	{
+		return FVector(X * v.X, Y * v.Y, Z * v.Z);
+	}
+
+	FVector& operator*=(const FVector& v)
+	{
+		X *= v.X;
+		Y *= v.Y;
+		Z *= v.Z;
+		return *this;
+	}
+
+	FVector operator/(float v) const
+	{
+		return FVector(X / v, Y / v, Z / v);
+	}
+
   FVector operator+(const FVector& v) const
   {
     return FVector(X + v.X, Y + v.Y, Z + v.Z);
@@ -282,6 +319,23 @@ struct FVector {
 	float X = 0;
 	float Y = 0;
 	float Z = 0;
+};
+
+struct FVector4 {
+	FVector4()
+	{}
+
+	FVector4(float x, float y, float z, float w)
+		: X(x)
+		, Y(y)
+		, Z(z)
+		, W(w)
+	{}
+
+	float X = 0;
+	float Y = 0;
+	float Z = 0;
+	float W = 0;
 };
 
 struct FScriptDelegate
@@ -639,12 +693,41 @@ struct FMatrix {
 	FMatrix() = default;
 	FMatrix(const FPlane& x, const FPlane& y, const FPlane& z, const FPlane& w);
 
-  inline FVector FMatrix::GetAxis(int32 i) const
+  inline FVector GetAxis(int32 i) const
   {
     return FVector(M[i][0], M[i][1], M[i][2]);
   }
 
+	inline FVector4 TransformFVector4(const FVector4& P) const
+	{
+		FVector4 Result;
+		Result.X = P.X * M[0][0] + P.Y * M[1][0] + P.Z * M[2][0] + P.W * M[3][0];
+		Result.Y = P.X * M[0][1] + P.Y * M[1][1] + P.Z * M[2][1] + P.W * M[3][1];
+		Result.Z = P.X * M[0][2] + P.Y * M[1][2] + P.Z * M[2][2] + P.W * M[3][2];
+		Result.W = P.X * M[0][3] + P.Y * M[1][3] + P.Z * M[2][3] + P.W * M[3][3];
+		return Result;
+	}
+
+	inline FVector4 TransformFVector(const FVector& V) const
+	{
+		return TransformFVector4(FVector4(V.X, V.Y, V.Z, 1.0f));
+	}
+
+	void operator*=(const FMatrix& b);
+
+	FVector Rotate(FVector& v);
+
 	float M[4][4];
+};
+
+struct FTranslationMatrix : FMatrix {
+	FTranslationMatrix(const FVector& d) :
+		FMatrix(
+			FPlane(1.0f, 0.0f, 0.0f, 0.0f),
+			FPlane(0.0f, 1.0f, 0.0f, 0.0f),
+			FPlane(0.0f, 0.0f, 1.0f, 0.0f),
+			FPlane(d.X, d.Y, d.Z, 1.0f))
+	{}
 };
 
 struct FRotator;

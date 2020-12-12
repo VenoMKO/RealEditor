@@ -9,51 +9,24 @@ bool UActorComponent::RegisterProperty(FPropertyTag* property)
   {
     return true;
   }
-  if (PROP_IS(property, Translation))
-  {
-    TranslationProperty = property;
-    property->GetVector(Translation);
-    return true;
-  }
-  if (PROP_IS(property, Rotation))
-  {
-    RotationProperty = property;
-    property->GetRotator(Rotation);
-    return true;
-  }
-  if (PROP_IS(property, Scale))
-  {
-    ScaleProperty = property;
-    Scale = property->Value->GetFloat();
-    return true;
-  }
-  if (PROP_IS(property, Scale3D))
-  {
-    Scale3DProperty = property;
-    property->GetVector(Scale3D);
-    return true;
-  }
+  SUPER_REGISTER_PROP();
+  REGISTER_VEC_PROP(Translation);
+  REGISTER_VEC_PROP(Scale3D);
+  REGISTER_ROT_PROP(Rotation);
+  REGISTER_FLOAT_PROP(Scale);
   return false;
 }
 
 bool UPrimitiveComponent::RegisterProperty(FPropertyTag* property)
 {
-  if (Super::RegisterProperty(property))
-  {
-    return true;
-  }
-  if (PROP_IS(property, ReplacementPrimitive))
-  {
-    ReplacementPrimitiveProperty = property;
-    ReplacementPrimitive = Cast<UPrimitiveComponent>(GetPackage()->GetObject(property->Value->GetObjectIndex(), false));
-    return true;
-  }
-  if (PROP_IS(property, CastShadow))
-  {
-    CastShadowProperty = property;
-    CastShadow = property->BoolVal;
-    return true;
-  }
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(ReplacementPrimitive, UPrimitiveComponent*);
+  REGISTER_BOOL_PROP(CastShadow);
+  REGISTER_BOOL_PROP(bCastDynamicShadow);
+  REGISTER_BOOL_PROP(bCastStaticShadow);
+  REGISTER_FLOAT_PROP(MinDrawDistance);
+  REGISTER_FLOAT_PROP(MaxDrawDistance);
+  REGISTER_FLOAT_PROP(CachedMaxDrawDistance);
   return false;
 }
 

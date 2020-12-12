@@ -434,3 +434,16 @@ void USkeletalMesh::Serialize(FStream& s)
     DBreakIf(Unk1 || (Export->SerialOffset + Export->SerialSize) - s.GetPosition());
   }
 }
+
+bool USkeletalMeshComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(SkeletalMesh, USkeletalMesh*);
+  return false;
+}
+
+void USkeletalMeshComponent::PostLoad()
+{
+  LoadObject(SkeletalMesh);
+  Super::PostLoad();
+}

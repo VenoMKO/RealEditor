@@ -1,5 +1,6 @@
 #pragma once
 #include "UObject.h"
+#include "UActorComponent.h"
 
 class USpeedTree : public UObject {
 public:
@@ -29,4 +30,15 @@ public:
 protected:
   FILE_OFFSET SpeedTreeDataSize = 0;
   void* SpeedTreeData = nullptr;
+};
+
+class USpeedTreeComponent : public UMeshComponent {
+public:
+  DECL_UOBJ(USpeedTreeComponent, UMeshComponent);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  UPROP(USpeedTree*, SpeedTree, nullptr);
+
+  void PostLoad() override;
 };

@@ -106,7 +106,40 @@ bool FPropertyTag::GetRotator(FRotator& output) const
   {
     return false;
   }
+	
   std::vector<FPropertyValue*> arr = Value->GetArray();
+	if (StructName == "Quat")
+	{
+		FQuat q;
+		for (FPropertyValue* v : arr)
+		{
+			if (v->Field)
+			{
+				if (v->Field->GetObjectName() == "X")
+				{
+					q.X = v->GetArray()[0]->GetFloat();
+				}
+				else if (v->Field->GetObjectName() == "Y")
+				{
+					q.Y = v->GetArray()[0]->GetFloat();
+				}
+				else if (v->Field->GetObjectName() == "Z")
+				{
+					q.Z = v->GetArray()[0]->GetFloat();
+				}
+				else if (v->Field->GetObjectName() == "W")
+				{
+					q.W = v->GetArray()[0]->GetFloat();
+				}
+				else
+				{
+					DBreak();
+				}
+			}
+		}
+		// TODO: quat to rotator
+		return false;
+	}
   for (FPropertyValue* v : arr)
   {
     if (v->Field)
@@ -158,6 +191,42 @@ bool FPropertyTag::GetLinearColor(FLinearColor& output) const
 			else if (v->Field->GetObjectName() == "A")
 			{
 				output.A = v->GetArray()[0]->GetFloat();
+			}
+			else
+			{
+				DBreak();
+			}
+		}
+	}
+	return true;
+}
+
+bool FPropertyTag::GetColor(FColor& output) const
+{
+	if (!Value || Value->Type != FPropertyValue::VID::Struct)
+	{
+		return false;
+	}
+	std::vector<FPropertyValue*> arr = Value->GetArray();
+	for (FPropertyValue* v : arr)
+	{
+		if (v->Field)
+		{
+			if (v->Field->GetObjectName() == "R")
+			{
+				output.R = v->GetArray()[0]->GetByte();
+			}
+			else if (v->Field->GetObjectName() == "G")
+			{
+				output.G = v->GetArray()[0]->GetByte();
+			}
+			else if (v->Field->GetObjectName() == "B")
+			{
+				output.B = v->GetArray()[0]->GetByte();
+			}
+			else if (v->Field->GetObjectName() == "A")
+			{
+				output.A = v->GetArray()[0]->GetByte();
 			}
 			else
 			{
