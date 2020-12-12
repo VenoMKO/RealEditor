@@ -4,6 +4,7 @@
 #include <Tera/ULevel.h>
 
 #include "../Misc/OSGWindow.h"
+#include "../Windows/LevelExportOptions.h"
 
 #include <unordered_map>
 #include <filesystem>
@@ -14,74 +15,6 @@ class UStaticMeshActor;
 class ULevelStreamingVolume;
 
 class ProgressWindow;
-
-struct LevelExportContext {
-  const char* DataDirName = "S1Game";
-  const char* StaticMeshStorage = "StaticMeshes";
-  const char* SkeletalMeshStorage = "SkeletalMeshes";
-  const char* SpeedTreeStorage = "SpeedTrees";
-  const char* TextureStorage = "Textures";
-  const char* MaterialStorage = "Materials";
-  std::filesystem::path Root;
-
-  inline std::filesystem::path GetStaticMeshDir() const
-  {
-    return Root / StaticMeshStorage / DataDirName;
-  }
-
-  inline std::filesystem::path GetSkeletalMeshDir() const
-  {
-    return Root / SkeletalMeshStorage / DataDirName;
-  }
-
-  inline std::filesystem::path GetSpeedTreeDir() const
-  {
-    return Root / SpeedTreeStorage / DataDirName;
-  }
-
-  inline std::filesystem::path GetTextureDir() const
-  {
-    return Root / TextureStorage / DataDirName;
-  }
-
-  inline std::filesystem::path GetMaterialDir() const
-  {
-    return Root / MaterialStorage / DataDirName;
-  }
-
-  bool Terrains = false;
-
-  bool StaticMeshes = false;
-  
-  bool SkeletalMeshes = false;
-
-  bool SpotLights = false;
-  
-  bool PointLights = false;
-
-  bool InterpActors = false;
-  
-  bool SpeedTrees = false;
-
-  bool Emitters = false;
-
-  bool Sounds = false;
-  
-  bool ResampleTerrain = false;
-  bool InvSqrtLightFalloff = false;
-  float SpotLightMultiplier = 1.;
-  float PointLightMultiplier = 1.;
-  bool Materials = false;
-  bool Textures = false;
-
-  int CurrentProgress = 0;
-  int StaticMeshActorsCount = 0;
-  int SkeletalMeshActorsCount = 0;
-  int SpeedTreeActorsCount = 0;
-  int PointLightActorsCount = 0;
-  int SpotLightActorsCount = 0;
-  int UntypedActorsCount = 0;
-};
 
 class LevelEditor : public GenericEditor {
 public:

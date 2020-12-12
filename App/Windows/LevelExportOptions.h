@@ -1,0 +1,108 @@
+#pragma once
+#include <wx/wx.h>
+#include <wx/filepicker.h>
+
+#include <filesystem>
+
+#include <Utils/AConfiguration.h>
+#include <Utils/TextureProcessor.h>
+
+struct LevelExportContext {
+
+  static LevelExportContext LoadFromAppConfig();
+  static void SaveToAppConfig(const LevelExportContext& ctx);
+
+  const char* DataDirName = "S1Game";
+  const char* StaticMeshStorage = "StaticMeshes";
+  const char* SkeletalMeshStorage = "SkeletalMeshes";
+  const char* SpeedTreeStorage = "SpeedTrees";
+  const char* TextureStorage = "Textures";
+  const char* MaterialStorage = "Materials";
+
+  inline std::filesystem::path GetStaticMeshDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / StaticMeshStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetSkeletalMeshDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / SkeletalMeshStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetSpeedTreeDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / SpeedTreeStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetTextureDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / TextureStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetMaterialDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MaterialStorage / DataDirName;
+  }
+
+  inline TextureProcessor::TCFormat GetTextureFormat() const
+  {
+    switch (Config.TextureFormat)
+    {
+    case 0:
+      return TextureProcessor::TCFormat::TGA;
+    case 1:
+      return TextureProcessor::TCFormat::PNG;
+    }
+    return TextureProcessor::TCFormat::DDS;
+  }
+
+  FMapExportConfig Config;
+
+  int CurrentProgress = 0;
+  int StaticMeshActorsCount = 0;
+  int SkeletalMeshActorsCount = 0;
+  int SpeedTreeActorsCount = 0;
+  int PointLightActorsCount = 0;
+  int SpotLightActorsCount = 0;
+  int UntypedActorsCount = 0;
+};
+
+class LevelExportOptionsWindow : public wxDialog {
+public:
+	LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx = LevelExportContext());
+	~LevelExportOptionsWindow();
+
+  void SetExportContext(const LevelExportContext& ctx);
+  LevelExportContext GetExportContext() const;
+
+protected:
+  void OnDirChanged(wxFileDirPickerEvent& event);
+	void OnDefaultsClicked(wxCommandEvent& event);
+	void OnExportClicked(wxCommandEvent& event);
+	void OnCancelClicked(wxCommandEvent& event);
+
+protected:
+	wxDirPickerCtrl* PathPicker = nullptr;
+	wxCheckBox* StaticMeshes = nullptr;
+	wxCheckBox* SkeletalMeshes = nullptr;
+	wxCheckBox* SpeedTrees = nullptr;
+	wxCheckBox* Interps = nullptr;
+	wxCheckBox* Terrains = nullptr;
+	wxCheckBox* PointLights = nullptr;
+	wxCheckBox* SpotLights = nullptr;
+	wxCheckBox* SoundNodes = nullptr;
+	wxCheckBox* Materials = nullptr;
+	wxTextCtrl* PointLightMultiplier = nullptr;
+  float PointLightMultiplierValue = 1.;
+	wxTextCtrl* SpotLightMultiplier = nullptr;
+  float SpotLightMultiplierValue = 1.;
+	wxCheckBox* LightInvSqrt = nullptr;
+	wxCheckBox* ResampleTerrain = nullptr;
+	wxCheckBox* SplitTerrainWeightMaps = nullptr;
+	wxCheckBox* Textures = nullptr;
+	wxChoice* TextureFormatSelector = nullptr;
+  wxCheckBox* Emitters = nullptr;
+	wxButton* DefaultsButton = nullptr;
+	wxButton* ExportButton = nullptr;
+	wxButton* CancelButton = nullptr;
+};

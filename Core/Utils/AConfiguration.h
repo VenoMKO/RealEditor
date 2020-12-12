@@ -21,6 +21,51 @@ struct FLogConfig
   friend FStream& operator<<(FStream& s, FLogConfig& c);
 };
 
+struct FMapExportConfig {
+  enum ConfigKey : uint16 {
+    CFG_RootDir = 1,
+    CFG_Terrains,
+    CFG_Statics,
+    CFG_Skeletals,
+    CFG_SpeedTrees,
+    CFG_PointLights,
+    CFG_SpotLights,
+    CFG_Interps,
+    CFG_Emitters,
+    CFG_Sounds,
+    CFG_TerrainResample,
+    CFG_SplitTerrainWeights,
+    CFG_InvSqrtFalloff,
+    CFG_SpotLightMul,
+    CFG_PointLightMul,
+    CFG_Material,
+    CFG_Textures,
+    CFG_TexturesFormat,
+    CFG_End = 0xFFFF
+  };
+
+  FString RootDir;
+  bool Terrains = true;
+  bool Statics = true;
+  bool Skeletals = true;
+  bool SpeedTrees = true;
+  bool PointLights = true;
+  bool SpotLights = true;
+  bool Interps = true;
+  bool Emitters = true;
+  bool Sounds = true;
+  bool ResampleTerrain = true;
+  bool SplitTerrainWeights = true;
+  bool InvSqrtFalloff = false;
+  float SpotLightMul = 1.;
+  float PointLightMul = 1.;
+  bool Materials = true;
+  bool Textures = true;
+  int32 TextureFormat = 0;
+
+  friend FStream& operator<<(FStream& s, FMapExportConfig& c);
+};
+
 // Application config
 struct FAppConfig
 {
@@ -35,6 +80,11 @@ struct FAppConfig
     // Log
     CFG_LogBegin = 100,
     CFG_LogEnd,
+
+    // MapExport
+    CFG_MapExportBegin = 110,
+    CFG_MapExportEnd,
+
     CFG_End = 0xFFFF
   };
   uint32 Magic = PACKAGE_MAGIC;
@@ -55,6 +105,9 @@ struct FAppConfig
 
   // CFG_LogBegin: Logger config
   FLogConfig LogConfig;
+
+  // CFG_MapExportBegin: Map export settings
+  FMapExportConfig MapExportConfig;
 
   friend FStream& operator<<(FStream& s, FAppConfig& c);
 };

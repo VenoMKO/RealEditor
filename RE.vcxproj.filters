@@ -236,6 +236,9 @@
     <ClCompile Include="Core\Tera\ULight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\LevelExportOptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -329,6 +332,7 @@
     <ClInclude Include="Core\Utils\ALog.h" />
     <ClInclude Include="Core\Utils\T3DUtils.h" />
     <ClInclude Include="Core\Tera\ULight.h" />
+    <ClInclude Include="App\Windows\LevelExportOptions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

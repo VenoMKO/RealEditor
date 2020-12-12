@@ -91,6 +91,104 @@ FStream& operator<<(FStream& s, FLogConfig& c)
   return s;
 }
 
+FStream& operator<<(FStream& s, FMapExportConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FMapExportConfig::CFG_RootDir:
+        s << c.RootDir;
+        break;
+      case FMapExportConfig::CFG_Terrains:
+        s << c.Terrains;
+        break;
+      case FMapExportConfig::CFG_Statics:
+        s << c.Statics;
+        break;
+      case FMapExportConfig::CFG_Skeletals:
+        s << c.Skeletals;
+        break;
+      case FMapExportConfig::CFG_SpeedTrees:
+        s << c.SpeedTrees;
+        break;
+      case FMapExportConfig::CFG_PointLights:
+        s << c.PointLights;
+        break;
+      case FMapExportConfig::CFG_SpotLights:
+        s << c.SpotLights;
+        break;
+      case FMapExportConfig::CFG_Interps:
+        s << c.Interps;
+        break;
+      case FMapExportConfig::CFG_Emitters:
+        s << c.Emitters;
+        break;
+      case FMapExportConfig::CFG_Sounds:
+        s << c.Sounds;
+        break;
+      case FMapExportConfig::CFG_TerrainResample:
+        s << c.ResampleTerrain;
+        break;
+      case FMapExportConfig::CFG_SplitTerrainWeights:
+        s << c.SplitTerrainWeights;
+        break;
+      case FMapExportConfig::CFG_InvSqrtFalloff:
+        s << c.InvSqrtFalloff;
+        break;
+      case FMapExportConfig::CFG_SpotLightMul:
+        s << c.SpotLightMul;
+        break;
+      case FMapExportConfig::CFG_PointLightMul:
+        s << c.PointLightMul;
+        break;
+      case FMapExportConfig::CFG_Material:
+        s << c.Materials;
+        break;
+      case FMapExportConfig::CFG_Textures:
+        s << c.Textures;
+        break;
+      case FMapExportConfig::CFG_TexturesFormat:
+        s << c.TextureFormat;
+        break;
+      default:
+        s.Close();
+        // no break
+      case FMapExportConfig::CFG_End:
+        return s;
+        break;
+      }
+    }
+  }
+  else
+  {
+    SerializeKeyValue(FMapExportConfig::CFG_RootDir, c.RootDir);
+    SerializeKeyValue(FMapExportConfig::CFG_Terrains, c.Terrains);
+    SerializeKeyValue(FMapExportConfig::CFG_Statics, c.Statics);
+    SerializeKeyValue(FMapExportConfig::CFG_Skeletals, c.Skeletals);
+    SerializeKeyValue(FMapExportConfig::CFG_SpeedTrees, c.SpeedTrees);
+    SerializeKeyValue(FMapExportConfig::CFG_PointLights, c.PointLights);
+    SerializeKeyValue(FMapExportConfig::CFG_SpotLights, c.SpotLights);
+    SerializeKeyValue(FMapExportConfig::CFG_Interps, c.Interps);
+    SerializeKeyValue(FMapExportConfig::CFG_Emitters, c.Emitters);
+    SerializeKeyValue(FMapExportConfig::CFG_Sounds, c.Sounds);
+    SerializeKeyValue(FMapExportConfig::CFG_TerrainResample, c.ResampleTerrain);
+    SerializeKeyValue(FMapExportConfig::CFG_SplitTerrainWeights, c.SplitTerrainWeights);
+    SerializeKeyValue(FMapExportConfig::CFG_InvSqrtFalloff, c.InvSqrtFalloff);
+    SerializeKeyValue(FMapExportConfig::CFG_SpotLightMul, c.SpotLightMul);
+    SerializeKeyValue(FMapExportConfig::CFG_PointLightMul, c.PointLightMul);
+    SerializeKeyValue(FMapExportConfig::CFG_Material, c.Materials);
+    SerializeKeyValue(FMapExportConfig::CFG_Textures, c.Textures);
+    SerializeKeyValue(FMapExportConfig::CFG_TexturesFormat, c.TextureFormat);
+    SerializeKey(FMapExportConfig::CFG_End);
+  }
+  return s;
+}
+
 FStream& operator<<(FStream& s, FAppConfig& c)
 {
   s << c.Magic;
@@ -127,6 +225,10 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.LogConfig;
         CheckKey(FAppConfig::CFG_LogEnd);
         break;
+      case FAppConfig::CFG_MapExportBegin:
+        s << c.MapExportConfig;
+        CheckKey(FAppConfig::CFG_MapExportEnd);
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -149,6 +251,11 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKey(FAppConfig::CFG_LogBegin);
     s << c.LogConfig;
     SerializeKey(FAppConfig::CFG_LogEnd);
+
+    // MapExport
+    SerializeKey(FAppConfig::CFG_MapExportBegin);
+    s << c.MapExportConfig;
+    SerializeKey(FAppConfig::CFG_MapExportEnd);
 
     // End
     SerializeKey(FAppConfig::CFG_End);

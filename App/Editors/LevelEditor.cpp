@@ -75,11 +75,14 @@ void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
 
 void LevelEditor::OnExportClicked(wxCommandEvent& e)
 {
-  LevelExportContext ctx;
-  ctx.StaticMeshes = true;
-  ctx.SkeletalMeshes = true;
-  ctx.SpeedTrees = true;
-  ctx.Root = "C:\\Users\\VenoMKO\\Desktop\\test_map";
+  LevelExportContext ctx = LevelExportContext::LoadFromAppConfig();
+  LevelExportOptionsWindow optionsWin(this, ctx);
+  if (optionsWin.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  ctx = optionsWin.GetExportContext();
+  LevelExportContext::SaveToAppConfig(ctx);
   UObject* world = Level->GetOuter();
   auto worldInner = world->GetInner();
   std::vector<ULevel*> levels = { Level };
@@ -351,7 +354,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     const FString className = actor->GetClassName();
     if (className == UStaticMeshActor::StaticClassName())
     {
-      if (!ctx.StaticMeshes)
+      if (!ctx.Config.Statics)
       {
         continue;
       }
@@ -417,7 +420,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == USkeletalMeshActor::StaticClassName())
     {
-      if (!ctx.SkeletalMeshes)
+      if (!ctx.Config.Skeletals)
       {
         continue;
       }
@@ -485,7 +488,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == UInterpActor::StaticClassName())
     {
-      if (!ctx.InterpActors)
+      if (!ctx.Config.Interps)
       {
         continue;
       }
@@ -598,7 +601,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == USpeedTreeActor::StaticClassName())
     {
-      if (!ctx.SpeedTrees)
+      if (!ctx.Config.SpeedTrees)
       {
         continue;
       }
@@ -666,7 +669,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == UPointLight::StaticClassName())
     {
-      if (!ctx.PointLights)
+      if (!ctx.Config.PointLights)
       {
         continue;
       }
@@ -689,8 +692,8 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         f.Begin("Object", nullptr, "LightComponent0");
         {
           f.AddFloat("LightFalloffExponent", component->FalloffExponent);
-          f.AddFloat("Intensity", component->Brightness * ctx.PointLightMultiplier);
-          f.AddBool("bUseInverseSquaredFalloff", ctx.InvSqrtLightFalloff);
+          f.AddFloat("Intensity", component->Brightness * ctx.Config.PointLightMul);
+          f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
           f.AddFloat("AttenuationRadius", component->Radius);
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
@@ -707,7 +710,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == USpotLight::StaticClassName())
     {
-      if (!ctx.SpotLights)
+      if (!ctx.Config.SpotLights)
       {
         continue;
       }
@@ -732,10 +735,10 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         f.Begin("Object", nullptr, "LightComponent0");
         {
           f.AddFloat("LightFalloffExponent", component->FalloffExponent);
-          f.AddFloat("Intensity", component->Brightness * ctx.PointLightMultiplier);
+          f.AddFloat("Intensity", component->Brightness * ctx.Config.SpotLightMul);
           f.AddFloat("InnerConeAngle", component->InnerConeAngle);
           f.AddFloat("OuterConeAngle", component->OuterConeAngle);
-          f.AddBool("bUseInverseSquaredFalloff", ctx.InvSqrtLightFalloff);
+          f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
           f.AddFloat("AttenuationRadius", component->Radius);
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
@@ -753,7 +756,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
     if (className == UEmitter::StaticClassName())
     {
-      if (!ctx.Emitters)
+      if (!ctx.Config.Emitters)
       {
         continue;
       }
@@ -789,7 +792,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
   }
 
   f.FinalizeMap();
-  std::filesystem::path dst = ctx.Root / level->GetPackage()->GetPackageName().WString();
+  std::filesystem::path dst = std::filesystem::path(ctx.Config.RootDir.WString()) / level->GetPackage()->GetPackageName().WString();
   dst.replace_extension("t3d");
   f.Save(dst);
 }
