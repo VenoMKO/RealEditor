@@ -155,6 +155,12 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_TexturesFormat:
         s << c.TextureFormat;
         break;
+      case FMapExportConfig::CFG_Override:
+        s << c.OverrideData;
+        break;
+      case FMapExportConfig::CFG_BakeTransform:
+        s << c.BakeComponentTransform;
+        break;
       default:
         s.Close();
         // no break
@@ -184,6 +190,8 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKeyValue(FMapExportConfig::CFG_Material, c.Materials);
     SerializeKeyValue(FMapExportConfig::CFG_Textures, c.Textures);
     SerializeKeyValue(FMapExportConfig::CFG_TexturesFormat, c.TextureFormat);
+    SerializeKeyValue(FMapExportConfig::CFG_Override, c.OverrideData);
+    SerializeKeyValue(FMapExportConfig::CFG_BakeTransform, c.BakeComponentTransform);
     SerializeKey(FMapExportConfig::CFG_End);
   }
   return s;
@@ -221,6 +229,18 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_LastModAuthor:
         s << c.LastModAuthor;
         break;
+      case FAppConfig::CFG_LastExport:
+        s << c.LastExportPath;
+        break;
+      case FAppConfig::CFG_LastImport:
+        s << c.LastImportPath;
+        break;
+      case FAppConfig::CFG_LastPkgOpen:
+        s << c.LastPkgOpenPath;
+        break;
+      case FAppConfig::CFG_LastPkgSave:
+        s << c.LastPkgSavePath;
+        break;
       case FAppConfig::CFG_LogBegin:
         s << c.LogConfig;
         CheckKey(FAppConfig::CFG_LogEnd);
@@ -246,6 +266,11 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_SashPos, c.SashPos);
     SerializeKeyValue(FAppConfig::CFG_CompositeDumpPath, c.CompositeDumpPath);
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastModAuthor);
+
+    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastExportPath);
+    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastImportPath);
+    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastPkgOpenPath);
+    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastPkgSavePath);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

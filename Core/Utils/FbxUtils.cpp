@@ -203,6 +203,11 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
     return false;
   }
 
+  if (ctx.ApplyRootTransform)
+  {
+    ApplyRootTransform(meshNode, ctx);
+  }
+
   GetScene()->GetRootNode()->AddChild(meshNode);
   if (!SaveScene(ctx.Path, ctx.EmbedMedia))
   {
@@ -225,6 +230,11 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
   if (!ExportStaticMesh(sourceMesh, ctx, (void**)&meshNode) || !meshNode)
   {
     return false;
+  }
+
+  if (ctx.ApplyRootTransform)
+  {
+    ApplyRootTransform(meshNode, ctx);
   }
 
   GetScene()->GetRootNode()->AddChild(meshNode);
@@ -579,4 +589,31 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx, 
     meshNode->AddMaterial(fbxMaterial);
   }
   return true;
+}
+
+void FbxUtils::ApplyRootTransform(void* node, FbxExportContext& ctx)
+{
+  FbxNode* meshNode = (FbxNode*)node;
+  FbxDouble3 translation = meshNode->LclTranslation.Get();
+  if (!ctx.PrePivot.IsZero())
+  {
+    translation[0] -= ctx.PrePivot.X;
+    translation[1] -= -ctx.PrePivot.Y;
+    translation[2] -= ctx.PrePivot.Z;
+  }
+  if (!ctx.Translation.IsZero())
+  {
+    translation[0] += ctx.Translation.X;
+    translation[1] += -ctx.Translation.Y;
+    translation[2] += ctx.Translation.Z;
+  }
+  meshNode->LclTranslation.Set(translation);
+
+  meshNode->LclScaling.Set(FbxDouble3(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z));
+
+  if (!ctx.Rotation.IsZero())
+  {
+    FVector rot = ctx.Rotation.Euler();
+    meshNode->LclRotation.Set(FbxDouble3(rot.X, -rot.Y, -rot.Z));
+  }
 }

@@ -8,6 +8,12 @@ struct FbxExportContext {
   bool ExportSkeleton = true;
   uint32 LodIndex = 0;
 
+  bool ApplyRootTransform = false;
+  FVector PrePivot;
+  FVector Translation;
+  FVector Scale3D;
+  FRotator Rotation;
+
   std::string Error;
 };
 
@@ -24,6 +30,7 @@ public:
 protected:
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
   bool ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
+  void ApplyRootTransform(void* node, FbxExportContext& ctx);
 
 private:
   void* SdkManager = nullptr;

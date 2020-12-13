@@ -255,6 +255,11 @@ struct FVector {
 		, Z(z)
 	{}
 
+	bool IsZero() const
+	{
+		return !X && !Y && !Z;
+	}
+
 	bool operator==(const FVector& v) const
 	{
 		return X == v.X && Y == v.Y && Z == v.Z;
@@ -784,6 +789,11 @@ struct FRotator
     }
     return a;
   }
+
+	bool IsZero() const
+	{
+		return !Pitch && !Yaw && !Roll;
+	}
 
 	FRotator Normalized() const;
 	FRotator Denormalized() const;

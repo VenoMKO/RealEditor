@@ -55,6 +55,50 @@ public:
     return (App*)wxTheApp;
   }
 
+  static wxString GetExportPath()
+  {
+    return GetSharedApp()->GetConfig().LastExportPath.WString();
+  }
+
+  static wxString GetImportPath()
+  {
+    return GetSharedApp()->GetConfig().LastImportPath.WString();
+  }
+
+  static wxString GetPackageOpenPath()
+  {
+    return GetSharedApp()->GetConfig().LastPkgOpenPath.WString();
+  }
+
+  static wxString GetPackageSavePath()
+  {
+    return GetSharedApp()->GetConfig().LastPkgSavePath.WString();
+  }
+
+  static void SaveExportPath(const wxString& path)
+  {
+    GetSharedApp()->GetConfig().LastExportPath = path.ToStdWstring();
+    GetSharedApp()->SaveConfig();
+  }
+
+  static void SaveImportPath(const wxString& path)
+  {
+    GetSharedApp()->GetConfig().LastImportPath = path.ToStdWstring();
+    GetSharedApp()->SaveConfig();
+  }
+
+  static void SavePackageOpenPath(const wxString& path)
+  {
+    GetSharedApp()->GetConfig().LastPkgOpenPath = path.ToStdWstring();
+    GetSharedApp()->SaveConfig();
+  }
+
+  static void SavePackageSavePath(const wxString& path)
+  {
+    GetSharedApp()->GetConfig().LastPkgSavePath = path.ToStdWstring();
+    GetSharedApp()->SaveConfig();
+  }
+
   ~App();
   bool OpenPackage(const wxString& path, const wxString selection = wxEmptyString);
   bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);

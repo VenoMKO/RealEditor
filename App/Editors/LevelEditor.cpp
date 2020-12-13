@@ -271,11 +271,14 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
   };
 
-  auto AddCommonActorComponentParameters = [](T3DFile& f, UActor* actor, UActorComponent* component) {
-    FVector position = actor->GetLocation();
-    f.AddPosition(position + component->Translation);
-    f.AddRotation(actor->Rotation + component->Rotation);
-    f.AddScale(actor->DrawScale3D * component->Scale3D, actor->DrawScale * component->Scale);
+  auto AddCommonActorComponentParameters = [](T3DFile& f, UActor* actor, UActorComponent* component, bool bakeTransform = false) {
+    FVector position = bakeTransform ? actor->Location : (actor->GetLocation() + component->Translation);
+    FRotator rotation = bakeTransform ? actor->Rotation : (actor->Rotation + component->Rotation);
+    FVector scale3D = bakeTransform ? actor->DrawScale3D : (actor->DrawScale3D * component->Scale3D);
+    float scale = bakeTransform ? actor->DrawScale : (actor->DrawScale * component->Scale);
+    f.AddPosition(position);
+    f.AddRotation(rotation);
+    f.AddScale(scale3D, scale);
   };
 
   auto AddCommonPrimitiveComponentParameters = [](T3DFile& f, UPrimitiveComponent* component) {
@@ -317,6 +320,33 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
       path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
     }
     return path;
+  };
+
+  auto GetUniqueFbxName = [&ctx](UActor* actor, UActorComponent* comp, std::string& outObjectName) {
+    if (ctx.Config.BakeComponentTransform)
+    {
+      LevelExportContext::ComponentTransform t;
+      t.PrePivot = actor->PrePivot;
+      t.Translation = comp->Translation;
+      t.Rotation = comp->Rotation;
+      t.Scale3D = comp->Scale3D;
+      t.Scale = comp->Scale;
+
+      auto& transforms = ctx.FbxComponentTransformMap[outObjectName];
+      for (size_t idx = 0; idx < transforms.size(); ++idx)
+      {
+        if (transforms[idx] == t)
+        {
+          // Found a name with the same offset. Use it.
+          outObjectName += "_" + std::to_string(idx);
+          return;
+        }
+      }
+      // Add a new name and offset.
+      outObjectName += "_" + std::to_string(transforms.size());
+      transforms.push_back(t);
+      return;
+    }
   };
 
   std::vector<UActor*> actors = level->GetActors();
@@ -395,20 +425,27 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
             }
             if (std::filesystem::exists(path, err))
             {
-              path /= component->StaticMesh->GetObjectName().UTF8();
+              std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
+              GetUniqueFbxName(actor, component, fbxName);
+              path /= fbxName;
               path.replace_extension("fbx");
-              if (!std::filesystem::exists(path, err))
+              if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
               {
                 FbxUtils utils;
                 FbxExportContext fbxCtx;
                 fbxCtx.Path = path.wstring();
+                fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
+                fbxCtx.PrePivot = actor->PrePivot;
+                fbxCtx.Translation = component->Translation;
+                fbxCtx.Rotation = component->Rotation;
+                fbxCtx.Scale3D = component->Scale3D * component->Scale;
                 utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
-              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + component->StaticMesh->GetObjectName().UTF8()).c_str());
+              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
             }
           }
           AddCommonPrimitiveComponentParameters(f, component);
-          AddCommonActorComponentParameters(f, actor, component);
+          AddCommonActorComponentParameters(f, actor, component, ctx.Config.BakeComponentTransform);
         }
         f.End();
         f.AddString("StaticMeshComponent", "StaticMeshComponent0");
@@ -461,16 +498,23 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
             }
             if (std::filesystem::exists(path, err))
             {
-              path /= component->SkeletalMesh->GetObjectName().UTF8();
+              std::string fbxName = component->SkeletalMesh->GetObjectName().UTF8();
+              GetUniqueFbxName(actor, component, fbxName);
+              path /= fbxName;
               path.replace_extension("fbx");
-              if (!std::filesystem::exists(path, err))
+              if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
               {
                 FbxUtils utils;
                 FbxExportContext fbxCtx;
                 fbxCtx.Path = path.wstring();
+                fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
+                fbxCtx.PrePivot = actor->PrePivot;
+                fbxCtx.Translation = component->Translation;
+                fbxCtx.Rotation = component->Rotation;
+                fbxCtx.Scale3D = component->Scale3D * component->Scale;
                 utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
               }
-              f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + component->SkeletalMesh->GetObjectName().UTF8()).c_str());
+              f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
             }
           }
           f.AddCustom("ClothingSimulationFactory", "Class'\"/Script/ClothingSystemRuntimeNv.ClothingSimulationFactoryNv\"'");
@@ -538,20 +582,27 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
             }
             if (std::filesystem::exists(path, err))
             {
-              path /= mesh->GetObjectName().UTF8();
+              std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
+              GetUniqueFbxName(actor, component, fbxName);
+              path /= fbxName;
               path.replace_extension("fbx");
-              if (!std::filesystem::exists(path, err))
+              if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
               {
                 FbxUtils utils;
                 FbxExportContext fbxCtx;
                 fbxCtx.Path = path.wstring();
-                utils.ExportStaticMesh(mesh, fbxCtx);
+                fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
+                fbxCtx.PrePivot = actor->PrePivot;
+                fbxCtx.Translation = component->Translation;
+                fbxCtx.Rotation = component->Rotation;
+                fbxCtx.Scale3D = component->Scale3D * component->Scale;
+                utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
-              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(mesh, "/") + mesh->GetObjectName().UTF8()).c_str());
+              f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
             }
           }
           AddCommonPrimitiveComponentParameters(f, component);
-          if (replicated)
+          if (replicated && !ctx.Config.BakeComponentTransform)
           {
             FVector vec = actor->Location;
             if (interpActor->ReplicatedMeshTranslationProperty)
@@ -697,6 +748,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           f.AddFloat("AttenuationRadius", component->Radius);
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
+          AddCommonActorComponentParameters(f, actor, component);
           f.AddCustom("Mobility", "Static");
         }
         f.End();
@@ -742,6 +794,15 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           f.AddFloat("AttenuationRadius", component->Radius);
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
+          f.AddPosition(actor->GetLocation() + component->Translation);
+          FVector scale3D = actor->DrawScale3D * component->Scale3D;
+          float scale = actor->DrawScale * component->Scale;
+          if (scale3D.X < 0 || scale3D.Y < 0 || scale3D.Z < 0 || scale < 0)
+          {
+            // TODO: UE4 does not support negative scale for spot lights. Fix it by flipping actor's orienation.
+          }
+          f.AddRotation(actor->Rotation + component->Rotation);
+          f.AddScale(scale3D, scale);
           f.AddCustom("Mobility", "Static");
         }
         f.End();

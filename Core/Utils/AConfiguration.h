@@ -41,6 +41,8 @@ struct FMapExportConfig {
     CFG_Material,
     CFG_Textures,
     CFG_TexturesFormat,
+    CFG_Override,
+    CFG_BakeTransform,
     CFG_End = 0xFFFF
   };
 
@@ -62,6 +64,8 @@ struct FMapExportConfig {
   bool Materials = true;
   bool Textures = true;
   int32 TextureFormat = 0;
+  bool BakeComponentTransform = true;
+  bool OverrideData = false;
 
   friend FStream& operator<<(FStream& s, FMapExportConfig& c);
 };
@@ -76,6 +80,10 @@ struct FAppConfig
     CFG_SashPos,
     CFG_CompositeDumpPath,
     CFG_LastModAuthor,
+    CFG_LastExport,
+    CFG_LastImport,
+    CFG_LastPkgOpen,
+    CFG_LastPkgSave,
 
     // Log
     CFG_LogBegin = 100,
@@ -101,6 +109,11 @@ struct FAppConfig
   FString CompositeDumpPath;
   // CFG_LastModAuthor: Last composite mod author
   FString LastModAuthor;
+
+  FString LastExportPath;
+  FString LastImportPath;
+  FString LastPkgOpenPath;
+  FString LastPkgSavePath;
 
 
   // CFG_LogBegin: Logger config

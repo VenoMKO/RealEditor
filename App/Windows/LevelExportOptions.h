@@ -58,6 +58,22 @@ struct LevelExportContext {
 
   FMapExportConfig Config;
 
+  struct ComponentTransform {
+    FVector PrePivot;
+    FVector Translation;
+    FVector Scale3D = FVector(1, 1, 1);
+    FRotator Rotation;
+    float Scale = 1.;
+
+    inline bool operator==(const ComponentTransform& a)
+    {
+      auto ta = std::tie(a.PrePivot.X, a.PrePivot.Y, a.PrePivot.Z, a.Translation.X, a.Translation.Y, a.Translation.Z, a.Scale3D.X, a.Scale3D.Y, a.Scale3D.Z, a.Rotation.Pitch, a.Rotation.Yaw, a.Rotation.Roll, a.Scale);
+      auto tb = std::tie(PrePivot.X, PrePivot.Y, PrePivot.Z, Translation.X, Translation.Y, Translation.Z, Scale3D.X, Scale3D.Y, Scale3D.Z, Rotation.Pitch, Rotation.Yaw, Rotation.Roll, Scale);
+      return ta == tb;
+    }
+  };
+
+  std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   int CurrentProgress = 0;
   int StaticMeshActorsCount = 0;
   int SkeletalMeshActorsCount = 0;
@@ -82,27 +98,30 @@ protected:
 	void OnCancelClicked(wxCommandEvent& event);
 
 protected:
-	wxDirPickerCtrl* PathPicker = nullptr;
-	wxCheckBox* StaticMeshes = nullptr;
-	wxCheckBox* SkeletalMeshes = nullptr;
-	wxCheckBox* SpeedTrees = nullptr;
-	wxCheckBox* Interps = nullptr;
-	wxCheckBox* Terrains = nullptr;
-	wxCheckBox* PointLights = nullptr;
-	wxCheckBox* SpotLights = nullptr;
-	wxCheckBox* SoundNodes = nullptr;
-	wxCheckBox* Materials = nullptr;
-	wxTextCtrl* PointLightMultiplier = nullptr;
-  float PointLightMultiplierValue = 1.;
-	wxTextCtrl* SpotLightMultiplier = nullptr;
-  float SpotLightMultiplierValue = 1.;
-	wxCheckBox* LightInvSqrt = nullptr;
-	wxCheckBox* ResampleTerrain = nullptr;
-	wxCheckBox* SplitTerrainWeightMaps = nullptr;
-	wxCheckBox* Textures = nullptr;
-	wxChoice* TextureFormatSelector = nullptr;
+  wxDirPickerCtrl* PathPicker = nullptr;
+  wxCheckBox* StaticMeshes = nullptr;
+  wxCheckBox* SkeletalMeshes = nullptr;
+  wxCheckBox* SpeedTrees = nullptr;
+  wxCheckBox* Interps = nullptr;
+  wxCheckBox* Terrains = nullptr;
+  wxCheckBox* PointLights = nullptr;
+  wxCheckBox* SpotLights = nullptr;
+  wxCheckBox* SoundNodes = nullptr;
   wxCheckBox* Emitters = nullptr;
-	wxButton* DefaultsButton = nullptr;
-	wxButton* ExportButton = nullptr;
-	wxButton* CancelButton = nullptr;
+  wxCheckBox* OverrideFiles = nullptr;
+  wxCheckBox* BakeTransforms = nullptr;
+  wxCheckBox* Materials = nullptr;
+  wxTextCtrl* PointLightMultiplier = nullptr;
+  wxTextCtrl* SpotLightMultiplier = nullptr;
+  wxCheckBox* LightInvSqrt = nullptr;
+  wxCheckBox* ResampleTerrain = nullptr;
+  wxCheckBox* SplitTerrainWeightMaps = nullptr;
+  wxCheckBox* Textures = nullptr;
+  wxChoice* TextureFormatSelector = nullptr;
+  wxButton* DefaultsButton = nullptr;
+  wxButton* ExportButton = nullptr;
+  wxButton* CancelButton = nullptr;
+
+  float PointLightMultiplierValue = 1.;
+  float SpotLightMultiplierValue = 1.;
 };
