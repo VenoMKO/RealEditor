@@ -118,6 +118,7 @@ protected:
   wxCheckBox* SplitTerrainWeightMaps = nullptr;
   wxCheckBox* Textures = nullptr;
   wxChoice* TextureFormatSelector = nullptr;
+  wxCheckBox* ExportLods = nullptr;
   wxButton* DefaultsButton = nullptr;
   wxButton* ExportButton = nullptr;
   wxButton* CancelButton = nullptr;

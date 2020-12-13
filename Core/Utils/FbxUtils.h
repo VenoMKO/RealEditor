@@ -6,7 +6,7 @@ struct FbxExportContext {
   std::wstring Path;
   bool EmbedMedia = false;
   bool ExportSkeleton = true;
-  uint32 LodIndex = 0;
+  bool ExportLods = true;
 
   bool ApplyRootTransform = false;
   FVector PrePivot;
@@ -29,7 +29,7 @@ public:
 
 protected:
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
-  bool ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
+  bool ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExportContext& ctx, void** outNode);
   void ApplyRootTransform(void* node, FbxExportContext& ctx);
 
 private:

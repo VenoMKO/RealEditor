@@ -439,6 +439,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
                 fbxCtx.Translation = component->Translation;
                 fbxCtx.Rotation = component->Rotation;
                 fbxCtx.Scale3D = component->Scale3D * component->Scale;
+                fbxCtx.ExportLods = ctx.Config.ExportLods;
                 utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
               f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
@@ -512,6 +513,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
                 fbxCtx.Translation = component->Translation;
                 fbxCtx.Rotation = component->Rotation;
                 fbxCtx.Scale3D = component->Scale3D * component->Scale;
+                fbxCtx.ExportLods = ctx.Config.ExportLods;
                 utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
               }
               f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
@@ -596,6 +598,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
                 fbxCtx.Translation = component->Translation;
                 fbxCtx.Rotation = component->Rotation;
                 fbxCtx.Scale3D = component->Scale3D * component->Scale;
+                fbxCtx.ExportLods = ctx.Config.ExportLods;
                 utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
               f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());

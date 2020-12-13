@@ -226,18 +226,53 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
   sceneInfo->mAuthor = "RealEditor (yupimods.tumblr.com)";
   GetScene()->SetSceneInfo(sceneInfo);
 
-  FbxNode* meshNode = nullptr;
-  if (!ExportStaticMesh(sourceMesh, ctx, (void**)&meshNode) || !meshNode)
+  if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
-    return false;
-  }
+    int32 lodCount = sourceMesh->GetLodCount();
+    std::vector<FbxNode*> lods;
+    lods.reserve(lodCount);
+    for (int32 idx = 0; idx < lodCount; ++idx)
+    {
+      FbxNode* meshNode = nullptr;
+      if (!ExportStaticMesh(sourceMesh, idx, ctx, (void**)&meshNode) || !meshNode)
+      {
+        continue;
+      }
+      if (ctx.ApplyRootTransform)
+      {
+        ApplyRootTransform(meshNode, ctx);
+      }
+      lods.push_back(meshNode);
+    }
+    if (lods.empty())
+    {
+      ctx.Error = "Failed to export the mesh. No lods found!";
+      return false;
+    }
 
-  if (ctx.ApplyRootTransform)
+    FbxNode* lodGroup = FbxNode::Create(GetScene(), sourceMesh->GetObjectName().UTF8().c_str());
+    lodGroup->AddNodeAttribute(FbxLODGroup::Create(GetScene(), (sourceMesh->GetObjectName() + "_LodGroup").UTF8().c_str()));
+    for (FbxNode* node : lods)
+    {
+      lodGroup->AddChild(node);
+    }
+    GetScene()->GetRootNode()->AddChild(lodGroup);
+  }
+  else
   {
-    ApplyRootTransform(meshNode, ctx);
-  }
+    FbxNode* meshNode = nullptr;
+    if (!ExportStaticMesh(sourceMesh, 0, ctx, (void**)&meshNode) || !meshNode)
+    {
+      return false;
+    }
 
-  GetScene()->GetRootNode()->AddChild(meshNode);
+    if (ctx.ApplyRootTransform)
+    {
+      ApplyRootTransform(meshNode, ctx);
+    }
+    GetScene()->GetRootNode()->AddChild(meshNode);
+  }
+  
   if (!SaveScene(ctx.Path, ctx.EmbedMedia))
   {
     ctx.Error = "Failed to write data!";
@@ -268,7 +303,7 @@ bool FbxUtils::SaveScene(const std::wstring& path, bool embedMedia)
 
 bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode)
 {
-  const FStaticLODModel* lod = sourceMesh->GetLod(ctx.LodIndex);
+  const FStaticLODModel* lod = sourceMesh->GetLod(0);
   if (!lod)
   {
     ctx.Error = "Failed to get the lod model!";
@@ -447,9 +482,9 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   return true;
 }
 
-bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx, void** outNode)
+bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExportContext& ctx, void** outNode)
 {
-  const FStaticMeshRenderData* lod = sourceMesh->GetLod(ctx.LodIndex);
+  const FStaticMeshRenderData* lod = sourceMesh->GetLod(lodIdx);
   if (!lod)
   {
     ctx.Error = "Failed to get the lod model!";
@@ -573,8 +608,12 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx, 
       mesh->EndPolygon();
     }
   }
-
-  char* meshName = FbxWideToUtf8(sourceMesh->GetObjectName().WString().c_str());
+  FString objectName = sourceMesh->GetObjectName();
+  if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
+  {
+    objectName += FString::Sprintf("_LOD_%d", lodIdx);
+  }
+  char* meshName = FbxWideToUtf8(objectName.WString().c_str());
   FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
   FbxFree(meshName);
   meshNode->SetNodeAttribute(mesh);

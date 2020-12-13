@@ -43,6 +43,7 @@ struct FMapExportConfig {
     CFG_TexturesFormat,
     CFG_Override,
     CFG_BakeTransform,
+    CFG_Lods,
     CFG_End = 0xFFFF
   };
 
@@ -66,6 +67,7 @@ struct FMapExportConfig {
   int32 TextureFormat = 0;
   bool BakeComponentTransform = true;
   bool OverrideData = false;
+  bool ExportLods = true;
 
   friend FStream& operator<<(FStream& s, FMapExportConfig& c);
 };

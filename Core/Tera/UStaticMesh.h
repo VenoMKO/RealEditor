@@ -279,6 +279,11 @@ public:
     return &LODModels[idx];
   }
 
+  int32 GetLodCount() const
+  {
+    return (int32)LODModels.size();
+  }
+
   std::vector<UObject*> GetMaterials() const;
 
 protected:

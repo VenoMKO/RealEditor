@@ -161,6 +161,9 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_BakeTransform:
         s << c.BakeComponentTransform;
         break;
+      case FMapExportConfig::CFG_Lods:
+        s << c.ExportLods;
+        break;
       default:
         s.Close();
         // no break
@@ -192,6 +195,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKeyValue(FMapExportConfig::CFG_TexturesFormat, c.TextureFormat);
     SerializeKeyValue(FMapExportConfig::CFG_Override, c.OverrideData);
     SerializeKeyValue(FMapExportConfig::CFG_BakeTransform, c.BakeComponentTransform);
+    SerializeKeyValue(FMapExportConfig::CFG_Lods, c.ExportLods);
     SerializeKey(FMapExportConfig::CFG_End);
   }
   return s;

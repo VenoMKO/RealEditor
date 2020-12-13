@@ -150,6 +150,11 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 
 	bSizer15->Add(BakeTransforms, 0, wxALL, 5);
 
+	ExportLods = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export LODs"), wxDefaultPosition, wxDefaultSize, 0);
+	ExportLods->SetToolTip(wxT("Embed model LODs into fbx"));
+
+	bSizer15->Add(ExportLods, 0, wxALL, 5);
+
 
 	bSizer141->Add(bSizer15, 1, wxEXPAND, 5);
 
@@ -373,10 +378,6 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
 	SoundNodes->SetValue(ctx.Config.Sounds);
 	Emitters->SetValue(ctx.Config.Emitters);
 	Materials->SetValue(ctx.Config.Materials);
-	SpotLightMultiplierValue = ctx.Config.SpotLightMul;
-	PointLightMultiplierValue = ctx.Config.PointLightMul;
-	SpotLightMultiplier->GetValidator()->TransferToWindow();
-	PointLightMultiplier->GetValidator()->TransferToWindow();
 	LightInvSqrt->SetValue(ctx.Config.InvSqrtFalloff);
 	ResampleTerrain->SetValue(ctx.Config.ResampleTerrain);
 	SplitTerrainWeightMaps->SetValue(HasAVX2() && ctx.Config.SplitTerrainWeights);
@@ -386,6 +387,13 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
 	TextureFormatSelector->Enable(HasAVX2());
 	OverrideFiles->SetValue(ctx.Config.OverrideData);
 	BakeTransforms->SetValue(ctx.Config.BakeComponentTransform);
+	ExportLods->SetValue(ctx.Config.ExportLods);
+
+	SpotLightMultiplierValue = ctx.Config.SpotLightMul;
+	PointLightMultiplierValue = ctx.Config.PointLightMul;
+	SpotLightMultiplier->GetValidator()->TransferToWindow();
+	PointLightMultiplier->GetValidator()->TransferToWindow();
+
 	wxFileDirPickerEvent e;
 	OnDirChanged(e);
 }
@@ -404,10 +412,6 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
 	ctx.Config.Sounds = SoundNodes->GetValue();
 	ctx.Config.Emitters = Emitters->GetValue();
 	ctx.Config.Materials = Materials->GetValue();
-	PointLightMultiplier->GetValidator()->TransferFromWindow();
-	ctx.Config.PointLightMul = PointLightMultiplierValue;
-	SpotLightMultiplier->GetValidator()->TransferFromWindow();
-	ctx.Config.SpotLightMul = SpotLightMultiplierValue;
 	ctx.Config.InvSqrtFalloff = LightInvSqrt->GetValue();
 	ctx.Config.ResampleTerrain = ResampleTerrain->GetValue();
 	ctx.Config.SplitTerrainWeights = SplitTerrainWeightMaps->GetValue();
@@ -415,6 +419,13 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
 	ctx.Config.TextureFormat = TextureFormatSelector->GetSelection();
 	ctx.Config.OverrideData = OverrideFiles->GetValue();
 	ctx.Config.BakeComponentTransform = BakeTransforms->GetValue();
+	ctx.Config.ExportLods = ExportLods->GetValue();
+
+	PointLightMultiplier->GetValidator()->TransferFromWindow();
+	SpotLightMultiplier->GetValidator()->TransferFromWindow();
+	ctx.Config.PointLightMul = PointLightMultiplierValue;
+	ctx.Config.SpotLightMul = SpotLightMultiplierValue;
+
 	return ctx;
 }
 
