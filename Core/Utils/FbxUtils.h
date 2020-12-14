@@ -31,7 +31,7 @@ public:
 protected:
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
   bool ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExportContext& ctx, void** outNode);
-  bool ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, void** outNode);
+  bool ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, std::vector<void*>& outNodes);
   void ApplyRootTransform(void* node, FbxExportContext& ctx);
 
 private:

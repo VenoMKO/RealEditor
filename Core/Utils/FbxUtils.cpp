@@ -4,6 +4,8 @@
 
 #include <Tera/UPhysAsset.h>
 
+#define MERGE_COVEX_HULLS 0
+
 char* FbxWideToUtf8(const wchar_t* in)
 {
   char* unistr = nullptr;
@@ -278,14 +280,20 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
 
   if (ctx.ExportCollisions && firstLod)
   {
-    FbxNode* colNode = nullptr;
-    if (ExportCollision(sourceMesh, ctx, firstLod->GetNameOnly(),(void**)&colNode))
+    std::vector<void*> colNodes;
+    if (ExportCollision(sourceMesh, ctx, firstLod->GetNameOnly(), colNodes))
     {
       if (ctx.ApplyRootTransform)
       {
-        ApplyRootTransform(colNode, ctx);
+        for (void* node : colNodes)
+        {
+          ApplyRootTransform(node, ctx);
+        }
       }
-      GetScene()->GetRootNode()->AddChild(colNode);
+      for (void* node : colNodes)
+      {
+        GetScene()->GetRootNode()->AddChild((FbxNode*)node);
+      }
     }
   }
   
@@ -646,7 +654,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
   return true;
 }
 
-bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, void** outNode)
+bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, std::vector<void*>& outNodes)
 {
   URB_BodySetup* bodySetup = sourceMesh->GetBodySetup();
   if (!bodySetup)
@@ -656,76 +664,130 @@ bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, c
 
   FKAggregateGeom aggGeom = bodySetup->GetAggregateGeometry();
 
-  int32 totalVertCount = 0;
-  int32 totalIndexCount = 0;
-  for (FKConvexElem& element : aggGeom.ConvexElems)
+  if (MERGE_COVEX_HULLS)
   {
-    totalVertCount += (int32)element.VertexData.size();
-    totalIndexCount += (int32)element.FaceTriData.size();
-  }
-  if (!totalVertCount || !totalIndexCount)
-  {
-    return false;
-  }
-
-  FbxNode* colNode = FbxNode::Create(GetScene(), ("UCX_" + FString(meshName)).UTF8().c_str());
-  FbxMesh* mesh = FbxMesh::Create(GetScene(), ("UCX_" + FString(meshName) + "_AggGeom").UTF8().c_str());
-  colNode->SetNodeAttribute(mesh);
-  *outNode = (void*)colNode;
-
-  FbxLayer* layer = mesh->GetLayer(0);
-  if (!layer)
-  {
-    layer = mesh->GetLayer(mesh->CreateLayer());
-  }
-
-  FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
-  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
-  layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-
-  FbxSurfaceMaterial* fbxMat = nullptr;
-  const int32 matIdx = colNode->AddMaterial(fbxMat);
-  
-  mesh->InitControlPoints(totalVertCount);
-  std::vector<int32> indicies;
-  std::vector<FVector> points;
-  {
-    int32 cpIdx = 0;
-    int32 wgOffset = 0;
+    int32 totalVertCount = 0;
+    int32 totalIndexCount = 0;
     for (FKConvexElem& element : aggGeom.ConvexElems)
     {
-      for (FVector& v : element.VertexData)
+      totalVertCount += (int32)element.VertexData.size();
+      totalIndexCount += (int32)element.FaceTriData.size();
+    }
+    if (!totalVertCount || !totalIndexCount)
+    {
+      return false;
+    }
+
+    FbxNode* colNode = FbxNode::Create(GetScene(), ("UCX_" + FString(meshName)).UTF8().c_str());
+    FbxMesh* mesh = FbxMesh::Create(GetScene(), ("UCX_" + FString(meshName) + "_AggGeom").UTF8().c_str());
+    colNode->SetNodeAttribute(mesh);
+    outNodes.push_back(colNode);
+
+    FbxLayer* layer = mesh->GetLayer(0);
+    if (!layer)
+    {
+      layer = mesh->GetLayer(mesh->CreateLayer());
+    }
+
+    FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
+    layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+    FbxSurfaceMaterial* fbxMat = nullptr;
+    const int32 matIdx = colNode->AddMaterial(fbxMat);
+
+    mesh->InitControlPoints(totalVertCount);
+    std::vector<int32> indicies;
+    std::vector<FVector> points;
+    {
+      int32 cpIdx = 0;
+      int32 wgOffset = 0;
+      for (FKConvexElem& element : aggGeom.ConvexElems)
       {
+        for (FVector& v : element.VertexData)
+        {
+          mesh->GetControlPoints()[cpIdx] = FbxVector4(v.X, -v.Y, v.Z);
+          points.push_back(v);
+          cpIdx++;
+        }
+        for (int32 idx : element.FaceTriData)
+        {
+          indicies.push_back(idx + wgOffset);
+        }
+        wgOffset += (int32)element.VertexData.size();
+      }
+    }
+
+    for (int32 pointIdx = 0; pointIdx < totalIndexCount; pointIdx += 3)
+    {
+      mesh->BeginPolygon(matIdx);
+      mesh->AddPolygon(indicies[pointIdx + 0]);
+      mesh->AddPolygon(indicies[pointIdx + 1]);
+      mesh->AddPolygon(indicies[pointIdx + 2]);
+      mesh->EndPolygon();
+
+      FVector a = points[pointIdx + 0];
+      FVector b = points[pointIdx + 1];
+      FVector c = points[pointIdx + 2];
+      FVector normal = (a - b) ^ (b - c);
+      normal.Normalize();
+      layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
+      layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
+      layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
+    }
+    layer->SetNormals(layerElementNormal);
+  }
+  else
+  {
+    for (int32 elementIndex = 0; elementIndex < aggGeom.ConvexElems.size(); ++elementIndex)
+    {
+      const FKConvexElem& element = aggGeom.ConvexElems[elementIndex];
+      FbxNode* colNode = FbxNode::Create(GetScene(), FString::Sprintf("UCX_%s_%d", meshName, elementIndex).UTF8().c_str());
+      FbxMesh* mesh = FbxMesh::Create(GetScene(), FString::Sprintf("UCX_%s_%d_AggGeom", meshName, elementIndex).UTF8().c_str());
+      colNode->SetNodeAttribute(mesh);
+      outNodes.push_back(colNode);
+
+      FbxLayer* layer = mesh->GetLayer(0);
+      if (!layer)
+      {
+        layer = mesh->GetLayer(mesh->CreateLayer());
+      }
+
+      FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
+      layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+      layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+      FbxSurfaceMaterial* fbxMat = nullptr;
+      const int32 matIdx = colNode->AddMaterial(fbxMat);
+      mesh->InitControlPoints((int)element.VertexData.size());
+      for (int32 cpIdx = 0; cpIdx < element.VertexData.size(); ++cpIdx)
+      {
+        const FVector& v = element.VertexData[cpIdx];
         mesh->GetControlPoints()[cpIdx] = FbxVector4(v.X, -v.Y, v.Z);
-        points.push_back(v);
-        cpIdx++;
       }
-      for (int32 idx : element.FaceTriData)
+
+      for (int32 pointIdx = 0; pointIdx < element.FaceTriData.size(); pointIdx += 3)
       {
-        indicies.push_back(idx + wgOffset);
+        mesh->BeginPolygon(matIdx);
+        mesh->AddPolygon(element.FaceTriData[pointIdx + 0]);
+        mesh->AddPolygon(element.FaceTriData[pointIdx + 1]);
+        mesh->AddPolygon(element.FaceTriData[pointIdx + 2]);
+        mesh->EndPolygon();
+
+        FVector a = element.VertexData[element.FaceTriData[pointIdx + 0]];
+        FVector b = element.VertexData[element.FaceTriData[pointIdx + 1]];
+        FVector c = element.VertexData[element.FaceTriData[pointIdx + 2]];
+        FVector normal = (a - b) ^ (b - c);
+        normal.Normalize();
+        layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
+        layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
+        layerElementNormal->GetDirectArray().Add(FbxVector4(-normal.X, normal.Y, -normal.Z));
       }
-      wgOffset += (int32)element.VertexData.size();
+      layer->SetNormals(layerElementNormal);
     }
   }
 
-  for (int32 pointIdx = 0; pointIdx < totalIndexCount; pointIdx += 3)
-  {
-    mesh->BeginPolygon(matIdx);
-    mesh->AddPolygon(indicies[pointIdx + 0]);
-    mesh->AddPolygon(indicies[pointIdx + 1]);
-    mesh->AddPolygon(indicies[pointIdx + 2]);
-    mesh->EndPolygon();
-
-    FVector a = points[pointIdx + 0];
-    FVector b = points[pointIdx + 1];
-    FVector c = points[pointIdx + 2];
-    FVector normal = (a - b) ^ (b - c);
-    normal.Normalize();
-    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
-    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
-    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
-  }
-  layer->SetNormals(layerElementNormal);
+  
   return true;
 }
 
