@@ -120,6 +120,7 @@ protected:
   wxChoice* TextureFormatSelector = nullptr;
   wxCheckBox* ExportLods = nullptr;
   wxCheckBox* ConvexCollisions = nullptr;
+  wxCheckBox* IgnoreHidden = nullptr;
   wxButton* DefaultsButton = nullptr;
   wxButton* ExportButton = nullptr;
   wxButton* CancelButton = nullptr;

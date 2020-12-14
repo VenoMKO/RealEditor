@@ -82,6 +82,7 @@ bool UActor::RegisterProperty(FPropertyTag* property)
   REGISTER_ROT_PROP(Rotation);
   REGISTER_VEC_PROP(DrawScale3D);
   REGISTER_FLOAT_PROP(DrawScale);
+  REGISTER_BOOL_PROP(bHidden);
   return false;
 }
 

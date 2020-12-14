@@ -167,6 +167,9 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_ConvexCollisions:
         s << c.ConvexCollisions;
         break;
+      case FMapExportConfig::CFG_IgnoreHidden:
+        s << c.IgnoreHidden;
+        break;
       default:
         s.Close();
         // no break
@@ -200,6 +203,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKeyValue(FMapExportConfig::CFG_BakeTransform, c.BakeComponentTransform);
     SerializeKeyValue(FMapExportConfig::CFG_Lods, c.ExportLods);
     SerializeKeyValue(FMapExportConfig::CFG_ConvexCollisions, c.ConvexCollisions);
+    SerializeKeyValue(FMapExportConfig::CFG_IgnoreHidden, c.IgnoreHidden);
     SerializeKey(FMapExportConfig::CFG_End);
   }
   return s;

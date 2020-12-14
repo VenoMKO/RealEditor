@@ -12,6 +12,7 @@ public:
   UPROP_NOINIT(FRotator, Rotation);
   UPROP(FVector, DrawScale3D, FVector(1, 1, 1));
   UPROP(float, DrawScale, 1.);
+  UPROP(bool, bHidden, false);
 
   // Location with unbaked prepivot transform
   FVector GetLocation(); 

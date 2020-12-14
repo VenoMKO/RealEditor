@@ -271,7 +271,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
   };
 
-  auto AddCommonActorComponentParameters = [](T3DFile& f, UActor* actor, UActorComponent* component, bool bakeTransform = false) {
+  auto AddCommonActorComponentParameters = [&ctx](T3DFile& f, UActor* actor, UActorComponent* component, bool bakeTransform = false) {
     FVector position = bakeTransform ? actor->Location : (actor->GetLocation() + component->Translation);
     FRotator rotation = bakeTransform ? actor->Rotation : (actor->Rotation + component->Rotation);
     FVector scale3D = bakeTransform ? actor->DrawScale3D : (actor->DrawScale3D * component->Scale3D);
@@ -279,6 +279,10 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddPosition(position);
     f.AddRotation(rotation);
     f.AddScale(scale3D, scale);
+    if (actor->bHidden && !ctx.Config.IgnoreHidden)
+    {
+      f.AddBool("bVisible", false);
+    }
   };
 
   auto AddCommonPrimitiveComponentParameters = [](T3DFile& f, UPrimitiveComponent* component) {

@@ -132,40 +132,41 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 	wxBoxSizer* bSizer141;
 	bSizer141 = new wxBoxSizer(wxVERTICAL);
 
-	wxBoxSizer* bSizer15;
-	bSizer15 = new wxBoxSizer(wxHORIZONTAL);
+	wxGridSizer* gSizer3;
+	gSizer3 = new wxGridSizer(0, 4, 0, 0);
 
 	Emitters = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export Emitters"), wxDefaultPosition, wxDefaultSize, 0);
 	Emitters->SetToolTip(wxT("Export Emitter actors. All emitters will be saved as empty actors with the original transform"));
 
-	bSizer15->Add(Emitters, 0, wxALL, 5);
-
-	OverrideFiles = new wxCheckBox(m_panel10, wxID_ANY, wxT("Override files"), wxDefaultPosition, wxDefaultSize, 0);
-	OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)"));
-
-	bSizer15->Add(OverrideFiles, 0, wxALL, 5);
-
-	BakeTransforms = new wxCheckBox(m_panel10, wxID_ANY, wxT("Bake components transform"), wxDefaultPosition, wxDefaultSize, 0);
-	BakeTransforms->SetToolTip(wxT("Bake component transform to fbx files. Gives more accurate result, but creates multiple fbx files with different transforms for the same geomtry"));
-
-	bSizer15->Add(BakeTransforms, 0, wxALL, 5);
+	gSizer3->Add(Emitters, 0, wxALL, 5);
 
 	ExportLods = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export LODs"), wxDefaultPosition, wxDefaultSize, 0);
 	ExportLods->SetToolTip(wxT("Embed model LODs into fbx"));
 
-	bSizer15->Add(ExportLods, 0, wxALL, 5);
+	gSizer3->Add(ExportLods, 0, wxALL, 5);
+
+	ConvexCollisions = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export RB collisions"), wxDefaultPosition, wxDefaultSize, 0);
+	ConvexCollisions->SetToolTip(wxT("Export Rigid Body collisions"));
+
+	gSizer3->Add(ConvexCollisions, 0, wxALL, 5);
+
+	BakeTransforms = new wxCheckBox(m_panel10, wxID_ANY, wxT("Bake transforms"), wxDefaultPosition, wxDefaultSize, 0);
+	BakeTransforms->SetToolTip(wxT("Bake component transform to fbx files. Gives more accurate result, but creates multiple fbx files with different transforms for the same geomtry"));
+
+	gSizer3->Add(BakeTransforms, 0, wxALL, 5);
+
+	IgnoreHidden = new wxCheckBox(m_panel10, wxID_ANY, wxT("Ignore Hidden flag"), wxDefaultPosition, wxDefaultSize, 0);
+	IgnoreHidden->SetToolTip(wxT("Make hidden objects visible. If this is disabled, hidden actors will be shown in the World Outliner, but UE4 won't show them in the scene view"));
+
+	gSizer3->Add(IgnoreHidden, 0, wxALL, 5);
+
+	OverrideFiles = new wxCheckBox(m_panel10, wxID_ANY, wxT("Override files"), wxDefaultPosition, wxDefaultSize, 0);
+	OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)"));
+
+	gSizer3->Add(OverrideFiles, 0, wxALL, 5);
 
 
-	bSizer141->Add(bSizer15, 0, wxEXPAND, 5);
-
-	wxBoxSizer* bSizer16;
-	bSizer16 = new wxBoxSizer(wxHORIZONTAL);
-
-	ConvexCollisions = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export convex collisions"), wxDefaultPosition, wxDefaultSize, 0);
-	bSizer16->Add(ConvexCollisions, 0, wxALL, 5);
-
-
-	bSizer141->Add(bSizer16, 0, wxEXPAND, 5);
+	bSizer141->Add(gSizer3, 0, wxEXPAND, 5);
 
 
 	m_panel10->SetSizer(bSizer141);
@@ -398,6 +399,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
 	BakeTransforms->SetValue(ctx.Config.BakeComponentTransform);
 	ExportLods->SetValue(ctx.Config.ExportLods);
 	ConvexCollisions->SetValue(ctx.Config.ConvexCollisions);
+	IgnoreHidden->SetValue(ctx.Config.IgnoreHidden);
 
 	SpotLightMultiplierValue = ctx.Config.SpotLightMul;
 	PointLightMultiplierValue = ctx.Config.PointLightMul;
@@ -431,6 +433,7 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
 	ctx.Config.BakeComponentTransform = BakeTransforms->GetValue();
 	ctx.Config.ExportLods = ExportLods->GetValue();
 	ctx.Config.ConvexCollisions = ConvexCollisions->GetValue();
+	ctx.Config.IgnoreHidden = IgnoreHidden->GetValue();
 
 	PointLightMultiplier->GetValidator()->TransferFromWindow();
 	SpotLightMultiplier->GetValidator()->TransferFromWindow();

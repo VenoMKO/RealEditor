@@ -45,6 +45,7 @@ struct FMapExportConfig {
     CFG_BakeTransform,
     CFG_Lods,
     CFG_ConvexCollisions,
+    CFG_IgnoreHidden,
     CFG_End = 0xFFFF
   };
 
@@ -70,6 +71,7 @@ struct FMapExportConfig {
   bool OverrideData = false;
   bool ExportLods = true;
   bool ConvexCollisions = true;
+  bool IgnoreHidden = true;
 
   friend FStream& operator<<(FStream& s, FMapExportConfig& c);
 };
