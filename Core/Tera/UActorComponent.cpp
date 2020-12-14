@@ -27,6 +27,7 @@ bool UPrimitiveComponent::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(MinDrawDistance);
   REGISTER_FLOAT_PROP(MaxDrawDistance);
   REGISTER_FLOAT_PROP(CachedMaxDrawDistance);
+  REGISTER_BOOL_PROP(bAcceptsLights);
   return false;
 }
 

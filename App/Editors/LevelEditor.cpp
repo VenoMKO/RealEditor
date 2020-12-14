@@ -297,6 +297,10 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddBool("CastShadow", component->CastShadow);
     f.AddBool("bCastDynamicShadow", component->bCastDynamicShadow);
     f.AddBool("bCastStaticShadow", component->bCastStaticShadow);
+    if (!component->bAcceptsLights)
+    {
+      f.AddCustom("LightingChannels","(bChannel0=False)");
+    }
   };
 
   auto AddCommonLightComponentParameters = [](T3DFile& f, ULightComponent* component) {
@@ -646,6 +650,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           {
             AddCommonActorComponentParameters(f, actor, component);
           }
+          f.AddCustom("Mobility", "Movable");
         }
         f.End();
         f.AddString("StaticMeshComponent", "StaticMeshComponent0");
@@ -802,11 +807,29 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           f.AddPosition(actor->GetLocation() + component->Translation);
           FVector scale3D = actor->DrawScale3D * component->Scale3D;
           float scale = actor->DrawScale * component->Scale;
-          if (scale3D.X < 0 || scale3D.Y < 0 || scale3D.Z < 0 || scale < 0)
+          FRotator rotation = actor->Rotation;
+          if (scale3D.X < 0 || scale3D.Y < 0 || scale3D.Z < 0)
           {
-            // TODO: UE4 does not support negative scale for spot lights. Fix it by flipping actor's orienation.
+            if (scale3D.X < 0)
+            {
+              rotation.Roll += 0x8000;
+              rotation.Yaw += 0x8000;
+              scale3D.X *= -1.;
+            }
+            if (scale3D.Y < 0)
+            {
+              rotation.Pitch += 0x8000;
+              rotation.Yaw += 0x8000;
+              scale3D.Y *= -1.;
+            }
+            if (scale3D.Z < 0)
+            {
+              rotation.Pitch += 0x8000;
+              rotation.Roll += 0x8000;
+              scale3D.Z *= -1.;
+            }
           }
-          f.AddRotation(actor->Rotation + component->Rotation);
+          f.AddRotation(rotation + component->Rotation);
           f.AddScale(scale3D, scale);
           f.AddCustom("Mobility", "Static");
         }

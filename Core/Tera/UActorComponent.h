@@ -26,6 +26,7 @@ public:
   UPROP(float, MinDrawDistance, 0);
   UPROP(float, MaxDrawDistance, 0);
   UPROP(float, CachedMaxDrawDistance, 0);
+  UPROP(bool, bAcceptsLights, true);
 
   void PostLoad() override;
 };
