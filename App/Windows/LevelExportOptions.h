@@ -18,6 +18,7 @@ struct LevelExportContext {
   const char* SpeedTreeStorage = "SpeedTrees";
   const char* TextureStorage = "Textures";
   const char* MaterialStorage = "Materials";
+  const char* MaterialMapStorage = "MaterialMap";
 
   inline std::filesystem::path GetStaticMeshDir() const
   {
@@ -41,7 +42,12 @@ struct LevelExportContext {
 
   inline std::filesystem::path GetMaterialDir() const
   {
-    return std::filesystem::path(Config.RootDir.WString()) / MaterialStorage / DataDirName;
+    return std::filesystem::path(Config.RootDir.WString()) / MaterialStorage;
+  }
+
+  inline std::filesystem::path GetMaterialMapDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MaterialMapStorage;
   }
 
   inline TextureProcessor::TCFormat GetTextureFormat() const
@@ -73,6 +79,7 @@ struct LevelExportContext {
     }
   };
 
+  std::vector<UObject*> UsedMaterials;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   int CurrentProgress = 0;
   int StaticMeshActorsCount = 0;

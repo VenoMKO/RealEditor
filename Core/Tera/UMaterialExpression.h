@@ -784,6 +784,11 @@ public:
 class UMaterialExpressionTextureSampleParameter : public UMaterialExpressionTextureSample {
 public:
   DECL_UOBJ(UMaterialExpressionTextureSampleParameter, UMaterialExpressionTextureSample);
+  
+  UPROP_NOINIT(FName, ParameterName);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
 
 class UMaterialExpressionTextureSampleParameter2D : public UMaterialExpressionTextureSampleParameter {

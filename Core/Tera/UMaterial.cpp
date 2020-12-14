@@ -68,10 +68,23 @@ void FMaterial::Serialize(FStream& s)
 
 bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
 {
+  SUPER_REGISTER_PROP();
+  if (PROP_IS(property, ScalarParameterValues))
+  {
+    ScalarParameterValues = property->Value->GetArray();
+    ScalarParameterValuesProperty = property;
+    return true;
+  }
   if (PROP_IS(property, TextureParameterValues))
   {
     TextureParameterValues = property->Value->GetArray();
     TextureParameterValuesProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, VectorParameterValues))
+  {
+    VectorParameterValues = property->Value->GetArray();
+    VectorParameterValuesProperty = property;
     return true;
   }
   if (PROP_IS(property, BlendMode))
@@ -120,6 +133,132 @@ EBlendMode UMaterialInterface::GetBlendMode() const
 UObject* UMaterialInterface::GetParent() const
 {
   return ParentProperty ? GetPackage()->GetObject(Parent) : nullptr;
+}
+
+std::map<FString, float> UMaterialInterface::GetScalarParameters() const
+{
+  std::map<FString, float> result;
+
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionScalarParameter* sexp = Cast<UMaterialExpressionScalarParameter>(exp))
+      {
+        result[sexp->ParameterName.String()] = sexp->DefaultValue;
+      }
+    }
+  }
+
+  for (FPropertyValue* container : ScalarParameterValues)
+  {
+    std::vector<FPropertyValue*>& tmpArray = container->GetArray();
+    FString parameterName;
+    float parameterValue = 0.;
+    for (FPropertyValue* subcontainer : tmpArray)
+    {
+      FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
+      if (tmpTag->Name == "ParameterName")
+      {
+        parameterName = tmpTag->GetName().String();
+        continue;
+      }
+      if (tmpTag->Name == "ParameterValue")
+      {
+        parameterValue = tmpTag->GetFloat();
+      }
+    }
+    if (parameterName.Size())
+    {
+      result[parameterName] = parameterValue;
+    }
+  }
+  return result;
+}
+
+std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters() const
+{
+  std::map<FString, UTexture*> result;
+
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionTextureSampleParameter* sexp = Cast<UMaterialExpressionTextureSampleParameter>(exp))
+      {
+        result[sexp->ParameterName.String()] = Cast<UTexture>(sexp->Texture);
+      }
+    }
+  }
+
+  for (FPropertyValue* container : TextureParameterValues)
+  {
+    std::vector<FPropertyValue*>& tmpArray = container->GetArray();
+    FString parameterName;
+    UTexture* parameterValue = nullptr;
+    for (FPropertyValue* subcontainer : tmpArray)
+    {
+      FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
+      if (tmpTag->Name == "ParameterName")
+      {
+        parameterName = tmpTag->GetName().String();
+        continue;
+      }
+      if (tmpTag->Name == "ParameterValue")
+      {
+        parameterValue = Cast<UTexture>(GetPackage()->GetObject(tmpTag->Value->GetObjectIndex()));
+      }
+    }
+    if (parameterName.Size())
+    {
+      result[parameterName] = parameterValue;
+    }
+  }
+  return result;
+}
+
+std::map<FString, FLinearColor> UMaterialInterface::GetVectorParameters() const
+{
+  std::map<FString, FLinearColor> result;
+
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionVectorParameter* sexp = Cast<UMaterialExpressionVectorParameter>(exp))
+      {
+        result[sexp->ParameterName.String()] = sexp->DefaultValue;
+      }
+    }
+  }
+
+  for (FPropertyValue* container : ScalarParameterValues)
+  {
+    std::vector<FPropertyValue*>& tmpArray = container->GetArray();
+    FString parameterName;
+    FLinearColor parameterValue;
+    for (FPropertyValue* subcontainer : tmpArray)
+    {
+      FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
+      if (tmpTag->Name == "ParameterName")
+      {
+        parameterName = tmpTag->GetName().String();
+        continue;
+      }
+      if (tmpTag->Name == "ParameterValue")
+      {
+        tmpTag->GetLinearColor(parameterValue);
+      }
+    }
+    if (parameterName.Size())
+    {
+      result[parameterName] = parameterValue;
+    }
+  }
+  return result;
 }
 
 UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) const

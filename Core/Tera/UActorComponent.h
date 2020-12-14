@@ -34,4 +34,9 @@ public:
 class UMeshComponent : public UPrimitiveComponent {
 public:
   DECL_UOBJ(UMeshComponent, UPrimitiveComponent);
+
+  UPROP_NOINIT(std::vector<UObject*>, Materials);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+  void PostLoad() override;
 };

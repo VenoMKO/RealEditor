@@ -1,6 +1,7 @@
 #pragma once
 #include "UObject.h"
 
+class UTexture;
 class UTexture2D;
 class UMaterialExpression;
 
@@ -92,6 +93,10 @@ public:
   DECL_UOBJ(UMaterialInterface, UObject);
 
   bool RegisterProperty(FPropertyTag* property) override;
+  
+  std::map<FString, float> GetScalarParameters() const;
+  std::map<FString, UTexture*> GetTextureParameters() const;
+  std::map<FString, FLinearColor> GetVectorParameters() const;
 
   UTexture2D* GetTextureParameterValue(const FString& name) const;
   UTexture2D* GetDiffuseTexture() const;
@@ -99,7 +104,9 @@ public:
   UObject* GetParent() const;
 
 protected:
-  UPROP(std::vector<FPropertyValue*>, TextureParameterValues, {});
+  UPROP_NOINIT(std::vector<FPropertyValue*>, ScalarParameterValues);
+  UPROP_NOINIT(std::vector<FPropertyValue*>, TextureParameterValues);
+  UPROP_NOINIT(std::vector<FPropertyValue*>, VectorParameterValues);
   UPROP(EBlendMode, BlendMode, EBlendMode::BLEND_Opaque);
   UPROP(PACKAGE_INDEX, Parent, INDEX_NONE);
 };

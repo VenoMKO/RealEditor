@@ -1599,3 +1599,16 @@ void UMaterialExpressionTransformPosition::AcceptVisitor(UMaterialExpressionView
 	SET_INPUT(Input);
 	visitor->SetValue(FString::Sprintf("Type: %s", TransformType.UTF8().c_str()));
 }
+
+bool UMaterialExpressionTextureSampleParameter::RegisterProperty(FPropertyTag* property)
+{
+	SUPER_REGISTER_PROP();
+	REGISTER_NAME_PROP(ParameterName);
+	return false;
+}
+
+void UMaterialExpressionTextureSampleParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+{
+	SUPER_ACCEPT();
+	visitor->SetValue(ParameterName.String());
+}

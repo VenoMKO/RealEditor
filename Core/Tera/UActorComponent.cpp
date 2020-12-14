@@ -36,3 +36,26 @@ void UPrimitiveComponent::PostLoad()
   Super::PostLoad();
   LoadObject(ReplacementPrimitive);
 }
+
+bool UMeshComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  if (PROP_IS(property, Materials))
+  {
+    for (FPropertyValue* v : property->GetArray())
+    {
+      Materials.push_back(GetPackage()->GetObject(v->GetObjectIndex(), false));
+    }
+    return true;
+  }
+  return false;
+}
+
+void UMeshComponent::PostLoad()
+{
+  Super::PostLoad();
+  for (UObject* mat : Materials)
+  {
+    LoadObject(mat);
+  }
+}

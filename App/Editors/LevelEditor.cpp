@@ -22,8 +22,26 @@
 #include <Tera/UTexture.h>
 #include <Tera/ULight.h>
 
+#include <Utils/ALog.h>
 #include <Utils/T3DUtils.h>
 #include <Utils/FbxUtils.h>
+#include <Utils/TextureProcessor.h>
+
+std::string GetLocalDir(UObject* obj, const char* sep = "\\")
+{
+  std::string path;
+  FObjectExport* outer = obj->GetExportObject()->Outer;
+  while (outer)
+  {
+    path = (outer->GetObjectName().UTF8() + sep + path);
+    outer = outer->Outer;
+  }
+  if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
+  {
+    path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
+  }
+  return path;
+}
 
 LevelEditor::LevelEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
@@ -110,6 +128,243 @@ void LevelEditor::OnExportClicked(wxCommandEvent& e)
       {
         SendEvent(&progress, UPDATE_PROGRESS_FINISH);
         return;
+      }
+    }
+    if (ctx.Config.Materials || ctx.Config.Textures)
+    {
+      if (ctx.Config.Materials)
+      {
+        SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Saving materials..."));
+        SendEvent(&progress, UPDATE_PROGRESS, 0);
+        SendEvent(&progress, UPDATE_MAX_PROGRESS, ctx.UsedMaterials.size());
+      }
+      else
+      {
+        SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Gathering textures..."));
+        SendEvent(&progress, UPDATE_PROGRESS, -1);
+      }
+      std::map<std::string, UTexture*> textures;
+      int curProgress = 0;
+      for (UObject* obj : ctx.UsedMaterials)
+      {
+        if (ctx.Config.Materials)
+        {
+          SendEvent(&progress, UPDATE_PROGRESS, curProgress);
+        }
+        curProgress++;
+        if (!obj)
+        {
+          continue;
+        }
+        std::filesystem::path path = ctx.GetMaterialDir() / GetLocalDir(obj);
+        std::error_code err;
+        if (!std::filesystem::exists(path, err))
+        {
+          if (!std::filesystem::create_directories(path, err))
+          {
+            LogW("Failed to save material %s", obj->GetObjectName().UTF8().c_str());
+            continue;
+          }
+        }
+        path /= obj->GetObjectName().UTF8();
+        path.replace_extension("txt");
+        if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
+        {
+          continue;
+        }
+
+        if (UMaterialInterface* mat = Cast<UMaterialInterface>(obj))
+        {
+          mat->Load();
+          auto textureParams = mat->GetTextureParameters();
+
+          if (ctx.Config.Materials)
+          {
+            std::ofstream s(path, std::ios::out);
+            s << mat->GetObjectName().UTF8() << '(' << mat->GetClassName().UTF8() << ")\n";
+            if (UObject* parent = mat->GetParent())
+            {
+              s << "Parent: " << GetLocalDir(parent) << parent->GetObjectName().UTF8() << '\n';
+            }
+
+            if (textureParams.size())
+            {
+              s << "\nTexture Parameters:\n";
+              for (const auto& p : textureParams)
+              {
+                s << "  " << p.first.UTF8() << ": ";
+                if (p.second)
+                {
+                  s << GetLocalDir(p.second) << p.second->GetObjectName().UTF8();
+                }
+                else
+                {
+                  s << "None";
+                }
+                s << '\n';
+              }
+            }
+
+            auto scalarParameters = mat->GetScalarParameters();
+            if (scalarParameters.size())
+            {
+              s << "\nScalar Parameters:\n";
+              for (const auto& p : scalarParameters)
+              {
+                s << "  " << p.first.UTF8() << ": " << std::to_string(p.second) << '\n';
+              }
+            }
+
+            auto vectorParameters = mat->GetVectorParameters();
+            if (vectorParameters.size())
+            {
+              s << "\nVector Parameters:\n";
+              for (const auto& p : vectorParameters)
+              {
+                s << "  " << p.first.UTF8() << ": ";
+                s << "( R: " << std::to_string(p.second.R);
+                s << ", G: " << std::to_string(p.second.G);
+                s << ", B: " << std::to_string(p.second.B);
+                s << ", A: " << std::to_string(p.second.A);
+                s << " )\n";
+              }
+            }
+          }
+
+          if (ctx.Config.Textures)
+          {
+            if (UMaterial* parent = Cast<UMaterial>(mat->GetParent()))
+            {
+              auto parentTexParams = parent->GetTextureParameters();
+              for (auto& p : parentTexParams)
+              {
+                if (!textureParams.count(p.first))
+                {
+                  textureParams[p.first] = p.second;
+                }
+              }
+            }
+            for (auto& p : textureParams)
+            {
+              std::string tpath = GetLocalDir(p.second) + p.second->GetObjectName().UTF8();
+              if (!textures.count(tpath))
+              {
+                textures[tpath] = p.second;
+              }
+            }
+          }
+        }
+      }
+
+      if (ctx.Config.Textures && textures.size())
+      {
+        SendEvent(&progress, UPDATE_PROGRESS, 0);
+        SendEvent(&progress, UPDATE_MAX_PROGRESS, textures.size());
+        curProgress = 0;
+        for (auto& p : textures)
+        {
+          SendEvent(&progress, UPDATE_PROGRESS, curProgress);
+          curProgress++;
+          if (!p.second)
+          {
+            continue;
+          }
+
+          SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Exporing: ") + p.second->GetObjectName().UTF8());
+
+          std::error_code err;
+          std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
+          if (!std::filesystem::exists(path, err))
+          {
+            std::filesystem::create_directories(path, err);
+          }
+          path /= p.second->GetObjectName().UTF8();
+          if (UTexture2D* texture = Cast<UTexture2D>(p.second))
+          {
+            TextureProcessor::TCFormat outputFormat = ctx.GetTextureFormat();
+            switch (outputFormat)
+            {
+            case TextureProcessor::TCFormat::PNG:
+              path.replace_extension("png");
+              break;
+            case TextureProcessor::TCFormat::TGA:
+              path.replace_extension("tga");
+              break;
+            case TextureProcessor::TCFormat::DDS:
+              path.replace_extension("dds");
+              break;
+            default:
+              continue;
+            }
+
+            TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+            switch (texture->Format)
+            {
+            case PF_DXT1:
+              inputFormat = TextureProcessor::TCFormat::DXT1;
+              break;
+            case PF_DXT3:
+              inputFormat = TextureProcessor::TCFormat::DXT3;
+              break;
+            case PF_DXT5:
+              inputFormat = TextureProcessor::TCFormat::DXT5;
+              break;
+            case PF_A8R8G8B8:
+              inputFormat = TextureProcessor::TCFormat::ARGB8;
+              break;
+            case PF_G8:
+              inputFormat = TextureProcessor::TCFormat::G8;
+              break;
+            default:
+              LogE("Failed to export texture %s. Invalid format!", texture->GetObjectName().UTF8().c_str());
+              continue;
+            }
+
+            if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
+            {
+              continue;
+            }
+
+            FTexture2DMipMap* mip = nullptr;
+            for (FTexture2DMipMap* mipmap : texture->Mips)
+            {
+              if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+              {
+                mip = mipmap;
+                break;
+              }
+            }
+            if (!mip)
+            {
+              LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectName().UTF8().c_str());
+              continue;
+            }
+
+            TextureProcessor processor(inputFormat, outputFormat);
+
+            processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
+            processor.SetOutputPath(W2A(path.wstring()));
+            processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
+
+            try
+            {
+              if (!processor.Process())
+              {
+                LogE("Failed to export %s: %s", texture->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
+                continue;
+              }
+            }
+            catch (...)
+            {
+              LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectName().UTF8().c_str());
+              continue;
+            }
+          }
+          else
+          {
+            // TODO: cubes
+          }
+        }
       }
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
@@ -315,21 +570,6 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
   };
 
-  auto GetLocalDir = [](UObject* obj, const char* sep = "\\") {
-    std::string path;
-    FObjectExport* outer = obj->GetExportObject()->Outer;
-    while (outer)
-    {
-      path = (outer->GetObjectName().UTF8() + sep + path);
-      outer = outer->Outer;
-    }
-    if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
-    {
-      path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
-    }
-    return path;
-  };
-
   auto GetUniqueFbxName = [&ctx](UActor* actor, UActorComponent* comp, std::string& outObjectName) {
     if (ctx.Config.BakeComponentTransform)
     {
@@ -357,6 +597,53 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
   };
 
+  auto SaveMaterialMap = [&ctx](UActor* actor, UMeshComponent* component, std::vector<UObject*>& materials) {
+    for (int matIdx = 0; matIdx < component->Materials.size(); ++matIdx)
+    {
+      if (component->Materials[matIdx] && matIdx < materials.size())
+      {
+        materials[matIdx] = component->Materials[matIdx];
+      }
+    }
+    ctx.UsedMaterials.insert(ctx.UsedMaterials.end(), materials.begin(), materials.end());
+    if (ctx.Config.Materials)
+    { 
+      if (materials.size())
+      {
+        std::error_code err;
+        std::filesystem::path path = ctx.GetMaterialMapDir() / actor->GetPackage()->GetPackageName().UTF8();
+        if (!std::filesystem::exists(path, err))
+        {
+          std::filesystem::create_directories(path, err);
+        }
+        if (std::filesystem::exists(path, err))
+        {
+          path /= actor->GetObjectName().UTF8();
+          path.replace_extension("txt");
+
+          if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
+          {
+            std::ofstream s(path, std::ios::out);
+            for (int idx = 0; idx < materials.size(); ++idx)
+            {
+              s << std::to_string(idx + 1) << ". ";
+              if (UObject* mat = materials[idx])
+              {
+                s << mat->GetObjectPath().UTF8();
+              }
+              else
+              {
+                s << "None";
+              }
+              s << '\n';
+            }
+          }
+        }
+      }
+    }
+  };
+
+  SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Preparing: " + level->GetPackage()->GetPackageName().UTF8()));
   std::vector<UActor*> actors = level->GetActors();
 
   if (actors.empty())
@@ -425,6 +712,9 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         {
           if (component->StaticMesh)
           {
+            std::vector<UObject*> materials = component->StaticMesh->GetMaterials();
+            SaveMaterialMap(actor, component, materials);
+
             std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
             std::error_code err;
             if (!std::filesystem::exists(path, err))
@@ -500,6 +790,9 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         {
           if (component->SkeletalMesh)
           {
+            std::vector<UObject*> materials = component->SkeletalMesh->GetMaterials();
+            SaveMaterialMap(actor, component, materials);
+
             std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
             std::error_code err;
             if (!std::filesystem::exists(path, err))
@@ -585,6 +878,9 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           }
           if (mesh)
           {
+            std::vector<UObject*> materials = mesh->GetMaterials();
+            SaveMaterialMap(actor, component, materials);
+
             std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(mesh);
             std::error_code err;
             if (!std::filesystem::exists(path, err))

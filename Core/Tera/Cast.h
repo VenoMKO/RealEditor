@@ -1,7 +1,7 @@
 #pragma once
 
 template<typename T>
-T* Cast(UObject* obj)
+T* Cast(const UObject* obj)
 {
   return obj && obj->IsA(T::StaticClassName()) ? (T*)obj : nullptr;
 }

@@ -358,13 +358,18 @@ std::vector<UObject*> UStaticMesh::GetMaterials() const
     }
     for (UObject* lodMaterial : lodMaterials)
     {
+      bool found = false;
       for (UObject* material : result)
       {
-        if (lodMaterial->GetPackage()->GetObjectIndex(lodMaterial) != material->GetPackage()->GetObjectIndex(material))
+        if (lodMaterial == material || (lodMaterial && material && lodMaterial->GetPackage()->GetObjectIndex(lodMaterial) == material->GetPackage()->GetObjectIndex(material)))
         {
-          result.push_back(lodMaterial);
+          found = true;
           break;
         }
+      }
+      if (!found)
+      {
+        result.push_back(lodMaterial);
       }
     }
   }
