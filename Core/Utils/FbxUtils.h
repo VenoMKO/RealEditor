@@ -7,11 +7,12 @@ struct FbxExportContext {
   bool EmbedMedia = false;
   bool ExportSkeleton = true;
   bool ExportLods = true;
+  bool ExportCollisions = true;
 
   bool ApplyRootTransform = false;
   FVector PrePivot;
   FVector Translation;
-  FVector Scale3D;
+  FVector Scale3D = FVector(1, 1, 1);
   FRotator Rotation;
 
   std::string Error;
@@ -30,6 +31,7 @@ public:
 protected:
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode);
   bool ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExportContext& ctx, void** outNode);
+  bool ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, void** outNode);
   void ApplyRootTransform(void* node, FbxExportContext& ctx);
 
 private:

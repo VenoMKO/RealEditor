@@ -5,6 +5,7 @@
 
 #include "FPackage.h"
 #include "FObjectResource.h"
+#include "UPhysAsset.h"
 
 FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b)
 {
@@ -338,6 +339,11 @@ void UStaticMesh::Serialize(FStream& s)
   {
     s.SerializeBytes(Unk, UnkSize);
   }
+}
+
+URB_BodySetup* UStaticMesh::GetBodySetup() const
+{
+  return Cast<URB_BodySetup>(FBodySetup);
 }
 
 std::vector<UObject*> UStaticMesh::GetMaterials() const

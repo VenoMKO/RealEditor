@@ -1,5 +1,20 @@
 #pragma once
 #include "UObject.h"
+#include "FStructs.h"
+
+struct FKConvexElem {
+  std::vector<FVector> VertexData;
+  std::vector<int32> FaceTriData;
+  void SetupFromPropertyValue(FPropertyValue* value);
+};
+
+struct FKAggregateGeom {
+  // TODO: implement if necessary
+  // std::vector<FKBoxElem> BoxElems;
+  // std::vector<FKSphylElem> SphylElems;
+  // std::vector<FKSphereElem> SphereElems;
+  std::vector<FKConvexElem> ConvexElems;
+};
 
 struct FRigidBodyIndexPair {
   int32 Indices[2] = { 0, 0 };
@@ -32,8 +47,19 @@ public:
 
   void Serialize(FStream& s) override;
 
+  void PostLoad() override;
+
+  FKAggregateGeom GetAggregateGeometry() const
+  {
+    return Geomtry;
+  }
+
+protected:
+  void LoadAggGeom(const std::vector<FPropertyValue*>& root);
+
 protected:
   std::vector<FKCachedConvexData> CachedPhysData;
+  FKAggregateGeom Geomtry;
 };
 
 class UPhysicsAssetInstance : public UObject {

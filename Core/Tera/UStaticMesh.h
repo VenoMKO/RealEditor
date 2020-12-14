@@ -284,6 +284,8 @@ public:
     return (int32)LODModels.size();
   }
 
+  class URB_BodySetup* GetBodySetup() const;
+
   std::vector<UObject*> GetMaterials() const;
 
 protected:

@@ -156,7 +156,16 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 	bSizer15->Add(ExportLods, 0, wxALL, 5);
 
 
-	bSizer141->Add(bSizer15, 1, wxEXPAND, 5);
+	bSizer141->Add(bSizer15, 0, wxEXPAND, 5);
+
+	wxBoxSizer* bSizer16;
+	bSizer16 = new wxBoxSizer(wxHORIZONTAL);
+
+	ConvexCollisions = new wxCheckBox(m_panel10, wxID_ANY, wxT("Export convex collisions"), wxDefaultPosition, wxDefaultSize, 0);
+	bSizer16->Add(ConvexCollisions, 0, wxALL, 5);
+
+
+	bSizer141->Add(bSizer16, 0, wxEXPAND, 5);
 
 
 	m_panel10->SetSizer(bSizer141);
@@ -388,6 +397,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
 	OverrideFiles->SetValue(ctx.Config.OverrideData);
 	BakeTransforms->SetValue(ctx.Config.BakeComponentTransform);
 	ExportLods->SetValue(ctx.Config.ExportLods);
+	ConvexCollisions->SetValue(ctx.Config.ConvexCollisions);
 
 	SpotLightMultiplierValue = ctx.Config.SpotLightMul;
 	PointLightMultiplierValue = ctx.Config.PointLightMul;
@@ -420,6 +430,7 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
 	ctx.Config.OverrideData = OverrideFiles->GetValue();
 	ctx.Config.BakeComponentTransform = BakeTransforms->GetValue();
 	ctx.Config.ExportLods = ExportLods->GetValue();
+	ctx.Config.ConvexCollisions = ConvexCollisions->GetValue();
 
 	PointLightMultiplier->GetValidator()->TransferFromWindow();
 	SpotLightMultiplier->GetValidator()->TransferFromWindow();

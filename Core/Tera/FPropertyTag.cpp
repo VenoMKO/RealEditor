@@ -6,6 +6,38 @@
 #include "FName.h"
 #include "FPackage.h"
 
+bool FPropertyValue::GetVector(FVector& output)
+{
+	if (Type != VID::Struct)
+	{
+		return false;
+	}
+	std::vector<FPropertyValue*> arr = GetArray();
+	for (FPropertyValue* v : arr)
+	{
+		if (v->Field)
+		{
+			if (v->Field->GetObjectName() == "X")
+			{
+				output.X = v->GetArray()[0]->GetFloat();
+			}
+			else if (v->Field->GetObjectName() == "Y")
+			{
+				output.Y = v->GetArray()[0]->GetFloat();
+			}
+			else if (v->Field->GetObjectName() == "Z")
+			{
+				output.Z = v->GetArray()[0]->GetFloat();
+			}
+			else
+			{
+				DBreak();
+			}
+		}
+	}
+	return true;
+}
+
 UObject* FPropertyValue::GetObjectValuePtr(bool load)
 {
 	if (Type == VID::Object)

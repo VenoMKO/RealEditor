@@ -142,6 +142,8 @@ struct FPropertyValue {
 		return *(std::vector<FPropertyValue*>*)Data;
 	}
 
+	bool GetVector(FVector& output);
+
 	UObject* GetObjectValuePtr(bool load = true);
 
 	~FPropertyValue();

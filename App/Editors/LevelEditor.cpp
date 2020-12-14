@@ -440,6 +440,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
                 fbxCtx.Rotation = component->Rotation;
                 fbxCtx.Scale3D = component->Scale3D * component->Scale;
                 fbxCtx.ExportLods = ctx.Config.ExportLods;
+                fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
                 utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
               f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
@@ -599,6 +600,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
                 fbxCtx.Rotation = component->Rotation;
                 fbxCtx.Scale3D = component->Scale3D * component->Scale;
                 fbxCtx.ExportLods = ctx.Config.ExportLods;
+                fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
                 utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
               }
               f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());

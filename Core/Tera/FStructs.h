@@ -288,6 +288,11 @@ struct FVector {
 		return *this;
 	}
 
+	FVector operator-(const FVector& v)
+	{
+		return FVector(X - v.X, Y - v.Y, Z - v.Z);
+	}
+
 	FVector& operator*=(float s)
 	{
 		X *= s;
@@ -318,6 +323,18 @@ struct FVector {
   {
     return FVector(X + v.X, Y + v.Y, Z + v.Z);
   }
+
+	bool Normalize()
+	{
+		const float ss = X * X + Y * Y + Z * Z;
+		if (ss > 1.e-8)
+		{
+			const float s = 1. / sqrtf(ss);
+			X *= s; Y *= s; Z *= s;
+			return true;
+		}
+		return false;
+	}
 
 	friend FStream& operator<<(FStream& s, FVector& v);
 

@@ -2,6 +2,8 @@
 
 #include "FbxUtils.h"
 
+#include <Tera/UPhysAsset.h>
+
 char* FbxWideToUtf8(const wchar_t* in)
 {
   char* unistr = nullptr;
@@ -226,6 +228,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
   sceneInfo->mAuthor = "RealEditor (yupimods.tumblr.com)";
   GetScene()->SetSceneInfo(sceneInfo);
 
+  FbxNode* firstLod = nullptr;
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
     int32 lodCount = sourceMesh->GetLodCount();
@@ -257,20 +260,33 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
       lodGroup->AddChild(node);
     }
     GetScene()->GetRootNode()->AddChild(lodGroup);
+    firstLod = lods.front();
   }
   else
   {
-    FbxNode* meshNode = nullptr;
-    if (!ExportStaticMesh(sourceMesh, 0, ctx, (void**)&meshNode) || !meshNode)
+    if (!ExportStaticMesh(sourceMesh, 0, ctx, (void**)&firstLod) || !firstLod)
     {
       return false;
     }
 
     if (ctx.ApplyRootTransform)
     {
-      ApplyRootTransform(meshNode, ctx);
+      ApplyRootTransform(firstLod, ctx);
     }
-    GetScene()->GetRootNode()->AddChild(meshNode);
+    GetScene()->GetRootNode()->AddChild(firstLod);
+  }
+
+  if (ctx.ExportCollisions && firstLod)
+  {
+    FbxNode* colNode = nullptr;
+    if (ExportCollision(sourceMesh, ctx, firstLod->GetNameOnly(),(void**)&colNode))
+    {
+      if (ctx.ApplyRootTransform)
+      {
+        ApplyRootTransform(colNode, ctx);
+      }
+      GetScene()->GetRootNode()->AddChild(colNode);
+    }
   }
   
   if (!SaveScene(ctx.Path, ctx.EmbedMedia))
@@ -611,7 +627,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
   FString objectName = sourceMesh->GetObjectName();
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
-    objectName += FString::Sprintf("_LOD_%d", lodIdx);
+    objectName += FString::Sprintf("_LOD%d", lodIdx);
   }
   char* meshName = FbxWideToUtf8(objectName.WString().c_str());
   FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
@@ -627,6 +643,89 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
     ((FbxSurfaceLambert*)fbxMaterial)->Diffuse.Set(FbxDouble3(0.72, 0.72, 0.72));
     meshNode->AddMaterial(fbxMaterial);
   }
+  return true;
+}
+
+bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, void** outNode)
+{
+  URB_BodySetup* bodySetup = sourceMesh->GetBodySetup();
+  if (!bodySetup)
+  {
+    return false;
+  }
+
+  FKAggregateGeom aggGeom = bodySetup->GetAggregateGeometry();
+
+  int32 totalVertCount = 0;
+  int32 totalIndexCount = 0;
+  for (FKConvexElem& element : aggGeom.ConvexElems)
+  {
+    totalVertCount += (int32)element.VertexData.size();
+    totalIndexCount += (int32)element.FaceTriData.size();
+  }
+  if (!totalVertCount || !totalIndexCount)
+  {
+    return false;
+  }
+
+  FbxNode* colNode = FbxNode::Create(GetScene(), ("UCX_" + FString(meshName)).UTF8().c_str());
+  FbxMesh* mesh = FbxMesh::Create(GetScene(), ("UCX_" + FString(meshName) + "_AggGeom").UTF8().c_str());
+  colNode->SetNodeAttribute(mesh);
+  *outNode = (void*)colNode;
+
+  FbxLayer* layer = mesh->GetLayer(0);
+  if (!layer)
+  {
+    layer = mesh->GetLayer(mesh->CreateLayer());
+  }
+
+  FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
+  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+  FbxSurfaceMaterial* fbxMat = nullptr;
+  const int32 matIdx = colNode->AddMaterial(fbxMat);
+  
+  mesh->InitControlPoints(totalVertCount);
+  std::vector<int32> indicies;
+  std::vector<FVector> points;
+  {
+    int32 cpIdx = 0;
+    int32 wgOffset = 0;
+    for (FKConvexElem& element : aggGeom.ConvexElems)
+    {
+      for (FVector& v : element.VertexData)
+      {
+        mesh->GetControlPoints()[cpIdx] = FbxVector4(v.X, -v.Y, v.Z);
+        points.push_back(v);
+        cpIdx++;
+      }
+      for (int32 idx : element.FaceTriData)
+      {
+        indicies.push_back(idx + wgOffset);
+      }
+      wgOffset += (int32)element.VertexData.size();
+    }
+  }
+
+  for (int32 pointIdx = 0; pointIdx < totalIndexCount; pointIdx += 3)
+  {
+    mesh->BeginPolygon(matIdx);
+    mesh->AddPolygon(indicies[pointIdx + 0]);
+    mesh->AddPolygon(indicies[pointIdx + 1]);
+    mesh->AddPolygon(indicies[pointIdx + 2]);
+    mesh->EndPolygon();
+
+    FVector a = points[pointIdx + 0];
+    FVector b = points[pointIdx + 1];
+    FVector c = points[pointIdx + 2];
+    FVector normal = (a - b) ^ (b - c);
+    normal.Normalize();
+    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
+    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
+    layerElementNormal->GetDirectArray().Add(FbxVector4(normal.X, -normal.Y, normal.Z));
+  }
+  layer->SetNormals(layerElementNormal);
   return true;
 }
 
