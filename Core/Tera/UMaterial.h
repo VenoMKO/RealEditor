@@ -97,6 +97,7 @@ public:
   std::map<FString, float> GetScalarParameters() const;
   std::map<FString, UTexture*> GetTextureParameters() const;
   std::map<FString, FLinearColor> GetVectorParameters() const;
+  std::vector<UTexture*> GetTextureSamples() const;
 
   UTexture2D* GetTextureParameterValue(const FString& name) const;
   UTexture2D* GetDiffuseTexture() const;

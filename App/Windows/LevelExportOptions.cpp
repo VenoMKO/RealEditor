@@ -182,7 +182,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 	gSizer2 = new wxGridSizer(0, 4, 0, 0);
 
 	Materials = new wxCheckBox(m_panel11, wxID_ANY, wxT("Export Materials"), wxDefaultPosition, wxDefaultSize, 0);
-	Materials->SetToolTip(wxT("Export material parameters"));
+	Materials->SetToolTip(wxT("Export parameters of materials used by actors. Will export materials that are related to current export operation."));
 
 	gSizer2->Add(Materials, 0, wxALL, 5);
 
@@ -286,7 +286,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 	bSizer28 = new wxBoxSizer(wxVERTICAL);
 
 	Textures = new wxCheckBox(m_panel15, wxID_ANY, wxT("Export Textures"), wxDefaultPosition, wxDefaultSize, 0);
-	Textures->SetToolTip(wxT("Export textures"));
+	Textures->SetToolTip(wxT("Export textures, used by exported actors. Will export textures that are related to the current export operation."));
 
 	bSizer28->Add(Textures, 0, wxALL, 5);
 
@@ -393,7 +393,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
 	SplitTerrainWeightMaps->SetValue(HasAVX2() && ctx.Config.SplitTerrainWeights);
 	SplitTerrainWeightMaps->Enable(HasAVX2());
 	Textures->SetValue(ctx.Config.Textures);
-	TextureFormatSelector->SetSelection(HasAVX2() ? ctx.Config.TextureFormat : 2);
+	TextureFormatSelector->Select(HasAVX2() ? ctx.Config.TextureFormat : 2);
 	TextureFormatSelector->Enable(HasAVX2());
 	OverrideFiles->SetValue(ctx.Config.OverrideData);
 	BakeTransforms->SetValue(ctx.Config.BakeComponentTransform);

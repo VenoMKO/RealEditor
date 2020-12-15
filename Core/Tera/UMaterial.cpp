@@ -261,6 +261,30 @@ std::map<FString, FLinearColor> UMaterialInterface::GetVectorParameters() const
   return result;
 }
 
+std::vector<UTexture*> UMaterialInterface::GetTextureSamples() const
+{
+  std::vector<UTexture*> result;
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionTextureSample* sexp = ExactCast<UMaterialExpressionTextureSample>(exp))
+      {
+        if (UTexture* tex = Cast<UTexture>(sexp->Texture))
+        {
+          result.push_back(tex);
+        }
+      }
+    }
+  }
+  else if (UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent()))
+  {
+    result = parent->GetTextureSamples();
+  }
+  return result;
+}
+
 UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) const
 {
   bool thisValue = false;

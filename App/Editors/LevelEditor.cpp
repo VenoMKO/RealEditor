@@ -252,6 +252,15 @@ void LevelEditor::OnExportClicked(wxCommandEvent& e)
                 textures[tpath] = p.second;
               }
             }
+            auto constTextures = mat->GetTextureSamples();
+            for (UTexture* tex : constTextures)
+            {
+              std::string tpath = GetLocalDir(tex) + tex->GetObjectName().UTF8();
+              if (!textures.count(tpath))
+              {
+                textures[tpath] = tex;
+              }
+            }
           }
         }
       }
