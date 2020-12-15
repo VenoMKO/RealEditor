@@ -8,7 +8,7 @@
 #include <osgUtil/SmoothingVisitor>
 #include <osg/BlendFunc>
 #include <osg/Depth>
-#include <osg/PositionAttitudeTransform>
+#include <osg/MatrixTransform>
 
 #include <Tera/Cast.h>
 #include <Tera/FPackage.h>
@@ -580,8 +580,8 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
   }
 
   static const osg::Vec3d yawAxis(0.0, 0.0, -1.0);
-  static const osg::Vec3d pitchAxis(-1.0, 0.0, 0.0);
-  static const osg::Vec3d rollAxis(0.0, -1.0, 0.0);
+  static const osg::Vec3d pitchAxis(0.0, -1.0, 0.0);
+  static const osg::Vec3d rollAxis(1.0, 0.0, 0.0);
 
   for (UActor* actor : actors)
   {
@@ -602,27 +602,38 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
 
     if (geode)
     {
-      FVector location = actor->GetLocation();
       geode->setName(actor->GetObjectName().UTF8().c_str());
-      osg::PositionAttitudeTransform* transform = new osg::PositionAttitudeTransform;
-      transform->addChild(geode);
-      transform->setPosition(osg::Vec3(location.X + compTranslation.X,
-        -(location.Y + compTranslation.Y),
-        location.Z + compTranslation.Z));
-      transform->setScale(osg::Vec3(actor->DrawScale3D.X * actor->DrawScale * compScale3D.X * compScale,
-        actor->DrawScale3D.Y * actor->DrawScale * compScale3D.Y * compScale,
-        actor->DrawScale3D.Z * actor->DrawScale * compScale3D.Z * compScale));
+
+      osg::MatrixTransform* mt = new osg::MatrixTransform;
+      mt->addChild(geode);
+
+      osg::Matrix matrix;
+      matrix.makeIdentity();
+      
+      FVector location = actor->GetLocation();
+      matrix.preMultTranslate(osg::Vec3(location.X + compTranslation.X,
+                                        -(location.Y + compTranslation.Y),
+                                        location.Z + compTranslation.Z));
+
+      
 
       osg::Quat quat;
       FRotator rot = actor->Rotation + compRotation;
       FVector euler = rot.Normalized().Euler(); // {X: Roll, Y: Pitch, Z: Yaw}
       quat.makeRotate(
-        euler.X * M_PI / 180., pitchAxis,
-        euler.Y * M_PI / 180., rollAxis,
+        euler.X * M_PI / 180., rollAxis,
+        euler.Y * M_PI / 180., pitchAxis,
         euler.Z * M_PI / 180., yawAxis
       );
-      transform->setAttitude(quat);
-      root->addChild(transform);
+
+      matrix.preMultRotate(quat);
+
+      matrix.preMultScale(osg::Vec3(actor->DrawScale3D.X * actor->DrawScale * compScale3D.X * compScale,
+                                    actor->DrawScale3D.Y * actor->DrawScale * compScale3D.Y * compScale,
+                                    actor->DrawScale3D.Z * actor->DrawScale * compScale3D.Z * compScale));
+
+      mt->setMatrix(matrix);
+      root->addChild(mt);
     }
   }
 }
@@ -1315,6 +1326,7 @@ osg::Geode* LevelEditor::CreateStaticActor(UStaticMeshActor* actor, FVector& tra
     if (replacement && replacement->StaticMesh)
     {
       mesh = replacement->StaticMesh;
+      component = replacement;
     }
     else
     {
