@@ -743,7 +743,7 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
   {
     newIdx = thisPackage->GetObjectIndex(selection);
   }
-  catch (const std::exception& e)
+  catch (...)
   {
     AllowChanges = false;
     return;

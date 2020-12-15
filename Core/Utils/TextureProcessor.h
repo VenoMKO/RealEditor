@@ -1,5 +1,6 @@
 #pragma once
 #include <Tera/Core.h>
+#include <array>
 
 class TextureProcessor {
 public:
@@ -25,25 +26,43 @@ public:
   {
     free(InputData);
     free(OutputData);
+    for (auto& cube : InputCube)
+    {
+      free(cube.Data);
+    }
+  }
+
+  inline void SetInputCubeFace(int32 faceIdx, void* data, int32 size, int32 width, int32 height)
+  {
+    InIsCube = data;
+    if (InputCube[faceIdx].Data)
+    {
+      free(InputCube[faceIdx].Data);
+      InputCube[faceIdx].Data = nullptr;
+    }
+    if (size && data)
+    {
+      InputCube[faceIdx].Data = malloc(size);
+      memcpy(InputCube[faceIdx].Data, data, size);
+    }
+    InputCube[faceIdx].Size = size;
+    InputCube[faceIdx].X = width;
+    InputCube[faceIdx].Y = height;
   }
 
   inline void SetInputData(void* data, int32 size)
   {
-    if (!data || size <= 0)
+    if (InputData)
     {
+      free(InputData);
       InputData = nullptr;
-      InputDataSize = 0;
     }
-    else
+    if (size && data)
     {
-      if (InputData)
-      {
-        free(InputData);
-      }
       InputData = malloc(size);
-      InputDataSize = size;
       memcpy(InputData, data, size);
     }
+    InputDataSize = size;
   }
 
   inline void SetInputDataDimensions(int32 sizeX, int32 sizeY)
@@ -125,6 +144,13 @@ public:
     void* Data = nullptr;
   };
 
+  struct Cube {
+    void* Data = nullptr;
+    int32 Size = 0;
+    int32 X = 0;
+    int32 Y = 0;
+  };
+
   inline const std::vector<OutputMip>& GetOutputMips() const
   {
     return OutputMips;
@@ -142,6 +168,20 @@ private:
   bool FileToBytes();
   bool DDSToBytes();
 
+  inline bool InputCubeIsValid() const
+  {
+    int32 x = InputCube[0].X;
+    int32 y = InputCube[0].Y;
+    for (const Cube& c : InputCube)
+    {
+      if (!c.Data || !c.Size || x != c.X || y != c.Y || !x || !y)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
 private:
   TCFormat InputFormat = TCFormat::None;
   TCFormat OutputFormat = TCFormat::None;
@@ -151,6 +191,7 @@ private:
   int32 InputDataSizeX = 0;
   int32 InputDataSizeY = 0;
   std::string InputPath;
+  std::array<Cube, 6> InputCube;
 
   void* OutputData = nullptr;
   int32 OutputDataSize = 0;
@@ -164,6 +205,7 @@ private:
   bool Alpha = false;
   bool Normal = false;
   bool GenerateMips = false;
+  bool InIsCube = false;
 
   MipFilterType MipFilter = MipFilterType::Mitchell;
 

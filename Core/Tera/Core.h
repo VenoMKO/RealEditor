@@ -83,8 +83,10 @@ enum { MSP_MAX = 1 };
 #define VER_TERA_MODERN 897
 #define VER_TERA_FILEMOD 2
 
+#ifndef M_PI
 #define _USE_MATH_DEFINES
 #include <cmath>
+#endif
 
 #include <string>
 // Use std::vector instead of TArray

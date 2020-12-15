@@ -270,6 +270,26 @@ void LevelEditor::OnExportClicked(wxCommandEvent& e)
         SendEvent(&progress, UPDATE_PROGRESS, 0);
         SendEvent(&progress, UPDATE_MAX_PROGRESS, textures.size());
         curProgress = 0;
+
+        TextureProcessor::TCFormat outputFormat = ctx.GetTextureFormat();
+        std::string ext;
+        switch (outputFormat)
+        {
+        case TextureProcessor::TCFormat::PNG:
+          ext = "png";
+          break;
+        case TextureProcessor::TCFormat::TGA:
+          ext = "tga";
+          break;
+        case TextureProcessor::TCFormat::DDS:
+          ext = "dds";
+          break;
+        default:
+          LogE("Invalid output format!");
+          SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+          break;
+        }
+
         for (auto& p : textures)
         {
           SendEvent(&progress, UPDATE_PROGRESS, curProgress);
@@ -288,24 +308,10 @@ void LevelEditor::OnExportClicked(wxCommandEvent& e)
             std::filesystem::create_directories(path, err);
           }
           path /= p.second->GetObjectName().UTF8();
+          path.replace_extension(ext);
+
           if (UTexture2D* texture = Cast<UTexture2D>(p.second))
           {
-            TextureProcessor::TCFormat outputFormat = ctx.GetTextureFormat();
-            switch (outputFormat)
-            {
-            case TextureProcessor::TCFormat::PNG:
-              path.replace_extension("png");
-              break;
-            case TextureProcessor::TCFormat::TGA:
-              path.replace_extension("tga");
-              break;
-            case TextureProcessor::TCFormat::DDS:
-              path.replace_extension("dds");
-              break;
-            default:
-              continue;
-            }
-
             TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
             switch (texture->Format)
             {
@@ -369,9 +375,102 @@ void LevelEditor::OnExportClicked(wxCommandEvent& e)
               continue;
             }
           }
+          else if (UTextureCube* cube = Cast<UTextureCube>(p.second))
+          {
+            auto faces = cube->GetFaces();
+            bool ok = true;
+            TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+            for (UTexture2D* face : faces)
+            {
+              if (!face)
+              {
+                LogW("Failed to export a texture cube %s. Can't get one of the faces.", p.second->GetObjectPath().UTF8().c_str());
+                ok = false;
+                break;
+              }
+              TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
+              switch (face->Format)
+              {
+              case PF_DXT1:
+                f = TextureProcessor::TCFormat::DXT1;
+                break;
+              case PF_DXT3:
+                f = TextureProcessor::TCFormat::DXT3;
+                break;
+              case PF_DXT5:
+                f = TextureProcessor::TCFormat::DXT5;
+                break;
+              case PF_A8R8G8B8:
+                f = TextureProcessor::TCFormat::ARGB8;
+                break;
+              case PF_G8:
+                f = TextureProcessor::TCFormat::G8;
+                break;
+              default:
+                LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+                ok = false;
+                break;
+              }
+              if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+              {
+                LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+                ok = false;
+                break;
+              }
+              inputFormat = f;
+            }
+
+            if (!ok)
+            {
+              continue;
+            }
+
+            TextureProcessor processor(inputFormat, outputFormat);
+            for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
+            {
+              FTexture2DMipMap* mip = nullptr;
+              for (FTexture2DMipMap* mipmap : faces[faceIdx]->Mips)
+              {
+                if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+                {
+                  mip = mipmap;
+                  break;
+                }
+              }
+              if (!mip)
+              {
+                LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str());
+                ok = false;
+                break;
+              }
+
+              processor.SetInputCubeFace(faceIdx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);
+            }
+
+            if (!ok)
+            {
+              continue;
+            }
+
+            processor.SetOutputPath(W2A(path.wstring()));
+
+            try
+            {
+              if (!processor.Process())
+              {
+                LogE("Failed to export %s: %s", cube->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+                continue;
+              }
+            }
+            catch (...)
+            {
+              LogE("Failed to export %s! Unknown texture processor error!", cube->GetObjectPath().UTF8().c_str());
+              continue;
+            }
+          }
           else
           {
-            // TODO: cubes
+            LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
           }
         }
       }

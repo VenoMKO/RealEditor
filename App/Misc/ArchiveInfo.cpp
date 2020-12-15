@@ -465,7 +465,7 @@ void ArchiveInfoView::OnNameContextMenu(wxDataViewEvent& e)
     return;
   }
 
-  int idx = int(e.GetItem().GetID()) - 1;
+  int idx = (int)e.GetItem().GetID() - 1;
   if (idx < 0)
   {
     return;

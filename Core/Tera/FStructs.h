@@ -329,7 +329,7 @@ struct FVector {
 		const float ss = X * X + Y * Y + Z * Z;
 		if (ss > 1.e-8)
 		{
-			const float s = 1. / sqrtf(ss);
+			const float s = 1.f / sqrtf(ss);
 			X *= s; Y *= s; Z *= s;
 			return true;
 		}

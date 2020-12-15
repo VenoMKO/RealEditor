@@ -154,7 +154,7 @@ bool TextureProcessor::Process()
 {
   if (InputPath.empty())
   {
-    if (!InputData || !InputDataSize)
+    if ((!InputData || !InputDataSize) && (!InIsCube || !InputCubeIsValid()))
     {
       Error = "Texture Processor: no input data";
       return false;
@@ -192,41 +192,85 @@ bool TextureProcessor::BytesToFile()
     Error = "Texture Processor: Your CPU does not support AVX2 instructions. Please, use DDS format to export the texture.";
     return false;
   }
-  if (InputFormat == TCFormat::DXT1 || InputFormat == TCFormat::DXT3 || InputFormat == TCFormat::DXT5)
+  if (InputFormat == TCFormat::DXT1 || InputFormat == TCFormat::DXT3 || InputFormat == TCFormat::DXT5 || InputFormat == TCFormat::ARGB8)
   {
     nvtt::Format fmt = nvtt::Format_Count;
-    if (InputFormat == TCFormat::DXT1)
+    switch (InputFormat)
     {
+    case TCFormat::DXT1:
       fmt = nvtt::Format_DXT1;
       hasAlpha = false;
-    }
-    else if (InputFormat == TCFormat::DXT3)
-    {
+      break;
+    case TCFormat::DXT3:
       fmt = nvtt::Format_DXT3;
-    }
-    else if (InputFormat == TCFormat::DXT5)
-    {
+      break;
+    case TCFormat::DXT5:
       fmt = nvtt::Format_DXT5;
+      break;
+    default:
+    case TCFormat::ARGB8:
+      hasAlpha = true;
+      break;
     }
-    LogI("Texture Processor: Setting surface image");
-    if (!surface.setImage2D(fmt, nvtt::Decoder_D3D9, InputDataSizeX, InputDataSizeY, InputData))
+
+    if (InIsCube)
     {
-      Error = "Texture Processor: failed to create input surface (";
-      Error += "DXT1:" + std::to_string(InputDataSizeX) + "x" + std::to_string(InputDataSizeY) + ")";
-      return false;
+      nvtt::CubeSurface cube;
+      hasAlpha = false;
+      LogI("Texture Processor: Setting cube surface image");
+      for (int32 face = 0; face < InputCube.size(); ++face)
+      {
+        nvtt::Surface& s = cube.face(face);
+        bool result = false;
+        if (fmt == nvtt::Format_Count)
+        {
+          result = s.setImage(nvtt::InputFormat_BGRA_8UB, InputCube[face].X, InputCube[face].Y, 1, InputCube[face].Data);
+        }
+        else
+        {
+          result = s.setImage2D(fmt, nvtt::Decoder_D3D9, InputCube[face].X, InputCube[face].Y, InputCube[face].Data);
+        }
+        if (!result || s.isNull() || !s.width() || !s.height())
+        {
+          Error = "Texture Processor: failed to create input cube surface";
+          return false;
+        }
+        s.flipY();
+      }
+      surface = cube.unfold(nvtt::CubeLayout_Row);
+      if (surface.isNull() || !surface.width() || !surface.height())
+      {
+        Error = "Texture Processor: failed to unfold the input cube surface";
+        return false;
+      }
     }
-  }
-  else if (InputFormat == TCFormat::ARGB8)
-  {
-    if (!surface.setImage(nvtt::InputFormat_BGRA_8UB, InputDataSizeX, InputDataSizeY, 1, InputData))
+    else
     {
-      Error = "Texture Processor: failed to create input surface (";
-      Error += "ARGB8:" + std::to_string(InputDataSizeX) + "x" + std::to_string(InputDataSizeY) + ")";
-      return false;
+      LogI("Texture Processor: Setting surface image");
+      bool result = false;
+      if (fmt == nvtt::Format_Count)
+      {
+        result = surface.setImage(nvtt::InputFormat_BGRA_8UB, InputDataSizeX, InputDataSizeY, 1, InputData);
+      }
+      else
+      {
+        result = surface.setImage2D(fmt, nvtt::Decoder_D3D9, InputDataSizeX, InputDataSizeY, InputData);
+      }
+      if (!result || surface.isNull() || !surface.width() || !surface.height())
+      {
+        Error = "Texture Processor: failed to create input surface";
+        return false;
+      }
+      surface.flipY();
     }
   }
   else if (InputFormat == TCFormat::G8)
   {
+    if (InIsCube)
+    {
+      Error = "PF_G8 texture cube is not supported!";
+      return false;
+    }
     hasAlpha = false;
     // Don't use nvtt for G8. Feed InputData directly to the FreeImage
   }
@@ -248,13 +292,6 @@ bool TextureProcessor::BytesToFile()
   }
   else
   {
-    if (surface.isNull() || !surface.width() || !surface.height())
-    {
-      Error = "Texture Processor: NVTT failed to create the surface!";
-      return false;
-    }
-
-    surface.flipY();
     nvtt::CompressionOptions compressionOptions;
     compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
     compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
