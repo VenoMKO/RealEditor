@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="App\Editors\ClassEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditor.cpp" />
+    <ClCompile Include="App\Editors\LevelEditorExport.cpp" />
     <ClCompile Include="App\Editors\MaterialEditor.cpp" />
     <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />

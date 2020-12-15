@@ -5,6 +5,7 @@
 
 #include "../Misc/OSGWindow.h"
 #include "../Windows/LevelExportOptions.h"
+#include <osg/MatrixTransform>
 
 #include <unordered_map>
 #include <filesystem>
@@ -41,10 +42,11 @@ protected:
   void CreateRenderer();
   void LoadPersistentLevel();
   void CreateLevel(ULevel* level, osg::Geode* root);
+  void PrepareToExportLevel(LevelExportContext& ctx);
   void ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWindow* progress);
   void OnIdle(wxIdleEvent& e);
 
-  osg::Geode* CreateStaticActor(UStaticMeshActor* actor, FVector& translation, FVector& scale3d, FRotator& rotation, float& scale);
+  osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshActor* actor);
   osg::Geode* CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
 
 protected:
