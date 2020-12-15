@@ -783,11 +783,11 @@ void FMatrix::operator*=(const FMatrix& b)
 
 FVector FMatrix::Rotate(FVector& v)
 {
-  double d[] = { v.X, v.Y, v.Z, 0 };
-  double dx = M[0][0] * d[0] + M[1][0] * d[1] + M[2][0] * d[2] + M[3][0] * d[3];
+  float d[] = { v.X, v.Y, v.Z, 0 };
+  float dx = M[0][0] * d[0] + M[1][0] * d[1] + M[2][0] * d[2] + M[3][0] * d[3];
 
-  double dy = M[0][1] * d[0] + M[1][1] * d[1] + M[2][1] * d[2] + M[3][1] * d[3];
-  double dz = M[0][2] * d[0] + M[0][2] * d[1] + M[2][2] * d[2] + M[3][2] * d[3];
+  float dy = M[0][1] * d[0] + M[1][1] * d[1] + M[2][1] * d[2] + M[3][1] * d[3];
+  float dz = M[0][2] * d[0] + M[0][2] * d[1] + M[2][2] * d[2] + M[3][2] * d[3];
 
   if (abs(dx) < 0.00001)
   {
@@ -809,7 +809,7 @@ FQuat::FQuat(const FMatrix& matrix)
   const float tr = matrix.M[0][0] + matrix.M[1][1] + matrix.M[2][2];
   if (tr > 0.0f)
   {
-    float invS = 1. / sqrtf(tr + 1.f);
+    float invS = 1.f / sqrtf(tr + 1.f);
     W = 0.5f * (1.f / invS);
     float s = 0.5f * invS;
     X = (matrix.M[1][2] - matrix.M[2][1]) * s;
@@ -834,7 +834,7 @@ FQuat::FQuat(const FMatrix& matrix)
 
     float s = matrix.M[i][i] - matrix.M[j][j] - matrix.M[k][k] + 1.0f;
 
-    float invS = 1. / sqrtf(s);
+    float invS = 1.f / sqrtf(s);
 
     float qt[4];
     qt[i] = 0.5f * (1.f / invS);
@@ -854,12 +854,12 @@ FQuat::FQuat(const FMatrix& matrix)
 
 FRotationTranslationMatrix::FRotationTranslationMatrix(const FRotator& rotation, const FVector& origin)
 {
-  const float	sr = sin(rotation.Roll);
-  const float	cr = cos(rotation.Roll);
-  const float	sp = sin(rotation.Pitch);
-  const float	cp = cos(rotation.Pitch);
-  const float	sy = sin(rotation.Yaw);
-  const float	cy = cos(rotation.Yaw);
+  const float	sr = (float)sin((double)rotation.Roll * (M_PI / 32768.));
+  const float	cr = (float)cos((double)rotation.Roll * (M_PI / 32768.));
+  const float	sp = (float)sin((double)rotation.Pitch * (M_PI / 32768.));
+  const float	cp = (float)cos((double)rotation.Pitch * (M_PI / 32768.));
+  const float	sy = (float)sin((double)rotation.Yaw * (M_PI / 32768.));
+  const float	cy = (float)cos((double)rotation.Yaw * (M_PI / 32768.));
 
   M[0][0] = cp * cy;
   M[0][1] = cp * sy;

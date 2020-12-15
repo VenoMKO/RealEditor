@@ -67,7 +67,7 @@ struct FMapExportConfig {
   bool Materials = true;
   bool Textures = true;
   int32 TextureFormat = 0;
-  bool BakeComponentTransform = true;
+  bool BakeComponentTransform = false;
   bool OverrideData = false;
   bool ExportLods = true;
   bool ConvexCollisions = true;

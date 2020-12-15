@@ -19,46 +19,9 @@ FVector UActor::GetLocation()
     delta *= DrawScale3D;
     delta *= DrawScale;
 
-    FVector rot = Rotation.Normalized().Euler();
-    
-    rot.X = (rot.X / 360.) * 2. * M_PI;
-    rot.Y = (rot.Y / 360.) * 2. * M_PI;
-    rot.Z = (rot.Z / 360.) * 2. * M_PI;
+    const FRotationMatrix Matrix = FRotationMatrix(Rotation);
+    delta = Matrix.TransformFVector(delta);
 
-    FMatrix mx(FPlane(1, 0, 0, 0),
-      FPlane(0, cosf(rot.X), -sinf(rot.X), 0),
-      FPlane(0, sinf(rot.X), cosf(rot.X), 0),
-      FPlane(0, 0, 0, 1));
-
-    FMatrix my(FPlane(cosf(rot.Y), 0, sinf(rot.Y), 0),
-      FPlane(0, 1, 0, 0),
-      FPlane(-sinf(rot.Y), 0, cosf(rot.Y), 0),
-      FPlane(0, 0, 0, 1));
-
-    FMatrix mz(FPlane(cosf(rot.Z), sinf(rot.Z), 0, 0),
-      FPlane(-sinf(rot.Z), cosf(rot.Z), 0, 0),
-      FPlane(0, 0, 1, 0),
-      FPlane(0, 0, 0, 1));
-
-    auto CleanupMatrix = [](FMatrix& m) {
-      for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-          if (abs(m.M[i][j]) < 0.01)
-          {
-            m.M[i][j] = 0;
-          }
-        }
-      }
-    };
-
-    CleanupMatrix(mx);
-    CleanupMatrix(my);
-    CleanupMatrix(mz);
-
-    mx *= my;
-    mx *= mz;
-
-    delta = mx.Rotate(delta);
     location -= delta;
   }
   return location;
