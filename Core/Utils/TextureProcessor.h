@@ -161,6 +161,8 @@ public:
     return OutputFormat;
   }
 
+  bool UnfoldCube();
+
 private:
   bool BytesToFile();
   bool BytesToDDS();

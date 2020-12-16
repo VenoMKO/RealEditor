@@ -179,6 +179,121 @@ bool TextureProcessor::Process()
   return false;
 }
 
+bool TextureProcessor::UnfoldCube()
+{
+  nvtt::Format fmt = nvtt::Format_Count;
+  switch (InputFormat)
+  {
+  case TCFormat::DXT1:
+    fmt = nvtt::Format_DXT1;
+    break;
+  case TCFormat::DXT3:
+    fmt = nvtt::Format_DXT3;
+    break;
+  case TCFormat::DXT5:
+    fmt = nvtt::Format_DXT5;
+    break;
+  default:
+  case TCFormat::ARGB8:
+    break;
+  }
+
+  nvtt::Surface surface;
+  nvtt::CubeSurface cube;
+  LogI("Texture Processor: Setting cube surface image");
+  for (int32 face = 0; face < InputCube.size(); ++face)
+  {
+    nvtt::Surface& s = cube.face(face);
+    bool result = false;
+    if (fmt == nvtt::Format_Count)
+    {
+      result = s.setImage(nvtt::InputFormat_BGRA_8UB, InputCube[face].X, InputCube[face].Y, 1, InputCube[face].Data);
+    }
+    else
+    {
+      result = s.setImage2D(fmt, nvtt::Decoder_D3D9, InputCube[face].X, InputCube[face].Y, InputCube[face].Data);
+    }
+    if (!result || s.isNull() || !s.width() || !s.height())
+    {
+      Error = "Texture Processor: failed to create input cube surface";
+      return false;
+    }
+    s.flipY();
+  }
+  surface = cube.unfold(nvtt::CubeLayout_Row);
+  if (surface.isNull() || !surface.width() || !surface.height())
+  {
+    Error = "Texture Processor: failed to unfold the input cube surface";
+    return false;
+  }
+
+  nvtt::Format ofmt = nvtt::Format_RGBA;
+  switch (OutputFormat)
+  {
+  case TCFormat::DXT1:
+    ofmt = nvtt::Format_DXT1;
+    break;
+  case TCFormat::DXT3:
+    ofmt = nvtt::Format_DXT3;
+    break;
+  case TCFormat::DXT5:
+    ofmt = nvtt::Format_DXT5;
+    break;
+  default:
+  case TCFormat::ARGB8:
+    break;
+  }
+
+  nvtt::Context ctx;
+  nvtt::CompressionOptions compressionOptions;
+  compressionOptions.setFormat(ofmt);
+  if (ofmt == nvtt::Format_RGBA)
+  {
+    compressionOptions.setPixelFormat(32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
+  }
+
+  nvtt::OutputOptions outputOptions;
+  TPOutputHandler ohandler;
+  outputOptions.setSrgbFlag(SRGB);
+  outputOptions.setOutputHandler(&ohandler);
+
+  if (!ctx.compress(surface, 0, 1, compressionOptions, outputOptions))
+  {
+    Error = "Texture Processor: Failed to compress cube surface!";
+    return false;
+  }
+
+  for (int32 idx = 0; idx < ohandler.MaxMipCount; ++idx)
+  {
+    OutputDataSize += ohandler.Mips[idx].Size;
+  }
+
+  if(!(OutputMipCount = ohandler.MipsCount))
+  {
+    Error = "Texture Processor: failed to compress the bitmap. No mipmaps were generated.";
+    return false;
+  }
+
+  if (!OutputDataSize)
+  {
+    Error = "Texture Processor: NVTT encoding error!";
+    return false;
+  }
+
+  OutputData = malloc(OutputDataSize);
+
+  int32 offset = 0;
+  for (int32 idx = 0; idx < OutputMipCount; ++idx)
+  {
+    TPOutputHandler::Mip& mip = ohandler.Mips[idx];
+    memcpy((uint8*)OutputData + offset, mip.Data, mip.Size);
+    OutputMips.push_back({ mip.SizeX, mip.SizeY, mip.Size, (uint8*)OutputData + offset });
+    offset += ohandler.Mips[idx].Size;
+  }
+
+  return true;
+}
+
 bool TextureProcessor::BytesToFile()
 {
   nvtt::Surface surface;
@@ -391,6 +506,141 @@ bool TextureProcessor::BytesToFile()
 
 bool TextureProcessor::BytesToDDS()
 {
+  if (InIsCube)
+  {
+    if (HasAVX2())
+    {
+      // Recompress the cube if we have AVX2. We want the output cube to have A8R8G8B8 format regardless of the input and output settings
+      nvtt::CubeSurface cube;
+      nvtt::Format fmt = nvtt::Format_Count;
+      switch (InputFormat)
+      {
+      case TCFormat::DXT1:
+        fmt = nvtt::Format_DXT1;
+        break;
+      case TCFormat::DXT3:
+        fmt = nvtt::Format_DXT3;
+        break;
+      case TCFormat::DXT5:
+        fmt = nvtt::Format_DXT5;
+        break;
+      case TCFormat::ARGB8:
+        break;
+      default:
+        Error = "Texture Processor: cube's pixel format is not supported!";
+        return false;
+      }
+
+      for (int32 faceIdx = 0; faceIdx < InputCube.size(); ++faceIdx)
+      {
+        nvtt::Surface& s = cube.face(faceIdx);
+        bool result = false;
+        if (fmt == nvtt::Format_Count)
+        {
+          result = s.setImage(nvtt::InputFormat_BGRA_8UB, InputCube[faceIdx].X, InputCube[faceIdx].Y, 1, InputCube[faceIdx].Data);
+        }
+        else
+        {
+          result = s.setImage2D(fmt, nvtt::Decoder_D3D10, InputCube[faceIdx].X, InputCube[faceIdx].Y, InputCube[faceIdx].Data);
+        }
+        if (!result)
+        {
+          Error = "Texture Processor: failed to set cube surface!";
+          return false;
+        }
+      }
+
+      nvtt::CompressionOptions compressionOptions;
+      compressionOptions.setFormat(nvtt::Format_RGBA);
+      compressionOptions.setPixelFormat(32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
+
+      nvtt::OutputOptions outputOptions;
+      TPOutputHandler ohandler;
+      outputOptions.setSrgbFlag(SRGB);
+      outputOptions.setOutputHandler(&ohandler);
+
+      nvtt::Context ctx;
+      if (!ctx.compress(cube, 1, compressionOptions, outputOptions))
+      {
+        Error = "Texture Processor: Failed to compress cube surface!";
+        return false;
+      }
+
+      DDS::DDSHeader header;
+      header.D3D9.dwWidth = InputCube[0].X;
+      header.D3D9.dwHeight = InputCube[0].Y;
+      header.D3D9.dwCaps = DDS::DDSCAPS::DDSCAPS_COMPLEX | DDS::DDSCAPS::DDSCAPS_TEXTURE | DDS::DDSCAPS::DDSCAPS_MIPMAP;
+      header.D3D9.dwCaps2 = DDS::DDSCAPS2::DDSCAPS2_CUBEMAP | DDS::DDSCAPS2::DDSCAPS2_CUBEMAP_ALLFACES;
+      header.D3D9.dwFlags &= ~DDS::DDSD::DDSD_LINEARSIZE;
+      header.D3D9.dwFlags |= DDS::DDSD::DDSD_PITCH;
+      header.D3D9.ddspf.dwFourCC = DDS::FCC::FCC_DX10;
+      header.D3D9.ddspf.dwFlags = DDS::DDPF_FOURCC;
+      header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_B8G8R8A8_UNORM;
+      header.D3D10.miscFlag = DDS::D3D10_MISC_FLAG::DDS_MISC_TEXTURECUBE;
+      header.D3D9.dwPitchOrLinearSize = (header.D3D9.dwWidth * 32 + 7) / 8;
+
+      FWriteStream s(OutputPath);
+      s << header;
+      for (int32 faceIdx = 0; faceIdx < ohandler.MipsCount; ++faceIdx)
+      {
+        s.SerializeBytes(ohandler.Mips[faceIdx].Data, ohandler.Mips[faceIdx].Size);
+      }
+
+      if (!s.IsGood())
+      {
+        Error = "Texture Processor: Failed to write texture to disk!";
+      }
+      return s.IsGood();
+    }
+
+    // We can't recompress faces without nvtt, so let's use existing face compression
+
+    DDS::DDSHeader header;
+    header.D3D9.dwWidth = InputCube[0].X;
+    header.D3D9.dwHeight = InputCube[0].Y;
+    header.D3D9.dwCaps = DDS::DDSCAPS::DDSCAPS_COMPLEX | DDS::DDSCAPS::DDSCAPS_TEXTURE | DDS::DDSCAPS::DDSCAPS_MIPMAP;
+    header.D3D9.dwCaps2 = DDS::DDSCAPS2::DDSCAPS2_CUBEMAP | DDS::DDSCAPS2::DDSCAPS2_CUBEMAP_ALLFACES;
+    header.D3D9.ddspf.dwFourCC = DDS::FCC::FCC_DX10;
+    header.D3D9.ddspf.dwFlags = DDS::DDPF_FOURCC;
+    header.D3D10.miscFlag = DDS::D3D10_MISC_FLAG::DDS_MISC_TEXTURECUBE;
+
+    switch (InputFormat)
+    {
+    case TCFormat::DXT1:
+      header.D3D9.dwPitchOrLinearSize = header.CalculateMipmapSize();
+      header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC1_TYPELESS;
+      break;
+    case TCFormat::DXT3:
+      header.D3D9.dwPitchOrLinearSize = header.CalculateMipmapSize();
+      header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC2_TYPELESS;
+      break;
+    case TCFormat::DXT5:
+      header.D3D9.dwPitchOrLinearSize = header.CalculateMipmapSize();
+      header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_BC3_TYPELESS;
+      break;
+    case TCFormat::ARGB8:
+      header.D3D9.dwFlags &= ~DDS::DDSD::DDSD_LINEARSIZE;
+      header.D3D9.dwFlags |= DDS::DDSD::DDSD_PITCH;
+      header.D3D10.dxgiFormat = DDS::DXGI_FORMAT_B8G8R8A8_UNORM;
+      header.D3D9.dwPitchOrLinearSize = (header.D3D9.dwWidth * 32 + 7) / 8;
+      break;
+    default:
+      Error = "Texture Processor: cube's pixel format is not supported!";
+      return false;
+    }
+
+    FWriteStream s(OutputPath);
+    s << header;
+    for (int32 faceIdx = 0; faceIdx < InputCube.size(); ++faceIdx)
+    {
+      s.SerializeBytes(InputCube[faceIdx].Data, InputCube[faceIdx].Size);
+    }
+    if (!s.IsGood())
+    {
+      Error = "Texture Processor: Failed to write texture to disk!";
+    }
+    return s.IsGood();
+  }
   DDS::DDSHeader header;
   header.D3D9.dwWidth = InputDataSizeX;
   header.D3D9.dwHeight = InputDataSizeY;

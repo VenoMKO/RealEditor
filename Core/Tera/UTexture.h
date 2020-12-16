@@ -93,7 +93,7 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
 
   // targets order: FacePosX, FaceNegX, FacePosY, FaceNegY, FacePosZ, FaceNegZ
-  bool RenderTo(std::array<osg::Image*, 6>& targets);
+  bool RenderTo(osg::Image* targets);
 
   std::array<UTexture2D*, 6> GetFaces()
   {

@@ -361,7 +361,9 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
               continue;
             }
 
-            TextureProcessor processor(inputFormat, outputFormat);
+            // UE4 accepts texture cubes only in a DDS container with A8R8G8B8 format anf proper flags. Export cubes this way regardless of the user's output format.
+            path.replace_extension("dds");
+            TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::DDS);
             for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
             {
               FTexture2DMipMap* mip = nullptr;

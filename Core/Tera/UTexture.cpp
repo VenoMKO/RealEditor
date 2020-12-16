@@ -3,6 +3,7 @@
 #include "FPackage.h"
 
 #include "Utils/ALog.h"
+#include "Utils/TextureProcessor.h"
 
 #include <../Extern/glew/glew.h>
 #include <osg/Image>
@@ -500,17 +501,95 @@ bool UTextureCube::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-bool UTextureCube::RenderTo(std::array<osg::Image*, 6>& targets)
+bool UTextureCube::RenderTo(osg::Image* target)
 {
+  if (!HasAVX2())
+  {
+    return false;
+  }
   std::array<UTexture2D*, 6> faces = GetFaces();
+  TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
   for (int32 idx = 0; idx < faces.size(); ++idx)
   {
-    if (!faces[idx] || !faces[idx]->RenderTo(targets[idx]))
+    if (!faces[idx])
     {
       return false;
     }
+    TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
+    switch (faces[idx]->Format)
+    {
+    case PF_DXT1:
+      f = TextureProcessor::TCFormat::DXT1;
+      break;
+    case PF_DXT3:
+      f = TextureProcessor::TCFormat::DXT3;
+      break;
+    case PF_DXT5:
+      f = TextureProcessor::TCFormat::DXT5;
+      break;
+    case PF_A8R8G8B8:
+      f = TextureProcessor::TCFormat::ARGB8;
+      break;
+    case PF_G8:
+      f = TextureProcessor::TCFormat::G8;
+      break;
+    default:
+      return false;
+    }
+    if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+    {
+      return false;
+    }
+    inputFormat = f;
   }
-  return true;
+
+  TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::ARGB8);
+  for (int32 idx = 0; idx < faces.size(); ++idx)
+  {
+    FTexture2DMipMap* mip = nullptr;
+    for (FTexture2DMipMap* mipmap : faces[idx]->Mips)
+    {
+      if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+      {
+        mip = mipmap;
+        break;
+      }
+    }
+    if (!mip)
+    {
+      LogE("Failed to export texture cube face %s.%s. No mipmaps!", GetObjectPath().UTF8().c_str(), faces[idx]->GetObjectName().UTF8().c_str());
+      return false;
+    }
+    processor.SetInputCubeFace(idx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);
+  }
+
+  if (!processor.UnfoldCube())
+  {
+    LogE("Failed to render cube: %s", processor.GetError().c_str());
+    return false;
+  }
+
+  GLenum type = 0;
+  GLenum format = PixelFormatInfo[PF_A8R8G8B8].Format;
+  GLenum inFormat = format;
+  auto& mips = processor.GetOutputMips();
+
+  if (!mips.size() || !FindInternalFormatAndType(PF_A8R8G8B8, inFormat, type, SRGB) || inFormat == GL_NONE || format == GL_NONE)
+  {
+    return false;
+  }
+
+  for (auto& mip : mips)
+  {
+    if (mip.SizeX && mip.SizeY && mip.Data)
+    {
+      void* data = malloc(mip.Size);
+      memcpy(data, mip.Data, mip.Size);
+      target->setImage(mip.SizeX, mip.SizeY, 0, inFormat, format, type, (uint8*)data, osg::Image::AllocationMode::USE_MALLOC_FREE);
+      return true;
+    }
+  }
+  return false;
 }
 
 void UTextureCube::PostLoad()

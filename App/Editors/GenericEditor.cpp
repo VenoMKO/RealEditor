@@ -73,6 +73,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   {
     editor = new MaterialInstanceEditor(parent, window);
   }
+  else if (c == UTextureCube::StaticClassName())
+  {
+    editor = new TextureCubeEditor(parent, window);
+  }
   else
   {
     editor = new GenericEditor(parent, window);
