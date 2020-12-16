@@ -13,6 +13,7 @@
 #include <Tera/UMaterial.h>
 #include <Tera/UTexture.h>
 #include <Tera/ULight.h>
+#include <Tera/UTerrain.h>
 
 #include <Utils/ALog.h>
 #include <Utils/T3DUtils.h>
@@ -86,6 +87,11 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
         if (ctx.Config.Materials)
         {
           SendEvent(&progress, UPDATE_PROGRESS, curProgress);
+        }
+        if (progress.IsCanceled())
+        {
+          SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+          return;
         }
         curProgress++;
         if (!obj)
@@ -174,7 +180,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
               auto parentTexParams = parent->GetTextureParameters();
               for (auto& p : parentTexParams)
               {
-                if (!textureParams.count(p.first))
+                if (p.second && !textureParams.count(p.first))
                 {
                   textureParams[p.first] = p.second;
                 }
@@ -182,6 +188,10 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
             }
             for (auto& p : textureParams)
             {
+              if (!p.second)
+              {
+                continue;
+              }
               std::string tpath = GetLocalDir(p.second) + p.second->GetObjectName().UTF8();
               if (!textures.count(tpath))
               {
@@ -191,6 +201,10 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
             auto constTextures = mat->GetTextureSamples();
             for (UTexture* tex : constTextures)
             {
+              if (!tex)
+              {
+                continue;
+              }
               std::string tpath = GetLocalDir(tex) + tex->GetObjectName().UTF8();
               if (!textures.count(tpath))
               {
@@ -228,6 +242,11 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
 
         for (auto& p : textures)
         {
+          if (progress.IsCanceled())
+          {
+            SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+            return;
+          }
           SendEvent(&progress, UPDATE_PROGRESS, curProgress);
           curProgress++;
           if (!p.second)
@@ -1070,6 +1089,63 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
       }
       f.End();
+      continue;
+    }
+    if (className == UTerrain::StaticClassName())
+    {
+      if (!ctx.Config.Terrains)
+      {
+        continue;
+      }
+
+      UTerrain* terrain = Cast<UTerrain>(actor);
+      int32 width = 0;
+      int32 height = 0;
+      uint16* heights = nullptr;
+      terrain->GetHeightMap(heights, width, height, ctx.Config.ResampleTerrain);
+      if (heights)
+      {
+        std::filesystem::path dst = ctx.Config.RootDir.WString();
+        dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_HeightMap";
+        dst.replace_extension(HasAVX2() ? "png" : "dds");
+
+        TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
+        processor.SetOutputPath(W2A(dst.wstring()));
+        processor.SetInputData(heights, width * height * sizeof(uint16));
+        processor.SetInputDataDimensions(width, height);
+        free(heights);
+
+        if (!processor.Process())
+        {
+          LogW("Failed to export %s heights: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+        }
+      }
+
+      if (terrain->HasVisibilityData())
+      {
+        uint8* visibility = nullptr;
+        width = 0;
+        height = 0;
+        terrain->GetVisibilityMap(visibility, width, height, ctx.Config.ResampleTerrain);
+        if (visibility)
+        {
+          std::filesystem::path dst = ctx.Config.RootDir.WString();
+          dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_VisibilityMap";
+          dst.replace_extension(HasAVX2() ? "png" : "dds");
+
+          TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
+          processor.SetOutputPath(W2A(dst.wstring()));
+          processor.SetInputData(visibility, width * height);
+          processor.SetInputDataDimensions(width, height);
+          free(visibility);
+
+          if (!processor.Process())
+          {
+            LogW("Failed to export %s visibility: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+          }
+        }
+      }
+
       continue;
     }
   }

@@ -71,6 +71,16 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
   void Serialize(FStream& s) override;
   void PostLoad() override;
+  
+  void GetHeightMap(uint16*& result, int32& width, int32& height, bool resample = false);
+  void GetVisibilityMap(uint8*& result, int32& width, int32& height, bool resample = false);
+
+  inline bool HasVisibilityData()
+  {
+    return HasTransparency;
+  }
+
+protected:
 
 protected:
   std::vector<FTerrainHeight> Heights;
@@ -81,4 +91,5 @@ protected:
   std::vector<UTerrainWeightMapTexture*> WeightMapTextures;
   void* MaterialData = nullptr;
   FILE_OFFSET MaterialDataSize = 0;
+  bool HasTransparency = false;
 };

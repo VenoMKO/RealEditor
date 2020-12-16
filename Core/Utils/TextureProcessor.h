@@ -12,6 +12,7 @@ public:
     DXT5,
     ARGB8,
     G8,
+    G16,
     PNG,
     TGA,
     DDS

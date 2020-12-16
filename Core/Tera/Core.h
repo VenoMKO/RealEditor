@@ -163,6 +163,16 @@ FString PackageFlagsToString(uint32 flags);
 FString ClassFlagsToString(uint32 flags);
 FString TextureCompressionSettingsToString(uint8 flags);
 
+inline double Lerp(double a, double b, double alpha)
+{
+  return (a * (1.0f - alpha)) + (b * alpha);
+}
+
+inline double Bilerp(double a, double b, double c, double d, double x, double y)
+{
+  return Lerp(Lerp(a, b, x), Lerp(c, d, x), y);
+}
+
 std::string GetAppVersion();
 
 void InitCRCTable();

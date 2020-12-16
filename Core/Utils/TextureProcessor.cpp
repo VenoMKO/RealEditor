@@ -389,6 +389,16 @@ bool TextureProcessor::BytesToFile()
     hasAlpha = false;
     // Don't use nvtt for G8. Feed InputData directly to the FreeImage
   }
+  else if (InputFormat == TCFormat::G16)
+  {
+    if (InIsCube)
+    {
+      Error = "PF_G16 texture cube is not supported!";
+      return false;
+    }
+    hasAlpha = false;
+    // Don't use nvtt for G16. Feed InputData directly to the FreeImage
+  }
   else
   {
     Error = "Texture Processor: unsupported input " + std::to_string((int)InputFormat);
@@ -404,6 +414,21 @@ bool TextureProcessor::BytesToFile()
     holder.bmp = FreeImage_Allocate(InputDataSizeX, InputDataSizeY, bits);
     memcpy(FreeImage_GetBits(holder.bmp), InputData, InputDataSize);
     FreeImage_FlipVertical(holder.bmp);
+  }
+  else if (InputFormat == TCFormat::G16)
+  {
+    bits = 16;
+    holder.bmp = FreeImage_AllocateT(FIT_UINT16, InputDataSizeX, InputDataSizeY, bits);
+    for (int y = 0; y < InputDataSizeY; ++y)
+    {
+      uint8* scanline = FreeImage_GetScanLine(holder.bmp, y);
+      for (int x = 0; x < InputDataSizeX; ++x)
+      {
+        int32 offset = (InputDataSizeY - y - 1) * InputDataSizeX + x;
+        scanline[x * sizeof(uint16) + 0] = *(((uint8*)InputData + offset * sizeof(uint16)) + 0);
+        scanline[x * sizeof(uint16) + 1] = *(((uint8*)InputData + offset * sizeof(uint16)) + 1);
+      }
+    }
   }
   else
   {
@@ -671,6 +696,14 @@ bool TextureProcessor::BytesToDDS()
     header.D3D9.ddspf.dwRBitMask = 0x000000ff;
     header.D3D9.ddspf.dwGBitMask = 0x000000ff;
     header.D3D9.ddspf.dwBBitMask = 0x000000ff;
+    break;
+  case TextureProcessor::TCFormat::G16:
+    header.D3D9.ddspf.dwFlags = DDS::DDPF_LUMINANCE;
+    header.D3D9.ddspf.dwFourCC = 0;
+    header.D3D9.ddspf.dwRGBBitCount = 16;
+    header.D3D9.ddspf.dwRBitMask = 0x0000ffff;
+    header.D3D9.ddspf.dwGBitMask = 0x0000ffff;
+    header.D3D9.ddspf.dwBBitMask = 0x0000ffff;
     break;
   default:
     Error = "Texture Processor: pixel format is not supported!";
