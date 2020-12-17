@@ -27,6 +27,28 @@ FVector UActor::GetLocation()
   return location;
 }
 
+std::vector<FString> UActor::GetLayers() const
+{
+  std::vector<FString> result;
+  if (LayerProperty)
+  {
+    FString layerStr = Layer.String();
+    if (layerStr.Size())
+    {
+      size_t pos = 0;
+      size_t last = 0;
+      size_t next = 0;
+      while ((next = layerStr.Find(",", last)) != std::string::npos)
+      {
+        result.push_back(layerStr.Substr(last, next - last));
+        last = next + 1;
+      }
+      result.push_back(layerStr.Substr(last));
+    }
+  }
+  return result;
+}
+
 bool UActor::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();
@@ -47,6 +69,7 @@ bool UActor::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(DrawScale);
   REGISTER_BOOL_PROP(bHidden);
   REGISTER_BOOL_PROP(bCollideActors);
+  REGISTER_NAME_PROP(Layer);
   return false;
 }
 

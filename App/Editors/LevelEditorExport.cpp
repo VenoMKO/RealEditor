@@ -443,6 +443,11 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
   auto AddCommonActorParameters = [](T3DFile& f, UActor* actor) {
     f.AddString("ActorLabel", actor->GetObjectName().UTF8().c_str());
     f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
+    auto layers = actor->GetLayers();
+    for (int32 idx = 0; idx < layers.size(); ++idx)
+    {
+      f.AddString(FString::Sprintf("Layers(%d)", idx).UTF8().c_str(), W2A(layers[idx].WString()).c_str());
+    }
   };
 
   auto AddCommonActorComponentParameters = [&ctx](T3DFile& f, UActor* actor, UActorComponent* component, bool bakeTransform = false) {
@@ -1108,7 +1113,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
 
       std::filesystem::path dst = ctx.GetTerrainDir();
       dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_HeightMap";
-      dst.replace_extension(HasAVX2() ? "tga" : "dds");
+      dst.replace_extension(HasAVX2() ? "png" : "dds");
 
       std::error_code err;
       if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
@@ -1121,7 +1126,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         terrain->GetHeightMap(heights, width, height, ctx.Config.ResampleTerrain);
         if (heights)
         {
-          TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+          TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
           processor.SetOutputPath(W2A(dst.wstring()));
           processor.SetInputData(heights, width * height * sizeof(uint16));
           processor.SetInputDataDimensions(width, height);
@@ -1165,6 +1170,8 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
 
       dst = ctx.GetTerrainDir();
       dst /= "WeightMaps";
+      dst /= terrain->GetPackage()->GetPackageName().UTF8();
+      dst /= terrain->GetObjectName().UTF8();
 
       if (!std::filesystem::exists(dst, err))
       {
@@ -1176,7 +1183,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         for (const FTerrainLayer& layer : terrain->Layers)
         {
           std::filesystem::path texPath = dst / layer.Name.UTF8();
-          texPath.replace_extension(HasAVX2() ? "tga" : "dds");
+          texPath.replace_extension(HasAVX2() ? "png" : "dds");
           if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
           {
             void* data = nullptr;
@@ -1186,7 +1193,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
             {
               continue;
             }
-            TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+            TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
             processor.SetOutputPath(W2A(texPath.wstring()));
             processor.SetInputData(data, width * height);
             processor.SetInputDataDimensions(width, height);

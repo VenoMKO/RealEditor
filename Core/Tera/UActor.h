@@ -14,9 +14,12 @@ public:
   UPROP(float, DrawScale, 1.);
   UPROP(bool, bHidden, false);
   UPROP(bool, bCollideActors, true);
+  UPROP_NOINIT(FName, Layer);
 
   // Location with unbaked prepivot transform
   FVector GetLocation(); 
+
+  std::vector<FString> GetLayers() const;
   
   bool RegisterProperty(FPropertyTag* property) override;
   void PostLoad() override;
