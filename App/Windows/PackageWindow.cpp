@@ -31,6 +31,7 @@ enum ControlElementId {
 	New = wxID_HIGHEST + 1,
 	CreateMod,
 	Open,
+	OpenByName,
 	OpenComposite,
 	Save,
 	SaveAs,
@@ -615,6 +616,15 @@ void PackageWindow::OnOpenClicked(wxCommandEvent&)
 	}
 }
 
+void PackageWindow::OnOpenByNameClicked(wxCommandEvent&)
+{
+	wxString name = Application->ShowOpenByNameDialog(this);
+	if (name.size())
+	{
+		Application->OpenNamedPackage(name);
+	}
+}
+
 void PackageWindow::OnOpenCompositeClicked(wxCommandEvent&)
 {
 	wxString name = Application->ShowOpenCompositeDialog(this);
@@ -1076,6 +1086,7 @@ wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
 EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
 EVT_MENU(ControlElementId::Open, PackageWindow::OnOpenClicked)
+EVT_MENU(ControlElementId::OpenByName, PackageWindow::OnOpenByNameClicked)
 EVT_MENU(ControlElementId::OpenComposite, PackageWindow::OnOpenCompositeClicked)
 EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)

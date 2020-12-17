@@ -104,6 +104,7 @@ public:
   bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);
   wxString ShowOpenCompositeDialog(wxWindow* parent);
+  wxString ShowOpenByNameDialog(wxWindow* parent);
   void ShowBulkImport(wxWindow* parent, const wxString& className = wxEmptyString, const wxString& objectName = wxEmptyString);
   void ResetBulkImport()
   {

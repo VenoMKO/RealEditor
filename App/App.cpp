@@ -271,6 +271,17 @@ wxString App::ShowOpenCompositeDialog(wxWindow* parent)
   return wxString();
 }
 
+wxString App::ShowOpenByNameDialog(wxWindow* parent)
+{
+  CompositePackagePicker picker(parent, "Open package...", true);
+  picker.CenterOnParent();
+  if (picker.ShowModal() == wxID_OK)
+  {
+    return picker.GetResult();
+  }
+  return wxString();
+}
+
 void App::ShowBulkImport(wxWindow* parent, const wxString& className, const wxString& objectName)
 {
   if (!BulkImporter)

@@ -26,6 +26,10 @@ void PackageWindow::InitLayout()
 	m_menuItem4 = new wxMenuItem(fileMenu, ControlElementId::Open, wxString(wxT("Open...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem4);
 
+	wxMenuItem* m_menuItem41;
+	m_menuItem41 = new wxMenuItem(fileMenu, ControlElementId::OpenByName, wxString(wxT("Open by name...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
+	fileMenu->Append(m_menuItem41);
+
 	wxMenuItem* m_menuItem5;
 	m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::OpenComposite, wxString(wxT("Open composite...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem5);

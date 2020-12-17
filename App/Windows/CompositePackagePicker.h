@@ -3,7 +3,7 @@
 
 class CompositePackagePicker : public wxDialog {
 public:
-  CompositePackagePicker(wxWindow* parent, const wxString& title);
+  CompositePackagePicker(wxWindow* parent, const wxString& title, bool dontCheck = false);
 
   wxString GetResult() const;
 
@@ -15,6 +15,7 @@ protected:
   wxTextCtrl* CompositeName = nullptr;
   wxButton* CancelButton = nullptr;
   wxButton* OpenButton = nullptr;
+  bool DontCheck = false;
 
   wxDECLARE_EVENT_TABLE();
 };

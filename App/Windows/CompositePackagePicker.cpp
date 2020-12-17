@@ -9,9 +9,10 @@ enum ControlElementId {
 	TextField = wxID_HIGHEST + 1,
 };
 
-CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString& title)
+CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString& title, bool dontCheck)
   : wxDialog(parent, wxID_ANY, title)
 {
+	DontCheck = dontCheck;
 	SetSize(445, 144);
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -28,7 +29,10 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
 	bSizer2->Add(m_staticText, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	CompositeName = new wxTextCtrl(m_panel1, ControlElementId::TextField, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-	CompositeName->AutoComplete(((App*)wxTheApp)->GetCompositePackageNames());
+	if (dontCheck)
+	{
+		CompositeName->AutoComplete(((App*)wxTheApp)->GetCompositePackageNames());
+	}
 	bSizer2->Add(CompositeName, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	m_panel1->SetSizer(bSizer2);
@@ -67,7 +71,14 @@ wxString CompositePackagePicker::GetResult() const
 
 void CompositePackagePicker::OnText(wxCommandEvent&)
 {
-	OpenButton->Enable(((App*)wxTheApp)->GetCompositePackageNames().Index(CompositeName->GetValue(), false) != wxNOT_FOUND);
+	if (DontCheck)
+	{
+		OpenButton->Enable(CompositeName->GetValue().size());
+	}
+	else
+	{
+		OpenButton->Enable(((App*)wxTheApp)->GetCompositePackageNames().Index(CompositeName->GetValue(), false) != wxNOT_FOUND);
+	}
 }
 
 void CompositePackagePicker::OnTextEnter(wxCommandEvent&)

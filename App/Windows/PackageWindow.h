@@ -47,6 +47,7 @@ private:
 	void OnNewClicked(wxCommandEvent&);
 	void OnCreateModClicked(wxCommandEvent&);
 	void OnOpenClicked(wxCommandEvent&);
+	void OnOpenByNameClicked(wxCommandEvent&);
 	void OnOpenCompositeClicked(wxCommandEvent&);
 	void OnSaveClicked(wxCommandEvent&);
 	void OnSaveAsClicked(wxCommandEvent&);
