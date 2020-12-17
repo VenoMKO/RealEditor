@@ -2,6 +2,8 @@
 #include "FPackage.h"
 #include "Cast.h"
 
+#include <Utils/ALog.h>
+
 template <typename T>
 T* ResampleData(const T* input, int32 width, int32 height, int32 newWidth, int32 newHeight)
 {
@@ -41,50 +43,18 @@ UTerrain::UTerrain(FObjectExport* exp)
 
 bool UTerrain::RegisterProperty(FPropertyTag* property)
 {
-  if (Super::RegisterProperty(property))
+  SUPER_REGISTER_PROP();
+  REGISTER_INT_PROP(MaxTesselationLevel);
+  REGISTER_INT_PROP(NumPatchesX);
+  REGISTER_INT_PROP(NumPatchesY);
+  REGISTER_INT_PROP(NumVerticesX);
+  REGISTER_INT_PROP(NumVerticesY);
+  REGISTER_INT_PROP(NumSectionsX);
+  REGISTER_INT_PROP(NumSectionsY);
+  if (PROP_IS(property, Layers))
   {
-    return true;
-  }
-  if (PROP_IS(property, MaxTesselationLevel))
-  {
-    MaxTesselationLevelProperty = property;
-    MaxTesselationLevel = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumPatchesX))
-  {
-    NumPatchesXProperty = property;
-    NumPatchesX = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumPatchesY))
-  {
-    NumPatchesYProperty = property;
-    NumPatchesY = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumVerticesX))
-  {
-    NumVerticesXProperty = property;
-    NumVerticesX = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumVerticesY))
-  {
-    NumVerticesYProperty = property;
-    NumVerticesY = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumSectionsX))
-  {
-    NumSectionsXProperty = property;
-    NumSectionsX = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, NumSectionsY))
-  {
-    NumSectionsYProperty = property;
-    NumSectionsY = property->Value->GetInt();
+    LayersProperty = property;
+    Layers.clear();
     return true;
   }
   return false;
@@ -116,6 +86,42 @@ void UTerrain::PostLoad()
     {
       HasTransparency = true;
       break;
+    }
+  }
+  if (LayersProperty)
+  {
+    for (FPropertyValue* structValue : LayersProperty->GetArray())
+    {
+      FTerrainLayer layer;
+      for (FPropertyValue* tagValue : structValue->GetArray())
+      {
+        FPropertyTag* tag = tagValue->GetPropertyTagPtr();
+        if (tag->Name == "Name")
+        {
+          layer.Name = tag->GetString();
+          continue;
+        }
+        if (tag->Name == "Setup")
+        {
+          layer.Setup = Cast<UTerrainLayerSetup>(tag->GetObjectValuePtr());
+          continue;
+        }
+        if (tag->Name == "AlphaMapIndex")
+        {
+          layer.AlphaMapIndex = tag->GetInt();
+          continue;
+        }
+        if (tag->Name == "Hidden")
+        {
+          layer.Hidden = tag->GetBool();
+          continue;
+        }
+      }
+      Layers.push_back(layer);
+    }
+    for (const FTerrainLayer& layer : Layers)
+    {
+      LoadObject(layer.Setup);
     }
   }
 }
@@ -172,4 +178,165 @@ void UTerrain::GetVisibilityMap(uint8*& result, int32& width, int32& height, boo
     }
   }
   result = mask;
+}
+
+float UTerrain::GetHeightMapRatioX()
+{
+  for (UTexture2D* weightmap : WeightMapTextures)
+  {
+    if (!weightmap || !weightmap->SizeX)
+    {
+      continue;
+    }
+    return (float)NumPatchesX / float(weightmap->SizeX - 1);
+  }
+  return 1.f;
+}
+
+float UTerrain::GetHeightMapRatioY()
+{
+  for (UTexture2D* weightmap : WeightMapTextures)
+  {
+    if (!weightmap || !weightmap->SizeY)
+    {
+      continue;
+    }
+    return (float)NumPatchesY / float(weightmap->SizeY - 1);
+  }
+  return 1.f;
+}
+
+bool UTerrain::GetWeightMapChannel(int32 idx, void*& data, int32& width, int32& height)
+{
+  const int32 channelsPerMap = 4;
+  int32 mapIndex = 0;
+  int32 alphaMapIndex = idx;
+  if (alphaMapIndex < 0)
+  {
+    alphaMapIndex = WeightMapTextures.size() * channelsPerMap;
+  }
+  if (alphaMapIndex > 0)
+  {
+    mapIndex = (int32)ceilf((float)alphaMapIndex / (float)channelsPerMap) - 1;
+  }
+  if (mapIndex >= WeightMapTextures.size())
+  {
+    LogE("Can't get terrain(%s) weight layer at index %d(%d)", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
+    return false;
+  }
+  UTexture2D* map = WeightMapTextures[mapIndex];
+  if (map->Format != PF_A8R8G8B8)
+  {
+    LogE("Can't get terrain(%s) weight layer at index %d(%d). The weightmap has incompatible format.", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
+    return false;
+  }
+  map->Load();
+
+  FTexture2DMipMap* mip = nullptr;
+  for (FTexture2DMipMap* m : map->Mips)
+  {
+    if (m->Data)
+    {
+      mip = m;
+      break;
+    }
+  }
+
+  if (!mip)
+  {
+    LogE("Can't get terrain(%s) weight layer at index %d(%d). The weightmap has no mips.", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
+    return false;
+  }
+
+  uint32 len = mip->SizeX * mip->SizeY;
+  uint8* channel = (uint8*)malloc(len);
+  const int32 offset = alphaMapIndex - (mapIndex * channelsPerMap);
+  for (uint32 idx = 0; idx < len; ++idx)
+  {
+    const uint8* value = (const uint8*)((const uint32*)mip->Data->GetAllocation() + idx);
+    channel[idx] = *(value + offset);
+  }
+  data = (void*)channel;
+  width = mip->SizeX;
+  height = mip->SizeY;
+  return true;
+}
+
+std::vector<UTerrainWeightMapTexture*> UTerrain::GetWeightMaps()
+{
+  return WeightMapTextures;
+}
+
+bool UTerrainMaterial::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_FLOAT_PROP(MappingScale);
+  REGISTER_FLOAT_PROP(MappingRotation);
+  REGISTER_FLOAT_PROP(MappingPanU);
+  REGISTER_FLOAT_PROP(MappingPanV);
+  REGISTER_TOBJ_PROP(Material, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(DisplacementMap, UTexture2D*);
+  REGISTER_FLOAT_PROP(DisplacementScale);
+  return false;
+}
+
+void UTerrainMaterial::PostLoad()
+{
+  Super::PostLoad();
+  LoadObject(Material);
+  LoadObject(DisplacementMap);
+}
+
+bool UTerrainLayerSetup::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  if (PROP_IS(property, Materials))
+  {
+    MaterialsProperty = property;
+    Materials.clear();
+    return true;
+  }
+  return false;
+}
+
+void UTerrainLayerSetup::PostLoad()
+{
+  Super::PostLoad();
+  if (MaterialsProperty)
+  {
+    for (FPropertyValue* structValue : MaterialsProperty->GetArray())
+    {
+      FTerrainFilteredMaterial mat;
+      bool found = false;
+      for (FPropertyValue* tagValue : structValue->GetArray())
+      {
+        FPropertyTag* tag = tagValue->GetPropertyTagPtr();
+        if (tag->Name == "Material")
+        {
+          mat.Material = Cast<UTerrainMaterial>(tag->GetObjectValuePtr());
+          if (found)
+          {
+            break;
+          }
+          found = true;
+          continue;
+        }
+        if (tag->Name == "Alpha")
+        {
+          mat.Alpha = tag->GetFloat();
+          if (found)
+          {
+            break;
+          }
+          found = true;
+          continue;
+        }
+      }
+      Materials.push_back(mat);
+    }
+    for (const FTerrainFilteredMaterial& mat : Materials)
+    {
+      LoadObject(mat.Material);
+    }
+  }
 }

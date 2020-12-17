@@ -412,8 +412,15 @@ bool TextureProcessor::BytesToFile()
   {
     bits = 8;
     holder.bmp = FreeImage_Allocate(InputDataSizeX, InputDataSizeY, bits);
-    memcpy(FreeImage_GetBits(holder.bmp), InputData, InputDataSize);
-    FreeImage_FlipVertical(holder.bmp);
+    for (int y = 0; y < InputDataSizeY; ++y)
+    {
+      uint8* scanline = FreeImage_GetScanLine(holder.bmp, y);
+      for (int x = 0; x < InputDataSizeX; ++x)
+      {
+        int32 offset = (InputDataSizeY - y - 1) * InputDataSizeX + x;
+        scanline[x * sizeof(uint8) + 0] = *((uint8*)InputData + offset);
+      }
+    }
   }
   else if (InputFormat == TCFormat::G16)
   {

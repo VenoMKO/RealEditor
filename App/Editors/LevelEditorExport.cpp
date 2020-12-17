@@ -457,6 +457,10 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     {
       f.AddBool("bVisible", false);
     }
+    if (!actor->bCollideActors)
+    {
+      f.AddCustom("BodyInstance", "(CollisionEnabled=NoCollision,CollisionProfileName=\"NoCollision\")");
+    }
   };
 
   auto AddCommonPrimitiveComponentParameters = [](T3DFile& f, UPrimitiveComponent* component) {
@@ -1101,39 +1105,52 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
       UTerrain* terrain = Cast<UTerrain>(actor);
       int32 width = 0;
       int32 height = 0;
-      uint16* heights = nullptr;
-      terrain->GetHeightMap(heights, width, height, ctx.Config.ResampleTerrain);
-      if (heights)
+
+      std::filesystem::path dst = ctx.GetTerrainDir();
+      dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_HeightMap";
+      dst.replace_extension(HasAVX2() ? "tga" : "dds");
+
+      std::error_code err;
+      if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
       {
-        std::filesystem::path dst = ctx.Config.RootDir.WString();
-        dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_HeightMap";
-        dst.replace_extension(HasAVX2() ? "png" : "dds");
-
-        TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
-        processor.SetOutputPath(W2A(dst.wstring()));
-        processor.SetInputData(heights, width * height * sizeof(uint16));
-        processor.SetInputDataDimensions(width, height);
-        free(heights);
-
-        if (!processor.Process())
+        if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
         {
-          LogW("Failed to export %s heights: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+          std::filesystem::create_directories(ctx.GetTerrainDir(), err);
+        }
+        uint16* heights = nullptr;
+        terrain->GetHeightMap(heights, width, height, ctx.Config.ResampleTerrain);
+        if (heights)
+        {
+          TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+          processor.SetOutputPath(W2A(dst.wstring()));
+          processor.SetInputData(heights, width * height * sizeof(uint16));
+          processor.SetInputDataDimensions(width, height);
+          free(heights);
+
+          if (!processor.Process())
+          {
+            LogW("Failed to export %s heights: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+          }
         }
       }
+      
+      dst = ctx.GetTerrainDir();
+      dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_VisibilityMap";
+      dst.replace_extension(HasAVX2() ? "tga" : "dds");
 
-      if (terrain->HasVisibilityData())
+      if (terrain->HasVisibilityData() && (ctx.Config.OverrideData || !std::filesystem::exists(dst, err)))
       {
+        if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
+        {
+          std::filesystem::create_directories(ctx.GetTerrainDir(), err);
+        }
         uint8* visibility = nullptr;
         width = 0;
         height = 0;
         terrain->GetVisibilityMap(visibility, width, height, ctx.Config.ResampleTerrain);
         if (visibility)
         {
-          std::filesystem::path dst = ctx.Config.RootDir.WString();
-          dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_VisibilityMap";
-          dst.replace_extension(HasAVX2() ? "png" : "dds");
-
-          TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
+          TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
           processor.SetOutputPath(W2A(dst.wstring()));
           processor.SetInputData(visibility, width * height);
           processor.SetInputDataDimensions(width, height);
@@ -1146,6 +1163,211 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         }
       }
 
+      dst = ctx.GetTerrainDir();
+      dst /= "WeightMaps";
+
+      if (!std::filesystem::exists(dst, err))
+      {
+        std::filesystem::create_directories(dst, err);
+      }
+
+      if (ctx.Config.SplitTerrainWeights)
+      {
+        for (const FTerrainLayer& layer : terrain->Layers)
+        {
+          std::filesystem::path texPath = dst / layer.Name.UTF8();
+          texPath.replace_extension(HasAVX2() ? "tga" : "dds");
+          if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
+          {
+            void* data = nullptr;
+            int32 width = 0;
+            int32 height = 0;
+            if (!terrain->GetWeightMapChannel(layer.AlphaMapIndex, data, width, height))
+            {
+              continue;
+            }
+            TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+            processor.SetOutputPath(W2A(texPath.wstring()));
+            processor.SetInputData(data, width * height);
+            processor.SetInputDataDimensions(width, height);
+            free(data);
+
+            if (!processor.Process())
+            {
+              LogW("Failed to export %s weightmap: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+            }
+          }
+        }
+      }
+      else
+      {
+        std::vector<UTerrainWeightMapTexture*> maps = terrain->GetWeightMaps();
+        for (UTerrainWeightMapTexture* map : maps)
+        {
+          if (!map)
+          {
+            continue;
+          }
+
+          std::filesystem::path texPath = dst / map->GetObjectName().UTF8();
+          texPath.replace_extension(HasAVX2() ? "tga" : "dds");
+
+          if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
+          {
+            map->Load();
+
+            TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+            switch (map->Format)
+            {
+            case PF_A8R8G8B8:
+              inputFormat = TextureProcessor::TCFormat::ARGB8;
+              break;
+            case PF_DXT1:
+              inputFormat = TextureProcessor::TCFormat::DXT1;
+              break;
+            case PF_DXT3:
+              inputFormat = TextureProcessor::TCFormat::DXT3;
+              break;
+            case PF_DXT5:
+              inputFormat = TextureProcessor::TCFormat::DXT5;
+              break;
+            default:
+              break;
+            }
+
+            if (inputFormat == TextureProcessor::TCFormat::None)
+            {
+              LogW("Failed to export %s weightmap %s: unsupported pixel format.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
+              continue;
+            }
+
+            FTexture2DMipMap* mip = nullptr;
+            for (FTexture2DMipMap* mipmap : map->Mips)
+            {
+              if (!mipmap->Data)
+              {
+                continue;
+              }
+              mip = mipmap;
+              break;
+            }
+            if (!mip)
+            {
+              LogW("Failed to export %s weightmap %s: mo mips.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
+              continue;
+            }
+
+            TextureProcessor processor(inputFormat, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+            processor.SetOutputPath(W2A(texPath.wstring()));
+            processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
+            processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
+
+            if (!processor.Process())
+            {
+              LogW("Failed to export %s weightmap %s: %s", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8(), processor.GetError().c_str());
+            }
+          }
+        }
+      }
+
+      dst = ctx.GetTerrainDir();
+      dst /= level->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_Setup";
+      dst.replace_extension("txt");
+
+      if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
+      {
+        if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
+        {
+          std::filesystem::create_directories(ctx.GetTerrainDir(), err);
+        }
+        std::ofstream s(dst);
+        s << actor->GetObjectPath().UTF8() << "\n\n";
+        FVector rot = actor->Rotation.Normalized().Euler();
+        FVector scale = actor->DrawScale3D * actor->DrawScale;
+        if (ctx.Config.ResampleTerrain)
+        {
+          scale.X *= terrain->GetHeightMapRatioX();
+          scale.Y *= terrain->GetHeightMapRatioY();
+        }
+        s << "Location: (X=" << std::to_string(actor->Location.X) << ", Y=" << std::to_string(actor->Location.Y) << ", Z=" << std::to_string(actor->Location.Z) << ")\n";
+        s << "Rotation: (X=" << std::to_string(rot.X) << ", Y=" << std::to_string(rot.Y) << ", Z=" << std::to_string(rot.Z) << ")\n";
+        s << "Scale: (X=" << std::to_string(scale.X) << ", Y=" << std::to_string(scale.Y) << ", Z=" << std::to_string(scale.Z) << ")\n\n";
+        s << "Layers:\n";
+
+        const char* padding = "  ";
+        for (int32 idx = 0; idx < terrain->Layers.size(); ++idx)
+        {
+          const auto& layer = terrain->Layers[idx];
+          s << "Layer " << idx + 1 << ":\n";
+          s << padding << "Name: " << layer.Name.UTF8() << '\n';
+          s << padding << "Index: " << layer.AlphaMapIndex << '\n';
+          s << padding << "Hidden:" << (layer.Hidden ? "True" : "False") << '\n';
+          if (layer.Setup && layer.Setup->Materials.size())
+          {
+            const auto& layerMaterials = layer.Setup->Materials;
+            s << padding << "Terrain Materials:" << '\n';
+            for (int32 mIdx = 0; mIdx < layerMaterials.size(); ++mIdx)
+            {
+              UTerrainMaterial* tm = layerMaterials[mIdx].Material;
+              s << padding << "TM " << mIdx << ":\n";
+              s << padding << padding << "Material: ";
+              if (!tm)
+              {
+                s << "NULL\n";
+                continue;
+              }
+              if (!tm->Material)
+              {
+                s << "NULL\n";
+              }
+              else
+              {
+                s << GetLocalDir(tm->Material) + tm->Material->GetObjectName().UTF8() << '\n';
+              }
+              if (tm->DisplacementMap)
+              {
+                s << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectName().UTF8() << '\n';
+                s << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
+              }
+              s << padding << padding << "Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
+              if (tm->MappingRotation)
+              {
+                s << padding << padding << "Rotation: " << std::to_string(tm->MappingRotation) << '\n';
+              }
+              if (tm->MappingPanU)
+              {
+                s << padding << padding << "PanU: " << std::to_string(tm->MappingPanU) << '\n';
+              }
+              if (tm->MappingPanV)
+              {
+                s << padding << padding << "PanV: " << std::to_string(tm->MappingPanV) << '\n';
+              }
+            }
+          }
+          
+        }
+      }
+
+      if (ctx.Config.Materials || ctx.Config.Textures)
+      {
+        for (const FTerrainLayer& layer : terrain->Layers)
+        {
+          if (!layer.Setup)
+          {
+            continue;
+          }
+
+          for (const FTerrainFilteredMaterial& tmat : layer.Setup->Materials)
+          {
+            if (!tmat.Material || !tmat.Material->Material)
+            {
+              continue;
+            }
+            ctx.UsedMaterials.push_back(tmat.Material->Material);
+          }
+        }
+        
+      }
       continue;
     }
   }

@@ -13,6 +13,7 @@ public:
   UPROP(FVector, DrawScale3D, FVector(1, 1, 1));
   UPROP(float, DrawScale, 1.);
   UPROP(bool, bHidden, false);
+  UPROP(bool, bCollideActors, true);
 
   // Location with unbaked prepivot transform
   FVector GetLocation(); 
@@ -36,6 +37,7 @@ class USkeletalMeshComponent;
 class USkeletalMeshActor : public UActor {
 public:
   DECL_UOBJ(USkeletalMeshActor, UActor);
+  USkeletalMeshActor(FObjectExport* exp);
 
   UPROP(USkeletalMeshComponent*, SkeletalMeshComponent, nullptr);
   
@@ -58,6 +60,7 @@ class UStaticMesh;
 class UDynamicSMActor : public UActor {
 public:
   DECL_UOBJ(UDynamicSMActor, UActor);
+  UDynamicSMActor(FObjectExport* exp);
 
   UPROP(UStaticMeshComponent*, StaticMeshComponent, nullptr);
   UPROP(UStaticMesh*, ReplicatedMesh, nullptr);

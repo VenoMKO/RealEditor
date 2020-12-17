@@ -88,6 +88,14 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTerrainWeightMapTexture(exp);
   }
+  else if (c == UTerrainMaterial::StaticClassName())
+  {
+    result = new UTerrainMaterial(exp);
+  }
+  else if (c == UTerrainLayerSetup::StaticClassName())
+  {
+    result = new UTerrainLayerSetup(exp);
+  }
   else if (c == UBrush::StaticClassName())
   {
     result = new UBrush(exp);

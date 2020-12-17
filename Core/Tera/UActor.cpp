@@ -46,6 +46,7 @@ bool UActor::RegisterProperty(FPropertyTag* property)
   REGISTER_VEC_PROP(DrawScale3D);
   REGISTER_FLOAT_PROP(DrawScale);
   REGISTER_BOOL_PROP(bHidden);
+  REGISTER_BOOL_PROP(bCollideActors);
   return false;
 }
 
@@ -77,6 +78,12 @@ void UStaticMeshActor::PostLoad()
 {
   LoadObject(StaticMeshComponent);
   Super::PostLoad();
+}
+
+USkeletalMeshActor::USkeletalMeshActor(FObjectExport* exp)
+  : UActor(exp)
+{
+  bCollideActors = false;
 }
 
 bool USkeletalMeshActor::RegisterProperty(FPropertyTag* property)
@@ -120,4 +127,10 @@ void UDynamicSMActor::PostLoad()
 {
   LoadObject(StaticMeshComponent);
   Super::PostLoad();
+}
+
+UDynamicSMActor::UDynamicSMActor(FObjectExport* exp)
+  : UActor(exp)
+{
+  bCollideActors = false;
 }

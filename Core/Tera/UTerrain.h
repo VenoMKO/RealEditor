@@ -55,6 +55,45 @@ struct FAlphaMap {
   }
 };
 
+class UTerrainMaterial : public UObject {
+public:
+  DECL_UOBJ(UTerrainMaterial, UObject);
+
+  UPROP(float, MappingScale, 4.f);
+  UPROP(float, MappingRotation, 0.f);
+  UPROP(float, MappingPanU, 0.f);
+  UPROP(float, MappingPanV, 0.f);
+  UPROP(UMaterialInterface*, Material, nullptr);
+  UPROP(UTexture2D*, DisplacementMap, nullptr);
+  UPROP(float, DisplacementScale, 1.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+  void PostLoad() override;
+};
+
+struct FTerrainFilteredMaterial {
+  UTerrainMaterial* Material = nullptr;
+  float Alpha = 1.f;
+};
+
+class UTerrainLayerSetup : public UObject {
+public:
+  DECL_UOBJ(UTerrainLayerSetup, UObject);
+
+  UPROP_NOINIT(std::vector<FTerrainFilteredMaterial>, Materials);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  void PostLoad() override;
+};
+
+struct FTerrainLayer {
+  FString Name;
+  UTerrainLayerSetup* Setup = nullptr;
+  int32 AlphaMapIndex = 0;
+  bool Hidden = false;
+};
+
 class UTerrain : public UActor {
 public:
   DECL_UOBJ(UTerrain, UActor);
@@ -67,6 +106,7 @@ public:
   UPROP(int32, NumVerticesY, 0);
   UPROP(int32, NumSectionsX, 0);
   UPROP(int32, NumSectionsY, 0);
+  UPROP_NOINIT(std::vector<FTerrainLayer>, Layers);
 
   bool RegisterProperty(FPropertyTag* property) override;
   void Serialize(FStream& s) override;
@@ -74,13 +114,16 @@ public:
   
   void GetHeightMap(uint16*& result, int32& width, int32& height, bool resample = false);
   void GetVisibilityMap(uint8*& result, int32& width, int32& height, bool resample = false);
+  float GetHeightMapRatioX();
+  float GetHeightMapRatioY();
+
+  bool GetWeightMapChannel(int32 idx, void*& data, int32& width, int32& height);
+  std::vector<UTerrainWeightMapTexture*> GetWeightMaps();
 
   inline bool HasVisibilityData()
   {
     return HasTransparency;
   }
-
-protected:
 
 protected:
   std::vector<FTerrainHeight> Heights;
