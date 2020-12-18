@@ -46,6 +46,13 @@ void PackageWindow::InitLayout()
 
 	fileMenu->AppendSeparator();
 
+
+	wxMenuItem* m_menuItem51;
+	m_menuItem51 = new wxMenuItem(fileMenu, ControlElementId::ShowInExplorer, wxString(wxT("Show in Explorer")), wxEmptyString, wxITEM_NORMAL);
+	fileMenu->Append(m_menuItem51);
+
+	fileMenu->AppendSeparator();
+
 	wxMenuItem* m_menuItem7;
 	m_menuItem7 = new wxMenuItem(fileMenu, ControlElementId::Close, wxString(wxT("Close")) + wxT('\t') + wxT("Ctrl+W"), wxEmptyString, wxITEM_NORMAL);
 	fileMenu->Append(m_menuItem7);

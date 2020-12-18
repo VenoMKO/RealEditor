@@ -49,6 +49,7 @@ private:
 	void OnOpenClicked(wxCommandEvent&);
 	void OnOpenByNameClicked(wxCommandEvent&);
 	void OnOpenCompositeClicked(wxCommandEvent&);
+	void OnShowInExplorerClicked(wxCommandEvent&);
 	void OnSaveClicked(wxCommandEvent&);
 	void OnSaveAsClicked(wxCommandEvent&);
 	void OnCloseClicked(wxCommandEvent&);

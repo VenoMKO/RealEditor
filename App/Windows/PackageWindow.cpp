@@ -27,12 +27,15 @@
 #include <Tera/UClass.h>
 #include <Tera/ULevel.h>
 
+#include <ShlObj.h>
+
 enum ControlElementId {
 	New = wxID_HIGHEST + 1,
 	CreateMod,
 	Open,
 	OpenByName,
 	OpenComposite,
+	ShowInExplorer,
 	Save,
 	SaveAs,
 	Close,
@@ -634,6 +637,19 @@ void PackageWindow::OnOpenCompositeClicked(wxCommandEvent&)
 	}
 }
 
+void PackageWindow::OnShowInExplorerClicked(wxCommandEvent&)
+{
+	FString path = Package->GetSourcePath();
+	if (Package->GetCompositeSourcePath().Size())
+	{
+		path = Package->GetCompositeSourcePath();
+	}
+	if (ITEMIDLIST* pidl = ILCreateFromPathW(path.WString().c_str())) {
+		SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
+		ILFree(pidl);
+	}
+}
+
 void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 {
 
@@ -1088,6 +1104,7 @@ EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
 EVT_MENU(ControlElementId::Open, PackageWindow::OnOpenClicked)
 EVT_MENU(ControlElementId::OpenByName, PackageWindow::OnOpenByNameClicked)
 EVT_MENU(ControlElementId::OpenComposite, PackageWindow::OnOpenCompositeClicked)
+EVT_MENU(ControlElementId::ShowInExplorer, PackageWindow::OnShowInExplorerClicked)
 EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)

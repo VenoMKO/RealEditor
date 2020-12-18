@@ -252,10 +252,16 @@ public:
 		return Summary.SourcePath;
 	}
 
-	// Get package's source path(may differ from a DataPath)
+	// Get package's data path(may differ from a SourcePath)
 	inline FString GetDataPath() const
 	{
 		return Summary.DataPath;
+	}
+
+	// Get package's composite storage gpk
+	inline FString GetCompositeSourcePath() const
+	{
+		return CompositeSourcePath;
 	}
 
 	// Returns true if Load() finished
