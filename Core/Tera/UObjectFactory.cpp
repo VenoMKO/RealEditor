@@ -164,9 +164,41 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UPointLight(exp);
   }
+  else if (c == UPointLightMovable::StaticClassName())
+  {
+    result = new UPointLightMovable(exp);
+  }
+  else if (c == UPointLightToggleable::StaticClassName())
+  {
+    result = new UPointLightToggleable(exp);
+  }
   else if (c == USpotLight::StaticClassName())
   {
     result = new USpotLight(exp);
+  }
+  else if (c == USpotLightMovable::StaticClassName())
+  {
+    result = new USpotLightMovable(exp);
+  }
+  else if (c == USpotLightToggleable::StaticClassName())
+  {
+    result = new USpotLightToggleable(exp);
+  }
+  else if (c == UDirectionalLight::StaticClassName())
+  {
+    result = new UDirectionalLight(exp);
+  }
+  else if (c == UDirectionalLightToggleable::StaticClassName())
+  {
+    result = new UDirectionalLightToggleable(exp);
+  }
+  else if (c == USkyLight::StaticClassName())
+  {
+    result = new USkyLight(exp);
+  }
+  else if (c == USkyLightToggleable::StaticClassName())
+  {
+    result = new USkyLightToggleable(exp);
   }
   else if (c == UInterpActor::StaticClassName())
   {
@@ -316,6 +348,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new USpotLightComponent(exp);
   }
+  else if (c == UDirectionalLightComponent::StaticClassName())
+  {
+    result = new UDirectionalLightComponent(exp);
+  }
   else if (c == UDominantDirectionalLightComponent::StaticClassName())
   {
     result = new UDominantDirectionalLightComponent(exp);
@@ -323,6 +359,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UDominantSpotLightComponent::StaticClassName())
   {
     result = new UDominantSpotLightComponent(exp);
+  }
+  else if (c == USkyLightComponent::StaticClassName())
+  {
+    result = new USkyLightComponent(exp);
   }
   else
   {

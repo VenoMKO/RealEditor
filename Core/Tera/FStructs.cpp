@@ -887,3 +887,27 @@ FVector::FVector(const FVector4& v)
   , Y(v.Y)
   , Z(v.Z)
 {}
+
+FColor FLinearColor::ToFColor(bool sRGB) const
+{
+  float r = std::clamp(R, 0.0f, 1.0f);
+  float g = std::clamp(G, 0.0f, 1.0f);
+  float b = std::clamp(B, 0.0f, 1.0f);
+  float a = std::clamp(A, 0.0f, 1.0f);
+
+  if (sRGB)
+  {
+    r = powf(r, 1.0f / 2.2f);
+    g = powf(g, 1.0f / 2.2f);
+    b = powf(b, 1.0f / 2.2f);
+  }
+
+  FColor result;
+
+  result.A = floorf(a * 255.999f);
+  result.R = floorf(r * 255.999f);
+  result.G = floorf(g * 255.999f);
+  result.B = floorf(b * 255.999f);
+
+  return result;
+}

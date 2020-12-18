@@ -622,6 +622,13 @@ public:
 		, A(a)
 	{}
 
+	FLinearColor(FColor& c)
+		: R(powf(c.R / 255.f, 2.2f))
+		, G(powf(c.G / 255.f, 2.2f))
+		, B(powf(c.B / 255.f, 2.2f))
+		, A(powf(c.A / 255.f, 2.2f))
+	{}
+
 	bool operator==(const FLinearColor& v) const
 	{
 		return R == v.R && G == v.G && B == v.B && A == v.A;
@@ -631,6 +638,27 @@ public:
 	{
 		return R != v.R || G != v.G || B != v.B || A != v.A;
 	}
+
+	FLinearColor operator*(float s) const
+	{
+		return FLinearColor(
+			this->R * s,
+			this->G * s,
+			this->B * s,
+			this->A * s
+		);
+	}
+
+	FLinearColor& operator*=(float s)
+	{
+		R *= s;
+		G *= s;
+		B *= s;
+		A *= s;
+		return *this;
+	}
+
+	FColor ToFColor(bool sRGB) const;
 
 	float R = 0;
 	float G = 0;

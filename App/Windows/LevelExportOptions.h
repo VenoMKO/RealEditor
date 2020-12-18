@@ -93,6 +93,8 @@ struct LevelExportContext {
   int SpeedTreeActorsCount = 0;
   int PointLightActorsCount = 0;
   int SpotLightActorsCount = 0;
+  int DirectionalLightActorsCount = 0;
+  int SkyLightActorsCount = 0;
   int UntypedActorsCount = 0;
 };
 

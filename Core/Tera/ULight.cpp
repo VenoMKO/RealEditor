@@ -21,6 +21,7 @@ bool ULightComponent::RegisterProperty(FPropertyTag* property)
   REGISTER_BOOL_PROP(CastShadows);
   REGISTER_BOOL_PROP(CastStaticShadows);
   REGISTER_BOOL_PROP(CastDynamicShadows);
+  REGISTER_BOOL_PROP(bEnabled);
   return false;
 }
 
@@ -33,10 +34,54 @@ bool UPointLightComponent::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
+USpotLightComponent::USpotLightComponent(FObjectExport* exp)
+  : UPointLightComponent(exp)
+{
+  CastDynamicShadows = true;
+}
+
 bool USpotLightComponent::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();
   REGISTER_FLOAT_PROP(InnerConeAngle);
   REGISTER_FLOAT_PROP(OuterConeAngle);
+  return false;
+}
+
+UDirectionalLightComponent::UDirectionalLightComponent(FObjectExport* exp)
+  : ULightComponent(exp)
+{
+  CastDynamicShadows = true;
+}
+
+void UDominantDirectionalLightComponent::Serialize(FStream& s)
+{
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << DominantLightShadowMap;
+  }
+  Super::Serialize(s);
+}
+
+void UDominantSpotLightComponent::Serialize(FStream& s)
+{
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << DominantLightShadowMap;
+  }
+  Super::Serialize(s);
+}
+
+USkyLightComponent::USkyLightComponent(FObjectExport* exp)
+  : ULightComponent(exp)
+{
+  CastShadows = false;
+}
+
+bool USkyLightComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_FLOAT_PROP(LowerBrightness);
+  REGISTER_COL_PROP(LowerColor);
   return false;
 }

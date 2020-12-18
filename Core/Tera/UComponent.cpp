@@ -10,21 +10,3 @@ void UComponent::PreSerialize(FStream& s)
     s << TemplateName;
   }
 }
-
-void UDominantDirectionalLightComponent::Serialize(FStream& s)
-{
-  if (s.GetFV() > VER_TERA_CLASSIC)
-  {
-    s << DominantLightShadowMap;
-  }
-  Super::Serialize(s);
-}
-
-void UDominantSpotLightComponent::Serialize(FStream& s)
-{
-  if (s.GetFV() > VER_TERA_CLASSIC)
-  {
-    s << DominantLightShadowMap;
-  }
-  Super::Serialize(s);
-}

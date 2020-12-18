@@ -56,6 +56,8 @@ struct FMapExportConfig {
   bool SpeedTrees = true;
   bool PointLights = true;
   bool SpotLights = true;
+  bool DirectionalLights = true;
+  bool SkyLights = true;
   bool Interps = true;
   bool Emitters = true;
   bool Sounds = true;
@@ -64,6 +66,8 @@ struct FMapExportConfig {
   bool InvSqrtFalloff = false;
   float SpotLightMul = 1.;
   float PointLightMul = 1.;
+  float DirectionalLightMul = 1.;
+  float SkyLightMul = 1.;
   bool Materials = true;
   bool Textures = true;
   int32 TextureFormat = 0;

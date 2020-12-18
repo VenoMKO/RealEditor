@@ -496,6 +496,10 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     f.AddBool("CastShadows", component->CastShadows);
     f.AddBool("CastStaticShadows", component->CastStaticShadows);
     f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+    if (!component->bEnabled)
+    {
+      f.AddBool("bAffectsWorld", false);
+    }
   };
 
   auto GetUniqueFbxName = [&ctx](UActor* actor, UActorComponent* comp, std::string& outObjectName) {
@@ -956,7 +960,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
       f.End();
       continue;
     }
-    if (className == UPointLight::StaticClassName())
+    if (className == UPointLight::StaticClassName() || className == UPointLightMovable::StaticClassName() || className == UPointLightToggleable::StaticClassName())
     {
       if (!ctx.Config.PointLights)
       {
@@ -987,7 +991,16 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
           AddCommonActorComponentParameters(f, actor, component);
-          f.AddCustom("Mobility", "Static");
+          std::string mobility = "Static";
+          if (className == UPointLightMovable::StaticClassName())
+          {
+            mobility = "Movable";
+          }
+          else if (className == UPointLightToggleable::StaticClassName())
+          {
+            mobility = "Stationary";
+          }
+          f.AddCustom("Mobility", mobility.c_str());
         }
         f.End();
         f.AddString("PointLightComponent", "LightComponent0");
@@ -998,7 +1011,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
       f.End();
       continue;
     }
-    if (className == USpotLight::StaticClassName())
+    if (className == USpotLight::StaticClassName() || className == USpotLightMovable::StaticClassName() || className == USpotLightToggleable::StaticClassName())
     {
       if (!ctx.Config.SpotLights)
       {
@@ -1033,8 +1046,7 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
           f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
           AddCommonLightComponentParameters(f, component);
           f.AddPosition(actor->GetLocation() + component->Translation);
-          FVector scale3D = actor->DrawScale3D * component->Scale3D;
-          float scale = actor->DrawScale * component->Scale;
+          FVector scale3D = actor->DrawScale3D;
           FRotator rotation = actor->Rotation;
           if (scale3D.X < 0 || scale3D.Y < 0 || scale3D.Z < 0)
           {
@@ -1042,24 +1054,29 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
             {
               rotation.Roll += 0x8000;
               rotation.Yaw += 0x8000;
-              scale3D.X *= -1.;
             }
             if (scale3D.Y < 0)
             {
               rotation.Pitch += 0x8000;
               rotation.Yaw += 0x8000;
-              scale3D.Y *= -1.;
             }
             if (scale3D.Z < 0)
             {
               rotation.Pitch += 0x8000;
               rotation.Roll += 0x8000;
-              scale3D.Z *= -1.;
             }
           }
           f.AddRotation(rotation + component->Rotation);
-          f.AddScale(scale3D, scale);
-          f.AddCustom("Mobility", "Static");
+          std::string mobility = "Static";
+          if (className == UPointLightMovable::StaticClassName())
+          {
+            mobility = "Movable";
+          }
+          else if (className == UPointLightToggleable::StaticClassName())
+          {
+            mobility = "Stationary";
+          }
+          f.AddCustom("Mobility", mobility.c_str());
         }
         f.End();
         f.AddString("SpotLightComponent", "LightComponent0");
@@ -1069,6 +1086,107 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
         AddCommonActorParameters(f, actor);
       }
       f.End();
+      continue;
+    }
+    if (className == UDirectionalLight::StaticClassName() || className == UDirectionalLightToggleable::StaticClassName())
+    {
+      if (!ctx.Config.DirectionalLights)
+      {
+        continue;
+      }
+
+      UDirectionalLight* dirLightActor = Cast<UDirectionalLight>(actor);
+      if (!dirLightActor || !dirLightActor->LightComponent)
+      {
+        continue;
+      }
+
+      UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(dirLightActor->LightComponent);
+      if (!component)
+      {
+        continue;
+      }
+
+      f.Begin("Actor", "DirectionalLight", FString::Sprintf("DirectionalLight_%d", ctx.DirectionalLightActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "ArrowComponent", "ArrowComponent0");
+        f.End();
+        f.Begin("Object", "DirectionalLightComponent", "LightComponent0");
+        f.End();
+        f.Begin("Object", nullptr, "ArrowComponent0");
+        {
+          f.AddColor("ArrowColor", component->LightColor);
+          f.AddString("AttachParent", "LightComponent0");
+        }
+        f.End();
+        f.Begin("Object", nullptr, "LightComponent0");
+        {
+          f.AddFloat("Intensity", component->Brightness * ctx.Config.DirectionalLightMul);
+          AddCommonLightComponentParameters(f, component);
+          f.AddPosition(dirLightActor->GetLocation() + component->Translation);
+          f.AddRotation(dirLightActor->Rotation + component->Rotation);
+          f.AddCustom("Mobility", "Stationary");
+        }
+        f.End();
+        f.AddString("ArrowComponent", "ArrowComponent0");
+        f.AddString("DirectionalLightComponent", "LightComponent0");
+        f.AddString("LightComponent", "LightComponent0");
+        f.AddString("RootComponent", "LightComponent0");
+        AddCommonActorParameters(f, actor);
+      }
+      f.End();
+
+      continue;
+    }
+    if (className == USkyLight::StaticClassName() || className == USkyLightToggleable::StaticClassName())
+    {
+      if (!ctx.Config.SkyLights)
+      {
+        continue;
+      }
+      USkyLight* skyLightActor = Cast<USkyLight>(actor);
+      if (!skyLightActor || !skyLightActor->LightComponent)
+      {
+        continue;
+      }
+
+      USkyLightComponent* component = Cast<USkyLightComponent>(skyLightActor->LightComponent);
+      if (!component)
+      {
+        continue;
+      }
+
+      f.Begin("Actor", "SkyLight", FString::Sprintf("SkyLight_%d", ctx.SkyLightActorsCount++).UTF8().c_str());
+      {
+        f.Begin("Object", "SkyLightComponent", "SkyLightComponent0");
+        f.End();
+        f.Begin("Object", "BillboardComponent", "Sprite");
+        f.End();
+        f.Begin("Object", nullptr, "SkyLightComponent0");
+        {
+          if (component->LowerBrightness)
+          {
+            FLinearColor lowColor = component->LowerColor;
+            f.AddLinearColor("LowerHemisphereColor", lowColor * component->LowerBrightness);
+          }
+          f.AddFloat("Intensity", component->Brightness * ctx.Config.SkyLightMul);
+          AddCommonLightComponentParameters(f, component);
+          f.AddPosition(skyLightActor->GetLocation() + component->Translation);
+          f.AddCustom("Mobility", "Stationary");
+        }
+        f.End();
+        f.Begin("Object", nullptr, "Sprite");
+        {
+          f.AddString("AttachParent", "SkyLightComponent0");
+        }
+        f.End();
+        f.AddString("SpriteComponent", "Sprite");
+        f.AddString("LightComponent", "SkyLightComponent0");
+        f.AddString("RootComponent", "SkyLightComponent0");
+        AddCommonActorParameters(f, actor);
+      }
+      f.End();
+
       continue;
     }
     if (className == UEmitter::StaticClassName())

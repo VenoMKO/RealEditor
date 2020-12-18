@@ -89,6 +89,11 @@ public:
     AddParameter(name, FString::Sprintf("(B=%d,G=%d,R=%d,A=%d)",int(value.B), int(value.G), int(value.R), int(value.A)).UTF8().c_str());
   }
 
+  inline void AddLinearColor(const char* name, const FLinearColor& value)
+  {
+    AddParameter(name, FString::Sprintf("(B=%06f,G=%06f,R=%06f,A=%06f)", int(value.B), int(value.G), int(value.R), int(value.A)).UTF8().c_str());
+  }
+
   inline void AddVector(const char* name, const FVector& value)
   {
     AddParameter(name, FString::Sprintf("(X=%06f,Y=%06f,Z=%06f)", value.X, value.Y, value.Z).UTF8().c_str());
