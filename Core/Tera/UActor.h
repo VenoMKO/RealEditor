@@ -84,3 +84,14 @@ class UEmitter : public UActor {
 public:
   DECL_UOBJ(UEmitter, UActor);
 };
+
+class UHeightFog : public UActor {
+public:
+  DECL_UOBJ(UHeightFog, UActor);
+
+  UPROP(UHeightFogComponent*, Component, nullptr);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  void PostLoad() override;
+};

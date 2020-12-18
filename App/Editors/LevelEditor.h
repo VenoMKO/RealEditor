@@ -44,6 +44,7 @@ protected:
   void CreateLevel(ULevel* level, osg::Geode* root);
   void PrepareToExportLevel(LevelExportContext& ctx);
   void ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWindow* progress);
+  bool ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWindow* progress);
   void OnIdle(wxIdleEvent& e);
 
   osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshActor* actor);

@@ -59,3 +59,13 @@ void UMeshComponent::PostLoad()
     LoadObject(mat);
   }
 }
+
+bool UHeightFogComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(bEnabled, true);
+  REGISTER_FLOAT_PROP(Density);
+  REGISTER_COL_PROP(LightColor);
+  REGISTER_FLOAT_PROP(ExtinctionDistance);
+  return false;
+}

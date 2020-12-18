@@ -208,6 +208,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UEmitter(exp);
   }
+  else if (c == UHeightFog::StaticClassName())
+  {
+    result = new UHeightFog(exp);
+  }
   else if (c == UAnimSequence::StaticClassName())
   {
     result = new UAnimSequence(exp);
@@ -363,6 +367,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == USkyLightComponent::StaticClassName())
   {
     result = new USkyLightComponent(exp);
+  }
+  else if (c == UHeightFogComponent::StaticClassName())
+  {
+    result = new UHeightFogComponent(exp);
   }
   else
   {

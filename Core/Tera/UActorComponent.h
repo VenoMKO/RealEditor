@@ -40,3 +40,16 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
   void PostLoad() override;
 };
+
+class UHeightFogComponent : public UActorComponent {
+public:
+  DECL_UOBJ(UHeightFogComponent, UActorComponent);
+
+  UPROP(bool, bEnabled, true);
+  UPROP(float, Density, 0.00005f);
+  UPROP(FColor, LightColor, FColor(255, 255, 255, 255));
+  UPROP(float, StartDistance, 0.f);
+  UPROP(float, ExtinctionDistance, 100000000.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+};

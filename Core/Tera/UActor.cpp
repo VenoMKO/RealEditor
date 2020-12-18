@@ -157,3 +157,16 @@ UDynamicSMActor::UDynamicSMActor(FObjectExport* exp)
 {
   bCollideActors = false;
 }
+
+bool UHeightFog::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(Component, UHeightFogComponent*);
+  return false;
+}
+
+void UHeightFog::PostLoad()
+{
+  Super::PostLoad();
+  LoadObject(Component);
+}

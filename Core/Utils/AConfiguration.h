@@ -61,6 +61,10 @@ struct FMapExportConfig {
   bool Interps = true;
   bool Emitters = true;
   bool Sounds = true;
+  bool HeightFog = true;
+  bool Materials = true;
+  bool Textures = true;
+
   bool ResampleTerrain = true;
   bool SplitTerrainWeights = true;
   bool InvSqrtFalloff = false;
@@ -68,8 +72,6 @@ struct FMapExportConfig {
   float PointLightMul = 1.;
   float DirectionalLightMul = 1.;
   float SkyLightMul = 1.;
-  bool Materials = true;
-  bool Textures = true;
   int32 TextureFormat = 0;
   bool BakeComponentTransform = false;
   bool OverrideData = false;
