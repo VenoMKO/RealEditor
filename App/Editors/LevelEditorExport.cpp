@@ -61,6 +61,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   auto worldInner = world->GetInner();
   std::vector<ULevel*> levels = { Level };
   int maxProgress = Level->GetActorsCount();
+  
   for (UObject* inner : worldInner)
   {
     if (ULevelStreaming* streamedLevel = Cast<ULevelStreaming>(inner))
@@ -77,14 +78,27 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   progress.SetMaxProgress(maxProgress);
 
   std::thread([&] {
+    T3DFile file;
+    if (!ctx.Config.SplitT3D)
+    {
+      file.InitializeMap();
+    }
     for (ULevel* level : levels)
     {
-      ExportLevel(level, ctx, &progress);
+      ExportLevel(file, level, ctx, &progress);
+
       if (progress.IsCanceled())
       {
         SendEvent(&progress, UPDATE_PROGRESS_FINISH);
         return;
       }
+    }
+    if (!ctx.Config.SplitT3D)
+    {
+      file.FinalizeMap();
+      std::filesystem::path dst = std::filesystem::path(ctx.Config.RootDir.WString()) / Level->GetPackage()->GetPackageName().WString();
+      dst.replace_extension("t3d");
+      file.Save(dst);
     }
     if (ctx.Config.Materials || ctx.Config.Textures)
     {
@@ -100,7 +114,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   progress.ShowModal();
 }
 
-void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWindow* progress)
+void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx, ProgressWindow* progress)
 {
   ctx.InterpActors.clear();
   SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Preparing: " + level->GetPackage()->GetPackageName().UTF8()));
@@ -111,9 +125,14 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     return;
   }
 
-  T3DFile f;
-  f.InitializeMap();
-  size_t initialSize = f.GetBody().size();
+  size_t initialSize = 0;
+  if (ctx.Config.SplitT3D)
+  {
+    f.Clear();
+    f.InitializeMap();
+    initialSize = f.GetBody().size();
+  }
+  
   for (UActor* actor : actors)
   {
     if (progress)
@@ -226,16 +245,13 @@ void LevelEditor::ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWi
     }
   }
 
-  if (initialSize == f.GetBody().size())
-  {
-    // Don't save empty T3D
-    return;
-  }
-
-  f.FinalizeMap();
   std::filesystem::path dst = std::filesystem::path(ctx.Config.RootDir.WString()) / level->GetPackage()->GetPackageName().WString();
-  dst.replace_extension("t3d");
-  f.Save(dst);
+  if (ctx.Config.SplitT3D && initialSize != f.GetBody().size())
+  {
+    f.FinalizeMap();
+    dst.replace_extension("t3d");
+    f.Save(dst);
+  }
 
   if (ctx.InterpActors.size())
   {
@@ -635,14 +651,15 @@ void AddCommonActorComponentParameters(T3DFile& f, UActor* actor, UActorComponen
   FVector scale3D = ctx.Config.BakeComponentTransform ? actor->DrawScale3D : (actor->DrawScale3D * component->Scale3D);
   float scale = ctx.Config.BakeComponentTransform ? actor->DrawScale : (actor->DrawScale * component->Scale);
   f.AddPosition(position);
-  f.AddRotation(rotation);
+  f.AddRotation(rotation.Normalized());
   f.AddScale(scale3D, scale);
   if (actor->bHidden && !ctx.Config.IgnoreHidden)
   {
     f.AddBool("bVisible", false);
   }
-  if (!actor->bCollideActors)
+  if (!actor->bCollideActors && ctx.Config.ConvexCollisions)
   {
+    f.AddBool("bUseDefaultCollision", false);
     f.AddCustom("BodyInstance", "(CollisionEnabled=NoCollision,CollisionProfileName=\"NoCollision\")");
   }
 }
@@ -765,12 +782,12 @@ void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor
     return;
   }
   actor->StaticMeshComponent->Load();
-  if (!actor->StaticMeshComponent->StaticMesh && !actor->StaticMeshComponent->ReplacementPrimitive)
+  if (!actor->StaticMeshComponent->StaticMesh)
   {
     return;
   }
 
-  UStaticMeshComponent* component = actor->StaticMeshComponent->ReplacementPrimitive ? Cast<UStaticMeshComponent>(actor->StaticMeshComponent->ReplacementPrimitive) : actor->StaticMeshComponent;
+  UStaticMeshComponent* component = actor->StaticMeshComponent;
   if (!component)
   {
     if (!(component = actor->StaticMeshComponent))
@@ -1394,7 +1411,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
   dst = ctx.GetTerrainDir();
   dst /= actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_VisibilityMap";
-  dst.replace_extension(HasAVX2() ? "tga" : "dds");
+  dst.replace_extension(HasAVX2() ? "png" : "dds");
 
   if (actor->HasVisibilityData() && (ctx.Config.OverrideData || !std::filesystem::exists(dst, err)))
   {
@@ -1408,7 +1425,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
     actor->GetVisibilityMap(visibility, width, height, ctx.Config.ResampleTerrain);
     if (visibility)
     {
-      TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::TGA : TextureProcessor::TCFormat::DDS);
+      TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
       processor.SetOutputPath(W2A(dst.wstring()));
       processor.SetInputData(visibility, width * height);
       processor.SetInputDataDimensions(width, height);

@@ -237,7 +237,7 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-bool UTexture2D::RenderTo(osg::Image* target)
+bool UTexture2D::RenderTo(osg::Image* target, int32 maxWidth, int32 maxHeight)
 {
   GLenum type = 0;
   GLenum format = PixelFormatInfo[Format].Format;
@@ -251,6 +251,10 @@ bool UTexture2D::RenderTo(osg::Image* target)
   {
     if (mip->SizeX && mip->SizeY && mip->Data->GetAllocation())
     {
+      if ((maxHeight && mip->SizeY > maxHeight) || (maxWidth && mip->SizeX > maxWidth))
+      {
+        continue;
+      }
       target->setImage(mip->SizeX, mip->SizeY, 0, inFormat, format, type, (uint8*)mip->Data->GetAllocation(), osg::Image::AllocationMode::NO_DELETE);
       return true;
     }

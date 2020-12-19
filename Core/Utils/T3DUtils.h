@@ -16,6 +16,12 @@ public:
     Begin("Level");
   }
 
+  inline void Clear()
+  {
+    Body.clear();
+    ObjectStack.clear();
+  }
+
   inline void FinalizeMap()
   {
     End();

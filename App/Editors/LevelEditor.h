@@ -12,7 +12,6 @@
 
 class UActor;
 class ULevel;
-class UStaticMeshActor;
 class ULevelStreamingVolume;
 
 class ProgressWindow;
@@ -43,11 +42,12 @@ protected:
   void LoadPersistentLevel();
   void CreateLevel(ULevel* level, osg::Geode* root);
   void PrepareToExportLevel(LevelExportContext& ctx);
-  void ExportLevel(ULevel* level, LevelExportContext& ctx, ProgressWindow* progress);
+  void ExportLevel(class T3DFile& file, ULevel* level, LevelExportContext& ctx, ProgressWindow* progress);
   bool ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWindow* progress);
   void OnIdle(wxIdleEvent& e);
 
-  osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshActor* actor);
+  osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshComponent* actor);
+  osg::MatrixTransform* CreateSkelMeshComponent(USkeletalMeshComponent* component);
   osg::Geode* CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
 
 protected:

@@ -47,7 +47,7 @@ public:
   UPROP(bool, NeverStream, false);
   UPROP(FName*, TextureFileCacheName, nullptr);
 
-  bool RenderTo(osg::Image* target);
+  bool RenderTo(osg::Image* target, int32 maxWidth = 0, int32 maxHeight = 0);
 
   friend bool TextureTravaller::Visit(UTexture2D* texture);
 

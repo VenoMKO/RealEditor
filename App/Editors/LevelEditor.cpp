@@ -14,6 +14,7 @@
 #include <Tera/UObject.h>
 #include <Tera/ULevelStreaming.h>
 #include <Tera/UStaticMesh.h>
+#include <Tera/USkeletalMesh.h>
 #include <Tera/UTexture.h>
 #include <Tera/UMaterial.h>
 
@@ -181,17 +182,54 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
     return;
   }
 
+  std::vector<UActor*> skip;
+  for (UActor* actor : actors)
+  {
+    if (UStaticMeshActor* staticActor = Cast<UStaticMeshActor>(actor))
+    {
+      if (staticActor->StaticMeshComponent && staticActor->StaticMeshComponent->ReplacementPrimitive)
+      {
+        skip.push_back(actor);
+      }
+    }
+    else if (UInterpActor* interpActor = Cast<UInterpActor>(actor))
+    {
+      if (interpActor->StaticMeshComponent && interpActor->StaticMeshComponent->ReplacementPrimitive)
+      {
+        skip.push_back(actor);
+      }
+    }
+    else if (USkeletalMeshActor* skelActor = Cast<USkeletalMeshActor>(actor))
+    {
+      if (skelActor->SkeletalMeshComponent && skelActor->SkeletalMeshComponent->ReplacementPrimitive)
+      {
+        skip.push_back(actor);
+      }
+    }
+  }
+
   for (UActor* actor : actors)
   {
     if (!actor || actor->bHidden)
     {
       continue;
     }
-
+    if (std::find(skip.begin(), skip.end(), actor) != skip.end())
+    {
+      continue;
+    }
     osg::MatrixTransform* componentTransform = nullptr;
     if (UStaticMeshActor* staticActor = Cast<UStaticMeshActor>(actor))
     {
-      componentTransform = CreateStaticMeshComponent(staticActor);
+      componentTransform = CreateStaticMeshComponent(staticActor->StaticMeshComponent);
+    }
+    else if (UInterpActor* interpActor = Cast<UInterpActor>(actor))
+    {
+      componentTransform = CreateStaticMeshComponent(interpActor->StaticMeshComponent);
+    }
+    else if (USkeletalMeshActor* skelActor = Cast<USkeletalMeshActor>(actor))
+    {
+      componentTransform = CreateSkelMeshComponent(skelActor->SkeletalMeshComponent);
     }
 
     if (!componentTransform)
@@ -231,34 +269,14 @@ void LevelEditor::OnIdle(wxIdleEvent& e)
   Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
 }
 
-osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshActor* actor)
+osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponent* component)
 {
-  if (!actor->StaticMeshComponent)
+  if (!component)
   {
     return nullptr;
   }
-  UStaticMeshComponent* component = actor->StaticMeshComponent;
-  UStaticMesh* mesh = nullptr;
-
-  // TODO: not sure what should be replaced. The component or its model?
-  if (component->ReplacementPrimitive)
-  {
-    UStaticMeshComponent* replacement = Cast<UStaticMeshComponent>(component->ReplacementPrimitive);
-    if (replacement && replacement->StaticMesh)
-    {
-      mesh = replacement->StaticMesh;
-      component = replacement;
-    }
-    else
-    {
-      mesh = component->StaticMesh;
-    }
-  }
-  else
-  {
-    mesh = component->StaticMesh;
-  }
-
+  
+  UStaticMesh* mesh = component->StaticMesh;
   if (!mesh)
   {
     return nullptr;
@@ -306,7 +324,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshActor* a
       if (UTexture2D* tex = material->GetDiffuseTexture())
       {
         osg::ref_ptr<osg::Image> img = new osg::Image;
-        tex->RenderTo(img.get());
+        tex->RenderTo(img.get(), 64);
         osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
@@ -326,7 +344,104 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshActor* a
   FVector scale3d = component->Scale3D * component->Scale;
 
   osg::MatrixTransform* mt = new osg::MatrixTransform;
-  mt->setName(actor->StaticMeshComponent->GetObjectName().UTF8().c_str());
+  mt->setName(component->GetObjectName().UTF8().c_str());
+  osg::Matrix m;
+  m.makeIdentity();
+
+  m.preMultTranslate(osg::Vec3(translation.X, -translation.Y, translation.Z));
+
+  osg::Quat quat;
+  quat.makeRotate(
+    rotation.X * M_PI / 180., RollAxis,
+    rotation.Y * M_PI / 180., PitchAxis,
+    rotation.Z * M_PI / 180., YawAxis
+  );
+  m.preMultRotate(quat);
+
+  m.preMultScale(osg::Vec3(scale3d.X, scale3d.Y, scale3d.Z));
+
+  mt->setMatrix(m);
+  mt->addChild(geode);
+
+  return mt;
+}
+
+osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponent* component)
+{
+  if (!component)
+  {
+    return nullptr;
+  }
+
+  USkeletalMesh* mesh = component->SkeletalMesh;
+  if (!mesh)
+  {
+    return nullptr;
+  }
+
+  const FStaticLODModel* model = mesh->GetLod(0);
+
+  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array(osg::Array::BIND_PER_VERTEX);
+  osg::ref_ptr<osg::Vec2Array> uvs = new osg::Vec2Array(osg::Array::BIND_PER_VERTEX);
+
+  std::vector<FSoftSkinVertex> uvertices = model->GetVertices();
+  for (int32 idx = 0; idx < uvertices.size(); ++idx)
+  {
+    FVector normal = uvertices[idx].TangentZ;
+    normals->push_back(osg::Vec3(normal.X, -normal.Y, normal.Z));
+    vertices->push_back(osg::Vec3(uvertices[idx].Position.X, -uvertices[idx].Position.Y, uvertices[idx].Position.Z));
+    uvs->push_back(osg::Vec2(uvertices[idx].UVs[0].X, uvertices[idx].UVs[0].Y));
+  }
+
+  osg::Geode* geode = new osg::Geode;
+  std::vector<const FSkelMeshSection*> sections = model->GetSections();
+  const FMultiSizeIndexContainer* indexContainer = model->GetIndexContainer();
+  for (const FSkelMeshSection* section : sections)
+  {
+    osg::ref_ptr<osg::Geometry> geo = new osg::Geometry;
+    osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
+    for (int32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
+    {
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 0));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
+      indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 2));
+    }
+    geo->addPrimitiveSet(indices.get());
+    geo->setVertexArray(vertices.get());
+    geo->setNormalArray(normals.get());
+    geo->setTexCoordArray(0, uvs.get());
+
+    // TODO: Use MaterialMap to remap section materials to the global materials list
+    if (mesh->GetMaterials().size() > section->MaterialIndex)
+    {
+      if (UMaterialInterface* material = Cast<UMaterialInterface>(mesh->GetMaterials()[section->MaterialIndex]))
+      {
+        if (UTexture2D* tex = material->GetDiffuseTexture())
+        {
+          osg::ref_ptr<osg::Image> img = new osg::Image;
+          tex->RenderTo(img.get());
+          osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
+          osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
+          osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
+          geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex.get());
+          if (material->GetBlendMode() == EBlendMode::BLEND_Masked)
+          {
+            geo->getOrCreateStateSet()->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            geo->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+          }
+        }
+      }
+    }
+    geode->addDrawable(geo.get());
+  }
+
+  FVector translation = component->Translation;
+  FVector rotation = component->Rotation.Normalized().Euler();
+  FVector scale3d = component->Scale3D * component->Scale;
+
+  osg::MatrixTransform* mt = new osg::MatrixTransform;
+  mt->setName(component->GetObjectName().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
 

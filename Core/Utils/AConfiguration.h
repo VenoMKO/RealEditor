@@ -78,6 +78,7 @@ struct FMapExportConfig {
   bool ExportLods = true;
   bool ConvexCollisions = true;
   bool IgnoreHidden = true;
+  bool SplitT3D = false;
 
   friend FStream& operator<<(FStream& s, FMapExportConfig& c);
 };
