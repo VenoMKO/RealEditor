@@ -29,7 +29,8 @@ struct PackageSaveContext {
 
 class FPackage {
 public:
-
+	// Removes all files in a tmp dir. Should be called before any package is open.
+	static void CleanCacheDir();
 	// RootDir's Core.u version
 	static uint16 GetCoreVersion();
 	// Load Cooked Persistent Data

@@ -194,6 +194,29 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
   }
 }
 
+std::filesystem::path GetTempDir()
+{
+  auto result = std::filesystem::temp_directory_path() / "RealEditor";
+  std::error_code err;
+  if (!std::filesystem::exists(result, err))
+  {
+    std::filesystem::create_directories(result, err);
+  }
+  return result;
+}
+
+std::filesystem::path GetTempFilePath()
+{
+  std::error_code err;
+  const auto root = GetTempDir();
+  std::filesystem::path result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
+  while (std::filesystem::exists(result, err))
+  {
+    result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
+  }
+  return result;
+}
+
 void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
@@ -476,6 +499,15 @@ std::vector<UClass*> FPackage::GetClasses()
 void FPackage::RegisterClass(UClass* classObject)
 {
   ClassMap[classObject->GetObjectName()] = classObject;
+}
+
+void FPackage::CleanCacheDir()
+{
+  std::error_code err;
+  for (auto& p : std::filesystem::directory_iterator(GetTempDir()))
+  {
+    std::filesystem::remove(p, err);
+  }
 }
 
 uint16 FPackage::GetCoreVersion()
@@ -1048,7 +1080,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       }
     }
 
-    std::filesystem::path decompressedPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
+    std::filesystem::path decompressedPath = GetTempFilePath();
     sum.DataPath = W2A(decompressedPath.wstring());
     LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
@@ -1189,7 +1221,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
           UThrow("Failed to read %s", name.C_str());
         }
       }
-      std::filesystem::path tmpPath = std::filesystem::temp_directory_path() / std::tmpnam(nullptr);
+      std::filesystem::path tmpPath = GetTempFilePath();
       LogI("Writing composite package %s to %s...", name.C_str(), tmpPath.string().c_str());
       {
         FWriteStream ws(tmpPath);
