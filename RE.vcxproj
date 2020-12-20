@@ -181,6 +181,7 @@
     <Image Include="Resources\Btn_Export.png" />
     <Image Include="Resources\Btn_Forward.png" />
     <Image Include="Resources\Btn_Import.png" />
+    <Image Include="Resources\Btn_PreviewLevel.png" />
     <Image Include="Resources\Btn_Refresh.png" />
     <Image Include="Resources\Btn_Texture2D_Alpha.png" />
     <Image Include="Resources\Btn_Texture2D_Blue.png" />

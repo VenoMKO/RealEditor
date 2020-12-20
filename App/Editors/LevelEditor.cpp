@@ -52,8 +52,7 @@ void LevelEditor::OnObjectLoaded()
 void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->AddSeparator();
-  toolbar->AddTool(eID_Level_Load, "Load", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
+  toolbar->AddTool(eID_Level_Load, "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
 }
 
 void LevelEditor::OnToolBarEvent(wxCommandEvent& event)

@@ -2,6 +2,8 @@
 #include "FPackage.h"
 #include "Cast.h"
 
+#include <Utils/ALog.h>
+
 bool ULevelStreaming::RegisterProperty(FPropertyTag* property)
 {
   if (Super::RegisterProperty(property))
@@ -19,84 +21,77 @@ bool ULevelStreaming::RegisterProperty(FPropertyTag* property)
 
 void ULevelStreaming::PostLoad()
 {
-  // TODO: refactor
   if (PackageName.Size() && PackageName != NAME_None)
   {
-    try
+    if (LoadLevelPackage(PackageName))
     {
-      FString originalPackageName = PackageName;
-      bool retried = false;
-retry:
-      if (std::shared_ptr<FPackage> package = FPackage::GetPackageNamed(PackageName.String()))
+      // OK
+      return;
+    }
+    auto pos = PackageName.FindLastOf('_');
+    if (pos != std::string::npos)
+    {
+      if (US1LevelStreamingDistance* s1this = Cast<US1LevelStreamingDistance>(this))
       {
-        package->Load();
-        Level = Cast<ULevel>(package->GetObject(INDEX_NONE, "PersistentLevel", ULevel::StaticClassName()));
-        GetPackage()->RetainPackage(package);
-        FPackage::UnloadPackage(package);
-      }
-      else if (!retried)
-      {
-        retried = true;
-        auto pos = PackageName.FindLastOf('_');
-        if (pos != std::string::npos)
+        if (s1this->ZoneNumberXProperty && s1this->ZoneNumberYProperty)
         {
-          if (US1LevelStreamingDistance* s1this = Cast<US1LevelStreamingDistance>(this))
+          LogI("Retring with a different name...");
+          if (LoadLevelPackage(PackageName.Substr(0, pos + 1) + std::to_string(s1this->ZoneNumberX) + std::to_string(s1this->ZoneNumberY)))
           {
-            if (s1this->ZoneNumberXProperty && s1this->ZoneNumberYProperty)
-            {
-              // Use zone coordinates for proper package name (e.g. Zone_XXYY)
-              PackageName = PackageName.Substr(0, pos + 1) + std::to_string(s1this->ZoneNumberX) + std::to_string(s1this->ZoneNumberY);
-              goto retry;
-            }
-            else
-            {
-              // Substr 1 from the Y coordinate of the package zone
-              int32 address = -1;
-              try
-              {
-                address += std::stoi(PackageName.Substr(pos + 1).WString());
-              }
-              catch (...)
-              {
-              }
-
-              if (address != -1)
-              {
-                PackageName = PackageName.Substr(0, pos + 1) + std::to_string(address);
-                goto retry;
-              }
-            }
-          }
-          else
-          {
-            // Substr 1 from the Y coordinate of the package zone
-            int32 address = -1;
-            try
-            {
-              address += std::stoi(PackageName.Substr(pos + 1).WString());
-            }
-            catch (...)
-            {
-            }
-
-            if (address != -1)
-            {
-              PackageName = PackageName.Substr(0, pos + 1) + std::to_string(address);
-              goto retry;
-            }
+            // OK
+            return;
           }
         }
-        
       }
-      else
+      // Substr 1 from the Y coordinate of the package zone
+      int32 address = -1;
+      try
       {
-        PackageName = originalPackageName;
+        address += std::stoi(PackageName.Substr(pos + 1).WString());
       }
-    }
-    catch (...)
-    {
+      catch (...)
+      {
+      }
+
+      if (address != -1)
+      {
+        LogI("Retring with a different name...");
+        if (LoadLevelPackage(PackageName.Substr(0, pos + 1) + std::to_string(address)))
+        {
+          // OK
+          return;
+        }
+      }
     }
   }
+  // Failed
+}
+
+bool ULevelStreaming::LoadLevelPackage(const FString& packageName)
+{
+  try
+  {
+    if (std::shared_ptr<FPackage> package = FPackage::GetPackageNamed(packageName.String()))
+    {
+      package->Load();
+      Level = Cast<ULevel>(package->GetObject(INDEX_NONE, "PersistentLevel", ULevel::StaticClassName()));
+      GetPackage()->RetainPackage(package);
+      FPackage::UnloadPackage(package);
+      return true;
+    }
+  }
+  catch (const std::exception& e)
+  {
+    LogW("Failed to load streamed level package %s by name '%s'. %s", PackageName.UTF8().c_str(), packageName.UTF8().c_str(), e.what());
+    return false;
+  }
+  catch (...)
+  {
+    LogW("Failed to load streamed level package %s by name '%s'", PackageName.UTF8().c_str(), packageName.UTF8().c_str());
+    return false;
+  }
+  LogW("Failed to load streamed level package %s by name '%s'", PackageName.UTF8().c_str(), packageName.UTF8().c_str());
+  return false;
 }
 
 bool ULevelStreamingVolume::RegisterProperty(FPropertyTag* property)

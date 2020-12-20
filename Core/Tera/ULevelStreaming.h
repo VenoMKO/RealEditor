@@ -9,6 +9,7 @@ public:
 
   bool RegisterProperty(FPropertyTag* property) override;
   void PostLoad() override;
+  bool LoadLevelPackage(const FString& packageName);
 
   ULevel* Level = nullptr;
 };

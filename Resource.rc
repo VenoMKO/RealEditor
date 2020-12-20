@@ -84,6 +84,8 @@ IDB_ICO_MAT             RCDATA                  "Resources\\Classes\\icon_mat.pn
 
 IDB_ICO_MI              RCDATA                  "Resources\\Classes\\icon_mi.png"
 
+IDB_LEVEL_PREVIEW       RCDATA                  "Resources\\Btn_PreviewLevel.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
