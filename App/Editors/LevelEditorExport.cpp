@@ -116,7 +116,6 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
 
 void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx, ProgressWindow* progress)
 {
-  ctx.InterpActors.clear();
   SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Preparing: " + level->GetPackage()->GetPackageName().UTF8()));
   std::vector<UActor*> actors = level->GetActors();
 
@@ -124,13 +123,19 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
   {
     return;
   }
-
+  T3DFile lightF;
+  size_t lightInitialSize = 0;
   size_t initialSize = 0;
   if (ctx.Config.SplitT3D)
   {
     f.Clear();
     f.InitializeMap();
     initialSize = f.GetBody().size();
+  }
+  else
+  {
+    lightF.InitializeMap();
+    lightInitialSize = lightF.GetBody().size();
   }
   
   for (UActor* actor : actors)
@@ -193,7 +198,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       {
         continue;
       }
-      ExportPointLightActor(f, ctx, Cast<UPointLight>(actor));
+      ExportPointLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<UPointLight>(actor));
     }
     else if (className == USpotLight::StaticClassName() || className == USpotLightMovable::StaticClassName() || className == USpotLightToggleable::StaticClassName())
     {
@@ -201,7 +206,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       {
         continue;
       }
-      ExportSpotLightActor(f, ctx, Cast<USpotLight>(actor));
+      ExportSpotLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<USpotLight>(actor));
     }
     else if (className == UDirectionalLight::StaticClassName() || className == UDirectionalLightToggleable::StaticClassName())
     {
@@ -209,7 +214,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       {
         continue;
       }
-      ExportDirectionalLightActor(f, ctx, Cast<UDirectionalLight>(actor));
+      ExportDirectionalLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<UDirectionalLight>(actor));
     }
     else if (className == USkyLight::StaticClassName() || className == USkyLightToggleable::StaticClassName())
     {
@@ -217,7 +222,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       {
         continue;
       }
-      ExportSkyLightActor(f, ctx, Cast<USkyLight>(actor));
+      ExportSkyLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<USkyLight>(actor));
     }
     else if (className == UHeightFog::StaticClassName())
     {
@@ -252,17 +257,10 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
     dst.replace_extension("t3d");
     f.Save(dst);
   }
-
-  if (ctx.InterpActors.size())
+  if (!ctx.Config.SplitT3D && lightInitialSize != lightF.GetBody().size())
   {
-    dst = std::filesystem::path(ctx.Config.RootDir.WString()) / level->GetPackage()->GetPackageName().WString();
-    dst += "_InterpActors.txt";
-    std::ofstream s(dst);
-    for (UInterpActor* actor : ctx.InterpActors)
-    {
-      s << actor->GetObjectPath().UTF8() << '\n';
-    }
-    ctx.InterpActors.clear();
+    lightF.FinalizeMap();
+    lightF.Save(dst + "_lights.t3d");
   }
 }
 
@@ -1008,7 +1006,6 @@ void ExportInterpActor(T3DFile& f, LevelExportContext& ctx, UInterpActor* actor)
 
   UStaticMeshComponent* component = actor->StaticMeshComponent;
 
-  ctx.InterpActors.push_back(actor);
   bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
   f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
   {

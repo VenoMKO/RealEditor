@@ -87,7 +87,6 @@ struct LevelExportContext {
 
   std::vector<UObject*> UsedMaterials;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
-  std::vector<class UInterpActor*> InterpActors;
   int CurrentProgress = 0;
   int StaticMeshActorsCount = 0;
   int SkeletalMeshActorsCount = 0;
