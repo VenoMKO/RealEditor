@@ -160,9 +160,12 @@ void UTerrain::GetVisibilityMap(uint8*& result, int32& width, int32& height, boo
   height = NumVerticesY;
 
   uint8* mask = (uint8*)calloc(width * height, sizeof(uint8));
-  for (int32 idx = 0; idx < InfoData.size(); ++idx)
+  for (int32 y = 0; y < NumVerticesY; ++y)
   {
-    mask[idx] = InfoData[idx].IsVisible() ? 0x00 : 0xFF;
+    for (int32 x = 0; x < NumVerticesX; ++x)
+    {
+      mask[y * NumVerticesX + x] = InfoData[std::clamp(y, 0, NumPatchesY - 1) * NumVerticesX + std::clamp(x, 0, NumPatchesX - 1)].IsVisible() ? 0x00 : 0xFF;
+    }
   }
   if (resample && WeightMapTextures.size())
   {
