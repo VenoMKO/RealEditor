@@ -47,6 +47,7 @@ FStream& operator<<(FStream& s, FStaticParameterSet& ps)
 
 void FMaterial::Serialize(FStream& s)
 {
+  s << Unk1;
   s << CompoilerErrors;
   s << TextureDependencyLengthMap;
   s << MaxTextureDependencyLength;
@@ -61,9 +62,9 @@ void FMaterial::Serialize(FStream& s)
   s << UsingTransforms;
   s << TextureLookups;
   s << FallbackComponents;
-  s << Unk1;
   s << Unk2;
   s << Unk3;
+  s << Unk4;
 }
 
 bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
@@ -316,9 +317,7 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
 void UMaterial::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  // TODO: Fix resource serialization for S1_MI.Mat.MaterialTemplate0012A
-  // MaterialResource.Serialize(s);
-  SerializeTrailingData(s);
+  MaterialResource.Serialize(s);
 }
 
 bool UMaterial::RegisterProperty(FPropertyTag* property)

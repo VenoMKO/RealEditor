@@ -34,9 +34,10 @@ public:
   uint32 UsingTransforms = 0;
   std::vector<FTextureLookup> TextureLookups;
   uint32 FallbackComponents = 0;
-  uint32 Unk1 = 0;
+  uint32 Unk1 = 1;
   uint32 Unk2 = 0;
   uint32 Unk3 = 0;
+  uint32 Unk4 = 0;
 };
 
 struct FStaticSwitchParameter {
