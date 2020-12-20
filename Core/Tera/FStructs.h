@@ -265,6 +265,11 @@ struct FVector {
 		return X == v.X && Y == v.Y && Z == v.Z;
 	}
 
+	bool operator!=(const FVector& v) const
+	{
+		return X != v.X || Y != v.Y || Z != v.Z;
+	}
+
 	FVector operator^(const FVector& V) const
 	{
 		return FVector
@@ -799,7 +804,18 @@ struct FQuat {
 
 	FQuat() = default;
 
+	FQuat(float x, float y, float z, float w)
+		: X(x)
+		, Y(y)
+		, Z(z)
+		, W(w)
+	{}
+
 	FQuat(const FMatrix& matrix);
+
+	FQuat Inverse() const;
+
+	FRotator Rotator() const;
 
 	friend FStream& operator<<(FStream& s, FQuat& f);
 };
@@ -835,15 +851,21 @@ struct FRotator
     return a;
   }
 
-	bool IsZero() const
+	inline bool IsZero() const
 	{
 		return !Pitch && !Yaw && !Roll;
+	}
+
+	static FRotator FRotator::MakeFromEuler(const FVector& Euler)
+	{
+		return FRotator(truncf(Euler.Y * (32768.f / 180.f)), truncf(Euler.Z * (32768.f / 180.f)), truncf(Euler.X * (32768.f / 180.f)));
 	}
 
 	FRotator Normalized() const;
 	FRotator Denormalized() const;
 	FVector Euler() const;
   FQuat Quaternion() const;
+	FRotator GetInverse() const;
 
   friend FStream& operator<<(FStream& s, FRotator& r);
 };

@@ -635,7 +635,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
 
 void AddCommonActorParameters(T3DFile& f, UActor* actor)
 {
-  f.AddString("ActorLabel", actor->GetObjectName().UTF8().c_str());
+  f.AddString("ActorLabel", (actor->GetPackage()->GetPackageName() + "_" + actor->GetObjectName()).UTF8().c_str());
   f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
   auto layers = actor->GetLayers();
   for (int32 idx = 0; idx < layers.size(); ++idx)
@@ -646,10 +646,24 @@ void AddCommonActorParameters(T3DFile& f, UActor* actor)
 
 void AddCommonActorComponentParameters(T3DFile& f, UActor* actor, UActorComponent* component, LevelExportContext& ctx)
 {
-  FVector position = ctx.Config.BakeComponentTransform ? actor->Location : (actor->GetLocation() + component->Translation);
-  FRotator rotation = ctx.Config.BakeComponentTransform ? actor->Rotation : (actor->Rotation + component->Rotation);
-  FVector scale3D = ctx.Config.BakeComponentTransform ? actor->DrawScale3D : (actor->DrawScale3D * component->Scale3D);
-  float scale = ctx.Config.BakeComponentTransform ? actor->DrawScale : (actor->DrawScale * component->Scale);
+  FVector position;
+  FRotator rotation;
+  FVector scale3D;
+  float scale = 1.;
+  if (ctx.Config.BakeComponentTransform || (component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1,1,1)))
+  {
+    position = actor->Location;
+    rotation = actor->Rotation;
+    scale3D = actor->DrawScale3D;
+    scale = actor->DrawScale;
+  }
+  else
+  {
+    position = component->Translation;
+    rotation = component->Rotation;
+    scale3D = component->Scale3D;
+    scale = component->Scale;
+  }
   f.AddPosition(position);
   f.AddRotation(rotation.Normalized());
   f.AddScale(scale3D, scale);
@@ -781,7 +795,9 @@ void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor
   {
     return;
   }
+  
   actor->StaticMeshComponent->Load();
+
   if (!actor->StaticMeshComponent->StaticMesh)
   {
     return;
@@ -790,17 +806,19 @@ void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor
   UStaticMeshComponent* component = actor->StaticMeshComponent;
   if (!component)
   {
-    if (!(component = actor->StaticMeshComponent))
-    {
-      return;
-    }
+    return;
   }
-  component->Load();
 
-  f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
+  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
   {
     f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
     f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
     f.Begin("Object", nullptr, "StaticMeshComponent0");
     {
       if (component->StaticMesh)
@@ -836,13 +854,41 @@ void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor
           f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
         }
       }
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", "Static");
+      }
       AddCommonPrimitiveComponentParameters(f, component);
       AddCommonActorComponentParameters(f, actor, component, ctx);
     }
     f.End();
-    f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-    f.AddString("RootComponent", "StaticMeshComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", "Static");
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+      f.AddString("RootComponent", "StaticMeshComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
+    }
   }
   f.End();
 }
@@ -854,25 +900,25 @@ void ExportSkeletalMeshActor(T3DFile& f, LevelExportContext& ctx, USkeletalMeshA
     return;
   }
 
-  if (!actor->SkeletalMeshComponent->SkeletalMesh && !actor->SkeletalMeshComponent->ReplacementPrimitive)
+  actor->SkeletalMeshComponent->Load();
+  
+  if (!actor->SkeletalMeshComponent->SkeletalMesh)
   {
     return;
   }
-  USkeletalMeshComponent* component = actor->SkeletalMeshComponent->ReplacementPrimitive ? Cast<USkeletalMeshComponent>(actor->SkeletalMeshComponent->ReplacementPrimitive) : actor->SkeletalMeshComponent;
 
-  if (!component)
-  {
-    component = actor->SkeletalMeshComponent;
-  }
-  else
-  {
-    component->Load();
-  }
+  USkeletalMeshComponent* component = actor->SkeletalMeshComponent;
 
-  f.Begin("Actor", "SkeletalMeshActor", FString::Sprintf("SkeletalMeshActor_%d", ctx.SkeletalMeshActorsCount++).UTF8().c_str());
+  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "SkeletalMeshActor", FString::Sprintf("SkeletalMeshActor_%d", ctx.SkeletalMeshActorsCount++).UTF8().c_str());
   {
     f.Begin("Object", "SkeletalMeshComponent", "SkeletalMeshComponent0");
     f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
     f.Begin("Object", nullptr, "SkeletalMeshComponent0");
     {
       if (component->SkeletalMesh)
@@ -909,13 +955,39 @@ void ExportSkeletalMeshActor(T3DFile& f, LevelExportContext& ctx, USkeletalMeshA
         }
       }
       f.AddCustom("ClothingSimulationFactory", "Class'\"/Script/ClothingSystemRuntimeNv.ClothingSimulationFactoryNv\"'");
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+      }
       AddCommonPrimitiveComponentParameters(f, component);
       AddCommonActorComponentParameters(f, actor, component, ctx);
     }
     f.End();
-    f.AddString("SkeletalMeshComponent", "SkeletalMeshComponent0");
-    f.AddString("RootComponent", "SkeletalMeshComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("SkeletalMeshComponent", "SkeletalMeshComponent0");
+      f.AddString("RootComponent", "SkeletalMeshComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "SkeletalMeshComponent'\"SkeletalMeshComponent0\"'");
+    }
   }
   f.End();
 }
@@ -926,43 +998,34 @@ void ExportInterpActor(T3DFile& f, LevelExportContext& ctx, UInterpActor* actor)
   {
     return;
   }
-
-  if (!actor->StaticMeshComponent->StaticMesh && !actor->StaticMeshComponent->ReplacementPrimitive)
+  
+  actor->StaticMeshComponent->Load();
+  
+  if (!actor->StaticMeshComponent->StaticMesh)
   {
     return;
   }
-  UStaticMeshComponent* component = actor->StaticMeshComponent->ReplacementPrimitive ? Cast<UStaticMeshComponent>(actor->StaticMeshComponent->ReplacementPrimitive) : actor->StaticMeshComponent;
 
-  if (!component)
-  {
-    component = actor->StaticMeshComponent;
-  }
-  else
-  {
-    component->Load();
-  }
+  UStaticMeshComponent* component = actor->StaticMeshComponent;
 
   ctx.InterpActors.push_back(actor);
-
-  f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
+  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
   {
     f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
     f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
     f.Begin("Object", nullptr, "StaticMeshComponent0");
     {
-      UStaticMesh* mesh = component->StaticMesh;
-      bool replicated = false;
-      if (actor->ReplicatedMesh)
+      if (component->StaticMesh)
       {
-        mesh = actor->ReplicatedMesh;
-        replicated = true;
-      }
-      if (mesh)
-      {
-        std::vector<UObject*> materials = mesh->GetMaterials();
-        SaveMaterialMap(actor, component, ctx, materials);
+        SaveMaterialMap(actor, component, ctx, component->StaticMesh->GetMaterials());
 
-        std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(mesh);
+        std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
         std::error_code err;
         if (!std::filesystem::exists(path, err))
         {
@@ -991,52 +1054,41 @@ void ExportInterpActor(T3DFile& f, LevelExportContext& ctx, UInterpActor* actor)
           f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
         }
       }
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+      }
+      f.AddString("Mobility", "Movable");
       AddCommonPrimitiveComponentParameters(f, component);
-      if (replicated && !ctx.Config.BakeComponentTransform)
-      {
-        FVector vec = actor->Location;
-        if (actor->ReplicatedMeshTranslationProperty)
-        {
-          vec = vec + actor->ReplicatedMeshTranslation;
-        }
-        else
-        {
-          vec = vec + component->Translation;
-        }
-        f.AddPosition(vec);
-
-        vec = actor->DrawScale3D;
-        if (actor->ReplicatedMeshScale3DProperty)
-        {
-          vec = vec * (actor->ReplicatedMeshScale3D / 100.);
-        }
-        else
-        {
-          vec = vec * actor->DrawScale3D;
-        }
-        f.AddScale(vec, actor->DrawScale * component->Scale);
-
-        FRotator rot = actor->Rotation;
-        if (actor->ReplicatedMeshRotationProperty)
-        {
-          rot = rot + actor->ReplicatedMeshRotation;
-        }
-        else
-        {
-          rot = rot + component->Rotation;
-        }
-        f.AddRotation(rot);
-      }
-      else
-      {
-        AddCommonActorComponentParameters(f, actor, component, ctx);
-      }
-      f.AddCustom("Mobility", "Movable");
+      AddCommonActorComponentParameters(f, actor, component, ctx);
     }
     f.End();
-    f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-    f.AddString("RootComponent", "StaticMeshComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", "Movable");
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+      f.AddString("RootComponent", "StaticMeshComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
+    }
   }
   f.End();
 }
@@ -1048,58 +1100,82 @@ void ExportSpeedTreeActor(T3DFile& f, LevelExportContext& ctx, USpeedTreeActor* 
     return;
   }
 
-  if (!actor->SpeedTreeComponent->SpeedTree && !actor->SpeedTreeComponent->ReplacementPrimitive)
+  USpeedTreeComponent* component = actor->SpeedTreeComponent;
+  component->Load();
+
+  if (!component->SpeedTree)
   {
     return;
   }
-  USpeedTreeComponent* component = actor->SpeedTreeComponent->ReplacementPrimitive ? Cast<USpeedTreeComponent>(actor->SpeedTreeComponent->ReplacementPrimitive) : actor->SpeedTreeComponent;
-
-  if (!component)
-  {
-    component = actor->SpeedTreeComponent;
-  }
-  else
-  {
-    component->Load();
-  }
-
-  f.Begin("Actor", "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.SpeedTreeActorsCount++).UTF8().c_str());
+  // TODO: material overrides
+  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.SpeedTreeActorsCount++).UTF8().c_str());
   {
     f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
     f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
     f.Begin("Object", nullptr, "StaticMeshComponent0");
     {
-      if (component->SpeedTree)
+      std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
+      std::error_code err;
+      if (!std::filesystem::exists(path, err))
       {
-        std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
-        std::error_code err;
+        std::filesystem::create_directories(path, err);
+      }
+      if (std::filesystem::exists(path, err))
+      {
+        path /= component->SpeedTree->GetObjectName().UTF8();
+        path.replace_extension("spt");
         if (!std::filesystem::exists(path, err))
         {
-          std::filesystem::create_directories(path, err);
+          void* sptData = nullptr;
+          FILE_OFFSET sptDataSize = 0;
+          component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
+          std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
+          s.write((const char*)sptData, sptDataSize);
+          free(sptData);
         }
-        if (std::filesystem::exists(path, err))
-        {
-          path /= component->SpeedTree->GetObjectName().UTF8();
-          path.replace_extension("spt");
-          if (!std::filesystem::exists(path, err))
-          {
-            void* sptData = nullptr;
-            FILE_OFFSET sptDataSize = 0;
-            component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
-            std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
-            s.write((const char*)sptData, sptDataSize);
-            free(sptData);
-          }
-          f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
-        }
+        f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
+      }
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", "Static");
       }
       AddCommonPrimitiveComponentParameters(f, component);
       AddCommonActorComponentParameters(f, actor, component, ctx);
     }
     f.End();
-    f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-    f.AddString("RootComponent", "StaticMeshComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", "Static");
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
+      f.AddString("RootComponent", "StaticMeshComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
+    }
   }
   f.End();
 }
@@ -1117,10 +1193,17 @@ void ExportPointLightActor(T3DFile& f, LevelExportContext& ctx, UPointLight* act
     return;
   }
 
-  f.Begin("Actor", "PointLight", FString::Sprintf("PointLight_%d", ctx.PointLightActorsCount++).UTF8().c_str());
+  bool addFakeRoot = !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "PointLight", FString::Sprintf("PointLight_%d", ctx.PointLightActorsCount++).UTF8().c_str());
   {
+    std::string mobility = "Static";
     f.Begin("Object", "PointLightComponent", "LightComponent0");
     f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
     f.Begin("Object", nullptr, "LightComponent0");
     {
       f.AddFloat("LightFalloffExponent", component->FalloffExponent);
@@ -1128,9 +1211,13 @@ void ExportPointLightActor(T3DFile& f, LevelExportContext& ctx, UPointLight* act
       f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
       f.AddFloat("AttenuationRadius", component->Radius);
       f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+      }
       AddCommonLightComponentParameters(f, component);
       AddCommonActorComponentParameters(f, actor, component, ctx);
-      std::string mobility = "Static";
       const FString className = actor->GetClassName().String();
       if (className == UPointLightMovable::StaticClassName())
       {
@@ -1143,10 +1230,32 @@ void ExportPointLightActor(T3DFile& f, LevelExportContext& ctx, UPointLight* act
       f.AddCustom("Mobility", mobility.c_str());
     }
     f.End();
-    f.AddString("PointLightComponent", "LightComponent0");
-    f.AddString("LightComponent", "LightComponent0");
-    f.AddString("RootComponent", "LightComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", mobility.c_str());
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("PointLightComponent", "LightComponent0");
+      f.AddString("LightComponent", "LightComponent0");
+      f.AddString("RootComponent", "LightComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "PointLightComponent'\"LightComponent0\"'");
+    }
   }
   f.End();
 }
@@ -1164,12 +1273,22 @@ void ExportSpotLightActor(T3DFile& f, LevelExportContext& ctx, USpotLight* actor
     return;
   }
 
-  f.Begin("Actor", "SpotLight", FString::Sprintf("SpotLight_%d", ctx.SpotLightActorsCount++).UTF8().c_str());
+  bool addFakeRoot = !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
+  f.Begin("Actor", addFakeRoot ? "Actor" : "SpotLight", FString::Sprintf("SpotLight_%d", ctx.SpotLightActorsCount++).UTF8().c_str());
   {
     f.Begin("Object", "SpotLightComponent", "LightComponent0");
     f.End();
-    f.Begin("Object", "ArrowComponent", "ArrowComponent0");
-    f.End();
+    if (addFakeRoot)
+    {
+      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
+      f.End();
+    }
+    else
+    {
+      f.Begin("Object", "ArrowComponent", "ArrowComponent0");
+      f.End();
+    }
+    std::string mobility = "Static";
     f.Begin("Object", nullptr, "LightComponent0");
     {
       f.AddFloat("LightFalloffExponent", component->FalloffExponent);
@@ -1180,29 +1299,15 @@ void ExportSpotLightActor(T3DFile& f, LevelExportContext& ctx, USpotLight* actor
       f.AddFloat("AttenuationRadius", component->Radius);
       f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
       AddCommonLightComponentParameters(f, component);
-      f.AddPosition(actor->GetLocation() + component->Translation);
-      FVector scale3D = actor->DrawScale3D;
+      f.AddPosition(addFakeRoot ? actor->GetLocation() : actor->GetLocation() + component->Translation);
       FRotator rotation = actor->Rotation;
-      if (scale3D.X < 0 || scale3D.Y < 0 || scale3D.Z < 0)
+      if (actor->DrawScale3D.X < 0)
       {
-        if (scale3D.X < 0)
-        {
-          rotation.Roll += 0x8000;
-          rotation.Yaw += 0x8000;
-        }
-        if (scale3D.Y < 0)
-        {
-          rotation.Pitch += 0x8000;
-          rotation.Yaw += 0x8000;
-        }
-        if (scale3D.Z < 0)
-        {
-          rotation.Pitch += 0x8000;
-          rotation.Roll += 0x8000;
-        }
+        // UDK flips a spot light if it has a negative X scale.
+        // TODO: verify this works correctly
+        rotation = rotation.Normalized().GetInverse();
       }
-      f.AddRotation(rotation + component->Rotation);
-      std::string mobility = "Static";
+      f.AddRotation(addFakeRoot ? rotation : rotation + component->Rotation);
       const FString className = actor->GetClassName();
       if (className == UPointLightMovable::StaticClassName())
       {
@@ -1213,13 +1318,40 @@ void ExportSpotLightActor(T3DFile& f, LevelExportContext& ctx, USpotLight* actor
         mobility = "Stationary";
       }
       f.AddCustom("Mobility", mobility.c_str());
+      if (addFakeRoot)
+      {
+        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
+        f.AddString("CreationMethod", "Instance");
+      }
     }
     f.End();
-    f.AddString("SpotLightComponent", "LightComponent0");
-    f.AddString("ArrowComponent", "ArrowComponent0");
-    f.AddString("LightComponent", "LightComponent0");
-    f.AddString("RootComponent", "LightComponent0");
+    if (addFakeRoot)
+    {
+      f.Begin("Object", nullptr, "DefaultSceneRoot");
+      {
+        f.AddPosition(actor->GetLocation());
+        f.AddRotation(actor->Rotation);
+        f.AddScale(actor->DrawScale3D, actor->DrawScale);
+        f.AddBool("bVisualizeComponent", false);
+        f.AddString("CreationMethod", "Instance");
+        f.AddString("Mobility", mobility.c_str());
+      }
+      f.End();
+      f.AddString("RootComponent", "DefaultSceneRoot");
+    }
+    else
+    {
+      f.AddString("SpotLightComponent", "LightComponent0");
+      f.AddString("ArrowComponent", "ArrowComponent0");
+      f.AddString("LightComponent", "LightComponent0");
+      f.AddString("RootComponent", "LightComponent0");
+    }
     AddCommonActorParameters(f, actor);
+    if (addFakeRoot)
+    {
+      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
+      f.AddCustom("InstanceComponents(1)", "SpotLightComponent'\"LightComponent0\"'");
+    }
   }
   f.End();
 }

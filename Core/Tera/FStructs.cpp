@@ -768,6 +768,11 @@ FQuat FRotator::Quaternion() const
   return FQuat(FRotationMatrix(*this));
 }
 
+FRotator FRotator::GetInverse() const
+{
+  return Quaternion().Inverse().Rotator();
+}
+
 FMatrix::FMatrix(const FPlane& x, const FPlane& y, const FPlane& z, const FPlane& w)
 {
   M[0][0] = x.X; M[0][1] = x.Y;  M[0][2] = x.Z;  M[0][3] = x.W;
@@ -850,6 +855,43 @@ FQuat::FQuat(const FMatrix& matrix)
     Z = qt[2];
     W = qt[3];
   }
+}
+
+FQuat FQuat::Inverse() const
+{
+  return FQuat(-X, -Y, -Z, W);
+}
+
+FRotator FQuat::Rotator() const
+{
+  // UE4
+  const float singularityTest = Z * X - W * Y;
+  const float yawY = 2.f * (W * Z + X * Y);
+  const float yawX = (1.f - 2.f * ((Y * Y) + (Z * Z)));
+
+  const float SINGULARITY_THRESHOLD = 0.4999995f;
+  const float RAD_TO_DEG = (180.f) / M_PI;
+  FVector tmp;
+
+  if (singularityTest < -SINGULARITY_THRESHOLD)
+  {
+    tmp.Y = -90.f;
+    tmp.Z = atan2(yawY, yawX) * RAD_TO_DEG;
+    tmp.X = FRotator::NormalizeAxis(-tmp.Z - (2.f * atan2f(X, W) * RAD_TO_DEG));
+  }
+  else if (singularityTest > SINGULARITY_THRESHOLD)
+  {
+    tmp.Y = 90.f;
+    tmp.Z = atan2f(yawY, yawX) * RAD_TO_DEG;
+    tmp.X = FRotator::NormalizeAxis(tmp.Z - (2.f * atan2f(X, W) * RAD_TO_DEG));
+  }
+  else
+  {
+    tmp.Y = asinf(2.f * (singularityTest)) * RAD_TO_DEG;
+    tmp.Z = atan2f(yawY, yawX) * RAD_TO_DEG;
+    tmp.X = atan2f(-2.f * (W * X + Y * Z), (1.f - 2.f * ((X * X) + (Y * Y)))) * RAD_TO_DEG;
+  }
+  return FRotator::MakeFromEuler(FVector(tmp.Y, tmp.Z, tmp.X));
 }
 
 FRotationTranslationMatrix::FRotationTranslationMatrix(const FRotator& rotation, const FVector& origin)
