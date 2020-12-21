@@ -1035,8 +1035,14 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       return found;
     }
   }
-  
-  LogI("Opening package: %s", path.String().c_str());
+  if (path.StartWith(RootDir))
+  {
+    LogI("Opening package: %s", path.Substr(RootDir.Size()).String().c_str());
+  }
+  else
+  {
+    LogI("Opening package: %s", path.String().c_str());
+  }
   FStream *stream = new FReadStream(path);
   if (!stream->IsGood())
   {
@@ -1082,7 +1088,6 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
 
     std::filesystem::path decompressedPath = GetTempFilePath();
     sum.DataPath = W2A(decompressedPath.wstring());
-    LogI("Decompressing package %s to %s", sum.PackageName.C_str(), decompressedPath.string().c_str());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
     sum.OriginalCompressionFlags = sum.CompressionFlags;
@@ -1222,7 +1227,6 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
         }
       }
       std::filesystem::path tmpPath = GetTempFilePath();
-      LogI("Writing composite package %s to %s...", name.C_str(), tmpPath.string().c_str());
       {
         FWriteStream ws(tmpPath);
         ws.SerializeBytes(rawData, entry.Size);

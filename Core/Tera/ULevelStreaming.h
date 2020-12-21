@@ -41,6 +41,7 @@ public:
   UPROP(int32, ZoneNumberY, 0);
 
   bool RegisterProperty(FPropertyTag* property) override;
+  void PostLoad() override;
 };
 
 class US1LevelStreamingBaseLevel : public US1LevelStreamingDistance {
