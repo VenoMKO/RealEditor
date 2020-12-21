@@ -242,6 +242,12 @@
     <ClCompile Include="App\Editors\LevelEditorExport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\UPrefab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\PrefabEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -336,6 +342,8 @@
     <ClInclude Include="Core\Utils\T3DUtils.h" />
     <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="App\Windows\LevelExportOptions.h" />
+    <ClInclude Include="Core\Tera\UPrefab.h" />
+    <ClInclude Include="App\Editors\PrefabEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

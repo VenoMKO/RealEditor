@@ -1,7 +1,5 @@
-#include "LevelEditor.h"
-#include "../App.h"
+#include "PrefabEditor.h"
 #include "../Windows/PackageWindow.h"
-#include "../Windows/ProgressWindow.h"
 
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
@@ -10,27 +8,35 @@
 #include <osg/Depth>
 
 #include <Tera/Cast.h>
-#include <Tera/FPackage.h>
-#include <Tera/UObject.h>
-#include <Tera/ULevelStreaming.h>
+#include <Tera/UTexture.h>
+#include <Tera/UActorComponent.h>
 #include <Tera/UStaticMesh.h>
 #include <Tera/USkeletalMesh.h>
-#include <Tera/UTexture.h>
 #include <Tera/UMaterial.h>
-#include <Tera/UPrefab.h>
 
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
 
-LevelEditor::LevelEditor(wxPanel* parent, PackageWindow* window)
+osg::MatrixTransform* CreateStaticMesh(UStaticMeshComponent* component);
+osg::MatrixTransform* CreateSkelMesh(USkeletalMeshComponent* component);
+
+PrefabEditor::PrefabEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
 {
   CreateRenderer();
   window->FixOSG();
 }
 
-void LevelEditor::OnTick()
+PrefabEditor::~PrefabEditor()
+{
+  if (Renderer)
+  {
+    delete Renderer;
+  }
+}
+
+void PrefabEditor::OnTick()
 {
   if (Renderer && Renderer->isRealized() && Renderer->checkNeedToDoFrame())
   {
@@ -38,53 +44,27 @@ void LevelEditor::OnTick()
   }
 }
 
-void LevelEditor::OnObjectLoaded()
+void PrefabEditor::OnObjectLoaded()
 {
-  if (Loading || !Level)
+  if (Loading || !Prefab)
   {
-    LevelNodes.clear();
-    Level = (ULevel*)Object;
-    Root = new osg::Geode;
-    Bind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
+    Prefab = (UPrefab*)Object;
+    CreateRenderModel();
   }
   GenericEditor::OnObjectLoaded();
 }
 
-void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
+void PrefabEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->AddTool(eID_Level_Load, "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
 }
 
-void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
+void PrefabEditor::OnToolBarEvent(wxCommandEvent& e)
 {
-  GenericEditor::OnToolBarEvent(event);
-  if (event.GetSkipped())
-  {
-    event.Skip(false);
-    return;
-  }
-  if (event.GetId() == eID_Level_Load)
-  {
-    LoadPersistentLevel();
-  }
+  GenericEditor::OnToolBarEvent(e);
 }
 
-void LevelEditor::OnExportClicked(wxCommandEvent& e)
-{
-  LevelExportContext ctx = LevelExportContext::LoadFromAppConfig();
-  LevelExportOptionsWindow optionsWin(this, ctx);
-  if (optionsWin.ShowModal() != wxID_OK)
-  {
-    return;
-  }
-  ctx = optionsWin.GetExportContext();
-  LevelExportContext::SaveToAppConfig(ctx);
-
-  PrepareToExportLevel(ctx);
-}
-
-void LevelEditor::SetNeedsUpdate()
+void PrefabEditor::SetNeedsUpdate()
 {
   if (Renderer)
   {
@@ -92,7 +72,7 @@ void LevelEditor::SetNeedsUpdate()
   }
 }
 
-void LevelEditor::CreateRenderer()
+void PrefabEditor::CreateRenderer()
 {
   int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 8, WX_GL_STENCIL_SIZE, 8, 0 };
 
@@ -123,123 +103,37 @@ void LevelEditor::CreateRenderer()
   manipulator->setAllowThrow(false);
   manipulator->setVerticalAxisFixed(true);
   Renderer->setCameraManipulator(manipulator);
-  Renderer->setThreadingModel(osgViewer::Viewer::AutomaticSelection);
+  Renderer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
 }
 
-void LevelEditor::LoadPersistentLevel()
+void PrefabEditor::CreateRenderModel()
 {
-  if (LevelLoaded)
-  {
-    wxMessageBox("Level is already loaded!", wxEmptyString, wxICON_INFORMATION);
-    return;
-  }
-  ProgressWindow progress(Window, "Please, wait...");
-  progress.SetCurrentProgress(-1);
-  progress.SetCanCancel(false);
-  progress.SetActionText("Loading the level");
-  progress.Layout();
-
-  std::thread([&] {
-    CreateLevel(Level, Root.get());
-    UObject* world = Level->GetOuter();
-    auto worldInner = world->GetInner();
-
-    for (UObject* inner : worldInner)
-    {
-      if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
-      {
-        level->Load();
-        if (level->Level)
-        {
-          osg::Geode* geode = new osg::Geode;
-          geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
-          CreateLevel(level->Level, geode);
-          Root->addChild(geode);
-        }
-      }
-    }
-    SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
-  }).detach();
-
-  progress.ShowModal();
-
-  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
-  Renderer->setSceneData(Root.get());
-  LevelLoaded = true;
-}
-
-void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
-{
-  if (!level)
+  if (!Prefab)
   {
     return;
   }
+  Root = new osg::Geode;
 
-  auto actors = level->GetActors();
-
-  if (actors.empty())
+  for (UObject* archetype : Prefab->PrefabArchetypes)
   {
-    return;
-  }
-
-  std::vector<UActor*> skip;
-  for (UActor* actor : actors)
-  {
-    if (!actor || actor->bHidden)
-    {
-      continue;
-    }
-    if (UStaticMeshActor* staticActor = Cast<UStaticMeshActor>(actor))
-    {
-      if (staticActor->StaticMeshComponent && staticActor->StaticMeshComponent->ReplacementPrimitive)
-      {
-        skip.push_back(actor);
-      }
-    }
-    else if (UInterpActor* interpActor = Cast<UInterpActor>(actor))
-    {
-      if (interpActor->StaticMeshComponent && interpActor->StaticMeshComponent->ReplacementPrimitive)
-      {
-        skip.push_back(actor);
-      }
-    }
-    else if (USkeletalMeshActor* skelActor = Cast<USkeletalMeshActor>(actor))
-    {
-      if (skelActor->SkeletalMeshComponent && skelActor->SkeletalMeshComponent->ReplacementPrimitive)
-      {
-        skip.push_back(actor);
-      }
-    }
-  }
-
-  for (UActor* actor : actors)
-  {
-    if (!actor || actor->bHidden)
-    {
-      continue;
-    }
-    if (std::find(skip.begin(), skip.end(), actor) != skip.end())
+    UActor* actor = Cast<UActor>(archetype);
+    if (!actor)
     {
       continue;
     }
     osg::MatrixTransform* componentTransform = nullptr;
-    if (UStaticMeshActor* staticActor = Cast<UStaticMeshActor>(actor))
+    if (UStaticMeshActor* actorSM = Cast<UStaticMeshActor>(actor))
     {
-      componentTransform = CreateStaticMeshComponent(staticActor->StaticMeshComponent);
+      componentTransform = CreateStaticMesh(Cast<UStaticMeshComponent>(actorSM->StaticMeshComponent));
     }
-    else if (UInterpActor* interpActor = Cast<UInterpActor>(actor))
+    else if (UInterpActor* actorIp = Cast<UInterpActor>(actor))
     {
-      componentTransform = CreateStaticMeshComponent(interpActor->StaticMeshComponent);
+      componentTransform = CreateStaticMesh(Cast<UStaticMeshComponent>(actorIp->StaticMeshComponent));
     }
-    else if (USkeletalMeshActor* skelActor = Cast<USkeletalMeshActor>(actor))
+    else if (USkeletalMeshActor* actorSkel = Cast<USkeletalMeshActor>(actor))
     {
-      componentTransform = CreateSkelMeshComponent(skelActor->SkeletalMeshComponent);
+      componentTransform = CreateSkelMesh(Cast<USkeletalMeshComponent>(actorSkel->SkeletalMeshComponent));
     }
-    else if (UPrefabInstance* prefab = Cast<UPrefabInstance>(actor))
-    {
-      componentTransform = CreatePrefabInstance(prefab);
-    }
-
     if (!componentTransform)
     {
       continue;
@@ -268,22 +162,19 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
 
     mt->setMatrix(m);
     mt->addChild(componentTransform);
-    root->addChild(mt);
+    Root->addChild(mt);
   }
+  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+  Renderer->setSceneData(Root.get());
 }
 
-void LevelEditor::OnIdle(wxIdleEvent& e)
-{
-  Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
-}
-
-osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponent* component)
+osg::MatrixTransform* CreateStaticMesh(UStaticMeshComponent* component)
 {
   if (!component)
   {
     return nullptr;
   }
-  
+
   UStaticMesh* mesh = component->StaticMesh;
   if (!mesh)
   {
@@ -297,7 +188,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   osg::ref_ptr<osg::Vec2Array> uvs = new osg::Vec2Array(osg::Array::BIND_PER_VERTEX);
 
   std::vector<FStaticVertex> uvertices = model->GetVertices();
-  for (auto & uvertex : uvertices)
+  for (auto& uvertex : uvertices)
   {
     FVector normal = uvertex.TangentZ;
     normals->push_back(osg::Vec3(normal.X, -normal.Y, normal.Z));
@@ -374,7 +265,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   return mt;
 }
 
-osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponent* component)
+osg::MatrixTransform* CreateSkelMesh(USkeletalMeshComponent* component)
 {
   if (!component)
   {
@@ -469,98 +360,4 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
   mt->addChild(geode);
 
   return mt;
-}
-
-osg::Geode* LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor)
-{
-  if (!actor || actor->StreamingLevels.empty())
-  {
-    return nullptr;
-  }
-
-  std::vector<ULevelStreaming*> aliveLevels;
-  for (ULevelStreaming* level : actor->StreamingLevels)
-  {
-    if (level && level->Level)
-    {
-      aliveLevels.push_back(level);
-    }
-  }
-
-  if (aliveLevels.empty())
-  {
-    return nullptr;
-  }
-
-  osg::Geode* result = new osg::Geode;
-  for (ULevelStreaming* level : aliveLevels)
-  {
-    osg::Geode* lgeode = new osg::Geode;
-    lgeode->setName(level->PackageName.UTF8().c_str());
-    result->addChild(lgeode);
-    CreateLevel(level->Level, lgeode);
-  }
-
-  return result;
-}
-
-osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instance)
-{
-  osg::MatrixTransform* root = nullptr;
-
-  for (UObject* archetype : instance->TemplatePrefab->PrefabArchetypes)
-  {
-    UActor* actor = Cast<UActor>(archetype);
-    if (!actor)
-    {
-      continue;
-    }
-    osg::MatrixTransform* componentTransform = nullptr;
-    if (UStaticMeshActor* actorSM = Cast<UStaticMeshActor>(actor))
-    {
-      componentTransform = CreateStaticMeshComponent(Cast<UStaticMeshComponent>(actorSM->StaticMeshComponent));
-    }
-    else if (UInterpActor* actorIp = Cast<UInterpActor>(actor))
-    {
-      componentTransform = CreateStaticMeshComponent(Cast<UStaticMeshComponent>(actorIp->StaticMeshComponent));
-    }
-    else if (USkeletalMeshActor* actorSkel = Cast<USkeletalMeshActor>(actor))
-    {
-      componentTransform = CreateSkelMeshComponent(Cast<USkeletalMeshComponent>(actorSkel->SkeletalMeshComponent));
-    }
-    if (!componentTransform)
-    {
-      continue;
-    }
-
-    osg::MatrixTransform* mt = new osg::MatrixTransform;
-    mt->setName(actor->GetObjectName().UTF8().c_str());
-    osg::Matrix m;
-    m.makeIdentity();
-
-    FVector location = actor->GetLocation();
-    FVector rotation = actor->Rotation.Normalized().Euler();
-    FVector scale3D = actor->DrawScale3D * actor->DrawScale;
-
-    m.preMultTranslate(osg::Vec3(location.X, -location.Y, location.Z));
-
-    osg::Quat quat;
-    quat.makeRotate(
-      rotation.X * M_PI / 180., RollAxis,
-      rotation.Y * M_PI / 180., PitchAxis,
-      rotation.Z * M_PI / 180., YawAxis
-    );
-    m.preMultRotate(quat);
-
-    m.preMultScale(osg::Vec3(scale3D.X, scale3D.Y, scale3D.Z));
-
-    mt->setMatrix(m);
-    mt->addChild(componentTransform);
-    if (!root)
-    {
-      root = new osg::MatrixTransform;
-    }
-    root->addChild(mt);
-  }
-  return root;
 }

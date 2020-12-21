@@ -22,6 +22,7 @@
 #include "UPhysAsset.h"
 #include "ULevelStreaming.h"
 #include "USpeedTree.h"
+#include "UPrefab.h"
 
 #include "UActor.h"
 #include "ULevel.h"
@@ -75,6 +76,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == USpeedTree::StaticClassName())
   {
     result = new USpeedTree(exp);
+  }
+  else if (c == UPrefab::StaticClassName())
+  {
+    result = new UPrefab(exp);
   }
   else if (c == UActor::StaticClassName())
   {
@@ -211,6 +216,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UHeightFog::StaticClassName())
   {
     result = new UHeightFog(exp);
+  }
+  else if (c == UPrefabInstance::StaticClassName())
+  {
+    result = new UPrefabInstance(exp);
   }
   else if (c == UAnimSequence::StaticClassName())
   {

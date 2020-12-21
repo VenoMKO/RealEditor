@@ -12,6 +12,7 @@
 
 class UActor;
 class ULevel;
+class UPrefabInstance;
 class ULevelStreamingVolume;
 
 class ProgressWindow;
@@ -48,6 +49,7 @@ protected:
 
   osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshComponent* actor);
   osg::MatrixTransform* CreateSkelMeshComponent(USkeletalMeshComponent* component);
+  osg::MatrixTransform* CreatePrefabInstance(UPrefabInstance* instance);
   osg::Geode* CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
 
 protected:

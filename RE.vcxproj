@@ -17,6 +17,7 @@
     <ClCompile Include="App\Editors\MaterialEditor.cpp" />
     <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
+    <ClCompile Include="App\Editors\PrefabEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
     <ClCompile Include="App\Editors\SpeedTreeEditor.cpp" />
@@ -42,6 +43,7 @@
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
+    <ClCompile Include="Core\Tera\UPrefab.cpp" />
     <ClCompile Include="Core\Utils\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
     <ClCompile Include="App\Editors\GenericEditor.cpp" />
@@ -94,6 +96,7 @@
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
+    <ClInclude Include="App\Editors\PrefabEditor.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
@@ -127,6 +130,7 @@
     <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
+    <ClInclude Include="Core\Tera\UPrefab.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />
     <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="Core\Tera\USpeedTree.h" />

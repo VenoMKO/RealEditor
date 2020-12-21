@@ -51,6 +51,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
 	{
 		return IcoMesh;
 	}
+	if (className == wxT("Prefab"))
+	{
+		return IcoMesh;
+	}
 	if (className == wxT("Class"))
 	{
 		return IcoClass;

@@ -18,6 +18,7 @@
 #include "SpeedTreeEditor.h"
 #include "MaterialEditor.h"
 #include "MaterialInstanceEditor.h"
+#include "PrefabEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -76,6 +77,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (c == UTextureCube::StaticClassName())
   {
     editor = new TextureCubeEditor(parent, window);
+  }
+  else if (c == UPrefab::StaticClassName())
+  {
+    editor = new PrefabEditor(parent, window);
   }
   else
   {
