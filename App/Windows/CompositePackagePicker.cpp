@@ -28,8 +28,8 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
 	m_staticText->Wrap(-1);
 	bSizer2->Add(m_staticText, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-	CompositeName = new wxTextCtrl(m_panel1, ControlElementId::TextField, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-	if (dontCheck)
+	CompositeName = new wxTextCtrl(m_panel1, ControlElementId::TextField, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+	if (!dontCheck)
 	{
 		CompositeName->AutoComplete(((App*)wxTheApp)->GetCompositePackageNames());
 	}
