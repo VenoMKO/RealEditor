@@ -14,46 +14,924 @@
 #include <Tera/UTexture.h>
 #include <Tera/ULight.h>
 #include <Tera/UTerrain.h>
+#include <Tera/UPrefab.h>
 
 #include <Utils/ALog.h>
 #include <Utils/T3DUtils.h>
 #include <Utils/FbxUtils.h>
 #include <Utils/TextureProcessor.h>
 
-std::string GetLocalDir(UObject* obj, const char* sep = "\\")
-{
-  std::string path;
-  FObjectExport* outer = obj->GetExportObject()->Outer;
-  while (outer)
-  {
-    path = (outer->GetObjectName().UTF8() + sep + path);
-    outer = outer->Outer;
-  }
-  if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
-  {
-    path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
-  }
-  return path;
-}
+#include <functional>
 
-void AddCommonActorParameters(T3DFile& f, UActor* actor);
-void AddCommonActorComponentParameters(T3DFile& f, UActor* actor, UActorComponent* component, LevelExportContext& ctx);
+typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
+
+std::string GetLocalDir(UObject* obj, const char* sep = "\\");
 void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* component);
-void AddCommonLightComponentParameters(T3DFile& f, ULightComponent* component);
-void GetUniqueFbxName(UActor* actor, UActorComponent* comp, LevelExportContext& ctx, std::string& outObjectName);
-void SaveMaterialMap(UActor* actor, UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
+void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
 
-void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor* actor);
-void ExportSkeletalMeshActor(T3DFile& f, LevelExportContext& ctx, USkeletalMeshActor* actor);
-void ExportInterpActor(T3DFile& f, LevelExportContext& ctx, UInterpActor* actor);
-void ExportSpeedTreeActor(T3DFile& f, LevelExportContext& ctx, USpeedTreeActor* actor);
-void ExportPointLightActor(T3DFile& f, LevelExportContext& ctx, UPointLight* actor);
-void ExportSpotLightActor(T3DFile& f, LevelExportContext& ctx, USpotLight* actor);
-void ExportDirectionalLightActor(T3DFile& f, LevelExportContext& ctx, UDirectionalLight* actor);
-void ExportSkyLightActor(T3DFile& f, LevelExportContext& ctx, USkyLight* actor);
-void ExportHeightFogActor(T3DFile& f, LevelExportContext& ctx, UHeightFog* actor);
-void ExportEmitterActor(T3DFile& f, LevelExportContext& ctx, UEmitter* actor);
+void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor);
 void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor);
+
+ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UStaticMeshComponent* component = Cast<UStaticMeshComponent>(acomp);
+  if (!component || !component->StaticMesh)
+  {
+    return;
+  }
+  SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials());
+  std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
+  std::error_code err;
+  if (!std::filesystem::exists(path, err))
+  {
+    std::filesystem::create_directories(path, err);
+  }
+  if (std::filesystem::exists(path, err))
+  {
+    std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
+    path /= fbxName;
+    path.replace_extension("fbx");
+    if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
+    {
+      FbxUtils utils;
+      FbxExportContext fbxCtx;
+      fbxCtx.Path = path.wstring();
+      fbxCtx.ExportLods = ctx.Config.ExportLods;
+      fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
+      utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
+    }
+    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
+  }
+  AddCommonPrimitiveComponentParameters(f, component);
+};
+
+ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(acomp);
+  if (!component || !component->SkeletalMesh)
+  {
+    return;
+  }
+  SaveMaterialMap(component, ctx, component->SkeletalMesh->GetMaterials());
+  std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
+  std::error_code err;
+  if (!std::filesystem::exists(path, err))
+  {
+    std::filesystem::create_directories(path, err);
+  }
+  if (std::filesystem::exists(path, err))
+  {
+    std::string fbxName = component->SkeletalMesh->GetObjectName().UTF8();
+    path /= fbxName;
+    path.replace_extension("fbx");
+    if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
+    {
+      FbxUtils utils;
+      FbxExportContext fbxCtx;
+      fbxCtx.Path = path.wstring();
+      fbxCtx.ExportLods = ctx.Config.ExportLods;
+      fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
+      utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
+    }
+    f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
+  }
+  AddCommonPrimitiveComponentParameters(f, component);
+};
+
+ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  USpeedTreeComponent* component = Cast<USpeedTreeComponent>(acomp);
+  if (!component || !component->SpeedTree)
+  {
+    return;
+  }
+  std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
+  std::error_code err;
+  if (!std::filesystem::exists(path, err))
+  {
+    std::filesystem::create_directories(path, err);
+  }
+  if (std::filesystem::exists(path, err))
+  {
+    path /= component->SpeedTree->GetObjectName().UTF8();
+    path.replace_extension("spt");
+    if (!std::filesystem::exists(path, err))
+    {
+      void* sptData = nullptr;
+      FILE_OFFSET sptDataSize = 0;
+      component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
+      std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
+      s.write((const char*)sptData, sptDataSize);
+      free(sptData);
+    }
+    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
+  }
+  AddCommonPrimitiveComponentParameters(f, component);
+};
+
+ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UPointLightComponent* component = Cast<UPointLightComponent>(acomp);
+  if (!component)
+  {
+    return;
+  }
+  f.AddFloat("LightFalloffExponent", component->FalloffExponent);
+  f.AddFloat("Intensity", component->Brightness* ctx.Config.PointLightMul);
+  f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
+  f.AddFloat("AttenuationRadius", component->Radius);
+  f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
+  f.AddColor("LightColor", component->LightColor);
+  f.AddBool("CastShadows", component->CastShadows);
+  f.AddBool("CastStaticShadows", component->CastStaticShadows);
+  f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+  if (!component->bEnabled)
+  {
+    f.AddBool("bAffectsWorld", false);
+  }
+  if (component->LightGuid.IsValid())
+  {
+    f.AddGuid("LightGuid", component->LightGuid);
+  }
+};
+
+ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  USpotLightComponent* component = Cast<USpotLightComponent>(acomp);
+  if (!component)
+  {
+    return;
+  }
+  f.AddFloat("LightFalloffExponent", component->FalloffExponent);
+  f.AddFloat("Intensity", component->Brightness* ctx.Config.SpotLightMul);
+  f.AddFloat("InnerConeAngle", component->InnerConeAngle);
+  f.AddFloat("OuterConeAngle", component->OuterConeAngle);
+  f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
+  f.AddFloat("AttenuationRadius", component->Radius);
+  f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
+  f.AddColor("LightColor", component->LightColor);
+  f.AddBool("CastShadows", component->CastShadows);
+  f.AddBool("CastStaticShadows", component->CastStaticShadows);
+  f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+  if (!component->bEnabled)
+  {
+    f.AddBool("bAffectsWorld", false);
+  }
+  if (component->LightGuid.IsValid())
+  {
+    f.AddGuid("LightGuid", component->LightGuid);
+  }
+};
+
+ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(acomp);
+  if (!component)
+  {
+    return;
+  }
+  f.AddFloat("Intensity", component->Brightness * ctx.Config.SpotLightMul);
+  f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
+  f.AddColor("LightColor", component->LightColor);
+  f.AddBool("CastShadows", component->CastShadows);
+  f.AddBool("CastStaticShadows", component->CastStaticShadows);
+  f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+  if (!component->bEnabled)
+  {
+    f.AddBool("bAffectsWorld", false);
+  }
+  if (component->LightGuid.IsValid())
+  {
+    f.AddGuid("LightGuid", component->LightGuid);
+  }
+};
+
+ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  USkyLightComponent* component = Cast<USkyLightComponent>(acomp);
+  if (!component)
+  {
+    return;
+  }
+  if (component->LowerBrightness)
+  {
+    FLinearColor lowColor = component->LowerColor;
+    f.AddLinearColor("LowerHemisphereColor", lowColor * component->LowerBrightness);
+  }
+  f.AddFloat("Intensity", component->Brightness * ctx.Config.SpotLightMul);
+  f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
+  f.AddColor("LightColor", component->LightColor);
+  f.AddBool("CastShadows", component->CastShadows);
+  f.AddBool("CastStaticShadows", component->CastStaticShadows);
+  f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
+  if (!component->bEnabled)
+  {
+    f.AddBool("bAffectsWorld", false);
+  }
+  if (component->LightGuid.IsValid())
+  {
+    f.AddGuid("LightGuid", component->LightGuid);
+  }
+};
+
+ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UHeightFogComponent* component = Cast<UHeightFogComponent>(acomp);
+  if (!component)
+  {
+    return;
+  }
+  f.AddFloat("FogDensity", component->Density);
+  f.AddFloat("StartDistance", component->StartDistance);
+  f.AddFloat("FogCutoffDistance", component->ExtinctionDistance);
+  f.AddLinearColor("FogInscatteringColor", component->LightColor);
+};
+
+struct T3DComponent {
+  enum class ComponentMobility {
+    Static = 0,
+    Stationary,
+    Movable
+  };
+
+  FString Name;
+  FString Class;
+
+  FVector Location;
+  FRotator Rotation;
+  FVector Scale3D = FVector::One;
+  float Scale = 1.f;
+
+  ComponentMobility Mobility = ComponentMobility::Static;
+  bool IsInstance = false;
+
+  ComponentDataFunc DataFunc;
+  UActorComponent* ActorComponent = nullptr;
+  T3DComponent* Parent = nullptr;
+
+  T3DComponent() = default;
+
+  T3DComponent(UActorComponent* comp)
+    : Name(comp->GetObjectName())
+    , Class(comp->GetClassName())
+    , Location(comp->Translation)
+    , Rotation(comp->Rotation)
+    , Scale3D(comp->Scale3D)
+    , Scale(comp->Scale)
+    , ActorComponent(comp)
+  {}
+
+  T3DComponent(UActorComponent* comp, ComponentDataFunc& func)
+    : Name(comp->GetObjectName())
+    , Class(comp->GetClassName())
+    , Location(comp->Translation)
+    , Rotation(comp->Rotation)
+    , Scale3D(comp->Scale3D)
+    , Scale(comp->Scale)
+    , DataFunc(func)
+    , ActorComponent(comp)
+  {}
+
+  // RootTransform
+  T3DComponent(UActor* actor)
+    : Name("RootTransform")
+    , Class("SceneComponent")
+    , Location(actor->GetLocation())
+    , Rotation(actor->Rotation)
+    , Scale3D(actor->DrawScale3D)
+    , Scale(actor->DrawScale)
+  {}
+
+  void Declare(T3DFile& f) const
+  {
+    f.Begin("Object", Class.UTF8().c_str(), Name.UTF8().c_str());
+    f.End();
+  }
+
+  bool NeedsParent() const
+  {
+    return !Location.IsZero() || !Rotation.IsZero() || Scale3D != FVector::One || Scale != 1.f;
+  }
+
+  void TakeActorTransform(UActor* actor)
+  {
+    if (!actor)
+    {
+      return;
+    }
+    Location = actor->GetLocation();
+    Rotation = actor->Rotation;
+    Scale3D = actor->DrawScale3D;
+    Scale = actor->DrawScale;
+  }
+
+  void TakeComponentTransform(UActorComponent* component)
+  {
+    if (!component)
+    {
+      return;
+    }
+    Location = component->Translation;
+    Rotation = component->Rotation;
+    Scale3D = component->Scale3D;
+    Scale = component->Scale;
+  }
+
+  void Define(T3DFile& f, LevelExportContext& ctx) const
+  {
+    f.Begin("Object", nullptr, Name.UTF8().c_str());
+    if (DataFunc && ActorComponent)
+    {
+      DataFunc(f, ctx, ActorComponent);
+    }
+    if (!Location.IsZero())
+    {
+      f.AddPosition(Location);
+    }
+    if (Scale3D.X < 0.f && Cast<USpotLightComponent>(ActorComponent))
+    {
+      FRotator inv = Rotation;
+      inv.Pitch += 0x8000;
+      f.AddRotation(inv);
+    }
+    else if (!Rotation.IsZero())
+    {
+      f.AddRotation(Rotation);
+    }
+    if (Scale3D != FVector::One || Scale != 1.f)
+    {
+      if (!Cast<USpotLightComponent>(ActorComponent))
+      {
+        f.AddScale(Scale3D, Scale);
+      }
+    }
+    if (IsInstance)
+    {
+      f.AddCustom("CreationMethod", "Instance");
+    }
+    if (Parent)
+    {
+      f.AddCustom("AttachParent", FString::Sprintf("%s'\"%s\"'", Parent->Class.UTF8().c_str(), Parent->Name.UTF8().c_str()).UTF8().c_str());
+    }
+    else if (IsInstance)
+    {
+      // Don't show root instance
+      f.AddBool("bVisualizeComponent", false);
+    }
+    switch (Mobility)
+    {
+    case ComponentMobility::Static:
+      f.AddCustom("Mobility", "Static");
+      break;
+    case ComponentMobility::Stationary:
+      f.AddCustom("Mobility", "Stationary");
+      break;
+    case ComponentMobility::Movable:
+      f.AddCustom("Mobility", "Movable");
+      break;
+    }
+    f.End();
+  }
+
+  ComponentDataFunc Data;
+};
+
+struct T3DActor {
+  FString Name;
+  FString Class;
+  FString Type;
+
+  std::list<T3DComponent> Components;
+  T3DComponent* RootComponent = nullptr;
+  std::map<FString, T3DComponent*> Properties;
+
+  bool ConfigureStaticMeshActor(UStaticMeshActor* actor)
+  {
+    if (!actor || !actor->StaticMeshComponent || !actor->StaticMeshComponent->StaticMesh)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->StaticMeshComponent, ExportStaticMeshComponentData);
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "StaticMeshActor";
+      RootComponent = &component;
+      Properties["StaticMeshComponent"] = &component;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureInterpActor(UInterpActor* actor)
+  {
+    if (!actor || !actor->StaticMeshComponent || !actor->StaticMeshComponent->StaticMesh)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->StaticMeshComponent, ExportStaticMeshComponentData);
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "StaticMeshActor";
+      RootComponent = &component;
+      Properties["StaticMeshComponent"] = &component;
+    }
+    component.Mobility = T3DComponent::ComponentMobility::Movable;
+    RootComponent->Mobility = T3DComponent::ComponentMobility::Movable;
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureSpeedTreeActor(USpeedTreeActor* actor)
+  {
+    if (!actor || !actor->SpeedTreeComponent || !actor->SpeedTreeComponent->SpeedTree)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->SpeedTreeComponent, ExportSpeedTreeComponentData);
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "StaticMeshActor";
+      RootComponent = &component;
+      Properties["StaticMeshComponent"] = &component;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureSkelMeshActor(USkeletalMeshActor* actor)
+  {
+    if (!actor || !actor->SkeletalMeshComponent || !actor->SkeletalMeshComponent->SkeletalMesh)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->SkeletalMeshComponent, ExportSkeletalMeshComponentData);
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "SkeletalMeshActor";
+      RootComponent = &component;
+      Properties["SkeletalMeshComponent"] = &component;
+    }
+    component.Mobility = T3DComponent::ComponentMobility::Movable;
+    RootComponent->Mobility = T3DComponent::ComponentMobility::Movable;
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigurePointLightActor(UPointLight* actor)
+  {
+    if (!actor || !actor->LightComponent)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportPointLightComponentData);
+    component.Name = "LightComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "PointLight";
+      RootComponent = &component;
+      Properties["LightComponent"] = &component;
+      Properties["PointLightComponent"] = &component;
+    }
+    if (actor->GetClassName() == UPointLightMovable::StaticClassName())
+    {
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Movable;
+      component.Mobility = T3DComponent::ComponentMobility::Movable;
+    }
+    else if (actor->GetClassName() == UPointLightToggleable::StaticClassName())
+    {
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Stationary;
+      component.Mobility = T3DComponent::ComponentMobility::Stationary;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureSpotLightActor(USpotLight* actor)
+  {
+    if (!actor || !actor->LightComponent)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportSpotLightComponentData);
+    component.Name = "LightComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "SpotLight";
+      RootComponent = &component;
+      Properties["LightComponent"] = &component;
+      Properties["SpotLightComponent"] = &component;
+    }
+    if (actor->GetClassName() == USpotLightMovable::StaticClassName())
+    {
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Movable;
+      component.Mobility = T3DComponent::ComponentMobility::Movable;
+    }
+    else if (actor->GetClassName() == USpotLightToggleable::StaticClassName())
+    {
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Stationary;
+      component.Mobility = T3DComponent::ComponentMobility::Stationary;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureDirectionalLightActor(UDirectionalLight* actor)
+  {
+    if (!actor || !actor->LightComponent)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportDirectionalLightComponentData);
+    component.Name = "LightComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "DirectionalLight";
+      RootComponent = &component;
+      Properties["LightComponent"] = &component;
+      Properties["DirectionalLightComponent"] = &component;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureSkyLightActor(USkyLight* actor)
+  {
+    if (!actor || !actor->LightComponent)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportSkyLightComponentData);
+    component.Name = "LightComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "SkyLight";
+      RootComponent = &component;
+      Properties["LightComponent"] = &component;
+      Properties["SkyLightComponent"] = &component;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureHeightFogActor(UHeightFog* actor)
+  {
+    if (!actor || !actor->Component)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    T3DComponent& component = Components.emplace_back(actor->Component, ExportHeightFogComponentData);
+    component.Name = "ExponentialHeightFogComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "ExponentialHeightFog";
+      RootComponent = &component;
+      Properties["ExponentialHeightFogComponent"] = &component;
+    }
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureEmitterActor(UEmitter* actor)
+  {
+    if (!actor)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    Class = "Actor";
+    T3DComponent& component = Components.emplace_back();
+    component.Name = "EmitterComponent0";
+    component.Class = "SceneComponent";
+    RootComponent = &component;
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigurePrefabInstance(UPrefabInstance* actor)
+  {
+    if (!actor)
+    {
+      return false;
+    }
+    Name = actor->GetObjectName();
+    Class = "Actor";
+
+    UPrefab* prefab = Cast<UPrefab>(actor->TemplatePrefab);
+    if (!prefab)
+    {
+      return false;
+    }
+    prefab->Load();
+
+    if (prefab->PrefabArchetypes.empty())
+    {
+      return false;
+    }
+
+    RootComponent = &Components.emplace_back(actor);
+    RootComponent->IsInstance = true;
+
+    for (UObject* archertype : prefab->PrefabArchetypes)
+    {
+      T3DActor tmp;
+      if (UStaticMeshActor* typed = Cast<UStaticMeshActor>(archertype))
+      {
+        if (!typed->StaticMeshComponent || !typed->StaticMeshComponent->StaticMesh)
+        {
+          continue;
+        }
+        T3DComponent component(typed->StaticMeshComponent, ExportStaticMeshComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (USkeletalMeshActor* typed = Cast<USkeletalMeshActor>(archertype))
+      {
+        if (!typed->SkeletalMeshComponent || !typed->SkeletalMeshComponent->SkeletalMesh)
+        {
+          continue;
+        }
+        T3DComponent component(typed->SkeletalMeshComponent, ExportSkeletalMeshComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (UInterpActor* typed = Cast<UInterpActor>(archertype))
+      {
+        if (!typed->StaticMeshComponent || !typed->StaticMeshComponent->StaticMesh)
+        {
+          continue;
+        }
+        T3DComponent component(typed->StaticMeshComponent, ExportStaticMeshComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (USpeedTreeActor* typed = Cast<USpeedTreeActor>(archertype))
+      {
+        if (!typed->SpeedTreeComponent || !typed->SpeedTreeComponent->SpeedTree)
+        {
+          continue;
+        }
+        T3DComponent component(typed->SpeedTreeComponent, ExportSpeedTreeComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (UPointLight* typed = Cast<UPointLight>(archertype))
+      {
+        if (!typed->LightComponent)
+        {
+          continue;
+        }
+        T3DComponent component(typed->LightComponent, ExportPointLightComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (USpotLight* typed = Cast<USpotLight>(archertype))
+      {
+        if (!typed->LightComponent)
+        {
+          continue;
+        }
+        T3DComponent component(typed->LightComponent, ExportSpotLightComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (UDirectionalLight* typed = Cast<UDirectionalLight>(archertype))
+      {
+        if (!typed->LightComponent)
+        {
+          continue;
+        }
+        T3DComponent component(typed->LightComponent, ExportDirectionalLightComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (USkyLight* typed = Cast<USkyLight>(archertype))
+      {
+        if (!typed->LightComponent)
+        {
+          continue;
+        }
+        T3DComponent component(typed->LightComponent, ExportSkyLightComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (UHeightFog* typed = Cast<UHeightFog>(archertype))
+      {
+        if (!typed->Component)
+        {
+          continue;
+        }
+        T3DComponent component(typed->Component, ExportHeightFogComponentData);
+        component.IsInstance = true;
+        if (component.NeedsParent())
+        {
+          T3DComponent& root = Components.emplace_back(typed);
+          root.IsInstance = true;
+          root.Parent = RootComponent;
+          component.Parent = &root;
+        }
+        else
+        {
+          component.Name = typed->GetObjectName();
+          component.TakeActorTransform(typed);
+          component.Parent = RootComponent;
+        }
+        Components.push_back(component);
+      }
+      else if (UEmitter* typed = Cast<UEmitter>(archertype))
+      {
+        T3DComponent& component = Components.emplace_back(typed);
+        component.Name = typed->GetObjectName();
+        component.Class = "SceneComponent";
+        component.IsInstance = true;
+        component.Parent = RootComponent;
+      }
+      else
+      {
+        LogW("Prefab archertype %s is not supported!", actor->GetClassName().UTF8().c_str());
+        continue;
+      }
+    }
+
+    return Components.size() > 1;
+  }
+};
 
 void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
 {
@@ -61,23 +939,26 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   auto worldInner = world->GetInner();
   std::vector<ULevel*> levels = { Level };
   int maxProgress = Level->GetActorsCount();
-  
-  for (UObject* inner : worldInner)
-  {
-    if (ULevelStreaming* streamedLevel = Cast<ULevelStreaming>(inner))
-    {
-      streamedLevel->Load();
-      if (streamedLevel->Level && streamedLevel->Level != Level)
-      {
-        levels.push_back(streamedLevel->Level);
-        maxProgress += streamedLevel->Level->GetActorsCount();
-      }
-    }
-  }
-  ProgressWindow progress(this, "Exporting");
-  progress.SetMaxProgress(maxProgress);
+  ProgressWindow progress(this, "Please wait...");
+  progress.SetActionText("Preparing...");
 
   std::thread([&] {
+
+    for (UObject* inner : worldInner)
+    {
+      if (ULevelStreaming* streamedLevel = Cast<ULevelStreaming>(inner))
+      {
+        streamedLevel->Load();
+        if (streamedLevel->Level && streamedLevel->Level != Level)
+        {
+          levels.push_back(streamedLevel->Level);
+          maxProgress += streamedLevel->Level->GetActorsCount();
+        }
+      }
+    }
+
+    SendEvent(&progress, UPDATE_MAX_PROGRESS, maxProgress);
+
     T3DFile file;
     if (!ctx.Config.SplitT3D)
     {
@@ -150,7 +1031,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       SendEvent(progress, UPDATE_PROGRESS, ctx.CurrentProgress);
       if (actor)
       {
-        FString name = level->GetPackage()->GetPackageName() + "/" + actor->GetObjectName();
+        FString name = level->GetPackage()->GetPackageName() + "\\" + actor->GetObjectName();
         SendEvent(progress, UPDATE_PROGRESS_DESC, wxString(L"Exporting: " + name.WString()));
       }
     }
@@ -158,95 +1039,21 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
     {
       continue;
     }
-
-    const FString className = actor->GetClassName();
-    if (className == UStaticMeshActor::StaticClassName())
-    {
-      if (!ctx.Config.Statics)
-      {
-        continue;
-      }
-      ExportStaticMeshActor(f, ctx, Cast<UStaticMeshActor>(actor));
-    }
-    else if (className == USkeletalMeshActor::StaticClassName())
-    {
-      if (!ctx.Config.Skeletals)
-      {
-        continue;
-      }
-      ExportSkeletalMeshActor(f, ctx, Cast<USkeletalMeshActor>(actor));
-    }
-    else if (className == UInterpActor::StaticClassName())
-    {
-      if (!ctx.Config.Interps)
-      {
-        continue;
-      }
-      ExportInterpActor(f, ctx, Cast<UInterpActor>(actor));
-    }
-    else if (className == USpeedTreeActor::StaticClassName())
-    {
-      if (!ctx.Config.SpeedTrees)
-      {
-        continue;
-      }
-      ExportSpeedTreeActor(f, ctx, Cast<USpeedTreeActor>(actor));
-    }
-    else if (className == UPointLight::StaticClassName() || className == UPointLightMovable::StaticClassName() || className == UPointLightToggleable::StaticClassName())
-    {
-      if (!ctx.Config.PointLights)
-      {
-        continue;
-      }
-      ExportPointLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<UPointLight>(actor));
-    }
-    else if (className == USpotLight::StaticClassName() || className == USpotLightMovable::StaticClassName() || className == USpotLightToggleable::StaticClassName())
-    {
-      if (!ctx.Config.SpotLights)
-      {
-        continue;
-      }
-      ExportSpotLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<USpotLight>(actor));
-    }
-    else if (className == UDirectionalLight::StaticClassName() || className == UDirectionalLightToggleable::StaticClassName())
-    {
-      if (!ctx.Config.DirectionalLights)
-      {
-        continue;
-      }
-      ExportDirectionalLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<UDirectionalLight>(actor));
-    }
-    else if (className == USkyLight::StaticClassName() || className == USkyLightToggleable::StaticClassName())
-    {
-      if (!ctx.Config.SkyLights)
-      {
-        continue;
-      }
-      ExportSkyLightActor(ctx.Config.SplitT3D ? f : lightF, ctx, Cast<USkyLight>(actor));
-    }
-    else if (className == UHeightFog::StaticClassName())
-    {
-      if (!ctx.Config.HeightFog)
-      {
-        continue;
-      }
-      ExportHeightFogActor(f, ctx, Cast<UHeightFog>(actor));
-    }
-    else if (className == UEmitter::StaticClassName())
-    {
-      if (!ctx.Config.Emitters)
-      {
-        continue;
-      }
-      ExportEmitterActor(f, ctx, Cast<UEmitter>(actor));
-    }
-    else if (className == UTerrain::StaticClassName())
+    if (actor->GetClassName() == UTerrain::StaticClassName())
     {
       if (!ctx.Config.Terrains)
       {
         continue;
       }
       ExportTerrainActor(f, ctx, Cast<UTerrain>(actor));
+    }
+    if (!ctx.Config.SplitT3D && Cast<ULight>(actor))
+    {
+      ExportActor(lightF, ctx, actor);
+    }
+    else
+    {
+      ExportActor(f, ctx, actor);
     }
   }
 
@@ -631,51 +1438,6 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
   return true;
 }
 
-void AddCommonActorParameters(T3DFile& f, UActor* actor)
-{
-  f.AddString("ActorLabel", (actor->GetPackage()->GetPackageName() + "_" + actor->GetObjectName()).UTF8().c_str());
-  f.AddString("FolderPath", actor->GetPackage()->GetPackageName().UTF8().c_str());
-  auto layers = actor->GetLayers();
-  for (int32 idx = 0; idx < layers.size(); ++idx)
-  {
-    f.AddString(FString::Sprintf("Layers(%d)", idx).UTF8().c_str(), W2A(layers[idx].WString()).c_str());
-  }
-}
-
-void AddCommonActorComponentParameters(T3DFile& f, UActor* actor, UActorComponent* component, LevelExportContext& ctx)
-{
-  FVector position;
-  FRotator rotation;
-  FVector scale3D;
-  float scale = 1.;
-  if (ctx.Config.BakeComponentTransform || (component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1,1,1)))
-  {
-    position = actor->Location;
-    rotation = actor->Rotation;
-    scale3D = actor->DrawScale3D;
-    scale = actor->DrawScale;
-  }
-  else
-  {
-    position = component->Translation;
-    rotation = component->Rotation;
-    scale3D = component->Scale3D;
-    scale = component->Scale;
-  }
-  f.AddPosition(position);
-  f.AddRotation(rotation.Normalized());
-  f.AddScale(scale3D, scale);
-  if (actor->bHidden && !ctx.Config.IgnoreHidden)
-  {
-    f.AddBool("bVisible", false);
-  }
-  if (!actor->bCollideActors && ctx.Config.ConvexCollisions)
-  {
-    f.AddBool("bUseDefaultCollision", false);
-    f.AddCustom("BodyInstance", "(CollisionEnabled=NoCollision,CollisionProfileName=\"NoCollision\")");
-  }
-}
-
 void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* component)
 {
   if (component->MinDrawDistance)
@@ -699,48 +1461,13 @@ void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* comp
   }
 }
 
-void AddCommonLightComponentParameters(T3DFile& f, ULightComponent* component)
+void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials)
 {
-  f.AddGuid("LightGuid", component->LightGuid);
-  f.AddColor("LightColor", component->LightColor);
-  f.AddBool("CastShadows", component->CastShadows);
-  f.AddBool("CastStaticShadows", component->CastStaticShadows);
-  f.AddBool("CastDynamicShadows", component->CastDynamicShadows);
-  if (!component->bEnabled)
+  if (!component)
   {
-    f.AddBool("bAffectsWorld", false);
+    return;
   }
-}
-
-void GetUniqueFbxName(UActor* actor, UActorComponent* comp, LevelExportContext& ctx, std::string& outObjectName)
-{
-  if (ctx.Config.BakeComponentTransform)
-  {
-    LevelExportContext::ComponentTransform t;
-    t.PrePivot = actor->PrePivot;
-    t.Translation = comp->Translation;
-    t.Rotation = comp->Rotation;
-    t.Scale3D = comp->Scale3D;
-    t.Scale = comp->Scale;
-
-    auto& transforms = ctx.FbxComponentTransformMap[outObjectName];
-    for (size_t idx = 0; idx < transforms.size(); ++idx)
-    {
-      if (transforms[idx] == t)
-      {
-        // Found a name with the same offset. Use it.
-        outObjectName += "_" + std::to_string(idx);
-        return;
-      }
-    }
-    // Add a new name and transform.
-    outObjectName += "_" + std::to_string(transforms.size());
-    transforms.push_back(t);
-  }
-}
-
-void SaveMaterialMap(UActor* actor, UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials)
-{
+  UActor* actor = Cast<UActor>(component->GetOuter());
   std::vector<UObject*> materialsToSave = materials;
   for (int matIdx = 0; matIdx < component->Materials.size(); ++matIdx)
   {
@@ -755,14 +1482,14 @@ void SaveMaterialMap(UActor* actor, UMeshComponent* component, LevelExportContex
     if (materialsToSave.size())
     {
       std::error_code err;
-      std::filesystem::path path = ctx.GetMaterialMapDir() / actor->GetPackage()->GetPackageName().UTF8();
+      std::filesystem::path path = ctx.GetMaterialMapDir() / (actor ? (UObject*)actor : (UObject*)component)->GetPackage()->GetPackageName().UTF8();
       if (!std::filesystem::exists(path, err))
       {
         std::filesystem::create_directories(path, err);
       }
       if (std::filesystem::exists(path, err))
       {
-        path /= actor->GetObjectName().UTF8();
+        path /= (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
         path.replace_extension("txt");
 
         if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
@@ -787,720 +1514,183 @@ void SaveMaterialMap(UActor* actor, UMeshComponent* component, LevelExportContex
   }
 }
 
-void ExportStaticMeshActor(T3DFile& f, LevelExportContext& ctx, UStaticMeshActor* actor)
+void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
 {
-  if (!actor || !actor->StaticMeshComponent)
+  if (!untypedActor)
   {
     return;
   }
-  
-  actor->StaticMeshComponent->Load();
-
-  if (!actor->StaticMeshComponent->StaticMesh)
+  T3DActor exportItem;
+  if (UStaticMeshActor* actor = Cast<UStaticMeshActor>(untypedActor))
   {
-    return;
-  }
-
-  UStaticMeshComponent* component = actor->StaticMeshComponent;
-  if (!component)
-  {
-    return;
-  }
-
-  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
-    f.End();
-    if (addFakeRoot)
+    if (!ctx.Config.Statics)
     {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
+      return;
     }
-    f.Begin("Object", nullptr, "StaticMeshComponent0");
+    if (!exportItem.ConfigureStaticMeshActor(actor))
     {
-      if (component->StaticMesh)
-      {
-        SaveMaterialMap(actor, component, ctx, component->StaticMesh->GetMaterials());
+      return;
+    }
+  }
+  else if (USkeletalMeshActor* actor = Cast<USkeletalMeshActor>(untypedActor))
+  {
+    if (!ctx.Config.Skeletals)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureSkelMeshActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UInterpActor* actor = Cast<UInterpActor>(untypedActor))
+  {
+    if (!ctx.Config.Interps)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureInterpActor(actor))
+    {
+      return;
+    }
+  }
+  else if (USpeedTreeActor* actor = Cast<USpeedTreeActor>(untypedActor))
+  {
+    if (!ctx.Config.SpeedTrees)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureSpeedTreeActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UPointLight* actor = Cast<UPointLight>(untypedActor))
+  {
+    if (!ctx.Config.PointLights)
+    {
+      return;
+    }
+    if (!exportItem.ConfigurePointLightActor(actor))
+    {
+      return;
+    }
+  }
+  else if (USpotLight* actor = Cast<USpotLight>(untypedActor))
+  {
+    if (!ctx.Config.SpotLights)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureSpotLightActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UDirectionalLight* actor = Cast<UDirectionalLight>(untypedActor))
+  {
+    if (!ctx.Config.DirectionalLights)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureDirectionalLightActor(actor))
+    {
+      return;
+    }
+  }
+  else if (USkyLight* actor = Cast<USkyLight>(untypedActor))
+  {
+    if (!ctx.Config.SkyLights)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureSkyLightActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UHeightFog* actor = Cast<UHeightFog>(untypedActor))
+  {
+    if (!ctx.Config.HeightFog)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureHeightFogActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UEmitter* actor = Cast<UEmitter>(untypedActor))
+  {
+    if (!ctx.Config.Emitters)
+    {
+      return;
+    }
+    if (!exportItem.ConfigureEmitterActor(actor))
+    {
+      return;
+    }
+  }
+  else if (UTerrain* actor = Cast<UTerrain>(untypedActor))
+  {
+    if (!ctx.Config.Terrains)
+    {
+      return;
+    }
+    ExportTerrainActor(f, ctx, actor);
+    return;
+  }
+  else if (UPrefabInstance* actor = Cast<UPrefabInstance>(untypedActor))
+  {
+    if (!ctx.Config.Prefabs)
+    {
+      return;
+    }
+    if (!exportItem.ConfigurePrefabInstance(actor))
+    {
+      return;
+    }
+  }
+  else
+  {
+    return;
+  }
 
-        std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
-        std::error_code err;
-        if (!std::filesystem::exists(path, err))
+  f.Begin("Actor", exportItem.Class.UTF8().c_str(), exportItem.Name.UTF8().c_str());
+  {
+    for (const T3DComponent& component : exportItem.Components)
+    {
+      component.Declare(f);
+    }
+    for (const T3DComponent& component : exportItem.Components)
+    {
+      component.Define(f, ctx);
+    }
+
+    f.AddCustom("RootComponent", FString::Sprintf("%s'\"%s\"'", exportItem.RootComponent->Class.UTF8().c_str(), exportItem.RootComponent->Name.UTF8().c_str()).UTF8().c_str());
+    for (const auto& p : exportItem.Properties)
+    {
+      f.AddCustom(p.first.UTF8().c_str(), FString::Sprintf("%s'\"%s\"'", p.second->Class.UTF8().c_str(), p.second->Name.UTF8().c_str()).UTF8().c_str());
+    }
+
+    {
+      int32 inctanceIdx = 0;
+      for (const T3DComponent& component : exportItem.Components)
+      {
+        if (component.IsInstance)
         {
-          std::filesystem::create_directories(path, err);
-        }
-        if (std::filesystem::exists(path, err))
-        {
-          std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
-          GetUniqueFbxName(actor, component, ctx, fbxName);
-          path /= fbxName;
-          path.replace_extension("fbx");
-          if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
-          {
-            FbxUtils utils;
-            FbxExportContext fbxCtx;
-            fbxCtx.Path = path.wstring();
-            fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
-            fbxCtx.PrePivot = actor->PrePivot;
-            fbxCtx.Translation = component->Translation;
-            fbxCtx.Rotation = component->Rotation;
-            fbxCtx.Scale3D = component->Scale3D * component->Scale;
-            fbxCtx.ExportLods = ctx.Config.ExportLods;
-            fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
-            utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
-          }
-          f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
-        }
-      }
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", "Static");
-      }
-      AddCommonPrimitiveComponentParameters(f, component);
-      AddCommonActorComponentParameters(f, actor, component, ctx);
-    }
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", "Static");
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
-    }
-    else
-    {
-      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-      f.AddString("RootComponent", "StaticMeshComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportSkeletalMeshActor(T3DFile& f, LevelExportContext& ctx, USkeletalMeshActor* actor)
-{
-  if (!actor || !actor->SkeletalMeshComponent)
-  {
-    return;
-  }
-
-  actor->SkeletalMeshComponent->Load();
-  
-  if (!actor->SkeletalMeshComponent->SkeletalMesh)
-  {
-    return;
-  }
-
-  USkeletalMeshComponent* component = actor->SkeletalMeshComponent;
-
-  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "SkeletalMeshActor", FString::Sprintf("SkeletalMeshActor_%d", ctx.SkeletalMeshActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "SkeletalMeshComponent", "SkeletalMeshComponent0");
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
-    }
-    f.Begin("Object", nullptr, "SkeletalMeshComponent0");
-    {
-      if (component->SkeletalMesh)
-      {
-        std::vector<UObject*> materials = component->SkeletalMesh->GetMaterials();
-        SaveMaterialMap(actor, component, ctx, materials);
-
-        std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
-        std::error_code err;
-        if (!std::filesystem::exists(path, err))
-        {
-          std::filesystem::create_directories(path, err);
-        }
-        if (std::filesystem::exists(path, err))
-        {
-          std::string fbxName = component->SkeletalMesh->GetObjectName().UTF8();
-          GetUniqueFbxName(actor, component, ctx, fbxName);
-          path /= fbxName;
-          path.replace_extension("fbx");
-          if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
-          {
-            FbxUtils utils;
-            FbxExportContext fbxCtx;
-            fbxCtx.Path = path.wstring();
-            fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
-            fbxCtx.PrePivot = actor->PrePivot;
-            fbxCtx.Translation = component->Translation;
-            fbxCtx.Rotation = component->Rotation;
-            fbxCtx.Scale3D = component->Scale3D * component->Scale;
-            fbxCtx.ExportLods = ctx.Config.ExportLods;
-            utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
-          }
-          f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
-        }
-      }
-      f.AddCustom("ClothingSimulationFactory", "Class'\"/Script/ClothingSystemRuntimeNv.ClothingSimulationFactoryNv\"'");
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-      }
-      AddCommonPrimitiveComponentParameters(f, component);
-      AddCommonActorComponentParameters(f, actor, component, ctx);
-    }
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
-    }
-    else
-    {
-      f.AddString("SkeletalMeshComponent", "SkeletalMeshComponent0");
-      f.AddString("RootComponent", "SkeletalMeshComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "SkeletalMeshComponent'\"SkeletalMeshComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportInterpActor(T3DFile& f, LevelExportContext& ctx, UInterpActor* actor)
-{
-  if (!actor || !actor->StaticMeshComponent)
-  {
-    return;
-  }
-  
-  actor->StaticMeshComponent->Load();
-  
-  if (!actor->StaticMeshComponent->StaticMesh)
-  {
-    return;
-  }
-
-  UStaticMeshComponent* component = actor->StaticMeshComponent;
-
-  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.StaticMeshActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
-    }
-    f.Begin("Object", nullptr, "StaticMeshComponent0");
-    {
-      if (component->StaticMesh)
-      {
-        SaveMaterialMap(actor, component, ctx, component->StaticMesh->GetMaterials());
-
-        std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
-        std::error_code err;
-        if (!std::filesystem::exists(path, err))
-        {
-          std::filesystem::create_directories(path, err);
-        }
-        if (std::filesystem::exists(path, err))
-        {
-          std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
-          GetUniqueFbxName(actor, component, ctx, fbxName);
-          path /= fbxName;
-          path.replace_extension("fbx");
-          if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
-          {
-            FbxUtils utils;
-            FbxExportContext fbxCtx;
-            fbxCtx.Path = path.wstring();
-            fbxCtx.ApplyRootTransform = ctx.Config.BakeComponentTransform;
-            fbxCtx.PrePivot = actor->PrePivot;
-            fbxCtx.Translation = component->Translation;
-            fbxCtx.Rotation = component->Rotation;
-            fbxCtx.Scale3D = component->Scale3D * component->Scale;
-            fbxCtx.ExportLods = ctx.Config.ExportLods;
-            fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
-            utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
-          }
-          f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
+          f.AddCustom(FString::Sprintf("InstanceComponents(%d)", inctanceIdx++).UTF8().c_str(), FString::Sprintf("%s'\"%s\"'", component.Class.UTF8().c_str(), component.Name.UTF8().c_str()).UTF8().c_str());
         }
       }
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-      }
-      f.AddString("Mobility", "Movable");
-      AddCommonPrimitiveComponentParameters(f, component);
-      AddCommonActorComponentParameters(f, actor, component, ctx);
     }
-    f.End();
-    if (addFakeRoot)
+    f.AddString("ActorLabel", (untypedActor->GetPackage()->GetPackageName() + "_" + untypedActor->GetObjectName()).UTF8().c_str());
+    f.AddString("FolderPath", untypedActor->GetPackage()->GetPackageName().UTF8().c_str());
+    auto layers = untypedActor->GetLayers();
+    layers.push_back("RE_All");
+    for (int32 idx = 0; idx < layers.size(); ++idx)
     {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", "Movable");
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
+      f.AddString(FString::Sprintf("Layers(%d)", idx).UTF8().c_str(), W2A(layers[idx].WString()).c_str());
     }
-    else
-    {
-      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-      f.AddString("RootComponent", "StaticMeshComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportSpeedTreeActor(T3DFile& f, LevelExportContext& ctx, USpeedTreeActor* actor)
-{
-  if (!actor || !actor->SpeedTreeComponent)
-  {
-    return;
-  }
-
-  USpeedTreeComponent* component = actor->SpeedTreeComponent;
-  component->Load();
-
-  if (!component->SpeedTree)
-  {
-    return;
-  }
-  // TODO: material overrides
-  bool addFakeRoot = !ctx.Config.BakeComponentTransform && !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "StaticMeshActor", FString::Sprintf("StaticMeshActor_%d", ctx.SpeedTreeActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "StaticMeshComponent", "StaticMeshComponent0");
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
-    }
-    f.Begin("Object", nullptr, "StaticMeshComponent0");
-    {
-      std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
-      std::error_code err;
-      if (!std::filesystem::exists(path, err))
-      {
-        std::filesystem::create_directories(path, err);
-      }
-      if (std::filesystem::exists(path, err))
-      {
-        path /= component->SpeedTree->GetObjectName().UTF8();
-        path.replace_extension("spt");
-        if (!std::filesystem::exists(path, err))
-        {
-          void* sptData = nullptr;
-          FILE_OFFSET sptDataSize = 0;
-          component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
-          std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
-          s.write((const char*)sptData, sptDataSize);
-          free(sptData);
-        }
-        f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
-      }
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", "Static");
-      }
-      AddCommonPrimitiveComponentParameters(f, component);
-      AddCommonActorComponentParameters(f, actor, component, ctx);
-    }
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", "Static");
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
-    }
-    else
-    {
-      f.AddString("StaticMeshComponent", "StaticMeshComponent0");
-      f.AddString("RootComponent", "StaticMeshComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "StaticMeshComponent'\"StaticMeshComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportPointLightActor(T3DFile& f, LevelExportContext& ctx, UPointLight* actor)
-{
-  if (!actor || !actor->LightComponent)
-  {
-    return;
-  }
-
-  UPointLightComponent* component = Cast<UPointLightComponent>(actor->LightComponent);
-  if (!component)
-  {
-    return;
-  }
-
-  bool addFakeRoot = !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "PointLight", FString::Sprintf("PointLight_%d", ctx.PointLightActorsCount++).UTF8().c_str());
-  {
-    std::string mobility = "Static";
-    f.Begin("Object", "PointLightComponent", "LightComponent0");
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
-    }
-    f.Begin("Object", nullptr, "LightComponent0");
-    {
-      f.AddFloat("LightFalloffExponent", component->FalloffExponent);
-      f.AddFloat("Intensity", component->Brightness * ctx.Config.PointLightMul);
-      f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
-      f.AddFloat("AttenuationRadius", component->Radius);
-      f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-      }
-      AddCommonLightComponentParameters(f, component);
-      AddCommonActorComponentParameters(f, actor, component, ctx);
-      const FString className = actor->GetClassName().String();
-      if (className == UPointLightMovable::StaticClassName())
-      {
-        mobility = "Movable";
-      }
-      else if (className == UPointLightToggleable::StaticClassName())
-      {
-        mobility = "Stationary";
-      }
-      f.AddCustom("Mobility", mobility.c_str());
-    }
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", mobility.c_str());
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
-    }
-    else
-    {
-      f.AddString("PointLightComponent", "LightComponent0");
-      f.AddString("LightComponent", "LightComponent0");
-      f.AddString("RootComponent", "LightComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "PointLightComponent'\"LightComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportSpotLightActor(T3DFile& f, LevelExportContext& ctx, USpotLight* actor)
-{
-  if (!actor || !actor->LightComponent)
-  {
-    return;
-  }
-
-  USpotLightComponent* component = Cast<USpotLightComponent>(actor->LightComponent);
-  if (!component)
-  {
-    return;
-  }
-
-  bool addFakeRoot = !(component->Translation.IsZero() && component->Rotation.IsZero() && component->Scale3D == FVector(1, 1, 1));
-  f.Begin("Actor", addFakeRoot ? "Actor" : "SpotLight", FString::Sprintf("SpotLight_%d", ctx.SpotLightActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "SpotLightComponent", "LightComponent0");
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-      f.End();
-    }
-    else
-    {
-      f.Begin("Object", "ArrowComponent", "ArrowComponent0");
-      f.End();
-    }
-    std::string mobility = "Static";
-    f.Begin("Object", nullptr, "LightComponent0");
-    {
-      f.AddFloat("LightFalloffExponent", component->FalloffExponent);
-      f.AddFloat("Intensity", component->Brightness * ctx.Config.SpotLightMul);
-      f.AddFloat("InnerConeAngle", component->InnerConeAngle);
-      f.AddFloat("OuterConeAngle", component->OuterConeAngle);
-      f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
-      f.AddFloat("AttenuationRadius", component->Radius);
-      f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
-      AddCommonLightComponentParameters(f, component);
-      f.AddPosition(addFakeRoot ? actor->GetLocation() : actor->GetLocation() + component->Translation);
-      FRotator rotation = actor->Rotation;
-      if (actor->DrawScale3D.X < 0)
-      {
-        // UDK flips a spot light if it has a negative X scale.
-        // TODO: verify this works correctly
-        rotation = rotation.Normalized().GetInverse();
-      }
-      f.AddRotation(addFakeRoot ? rotation : rotation + component->Rotation);
-      const FString className = actor->GetClassName();
-      if (className == UPointLightMovable::StaticClassName())
-      {
-        mobility = "Movable";
-      }
-      else if (className == UPointLightToggleable::StaticClassName())
-      {
-        mobility = "Stationary";
-      }
-      f.AddCustom("Mobility", mobility.c_str());
-      if (addFakeRoot)
-      {
-        f.AddCustom("AttachParent", "SceneComponent'\"DefaultSceneRoot\"'");
-        f.AddString("CreationMethod", "Instance");
-      }
-    }
-    f.End();
-    if (addFakeRoot)
-    {
-      f.Begin("Object", nullptr, "DefaultSceneRoot");
-      {
-        f.AddPosition(actor->GetLocation());
-        f.AddRotation(actor->Rotation);
-        f.AddScale(actor->DrawScale3D, actor->DrawScale);
-        f.AddBool("bVisualizeComponent", false);
-        f.AddString("CreationMethod", "Instance");
-        f.AddString("Mobility", mobility.c_str());
-      }
-      f.End();
-      f.AddString("RootComponent", "DefaultSceneRoot");
-    }
-    else
-    {
-      f.AddString("SpotLightComponent", "LightComponent0");
-      f.AddString("ArrowComponent", "ArrowComponent0");
-      f.AddString("LightComponent", "LightComponent0");
-      f.AddString("RootComponent", "LightComponent0");
-    }
-    AddCommonActorParameters(f, actor);
-    if (addFakeRoot)
-    {
-      f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
-      f.AddCustom("InstanceComponents(1)", "SpotLightComponent'\"LightComponent0\"'");
-    }
-  }
-  f.End();
-}
-
-void ExportDirectionalLightActor(T3DFile& f, LevelExportContext& ctx, UDirectionalLight* actor)
-{
-  if (!actor || !actor->LightComponent)
-  {
-    return;
-  }
-
-  UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(actor->LightComponent);
-  if (!component)
-  {
-    return;
-  }
-
-  f.Begin("Actor", "DirectionalLight", FString::Sprintf("DirectionalLight_%d", ctx.DirectionalLightActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "ArrowComponent", "ArrowComponent0");
-    f.End();
-    f.Begin("Object", "DirectionalLightComponent", "LightComponent0");
-    f.End();
-    f.Begin("Object", nullptr, "ArrowComponent0");
-    {
-      f.AddColor("ArrowColor", component->LightColor);
-      f.AddString("AttachParent", "LightComponent0");
-    }
-    f.End();
-    f.Begin("Object", nullptr, "LightComponent0");
-    {
-      f.AddFloat("Intensity", component->Brightness * ctx.Config.DirectionalLightMul);
-      AddCommonLightComponentParameters(f, component);
-      f.AddPosition(actor->GetLocation() + component->Translation);
-      f.AddRotation(actor->Rotation + component->Rotation);
-      f.AddCustom("Mobility", "Stationary");
-    }
-    f.End();
-    f.AddString("ArrowComponent", "ArrowComponent0");
-    f.AddString("DirectionalLightComponent", "LightComponent0");
-    f.AddString("LightComponent", "LightComponent0");
-    f.AddString("RootComponent", "LightComponent0");
-    AddCommonActorParameters(f, actor);
-  }
-  f.End();
-}
-
-void ExportSkyLightActor(T3DFile& f, LevelExportContext& ctx, USkyLight* actor)
-{
-  if (!actor || !actor->LightComponent)
-  {
-    return;
-  }
-
-  USkyLightComponent* component = Cast<USkyLightComponent>(actor->LightComponent);
-  if (!component)
-  {
-    return;
-  }
-
-  f.Begin("Actor", "SkyLight", FString::Sprintf("SkyLight_%d", ctx.SkyLightActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "SkyLightComponent", "SkyLightComponent0");
-    f.End();
-    f.Begin("Object", "BillboardComponent", "Sprite");
-    f.End();
-    f.Begin("Object", nullptr, "SkyLightComponent0");
-    {
-      if (component->LowerBrightness)
-      {
-        FLinearColor lowColor = component->LowerColor;
-        f.AddLinearColor("LowerHemisphereColor", lowColor * component->LowerBrightness);
-      }
-      f.AddFloat("Intensity", component->Brightness * ctx.Config.SkyLightMul);
-      AddCommonLightComponentParameters(f, component);
-      f.AddPosition(actor->GetLocation() + component->Translation);
-      f.AddCustom("Mobility", "Stationary");
-    }
-    f.End();
-    f.Begin("Object", nullptr, "Sprite");
-    {
-      f.AddString("AttachParent", "SkyLightComponent0");
-    }
-    f.End();
-    f.AddString("SpriteComponent", "Sprite");
-    f.AddString("LightComponent", "SkyLightComponent0");
-    f.AddString("RootComponent", "SkyLightComponent0");
-    AddCommonActorParameters(f, actor);
-  }
-  f.End();
-}
-
-void ExportHeightFogActor(T3DFile& f, LevelExportContext& ctx, UHeightFog* actor)
-{
-  if (!actor)
-  {
-    return;
-  }
-
-  UHeightFogComponent* component = Cast<UHeightFogComponent>(actor->Component);
-  if (!component)
-  {
-    return;
-  }
-  f.Begin("Actor", "ExponentialHeightFog", FString::Sprintf("ExponentialHeightFog_%d", ctx.HeightFogCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "ExponentialHeightFogComponent", "HeightFogComponent0");
-    f.End();
-    f.Begin("Object", "BillboardComponent", "Sprite");
-    f.End();
-    f.Begin("Object", nullptr, "HeightFogComponent0");
-    {
-      f.AddFloat("FogDensity", component->Density);
-      f.AddFloat("StartDistance", component->StartDistance);
-      f.AddFloat("FogCutoffDistance", component->ExtinctionDistance);
-      f.AddLinearColor("FogInscatteringColor", component->LightColor);
-      f.AddPosition(actor->Location);
-    }
-    f.End();
-    f.Begin("Object", nullptr, "Sprite");
-    {
-      f.AddString("AttachParent", "HeightFogComponent0");
-    }
-    f.End();
-    f.AddCustom("Component", "HeightFogComponent0");
-    f.AddCustom("SpriteComponent", "Sprite");
-    f.AddCustom("RootComponent", "HeightFogComponent0");
-    AddCommonActorParameters(f, actor);
-  }
-  f.End();
-}
-
-void ExportEmitterActor(T3DFile& f, LevelExportContext& ctx, UEmitter* actor)
-{
-  if (!actor)
-  {
-    return;
-  }
-  f.Begin("Actor", "Actor", FString::Sprintf("Actor_%d", ctx.UntypedActorsCount++).UTF8().c_str());
-  {
-    f.Begin("Object", "SceneComponent", "DefaultSceneRoot");
-    f.End();
-    f.Begin("Object", nullptr, "DefaultSceneRoot");
-    {
-      f.AddPosition(actor->Location);
-      f.AddBool("bVisualizeComponent", true);
-      f.AddCustom("CreationMethod", "Instance");
-    }
-    f.End();
-    f.AddCustom("RootComponent", "SceneComponent'\"DefaultSceneRoot\"'");
-    AddCommonActorParameters(f, actor);
-    f.AddCustom("InstanceComponents(0)", "SceneComponent'\"DefaultSceneRoot\"'");
   }
   f.End();
 }
@@ -1773,4 +1963,20 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
       }
     }
   }
+}
+
+std::string GetLocalDir(UObject* obj, const char* sep)
+{
+  std::string path;
+  FObjectExport* outer = obj->GetExportObject()->Outer;
+  while (outer)
+  {
+    path = (outer->GetObjectName().UTF8() + sep + path);
+    outer = outer->Outer;
+  }
+  if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
+  {
+    path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
+  }
+  return path;
 }

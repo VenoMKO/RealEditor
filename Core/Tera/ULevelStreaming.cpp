@@ -20,7 +20,7 @@ void ULevelStreaming::PostLoad()
 {
   // Try to load all S1 level by XY coords(except the S1Void)
   auto pos = PackageName.FindLastOf('_');
-  if (pos != std::string::npos)
+  if (pos != std::string::npos && PackageName.Substr(pos + 1).IsNumeric())
   {
     // Subtract 1 from the Y coordinate of the package zone
     int32 address = -1;

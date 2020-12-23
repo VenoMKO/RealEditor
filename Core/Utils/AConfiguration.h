@@ -64,6 +64,7 @@ struct FMapExportConfig {
   bool HeightFog = true;
   bool Materials = true;
   bool Textures = true;
+  bool Prefabs = true;
 
   bool ResampleTerrain = true;
   bool SplitTerrainWeights = true;

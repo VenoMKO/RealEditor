@@ -232,6 +232,8 @@ struct FVector2D {
 
 struct FVector4;
 struct FVector {
+	static const FVector One;
+
 	FVector()
 	{}
 

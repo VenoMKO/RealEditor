@@ -427,6 +427,18 @@ public:
     return true;
   }
 
+  inline bool IsNumeric() const
+  {
+    for (size_t idx = 0; idx < Data.size(); ++idx)
+    {
+      if (Data[idx] < '0' || Data[idx] > '9')
+      {
+        return Data[idx] == '\0' && idx == Data.size() - 1;
+      }
+    }
+    return true;
+  }
+
   inline bool StartWith(const FString& s) const
   {
     if (Data.size() && s.Size())
