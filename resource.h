@@ -22,12 +22,14 @@
 #define IDB_ICO_MAT                     125
 #define IDB_ICO_MI                      126
 #define IDB_LEVEL_PREVIEW               127
+#define IDB_ICO_LEVEL                   128
+#define IDB_ICO_SLEVEL                  129
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        128
+#define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101

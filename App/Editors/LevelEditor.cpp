@@ -34,6 +34,11 @@ void LevelEditor::OnTick()
   if (Renderer && Renderer->isRealized() && Renderer->checkNeedToDoFrame())
   {
     Renderer->frame();
+    if (LevelLoaded && ShowEmptyMessage)
+    {
+      ShowEmptyMessage = false;
+      wxMessageBox("There are no actors to display!\nProbably the level consists of lights, sounds, emitters, or other actors that can't be rendered.", "Level loaded successfully!", wxICON_INFORMATION);
+    }
   }
 }
 
@@ -52,7 +57,7 @@ void LevelEditor::OnObjectLoaded()
 void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->AddTool(eID_Level_Load, "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
+  toolbar->AddTool(eID_Level_Load, LevelLoaded ? "Loaded" : "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview")->Enable(!LevelLoaded && Level);
 }
 
 void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
@@ -66,6 +71,18 @@ void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
   if (event.GetId() == eID_Level_Load)
   {
     LoadPersistentLevel();
+    ShowEmptyMessage = !Root->getNumChildren();
+    if (wxToolBarBase* item = (wxToolBarBase*)event.GetEventObject())
+    {
+      if (wxToolBarToolBase* sender = item->FindById(event.GetId()))
+      {
+        sender->Enable(false);
+        if (LevelLoaded)
+        {
+          sender->SetLabel("Loaded");
+        }
+      }
+    }
   }
 }
 
@@ -130,6 +147,18 @@ void LevelEditor::LoadPersistentLevel()
   if (LevelLoaded)
   {
     wxMessageBox("Level is already loaded!", wxEmptyString, wxICON_INFORMATION);
+    return;
+  }
+  if (!Level)
+  {
+    if (Object)
+    {
+      wxMessageBox(wxString::Format("Failed to load the level %s.gmp!", ((ULevelStreaming*)Object)->PackageName.UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+    }
+    else
+    {
+      wxMessageBox(wxT("Failed to load the level!"), wxT("Error!"), wxICON_ERROR);
+    }
     return;
   }
   ProgressWindow progress(Window, "Please, wait...");
@@ -562,4 +591,32 @@ osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instanc
     root->addChild(mt);
   }
   return root;
+}
+
+void StreamingLevelEditor::OnObjectLoaded()
+{
+  bool needsResetLevel = (Loading || !Level);
+  LevelEditor::OnObjectLoaded();
+  if (needsResetLevel)
+  {
+    if (Level)
+    {
+      Level = ((ULevelStreaming*)Object)->Level;
+    }
+  }
+}
+
+void StreamingLevelEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  LevelEditor::PopulateToolBar(toolbar);
+  toolbar->AddTool(eID_StreamingLevel_Source, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open the source package with this level.")->Enable(Level);
+}
+
+void StreamingLevelEditor::OnToolBarEvent(wxCommandEvent& event)
+{
+  LevelEditor::OnToolBarEvent(event);
+  if (event.GetId() == eID_StreamingLevel_Source && Level)
+  {
+    App::GetSharedApp()->OpenNamedPackage(Level->GetPackage()->GetPackageName().WString());
+  }
 }

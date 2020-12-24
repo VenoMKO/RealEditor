@@ -82,6 +82,13 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   {
     editor = new PrefabEditor(parent, window);
   }
+  else if (c == ULevelStreaming::StaticClassName() || c == ULevelStreamingAlwaysLoaded::StaticClassName() || c == ULevelStreamingDistance::StaticClassName() ||
+    c == ULevelStreamingKismet::StaticClassName() || c == ULevelStreamingPersistent::StaticClassName() || c == US1LevelStreamingDistance::StaticClassName() ||
+    c == US1LevelStreamingBaseLevel::StaticClassName() || c == US1LevelStreamingSound::StaticClassName() || c == US1LevelStreamingSuperLow::StaticClassName() ||
+    c == US1LevelStreamingVOID::StaticClassName())
+  {
+    editor = new StreamingLevelEditor(parent, window);
+  }
   else
   {
     editor = new GenericEditor(parent, window);

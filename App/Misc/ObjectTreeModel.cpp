@@ -17,6 +17,8 @@ enum ClassIco : int {
   IcoPackageImp,
   IcoMat,
   IcoMi,
+  IcoLevel,
+  IcoSLevel,
 };
 
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
@@ -74,6 +76,17 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   if (className == wxT("MaterialInstanceConstant") || className == wxT("MaterialInstance"))
   {
     return IcoMi;
+  }
+  else if (className == wxT("Level"))
+  {
+    return IcoLevel;
+  }
+  else if (className == wxT("LevelStreaming") || className == wxT("LevelStreamingAlwaysLoaded") || className == wxT("LevelStreamingDistance") ||
+           className == wxT("LevelStreamingKismet") || className == wxT("LevelStreamingPersistent") || className == wxT("S1LevelStreamingDistance") ||
+           className == wxT("S1LevelStreamingBaseLevel") || className == wxT("S1LevelStreamingSound") || className == wxT("S1LevelStreamingSuperLow") ||
+           className == wxT("S1LevelStreamingVOID"))
+  {
+    return IcoSLevel;
   }
   return IcoGeneric;
 }
@@ -218,6 +231,12 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 
   // MaterialInstance icon
   IconList->Add(wxBitmap("#126", wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // Level icon
+  IconList->Add(wxBitmap("#128", wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // StreamingLevel icon
+  IconList->Add(wxBitmap("#129", wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const

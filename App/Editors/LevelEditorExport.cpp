@@ -935,6 +935,10 @@ struct T3DActor {
 
 void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
 {
+  if (!Level)
+  {
+    return;
+  }
   UObject* world = Level->GetOuter();
   auto worldInner = world->GetInner();
   std::vector<ULevel*> levels = { Level };

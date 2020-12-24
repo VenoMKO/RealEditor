@@ -193,10 +193,12 @@
     <Image Include="Resources\Btn_Texture2D_Red.png" />
     <Image Include="Resources\Classes\icon_class.png" />
     <Image Include="Resources\Classes\icon_imp.png" />
+    <Image Include="Resources\Classes\icon_level.png" />
     <Image Include="Resources\Classes\icon_mat.png" />
     <Image Include="Resources\Classes\icon_mesh.png" />
     <Image Include="Resources\Classes\icon_mi.png" />
     <Image Include="Resources\Classes\icon_redir.png" />
+    <Image Include="Resources\Classes\icon_slevel.png" />
     <Image Include="Resources\Classes\icon_sound.png" />
     <Image Include="Resources\Classes\icon_t2d.png" />
     <Image Include="Resources\FileIcon.ico" />

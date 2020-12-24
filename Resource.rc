@@ -86,6 +86,10 @@ IDB_ICO_MI              RCDATA                  "Resources\\Classes\\icon_mi.png
 
 IDB_LEVEL_PREVIEW       RCDATA                  "Resources\\Btn_PreviewLevel.png"
 
+IDB_ICO_LEVEL           RCDATA                  "Resources\\Classes\\icon_level.png"
+
+IDB_ICO_SLEVEL          RCDATA                  "Resources\\Classes\\icon_slevel.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -136,6 +140,7 @@ BEGIN
         VALUE "Translation", 0x9, 1200
     END
 END
+
 
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////

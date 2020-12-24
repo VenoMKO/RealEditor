@@ -56,9 +56,18 @@ protected:
 protected:
   ULevel* Level = nullptr;
   bool LevelLoaded = false;
+  bool ShowEmptyMessage = false;
   std::unordered_map<UActor*, osg::Geode*> LevelNodes;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   OSGCanvas* Canvas = nullptr;
   OSGWindow* OSGProxy = nullptr;
   osgViewer::Viewer* Renderer = nullptr;
+};
+
+class StreamingLevelEditor : public LevelEditor {
+public:
+  using LevelEditor::LevelEditor;
+  void OnObjectLoaded() override;
+  void PopulateToolBar(wxToolBar* toolbar) override;
+  void OnToolBarEvent(wxCommandEvent& event) override;
 };

@@ -14,6 +14,7 @@ enum ToolEventID : int {
   eID_Texture2D_Channel_B,
   eID_Texture2D_Channel_A,
   eID_Level_Load,
+  eID_StreamingLevel_Source,
 };
 
 class UObject;

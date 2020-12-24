@@ -411,5 +411,11 @@
     <Image Include="Resources\Btn_PreviewLevel.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\Classes\icon_level.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Classes\icon_slevel.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
