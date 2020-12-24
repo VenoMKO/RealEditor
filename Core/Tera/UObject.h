@@ -23,34 +23,34 @@ public:\
 #define __REGISTER_PROP(TName, TType)\
 if (PROP_IS(property, TName))\
 {\
-	__GLUE_PROP(TName,Property) = property;\
-	TName = property->__GLUE_PROP(Get,TType)();\
-	return true;\
+  __GLUE_PROP(TName,Property) = property;\
+  TName = property->__GLUE_PROP(Get,TType)();\
+  return true;\
 }\
 //
 
 #define __REGISTER_TYPED_PROP(TName, TCast, TType)\
 if (PROP_IS(property, TName))\
 {\
-	__GLUE_PROP(TName,Property) = property;\
-	TName = (TCast)property->__GLUE_PROP(Get,TType)();\
-	return true;\
+  __GLUE_PROP(TName,Property) = property;\
+  TName = (TCast)property->__GLUE_PROP(Get,TType)();\
+  return true;\
 }\
 //
 
 #define REGISTER_ENUM_STR_PROP(TName)\
 if (PROP_IS(property, TName))\
 {\
-	__GLUE_PROP(TName,Property) = property;\
-	if (property->Value->Enum)\
-	{\
-		TName = property->Value->Enum->GetEnum(property->GetByte()).String().String();\
-	}\
-	else\
-	{\
-		TName = FString::Sprintf("%d", int(property->GetByte()));\
-	}\
-	return true;\
+  __GLUE_PROP(TName,Property) = property;\
+  if (property->Value->Enum)\
+  {\
+    TName = property->Value->Enum->GetEnum(property->GetByte()).String().String();\
+  }\
+  else\
+  {\
+    TName = FString::Sprintf("%d", int(property->GetByte()));\
+  }\
+  return true;\
 }\
 //
 
@@ -89,25 +89,25 @@ return property->GetRotator(TName); \
 #define REGISTER_COL_PROP(TName)\
 if (PROP_IS(property, TName))\
 {\
-	__GLUE_PROP(TName,Property) = property;\
-	property->GetColor(TName);\
-	return true;\
+  __GLUE_PROP(TName,Property) = property;\
+  property->GetColor(TName);\
+  return true;\
 }\
 //
 
 #define REGISTER_LCOL_PROP(TName)\
 if (PROP_IS(property, TName))\
 {\
-	__GLUE_PROP(TName,Property) = property;\
-	property->GetLinearColor(TName);\
-	return true;\
+  __GLUE_PROP(TName,Property) = property;\
+  property->GetLinearColor(TName);\
+  return true;\
 }\
 //
 
 #define SUPER_REGISTER_PROP()\
 if (Super::RegisterProperty(property))\
 {\
-	return true;\
+  return true;\
 }\
 //
 

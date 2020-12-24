@@ -12,7 +12,6 @@
 #include <Tera/Cast.h>
 #include <Tera/FPackage.h>
 #include <Tera/UObject.h>
-#include <Tera/ULevelStreaming.h>
 #include <Tera/UStaticMesh.h>
 #include <Tera/USkeletalMesh.h>
 #include <Tera/UTexture.h>

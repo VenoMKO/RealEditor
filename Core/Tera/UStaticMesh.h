@@ -37,17 +37,17 @@ struct FStaticVertex
 };
 
 struct FStaticMeshVertexBase {
-	FPackedNormal TangentX; // Tangent
-	FPackedNormal TangentZ; // Normal
+  FPackedNormal TangentX; // Tangent
+  FPackedNormal TangentZ; // Normal
 
   virtual ~FStaticMeshVertexBase()
   {}
 
-	void Serialize(FStream& s)
-	{
-		s << TangentX;
-		s << TangentZ;
-	}
+  void Serialize(FStream& s)
+  {
+    s << TangentX;
+    s << TangentZ;
+  }
 
   FVector GetTangentX() const
   {
@@ -192,23 +192,23 @@ class FStaticMeshElement
 {
 public:
   DECL_UREF(UObject, Material);
-	bool EnableCollision = false;
+  bool EnableCollision = false;
   bool EnableCollisionOld = false;
-	bool bEnableShadowCasting = true;
-	uint32 FirstIndex = 0;
-	uint32 NumTriangles = 0;
-	uint32 MinVertexIndex = 0;
-	uint32 MaxVertexIndex = 0;
-	int32 MaterialIndex = 0;
-	std::vector<FFragmentRange> Fragments;
+  bool bEnableShadowCasting = true;
+  uint32 FirstIndex = 0;
+  uint32 NumTriangles = 0;
+  uint32 MinVertexIndex = 0;
+  uint32 MaxVertexIndex = 0;
+  int32 MaterialIndex = 0;
+  std::vector<FFragmentRange> Fragments;
 
-	bool operator==(const FStaticMeshElement& a) const
-	{
-		return MaterialIndex == a.MaterialIndex;
-	}
+  bool operator==(const FStaticMeshElement& a) const
+  {
+    return MaterialIndex == a.MaterialIndex;
+  }
 
-	friend FStream& operator<<(FStream& s, FStaticMeshElement& e)
-	{
+  friend FStream& operator<<(FStream& s, FStaticMeshElement& e)
+  {
     s << e.Material;
     s << e.EnableCollision;
     s << e.EnableCollisionOld;
@@ -217,11 +217,11 @@ public:
     s << e.NumTriangles;
     s << e.MinVertexIndex;
     s << e.MaxVertexIndex;
-		s << e.MaterialIndex;
+    s << e.MaterialIndex;
     s << e.Fragments;
 
-		if (s.GetFV() >= VER_TERA_CLASSIC)
-		{
+    if (s.GetFV() >= VER_TERA_CLASSIC)
+    {
       uint8 loadPS3Data = 0;
       s << loadPS3Data;
       // PC packages should not have PS3 mesh data
@@ -229,10 +229,10 @@ public:
       {
         UThrow("Can't load the mesh. Unexpected PS3 data!");
       }
-		}
+    }
 
-		return s;
-	}
+    return s;
+  }
 };
 
 class UStaticMesh;

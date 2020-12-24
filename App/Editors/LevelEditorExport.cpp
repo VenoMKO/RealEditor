@@ -1041,7 +1041,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
     }
     if (actor->GetClassName() == UTerrain::StaticClassName())
     {
-      if (!ctx.Config.Terrains)
+      if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes))
       {
         continue;
       }
@@ -1523,7 +1523,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   T3DActor exportItem;
   if (UStaticMeshActor* actor = Cast<UStaticMeshActor>(untypedActor))
   {
-    if (!ctx.Config.Statics)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes))
     {
       return;
     }
@@ -1534,7 +1534,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (USkeletalMeshActor* actor = Cast<USkeletalMeshActor>(untypedActor))
   {
-    if (!ctx.Config.Skeletals)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::SkeletalMeshes))
     {
       return;
     }
@@ -1545,7 +1545,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UInterpActor* actor = Cast<UInterpActor>(untypedActor))
   {
-    if (!ctx.Config.Interps)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Interps))
     {
       return;
     }
@@ -1556,7 +1556,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (USpeedTreeActor* actor = Cast<USpeedTreeActor>(untypedActor))
   {
-    if (!ctx.Config.SpeedTrees)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::SpeedTrees))
     {
       return;
     }
@@ -1567,7 +1567,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UPointLight* actor = Cast<UPointLight>(untypedActor))
   {
-    if (!ctx.Config.PointLights)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::PointLights))
     {
       return;
     }
@@ -1578,7 +1578,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (USpotLight* actor = Cast<USpotLight>(untypedActor))
   {
-    if (!ctx.Config.SpotLights)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::SpotLights))
     {
       return;
     }
@@ -1589,7 +1589,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UDirectionalLight* actor = Cast<UDirectionalLight>(untypedActor))
   {
-    if (!ctx.Config.DirectionalLights)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::DirectionalLights))
     {
       return;
     }
@@ -1600,7 +1600,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (USkyLight* actor = Cast<USkyLight>(untypedActor))
   {
-    if (!ctx.Config.SkyLights)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::SkyLights))
     {
       return;
     }
@@ -1611,7 +1611,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UHeightFog* actor = Cast<UHeightFog>(untypedActor))
   {
-    if (!ctx.Config.HeightFog)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::HeightFog))
     {
       return;
     }
@@ -1622,7 +1622,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UEmitter* actor = Cast<UEmitter>(untypedActor))
   {
-    if (!ctx.Config.Emitters)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Emitters))
     {
       return;
     }
@@ -1633,7 +1633,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UTerrain* actor = Cast<UTerrain>(untypedActor))
   {
-    if (!ctx.Config.Terrains)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Terrains))
     {
       return;
     }
@@ -1642,7 +1642,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
   }
   else if (UPrefabInstance* actor = Cast<UPrefabInstance>(untypedActor))
   {
-    if (!ctx.Config.Prefabs)
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Prefabs))
     {
       return;
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include <wx/wx.h>
+#include <wx/dataview.h>
 #include <wx/filepicker.h>
 
 #include <filesystem>
@@ -101,31 +102,32 @@ struct LevelExportContext {
 
 class LevelExportOptionsWindow : public wxDialog {
 public:
-	LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx = LevelExportContext());
-	~LevelExportOptionsWindow();
+  LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx = LevelExportContext());
+  ~LevelExportOptionsWindow();
 
   void SetExportContext(const LevelExportContext& ctx);
   LevelExportContext GetExportContext() const;
 
 protected:
+  void FillActorsTable(const FMapExportConfig& cfg);
+  int32 GetActorsTableMask() const;
   void OnDirChanged(wxFileDirPickerEvent& event);
-	void OnDefaultsClicked(wxCommandEvent& event);
-	void OnExportClicked(wxCommandEvent& event);
-	void OnCancelClicked(wxCommandEvent& event);
+  void OnDefaultsClicked(wxCommandEvent& event);
+  void OnExportClicked(wxCommandEvent& event);
+  void OnCancelClicked(wxCommandEvent& event);
+  void OnAllClicked(wxCommandEvent&);
+  void OnNoneClicked(wxCommandEvent&);
+  void OnActorTableValueChanged(wxDataViewEvent&);
+  void OnFirstIdle(wxIdleEvent&);
 
 protected:
   wxDirPickerCtrl* PathPicker = nullptr;
-  wxCheckBox* StaticMeshes = nullptr;
-  wxCheckBox* SkeletalMeshes = nullptr;
-  wxCheckBox* SpeedTrees = nullptr;
-  wxCheckBox* Interps = nullptr;
-  wxCheckBox* Terrains = nullptr;
-  wxCheckBox* PointLights = nullptr;
-  wxCheckBox* SpotLights = nullptr;
-  wxCheckBox* SoundNodes = nullptr;
-  wxCheckBox* Emitters = nullptr;
+  wxDataViewCtrl* ActorTable = nullptr;
+  wxButton* TurnOnAllButton = nullptr;
+  wxButton* TurnOffAllButton = nullptr;
+
   wxCheckBox* OverrideFiles = nullptr;
-  wxCheckBox* BakeTransforms = nullptr;
+  wxCheckBox* SplitT3d = nullptr;
   wxCheckBox* Materials = nullptr;
   wxTextCtrl* PointLightMultiplier = nullptr;
   wxTextCtrl* SpotLightMultiplier = nullptr;
@@ -143,4 +145,5 @@ protected:
 
   float PointLightMultiplierValue = 1.;
   float SpotLightMultiplierValue = 1.;
+  int32 DelayedTextureFormat = 0;
 };

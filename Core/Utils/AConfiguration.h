@@ -22,17 +22,28 @@ struct FLogConfig
 };
 
 struct FMapExportConfig {
+  enum class ActorClass : uint32
+  {
+    None = 0,
+    StaticMeshes = 0x00000001,
+    SkeletalMeshes = 0x00000002,
+    Terrains = 0x00000004,
+    SpeedTrees = 0x00000008,
+    Prefabs = 0x00000010,
+    Interps = 0x00000020,
+    PointLights = 0x00000040,
+    SpotLights = 0x00000080,
+    DirectionalLights = 0x00000100,
+    SkyLights = 0x00000200,
+    HeightFog = 0x00000400,
+    Emitters = 0x00000800,
+    Sounds = 0x00001000,
+    All = 0xFFFFFFFF
+  };
+
   enum ConfigKey : uint16 {
     CFG_RootDir = 1,
-    CFG_Terrains,
-    CFG_Statics,
-    CFG_Skeletals,
-    CFG_SpeedTrees,
-    CFG_PointLights,
-    CFG_SpotLights,
-    CFG_Interps,
-    CFG_Emitters,
-    CFG_Sounds,
+    CFG_ActorMask,
     CFG_TerrainResample,
     CFG_SplitTerrainWeights,
     CFG_InvSqrtFalloff,
@@ -42,44 +53,63 @@ struct FMapExportConfig {
     CFG_Textures,
     CFG_TexturesFormat,
     CFG_Override,
-    CFG_BakeTransform,
     CFG_Lods,
-    CFG_ConvexCollisions,
+    CFG_RBCollisions,
     CFG_IgnoreHidden,
+    CFG_SplitT3D,
     CFG_End = 0xFFFF
   };
 
   FString RootDir;
-  bool Terrains = true;
-  bool Statics = true;
-  bool Skeletals = true;
-  bool SpeedTrees = true;
-  bool PointLights = true;
-  bool SpotLights = true;
-  bool DirectionalLights = true;
-  bool SkyLights = true;
-  bool Interps = true;
-  bool Emitters = true;
-  bool Sounds = true;
-  bool HeightFog = true;
-  bool Materials = true;
-  bool Textures = true;
-  bool Prefabs = true;
+  uint32 ActorClasses = ((uint32)ActorClass::All & ~(uint32)ActorClass::Sounds);
 
-  bool ResampleTerrain = true;
-  bool SplitTerrainWeights = true;
-  bool InvSqrtFalloff = false;
-  float SpotLightMul = 1.;
-  float PointLightMul = 1.;
-  float DirectionalLightMul = 1.;
-  float SkyLightMul = 1.;
-  int32 TextureFormat = 0;
-  bool BakeComponentTransform = false;
+  // General
   bool OverrideData = false;
-  bool ExportLods = true;
-  bool ConvexCollisions = true;
   bool IgnoreHidden = true;
   bool SplitT3D = false;
+  
+  // Materials
+  bool Materials = true;
+  bool Textures = true;
+  int32 TextureFormat = 0;
+
+  // Lights
+  float SpotLightMul = 1.;
+  float PointLightMul = 1.;
+  float DirectionalLightMul = 1.; // Not in UI
+  float SkyLightMul = 1.; // Not in UI
+  bool InvSqrtFalloff = false;
+
+  // Terrains
+  bool ResampleTerrain = true;
+  bool SplitTerrainWeights = true;
+  
+  // Models
+  bool ExportLods = true;
+  bool ConvexCollisions = true;
+  
+
+  bool GetClassEnabled(ActorClass classFlag) const
+  {
+    return GetClassEnabled((uint32)(classFlag));
+  }
+
+  bool GetClassEnabled(uint32 classFlag) const
+  {
+    return ActorClasses & classFlag;
+  }
+
+  void SetClassEnabled(uint32 classFlag, bool on = true)
+  {
+    if (on)
+    {
+      ActorClasses |= classFlag;
+    }
+    else
+    {
+      ActorClasses &= ~classFlag;
+    }
+  }
 
   friend FStream& operator<<(FStream& s, FMapExportConfig& c);
 };

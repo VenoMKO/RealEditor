@@ -5,6 +5,8 @@
 #define SerializeKeyValue(key, value) { uint16 k = key; s << k << value; } //
 #define CheckKey(key) { if (!s.IsGood()) { return s; } uint16 k = key; s << k; if (k != key) { s.Close(); return s; }} //
 
+#define SerializeKVIfNotDefault(key, value, def) if (value != def) SerializeKeyValue(key, value) //
+
 AConfiguration::AConfiguration(const std::string& path)
   : Path(path)
 {}
@@ -104,48 +106,20 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_RootDir:
         s << c.RootDir;
         break;
-      case FMapExportConfig::CFG_Terrains:
-        s << c.Terrains;
+      case FMapExportConfig::CFG_ActorMask:
+        s << c.ActorClasses;
         break;
-      case FMapExportConfig::CFG_Statics:
-        s << c.Statics;
+      // General
+      case FMapExportConfig::CFG_Override:
+        s << c.OverrideData;
         break;
-      case FMapExportConfig::CFG_Skeletals:
-        s << c.Skeletals;
+      case FMapExportConfig::CFG_IgnoreHidden:
+        s << c.IgnoreHidden;
         break;
-      case FMapExportConfig::CFG_SpeedTrees:
-        s << c.SpeedTrees;
+      case FMapExportConfig::CFG_SplitT3D:
+        s << c.SplitT3D;
         break;
-      case FMapExportConfig::CFG_PointLights:
-        s << c.PointLights;
-        break;
-      case FMapExportConfig::CFG_SpotLights:
-        s << c.SpotLights;
-        break;
-      case FMapExportConfig::CFG_Interps:
-        s << c.Interps;
-        break;
-      case FMapExportConfig::CFG_Emitters:
-        s << c.Emitters;
-        break;
-      case FMapExportConfig::CFG_Sounds:
-        s << c.Sounds;
-        break;
-      case FMapExportConfig::CFG_TerrainResample:
-        s << c.ResampleTerrain;
-        break;
-      case FMapExportConfig::CFG_SplitTerrainWeights:
-        s << c.SplitTerrainWeights;
-        break;
-      case FMapExportConfig::CFG_InvSqrtFalloff:
-        s << c.InvSqrtFalloff;
-        break;
-      case FMapExportConfig::CFG_SpotLightMul:
-        s << c.SpotLightMul;
-        break;
-      case FMapExportConfig::CFG_PointLightMul:
-        s << c.PointLightMul;
-        break;
+      // Materials
       case FMapExportConfig::CFG_Material:
         s << c.Materials;
         break;
@@ -155,55 +129,62 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_TexturesFormat:
         s << c.TextureFormat;
         break;
-      case FMapExportConfig::CFG_Override:
-        s << c.OverrideData;
+      // Lights
+      case FMapExportConfig::CFG_SpotLightMul:
+        s << c.SpotLightMul;
         break;
-      case FMapExportConfig::CFG_BakeTransform:
-        s << c.BakeComponentTransform;
+      case FMapExportConfig::CFG_PointLightMul:
+        s << c.PointLightMul;
         break;
+      case FMapExportConfig::CFG_InvSqrtFalloff:
+        s << c.InvSqrtFalloff;
+        break;
+      // Terrain
+      case FMapExportConfig::CFG_TerrainResample:
+        s << c.ResampleTerrain;
+        break;
+      case FMapExportConfig::CFG_SplitTerrainWeights:
+        s << c.SplitTerrainWeights;
+        break;
+      // Models
       case FMapExportConfig::CFG_Lods:
         s << c.ExportLods;
         break;
-      case FMapExportConfig::CFG_ConvexCollisions:
+      case FMapExportConfig::CFG_RBCollisions:
         s << c.ConvexCollisions;
-        break;
-      case FMapExportConfig::CFG_IgnoreHidden:
-        s << c.IgnoreHidden;
         break;
       default:
         s.Close();
         // no break
       case FMapExportConfig::CFG_End:
         return s;
-        break;
       }
     }
   }
   else
   {
-    SerializeKeyValue(FMapExportConfig::CFG_RootDir, c.RootDir);
-    SerializeKeyValue(FMapExportConfig::CFG_Terrains, c.Terrains);
-    SerializeKeyValue(FMapExportConfig::CFG_Statics, c.Statics);
-    SerializeKeyValue(FMapExportConfig::CFG_Skeletals, c.Skeletals);
-    SerializeKeyValue(FMapExportConfig::CFG_SpeedTrees, c.SpeedTrees);
-    SerializeKeyValue(FMapExportConfig::CFG_PointLights, c.PointLights);
-    SerializeKeyValue(FMapExportConfig::CFG_SpotLights, c.SpotLights);
-    SerializeKeyValue(FMapExportConfig::CFG_Interps, c.Interps);
-    SerializeKeyValue(FMapExportConfig::CFG_Emitters, c.Emitters);
-    SerializeKeyValue(FMapExportConfig::CFG_Sounds, c.Sounds);
-    SerializeKeyValue(FMapExportConfig::CFG_TerrainResample, c.ResampleTerrain);
-    SerializeKeyValue(FMapExportConfig::CFG_SplitTerrainWeights, c.SplitTerrainWeights);
-    SerializeKeyValue(FMapExportConfig::CFG_InvSqrtFalloff, c.InvSqrtFalloff);
-    SerializeKeyValue(FMapExportConfig::CFG_SpotLightMul, c.SpotLightMul);
-    SerializeKeyValue(FMapExportConfig::CFG_PointLightMul, c.PointLightMul);
-    SerializeKeyValue(FMapExportConfig::CFG_Material, c.Materials);
-    SerializeKeyValue(FMapExportConfig::CFG_Textures, c.Textures);
-    SerializeKeyValue(FMapExportConfig::CFG_TexturesFormat, c.TextureFormat);
-    SerializeKeyValue(FMapExportConfig::CFG_Override, c.OverrideData);
-    SerializeKeyValue(FMapExportConfig::CFG_BakeTransform, c.BakeComponentTransform);
-    SerializeKeyValue(FMapExportConfig::CFG_Lods, c.ExportLods);
-    SerializeKeyValue(FMapExportConfig::CFG_ConvexCollisions, c.ConvexCollisions);
-    SerializeKeyValue(FMapExportConfig::CFG_IgnoreHidden, c.IgnoreHidden);
+    FMapExportConfig d;
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_RootDir, c.RootDir, d.RootDir);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_ActorMask, c.ActorClasses, d.ActorClasses);
+
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_Override, c.OverrideData, d.OverrideData);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_IgnoreHidden, c.IgnoreHidden, d.IgnoreHidden);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_SplitT3D, c.SplitT3D, d.SplitT3D);
+
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_Material, c.Materials, d.Materials);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_Textures, c.Textures, d.Textures);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_TexturesFormat, c.TextureFormat, d.TextureFormat);
+
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_SpotLightMul, c.SpotLightMul, d.SpotLightMul);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_PointLightMul, c.PointLightMul, d.PointLightMul);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_InvSqrtFalloff, c.InvSqrtFalloff, d.InvSqrtFalloff);
+    
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_TerrainResample, c.ResampleTerrain, d.ResampleTerrain);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_SplitTerrainWeights, c.SplitTerrainWeights, d.SplitTerrainWeights);
+    
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_Lods, c.ExportLods, d.ExportLods);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_RBCollisions, c.ConvexCollisions, d.ConvexCollisions);
+    
     SerializeKey(FMapExportConfig::CFG_End);
   }
   return s;

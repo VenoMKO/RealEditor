@@ -2,6 +2,7 @@
 #include "GenericEditor.h"
 
 #include <Tera/ULevel.h>
+#include <Tera/ULevelStreaming.h>
 
 #include "../Misc/OSGWindow.h"
 #include "../Windows/LevelExportOptions.h"
