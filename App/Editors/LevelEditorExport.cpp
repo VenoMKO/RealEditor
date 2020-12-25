@@ -1820,9 +1820,14 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
   if (ctx.Config.SplitTerrainWeights)
   {
-    for (const FTerrainLayer& layer : actor->Layers)
+    for (int32 idx = 0; idx < actor->Layers.size(); ++idx)
     {
-      std::filesystem::path texPath = dst / layer.Name.UTF8();
+      const FTerrainLayer& layer = actor->Layers[idx];
+      if (layer.AlphaMapIndex == INDEX_NONE)
+      {
+        continue;
+      }
+      std::filesystem::path texPath = dst / (std::to_string(idx + 1) + '_' + layer.Name.UTF8());
       texPath.replace_extension(HasAVX2() ? "png" : "dds");
       if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
       {

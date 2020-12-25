@@ -211,58 +211,15 @@ float UTerrain::GetHeightMapRatioY()
 
 bool UTerrain::GetWeightMapChannel(int32 idx, void*& data, int32& width, int32& height)
 {
-  const int32 channelsPerMap = 4;
-  int32 mapIndex = 0;
-  int32 alphaMapIndex = idx;
-  if (alphaMapIndex < 0)
+  uint32 len = WeightMapTextures.front()->SizeX * WeightMapTextures.front()->SizeY;
+  if (uint8* channel = (uint8*)malloc(len))
   {
-    alphaMapIndex = WeightMapTextures.size() * channelsPerMap;
+    memcpy(channel, &AlphaMaps[idx].Data[0], len);
+    data = (void*)channel;
+    width = WeightMapTextures.front()->SizeX;
+    height = WeightMapTextures.front()->SizeY;
   }
-  if (alphaMapIndex > 0)
-  {
-    mapIndex = (int32)ceilf((float)alphaMapIndex / (float)channelsPerMap) - 1;
-  }
-  if (mapIndex >= WeightMapTextures.size())
-  {
-    LogE("Can't get terrain(%s) weight layer at index %d(%d)", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
-    return false;
-  }
-  UTexture2D* map = WeightMapTextures[mapIndex];
-  if (map->Format != PF_A8R8G8B8)
-  {
-    LogE("Can't get terrain(%s) weight layer at index %d(%d). The weightmap has incompatible format.", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
-    return false;
-  }
-  map->Load();
-
-  FTexture2DMipMap* mip = nullptr;
-  for (FTexture2DMipMap* m : map->Mips)
-  {
-    if (m->Data)
-    {
-      mip = m;
-      break;
-    }
-  }
-
-  if (!mip)
-  {
-    LogE("Can't get terrain(%s) weight layer at index %d(%d). The weightmap has no mips.", GetPackage()->GetPackageName().UTF8().c_str(), alphaMapIndex, int32(WeightMapTextureIndices.size()));
-    return false;
-  }
-
-  uint32 len = mip->SizeX * mip->SizeY;
-  uint8* channel = (uint8*)malloc(len);
-  const int32 offset = alphaMapIndex - (mapIndex * channelsPerMap);
-  for (uint32 idx = 0; idx < len; ++idx)
-  {
-    const uint8* value = (const uint8*)((const uint32*)mip->Data->GetAllocation() + idx);
-    channel[idx] = *(value + offset);
-  }
-  data = (void*)channel;
-  width = mip->SizeX;
-  height = mip->SizeY;
-  return true;
+  return data != nullptr;
 }
 
 std::vector<UTerrainWeightMapTexture*> UTerrain::GetWeightMaps()
