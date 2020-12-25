@@ -236,7 +236,7 @@ std::map<FString, FLinearColor> UMaterialInterface::GetVectorParameters() const
     }
   }
 
-  for (FPropertyValue* container : ScalarParameterValues)
+  for (FPropertyValue* container : VectorParameterValues)
   {
     std::vector<FPropertyValue*>& tmpArray = container->GetArray();
     FString parameterName;
