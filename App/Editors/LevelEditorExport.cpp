@@ -45,9 +45,9 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     std::filesystem::create_directories(path, err);
   }
+  std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
   if (std::filesystem::exists(path, err))
   {
-    std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
     path /= fbxName;
     path.replace_extension("fbx");
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
@@ -62,6 +62,29 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
   }
   AddCommonPrimitiveComponentParameters(f, component);
+
+  if (ctx.Config.ConvexCollisions && !component->StaticMesh->GetBodySetup())
+  {
+    if (!component->StaticMesh->UseSimpleBoxCollision || !component->StaticMesh->UseSimpleLineCollision)
+    {
+      const std::string item = GetLocalDir(component->StaticMesh) + fbxName;
+      if (std::find(ctx.ComplexCollisions.begin(), ctx.ComplexCollisions.end(), item) == ctx.ComplexCollisions.end())
+      {
+        ctx.ComplexCollisions.push_back(item);
+      }
+    }
+  }
+
+  if (component->ReplacementPrimitive)
+  {
+    const std::string itemPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->GetOuter()->GetObjectName().UTF8();
+    const std::string mlodPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->ReplacementPrimitive->GetOuter()->GetObjectName().UTF8();
+    auto& vec = ctx.MLODs[mlodPath];
+    if (vec.empty() || std::find(vec.begin(), vec.end(), itemPath) == vec.end())
+    {
+      vec.push_back(itemPath);
+    }
+  }
 };
 
 ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
@@ -415,6 +438,7 @@ struct T3DActor {
     }
     else
     {
+      component.Name = "StaticMeshComponent0";
       Class = "StaticMeshActor";
       RootComponent = &component;
       Properties["StaticMeshComponent"] = &component;
@@ -441,6 +465,7 @@ struct T3DActor {
     }
     else
     {
+      component.Name = "StaticMeshComponent0";
       Class = "StaticMeshActor";
       RootComponent = &component;
       Properties["StaticMeshComponent"] = &component;
@@ -469,6 +494,7 @@ struct T3DActor {
     }
     else
     {
+      component.Name = "StaticMeshComponent0";
       Class = "StaticMeshActor";
       RootComponent = &component;
       Properties["StaticMeshComponent"] = &component;
@@ -495,6 +521,7 @@ struct T3DActor {
     }
     else
     {
+      component.Name = "SkeletalMeshComponent0";
       Class = "SkeletalMeshActor";
       RootComponent = &component;
       Properties["SkeletalMeshComponent"] = &component;
@@ -945,7 +972,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   int maxProgress = Level->GetActorsCount();
   ProgressWindow progress(this, "Please wait...");
   progress.SetActionText("Preparing...");
-
+  progress.SetCurrentProgress(-1);
   std::thread([&] {
 
     for (UObject* inner : worldInner)
@@ -984,6 +1011,26 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
       std::filesystem::path dst = std::filesystem::path(ctx.Config.RootDir.WString()) / Level->GetPackage()->GetPackageName().WString();
       dst.replace_extension("t3d");
       file.Save(dst);
+    }
+    if (ctx.ComplexCollisions.size())
+    {
+      std::ofstream s(std::filesystem::path(ctx.Config.RootDir.WString()) / "ComplexCollisions.txt");
+      for (const std::string& item : ctx.ComplexCollisions)
+      {
+        s << item << '\n';
+      }
+    }
+    if (ctx.MLODs.size())
+    {
+      std::ofstream s(std::filesystem::path(ctx.Config.RootDir.WString()) / "MLODs.txt");
+      for (const auto& p : ctx.MLODs)
+      {
+        s << p.first << '\n';
+        for (const auto& i : p.second)
+        {
+          s << "  " << i << '\n';
+        }
+      }
     }
     if (ctx.Config.Materials || ctx.Config.Textures)
     {

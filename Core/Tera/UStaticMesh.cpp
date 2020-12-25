@@ -142,6 +142,14 @@ UStaticMesh::~UStaticMesh()
   free(Unk);
 }
 
+bool UStaticMesh::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(UseSimpleLineCollision);
+  REGISTER_BOOL_PROP(UseSimpleBoxCollision);
+  return false;
+}
+
 void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
 {
   if (s.IsReading())

@@ -37,7 +37,7 @@ void LevelEditor::OnTick()
     if (LevelLoaded && ShowEmptyMessage)
     {
       ShowEmptyMessage = false;
-      wxMessageBox("There are no actors to display!\nProbably the level consists of lights, sounds, emitters, or other actors that can't be rendered.", "Level loaded successfully!", wxICON_INFORMATION);
+      wxMessageBox("Probably the level consists of lights, sounds, emitters, or other actors that can't be rendered.", "There are no actors to display!", wxICON_INFORMATION);
     }
   }
 }
@@ -57,7 +57,16 @@ void LevelEditor::OnObjectLoaded()
 void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->AddTool(eID_Level_Load, LevelLoaded ? "Loaded" : "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview")->Enable(!LevelLoaded && Level);
+  auto tool = toolbar->AddTool(eID_Level_Load, LevelLoaded ? "Loaded" : "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
+  tool->Enable(!LevelLoaded && Level);
+  if (!Level)
+  {
+    tool->SetShortHelp("The level preview can't be loaded because the GMP file was not found!");
+  }
+  else if (LevelLoaded)
+  {
+    tool->SetShortHelp("The level was loaded!");
+  }
 }
 
 void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
@@ -80,6 +89,7 @@ void LevelEditor::OnToolBarEvent(wxCommandEvent& event)
         if (LevelLoaded)
         {
           sender->SetLabel("Loaded");
+          sender->SetShortHelp("The level was loaded!");
         }
       }
     }
@@ -609,7 +619,12 @@ void StreamingLevelEditor::OnObjectLoaded()
 void StreamingLevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   LevelEditor::PopulateToolBar(toolbar);
-  toolbar->AddTool(eID_StreamingLevel_Source, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open the source package with this level.")->Enable(Level);
+  auto tool = toolbar->AddTool(eID_StreamingLevel_Source, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open the source package with this level.");
+  tool->Enable(Level);
+  if (!Level)
+  {
+    tool->SetShortHelp("Can't show the source level object because the GMP was not found!");
+  }
 }
 
 void StreamingLevelEditor::OnToolBarEvent(wxCommandEvent& event)

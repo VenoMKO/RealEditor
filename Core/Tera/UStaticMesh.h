@@ -266,8 +266,11 @@ public:
   // Construct StaticMesh class and link properties
   static void ConfigureClassObject(UClass* object);
 
-  ~UStaticMesh() override;
+  UPROP(bool, UseSimpleLineCollision, true);
+  UPROP(bool, UseSimpleBoxCollision, true);
 
+  ~UStaticMesh() override;
+  bool RegisterProperty(FPropertyTag* property) override;
   void Serialize(FStream& s) override;
 
   const FStaticMeshRenderData* GetLod(int32 idx) const
