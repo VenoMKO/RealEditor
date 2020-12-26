@@ -141,25 +141,45 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     ctx.UsedMaterials.push_back(component->SpeedTree->LeafMaterial);
     materialMap["leaf"] = component->SpeedTree->LeafMaterial->GetObjectName().UTF8();
   }
+  bool hasOverrides = false;
   if (component->BranchMaterial)
   {
+    if (component->BranchMaterial != component->SpeedTree->BranchMaterial)
+    {
+      hasOverrides = true;
+    }
     ctx.UsedMaterials.push_back(component->BranchMaterial);
     materialMap["brach"] = component->BranchMaterial->GetObjectName().UTF8();
   }
   if (component->FrondMaterial)
   {
+    if (component->FrondMaterial != component->SpeedTree->FrondMaterial)
+    {
+      hasOverrides = true;
+    }
     ctx.UsedMaterials.push_back(component->FrondMaterial);
     materialMap["frond"] = component->FrondMaterial->GetObjectName().UTF8();
+    hasOverrides = true;
   }
   if (component->LeafMaterial)
   {
+    if (component->LeafMaterial != component->SpeedTree->LeafMaterial)
+    {
+      hasOverrides = true;
+    }
     ctx.UsedMaterials.push_back(component->LeafMaterial);
     materialMap["leaf"] = component->LeafMaterial->GetObjectName().UTF8();
+    hasOverrides = true;
   }
   if (materialMap.size())
   {
-    UActor* actor = Cast<UActor>(component->GetOuter());
     std::error_code err;
+    UActor* actor = Cast<UActor>(component->GetOuter());
+    if (hasOverrides)
+    {
+      ctx.MaterialOverrides.push_back(actor ? (UObject*)actor : (UObject*)component);
+    }
+    
     std::filesystem::path path = ctx.GetMaterialMapDir() / (actor ? (UObject*)actor : (UObject*)component)->GetPackage()->GetPackageName().UTF8();
     if (!std::filesystem::exists(path, err))
     {
@@ -1190,6 +1210,17 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Gathering textures..."));
     SendEvent(progress, UPDATE_PROGRESS, -1);
   }
+
+  if (ctx.Config.Materials && ctx.MaterialOverrides.size())
+  {
+    const std::filesystem::path root = ctx.GetMaterialOverridesPath();
+    std::ofstream s(root);
+    for (UObject* obj : ctx.MaterialOverrides)
+    {
+      s << obj->GetPackage()->GetPackageName().UTF8() << '\\' << obj->GetObjectName().UTF8() << '\n';
+    }
+  }
+  
   std::map<std::string, UTexture*> textures;
   int curProgress = 0;
   for (UObject* obj : ctx.UsedMaterials)
@@ -1207,6 +1238,17 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     if (!obj)
     {
       continue;
+    }
+    if (UMaterial* mat = Cast<UMaterial>(obj))
+    {
+      ctx.MasterMaterials[mat->GetObjectPath().UTF8()] = mat;
+    }
+    else if (UMaterialInstance* instance = Cast<UMaterialInstance>(obj))
+    {
+      if (UMaterial* mat = Cast<UMaterial>(instance->GetParent()))
+      {
+        ctx.MasterMaterials[GetLocalDir(mat) + mat->GetObjectName().UTF8()] = mat;
+      }
     }
     std::filesystem::path path = ctx.GetMaterialDir() / GetLocalDir(obj);
     std::error_code err;
@@ -1321,6 +1363,15 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             textures[tpath] = tex;
           }
         }
+      }
+    }
+
+    if (ctx.Config.Materials && ctx.MasterMaterials.size())
+    {
+      std::ofstream s(ctx.GetMasterMaterialsPath());
+      for (const auto& p : ctx.MasterMaterials)
+      {
+        s << p.first << '\n';
       }
     }
   }
@@ -1575,12 +1626,21 @@ void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const s
   }
   UActor* actor = Cast<UActor>(component->GetOuter());
   std::vector<UObject*> materialsToSave = materials;
+  bool materialOverrides = false;
   for (int matIdx = 0; matIdx < component->Materials.size(); ++matIdx)
   {
     if (component->Materials[matIdx] && matIdx < materialsToSave.size())
     {
+      if (materialsToSave[matIdx] != component->Materials[matIdx])
+      {
+        materialOverrides = true;
+      }
       materialsToSave[matIdx] = component->Materials[matIdx];
     }
+  }
+  if (materialOverrides)
+  {
+    ctx.MaterialOverrides.push_back(actor ? (UObject*)actor : (UObject*)component);
   }
   ctx.UsedMaterials.insert(ctx.UsedMaterials.end(), materialsToSave.begin(), materialsToSave.end());
   if (ctx.Config.Materials)

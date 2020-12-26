@@ -20,6 +20,8 @@ struct LevelExportContext {
   const char* TextureStorage = "Textures";
   const char* MaterialStorage = "Materials";
   const char* MaterialMapStorage = "MaterialMap";
+  const char* MasterMaterialStorage = "MasterMaterials.txt";
+  const char* MaterialOverridesStorage = "MaterialOverrides.txt";
   const char* TerrainStorage = "Terrains";
 
   inline std::filesystem::path GetStaticMeshDir() const
@@ -50,6 +52,16 @@ struct LevelExportContext {
   inline std::filesystem::path GetMaterialMapDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / MaterialMapStorage;
+  }
+
+  inline std::filesystem::path GetMaterialOverridesPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MaterialOverridesStorage;
+  }
+
+  inline std::filesystem::path GetMasterMaterialsPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MasterMaterialStorage;
   }
 
   inline std::filesystem::path GetTerrainDir() const
@@ -87,6 +99,8 @@ struct LevelExportContext {
   };
 
   std::vector<UObject*> UsedMaterials;
+  std::vector<UObject*> MaterialOverrides;
+  std::map<std::string, UObject*> MasterMaterials;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   std::vector<std::string> ComplexCollisions;
   std::map<std::string, std::vector<std::string>> MLODs;
