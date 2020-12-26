@@ -32,13 +32,21 @@ protected:
   void* SpeedTreeData = nullptr;
 };
 
+class UMaterialInterface;
 class USpeedTreeComponent : public UMeshComponent {
 public:
   DECL_UOBJ(USpeedTreeComponent, UMeshComponent);
 
-  bool RegisterProperty(FPropertyTag* property) override;
-
   UPROP(USpeedTree*, SpeedTree, nullptr);
+  UPROP(UMaterialInterface*, BranchMaterial, nullptr);
+  UPROP(UMaterialInterface*, Branch1Material, nullptr);
+  UPROP(UMaterialInterface*, Branch2Material, nullptr);
+  UPROP(UMaterialInterface*, FrondMaterial, nullptr);
+  UPROP(UMaterialInterface*, LeafMaterial, nullptr);
+  UPROP(UMaterialInterface*, LeafCardMaterial, nullptr);
+  UPROP(UMaterialInterface*, LeafMeshMaterial, nullptr);
+  UPROP(UMaterialInterface*, BillboardMaterial, nullptr);
 
+  bool RegisterProperty(FPropertyTag* property) override;
   void PostLoad() override;
 };

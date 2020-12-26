@@ -125,6 +125,61 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   {
     return;
   }
+  std::map<std::string, std::string> materialMap;
+  if (component->SpeedTree->BranchMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->SpeedTree->BranchMaterial);
+    materialMap["brach"] = component->SpeedTree->BranchMaterial->GetObjectName().UTF8();
+  }
+  if (component->SpeedTree->FrondMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->SpeedTree->FrondMaterial);
+    materialMap["frond"] = component->SpeedTree->FrondMaterial->GetObjectName().UTF8();
+  }
+  if (component->SpeedTree->LeafMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->SpeedTree->LeafMaterial);
+    materialMap["leaf"] = component->SpeedTree->LeafMaterial->GetObjectName().UTF8();
+  }
+  if (component->BranchMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->BranchMaterial);
+    materialMap["brach"] = component->BranchMaterial->GetObjectName().UTF8();
+  }
+  if (component->FrondMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->FrondMaterial);
+    materialMap["frond"] = component->FrondMaterial->GetObjectName().UTF8();
+  }
+  if (component->LeafMaterial)
+  {
+    ctx.UsedMaterials.push_back(component->LeafMaterial);
+    materialMap["leaf"] = component->LeafMaterial->GetObjectName().UTF8();
+  }
+  if (materialMap.size())
+  {
+    UActor* actor = Cast<UActor>(component->GetOuter());
+    std::error_code err;
+    std::filesystem::path path = ctx.GetMaterialMapDir() / (actor ? (UObject*)actor : (UObject*)component)->GetPackage()->GetPackageName().UTF8();
+    if (!std::filesystem::exists(path, err))
+    {
+      std::filesystem::create_directories(path, err);
+    }
+    if (std::filesystem::exists(path, err))
+    {
+      path /= (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
+      path.replace_extension("txt");
+
+      if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
+      {
+        std::ofstream s(path, std::ios::out);
+        for (const auto& p : materialMap)
+        {
+          s << p.first << ": " << p.second << '\n';
+        }
+      }
+    }
+  }
   std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
   std::error_code err;
   if (!std::filesystem::exists(path, err))
@@ -139,7 +194,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     {
       void* sptData = nullptr;
       FILE_OFFSET sptDataSize = 0;
-      component->SpeedTree->GetSptData(&sptData, &sptDataSize, false);
+      component->SpeedTree->GetSptData(&sptData, &sptDataSize, true);
       std::ofstream s(path, std::ios::out | std::ios::trunc | std::ios::binary);
       s.write((const char*)sptData, sptDataSize);
       free(sptData);

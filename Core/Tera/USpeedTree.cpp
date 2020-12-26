@@ -1,7 +1,14 @@
 #include "USpeedTree.h"
 #include "FPackage.h"
+#include "FStream.h"
+#include "UMaterial.h"
 
 #include "Utils/ALog.h"
+
+#define SPT_UserDataSection 19000
+#define SPT_UserDataBegin 19002
+#define SPT_UserDataEnd 19001
+
 
 bool USpeedTree::RegisterProperty(FPropertyTag* property)
 {
@@ -9,66 +16,17 @@ bool USpeedTree::RegisterProperty(FPropertyTag* property)
   {
     return true;
   }
-  if (PROP_IS(property, bLegacySpeedTree))
-  {
-    bLegacySpeedTreeProperty = property;
-    bLegacySpeedTree = property->BoolVal;
-    return true;
-  }
-  if (PROP_IS(property, RandomSeed))
-  {
-    RandomSeedProperty = property;
-    RandomSeed = property->Value->GetInt();
-    return true;
-  }
-  if (PROP_IS(property, BillboardMaterial))
-  {
-    BillboardMaterialProperty = property;
-    BillboardMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, LeafMaterial))
-  {
-    LeafMaterialProperty = property;
-    LeafMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, LeafMeshMaterial))
-  {
-    LeafMeshMaterialProperty = property;
-    LeafMeshMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, LeafCardMaterial))
-  {
-    LeafCardMaterialProperty = property;
-    LeafCardMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, FrondMaterial))
-  {
-    FrondMaterialProperty = property;
-    FrondMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, BranchMaterial))
-  {
-    BranchMaterialProperty = property;
-    BranchMaterial = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, Branch1Material))
-  {
-    Branch1MaterialProperty = property;
-    Branch1Material = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
-  if (PROP_IS(property, Branch2Material))
-  {
-    Branch2MaterialProperty = property;
-    Branch2Material = GetPackage()->GetObject(property->Value->GetObjectIndex(), false);
-    return true;
-  }
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(bLegacySpeedTree);
+  REGISTER_INT_PROP(RandomSeed);
+  REGISTER_TOBJ_PROP(BillboardMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafMeshMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafCardMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(FrondMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(BranchMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(Branch1Material, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(Branch2Material, UMaterialInterface*);
   return false;
 }
 
@@ -105,14 +63,58 @@ bool USpeedTree::GetSptData(void** output, FILE_OFFSET* outputSize, bool embedMa
   }
   *output = nullptr;
   *outputSize = SpeedTreeDataSize;
-  if (SpeedTreeDataSize)
+  if (!SpeedTreeDataSize)
+  {
+    return false;
+  }
+  FString branch = BranchMaterial ? BranchMaterial->GetObjectName() : FString();
+  FString frond = FrondMaterial ? FrondMaterial->GetObjectName() : FString();
+  FString leaf = LeafMaterial ? LeafMaterial->GetObjectName() : FString();
+
+  if (embedMaterialInfo && (branch.Size() || frond.Size() || leaf.Size()))
+  {
+    FString userData;
+    userData += '$';
+    if (branch.Size())
+    {
+      userData += 'b';
+      userData += (uint8)branch.UTF8().size();
+      userData += branch.UTF8();
+    }
+    if (frond.Size())
+    {
+      userData += 'f';
+      userData += (uint8)frond.UTF8().size();
+      userData += frond.UTF8();
+    }
+    if (leaf.Size())
+    {
+      userData += 'l';
+      userData += (uint8)leaf.UTF8().size();
+      userData += leaf.UTF8();
+    }
+    userData += '\0';
+
+    MWriteStream s(SpeedTreeData, SpeedTreeDataSize);
+    s.SetPosition(SpeedTreeDataSize);
+    uint32 tag;
+    tag = SPT_UserDataSection;
+    s << tag;
+    tag = SPT_UserDataBegin;
+    s << tag;
+    s << userData;
+    tag = SPT_UserDataEnd;
+    s << tag;
+    *outputSize = s.GetPosition();
+    *output = malloc(*outputSize);
+    memcpy(*output, s.GetAllocation(), *outputSize);
+  }
+  else
   {
     *output = malloc(SpeedTreeDataSize);
     memcpy(*output, SpeedTreeData, SpeedTreeDataSize);
-    // TODO: embed materials
-    return true;
   }
-  return false;
+  return true;
 }
 
 void USpeedTree::SetSptData(void* data, FILE_OFFSET size)
@@ -144,11 +146,25 @@ bool USpeedTreeComponent::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();
   REGISTER_TOBJ_PROP(SpeedTree, USpeedTree*);
+  REGISTER_TOBJ_PROP(Branch1Material, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(Branch2Material, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(FrondMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafCardMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(LeafMeshMaterial, UMaterialInterface*);
+  REGISTER_TOBJ_PROP(BillboardMaterial, UMaterialInterface*);
   return false;
 }
 
 void USpeedTreeComponent::PostLoad()
 {
   LoadObject(SpeedTree);
+  LoadObject(LeafMaterial);
+  LoadObject(Branch1Material);
+  LoadObject(Branch2Material);
+  LoadObject(FrondMaterial);
+  LoadObject(LeafCardMaterial);
+  LoadObject(LeafMeshMaterial);
+  LoadObject(BillboardMaterial);
   Super::PostLoad();
 }

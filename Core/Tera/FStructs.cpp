@@ -374,7 +374,7 @@ void FUntypedBulkData::SerializeBulkData(FStream& s, void* data)
       else
       {
         void* tmp = malloc(GetElementSize() * ElementCount);
-        MWrightStream memStream(tmp, GetElementSize() * ElementCount);
+        MWriteStream memStream(tmp, GetElementSize() * ElementCount);
 
         // Serialize each element individually via memory reader.				
         for (int32 idx = 0; idx < ElementCount; ++idx)

@@ -1624,7 +1624,7 @@ bool FPackage::Save(PackageSaveContext& context)
           LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
         });
 
-        MWrightStream memStream(decompressedPackageData, readStream.GetPosition() + totalDecompressedSize);
+        MWriteStream memStream(decompressedPackageData, readStream.GetPosition() + totalDecompressedSize);
         memStream << summary;
 
         FWriteStream writeStream(context.Path);
@@ -2003,7 +2003,7 @@ bool FPackage::Save(PackageSaveContext& context)
     {
       if (exp->ObjectFlags & RF_Marked)
       {
-        MWrightStream tmpWriter(nullptr, 1024 * 1024, writer.GetPosition());
+        MWriteStream tmpWriter(nullptr, 1024 * 1024, writer.GetPosition());
         tmpWriter.SetPackage(this);
 
         exp->SerialOffset = writer.GetPosition();

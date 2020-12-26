@@ -309,6 +309,22 @@ public:
     return *this;
   }
 
+  inline FString& operator+=(const char& str)
+  {
+    bool appnedNull = false;
+    if (Data.size() && Data.back() == 0)
+    {
+      Data = Data.substr(0, Data.size() - 1);
+      appnedNull = str != 0;
+    }
+    Data += str;
+    if (appnedNull)
+    {
+      Data.resize(Data.size() + 1);
+    }
+    return *this;
+  }
+
   inline FString operator+(const FString& str) const
   {
     FString s(*this);

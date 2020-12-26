@@ -17,11 +17,8 @@ void SpeedTreeEditor::PopulateToolBar(wxToolBar* toolbar)
 void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
 {
   wxMenu menu;
-  wxMenuItem* mitem = nullptr;
-  bool hasData = Object->GetDataSize() > 0 && !Object->IsDirty();
-  mitem = menu.Append(ExportMode::ExportSpt, wxT("Export SPT"));
-  mitem = menu.Append(ExportMode::ExportSptAndMaterials, wxT("Export SPT with embeded materials"));
-  mitem->Enable(false);
+  menu.Append(ExportMode::ExportSptAndMaterials, wxT("Export SPT with embeded materials"));
+  menu.Append(ExportMode::ExportSpt, wxT("Export unmodifed SPT"));
 
   void* sptData = nullptr;
   FILE_OFFSET sptDataSize = 0;

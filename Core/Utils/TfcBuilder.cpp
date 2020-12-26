@@ -53,7 +53,7 @@ bool TfcBuilder::Compile()
     return false;
   }
 
-  MWrightStream s(nullptr, 0);
+  MWriteStream s(nullptr, 0);
   for (const auto& p : tfcMap)
   {
     UTexture2D* tex = p.second.front();

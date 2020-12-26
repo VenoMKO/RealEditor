@@ -555,9 +555,9 @@ protected:
   size_t Size = 0;
 };
 
-class MWrightStream : public FStream {
+class MWriteStream : public FStream {
 public:
-  MWrightStream(void* data, size_t size, size_t fakeOffset = 0)
+  MWriteStream(void* data, size_t size, size_t fakeOffset = 0)
     : Offset(fakeOffset)
     , Size(size)
   {
@@ -574,7 +574,7 @@ public:
     Good = true;
   }
 
-  ~MWrightStream()
+  ~MWriteStream()
   {
     if (Data)
     {
