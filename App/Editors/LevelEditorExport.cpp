@@ -27,7 +27,7 @@ typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> Com
 
 std::string GetLocalDir(UObject* obj, const char* sep = "\\");
 void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* component);
-void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
+std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
 
 void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor);
 void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor);
@@ -38,7 +38,16 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     return;
   }
-  SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials());
+  auto materials = SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials());
+  for (int32 idx = 0; idx < materials.size(); ++idx)
+  {
+    FString item = "None";
+    if (materials[idx])
+    {
+      item = FString::Sprintf("%s'\"Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
+    }
+    f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
+  }
   std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
   std::error_code err;
   if (!std::filesystem::exists(path, err))
@@ -1618,11 +1627,11 @@ void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* comp
   }
 }
 
-void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials)
+std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials)
 {
   if (!component)
   {
-    return;
+    return {};
   }
   UActor* actor = Cast<UActor>(component->GetOuter());
   std::vector<UObject*> materialsToSave = materials;
@@ -1678,6 +1687,7 @@ void SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const s
       }
     }
   }
+  return materialsToSave;
 }
 
 void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
@@ -1866,11 +1876,18 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
   int32 width = 0;
   int32 height = 0;
 
+  std::error_code err;
   std::filesystem::path dst = ctx.GetTerrainDir();
-  dst /= actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_HeightMap";
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectName().UTF8();
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+  dst /= "HeightMap";
   dst.replace_extension(HasAVX2() ? "png" : "dds");
 
-  std::error_code err;
+  
   if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
   {
     if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
@@ -1895,7 +1912,13 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
   }
 
   dst = ctx.GetTerrainDir();
-  dst /= actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_VisibilityMap";
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectName().UTF8();
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+  dst /= "VisibilityMap";
   dst.replace_extension(HasAVX2() ? "png" : "dds");
 
   if (actor->HasVisibilityData() && (ctx.Config.OverrideData || !std::filesystem::exists(dst, err)))
@@ -1924,9 +1947,9 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
   }
 
   dst = ctx.GetTerrainDir();
-  dst /= "WeightMaps";
   dst /= actor->GetPackage()->GetPackageName().UTF8();
   dst /= actor->GetObjectName().UTF8();
+  dst /= "WeightMaps";
 
   if (!std::filesystem::exists(dst, err))
   {
@@ -2038,7 +2061,15 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
   }
 
   dst = ctx.GetTerrainDir();
-  dst /= actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8() + "_Setup";
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectName().UTF8();
+
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+
+  dst /= "Setup";
   dst.replace_extension("txt");
 
   if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
@@ -2096,7 +2127,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
             s << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectName().UTF8() << '\n';
             s << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
           }
-          s << padding << padding << "Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
+          s << padding << padding << "Mapping Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
           if (tm->MappingRotation)
           {
             s << padding << padding << "Rotation: " << std::to_string(tm->MappingRotation) << '\n';
