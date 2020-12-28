@@ -160,6 +160,7 @@ protected:
   wxCheckBox* ExportLods = nullptr;
   wxCheckBox* ExportMLods = nullptr;
   wxCheckBox* ConvexCollisions = nullptr;
+  wxCheckBox* ExportLightmapUVs = nullptr;
   wxCheckBox* IgnoreHidden = nullptr;
   wxButton* DefaultsButton = nullptr;
   wxButton* ExportButton = nullptr;

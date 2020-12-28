@@ -194,7 +194,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   bSizer141 = new wxBoxSizer(wxHORIZONTAL);
 
   OverrideFiles = new wxCheckBox(m_panel10, wxID_ANY, wxT("Override files"), wxDefaultPosition, wxDefaultSize, 0);
-  OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)"));
+  OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)."));
 
   bSizer141->Add(OverrideFiles, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
@@ -355,6 +355,11 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 
   bSizer181->Add(ConvexCollisions, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
+  ExportLightmapUVs = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export lightmap UVs"), wxDefaultPosition, wxDefaultSize, 0);
+  ExportLightmapUVs->SetToolTip(wxT("Embed custom UV sets."));
+
+  bSizer181->Add(ExportLightmapUVs, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
 
   m_panel121->SetSizer(bSizer181);
   m_panel121->Layout();
@@ -453,6 +458,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
   ExportLods->SetValue(ctx.Config.ExportLods);
   ExportMLods->SetValue(ctx.Config.ExportMLods);
   ConvexCollisions->SetValue(ctx.Config.ConvexCollisions);
+  ExportLightmapUVs->SetValue(ctx.Config.ExportLightmapUVs);
   IgnoreHidden->SetValue(ctx.Config.IgnoreHidden);
 
   SpotLightMultiplierValue = ctx.Config.SpotLightMul;
@@ -483,6 +489,7 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
   ctx.Config.ConvexCollisions = ConvexCollisions->GetValue();
   ctx.Config.IgnoreHidden = IgnoreHidden->GetValue();
   ctx.Config.ExportMLods = ExportMLods->GetValue();
+  ctx.Config.ExportLightmapUVs = ExportLightmapUVs->GetValue();
 
   PointLightMultiplier->GetValidator()->TransferFromWindow();
   SpotLightMultiplier->GetValidator()->TransferFromWindow();

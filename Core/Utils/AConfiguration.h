@@ -59,6 +59,7 @@ struct FMapExportConfig {
     CFG_SplitT3D,
     CFG_MLods,
     CFG_DynamicShadows,
+    CFG_LightmapUVs,
     CFG_End = 0xFFFF
   };
 
@@ -91,6 +92,7 @@ struct FMapExportConfig {
   bool ExportLods = false;
   bool ExportMLods = false;
   bool ConvexCollisions = true;
+  bool ExportLightmapUVs = false;
   
 
   bool GetClassEnabled(ActorClass classFlag) const

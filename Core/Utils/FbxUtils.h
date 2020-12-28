@@ -8,6 +8,7 @@ struct FbxExportContext {
   bool ExportSkeleton = true;
   bool ExportLods = true;
   bool ExportCollisions = true;
+  bool ExportLightMapUVs = false;
 
   bool ApplyRootTransform = false;
   FVector PrePivot;

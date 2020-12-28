@@ -537,7 +537,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
     layer = mesh->GetLayer(mesh->CreateLayer());
   }
 
-  const int32 numTexCoords = lod->VertexBuffer.NumTexCoords;
+  const int32 numTexCoords = ctx.ExportLightMapUVs ? lod->VertexBuffer.NumTexCoords : 1;
   FbxLayerElementUV* uvDiffuseLayer = FbxLayerElementUV::Create(mesh, "DiffuseUV");
   std::vector<FbxLayerElementUV*> customUVLayers;
   for (int32 idx = 1; idx < numTexCoords; ++idx)

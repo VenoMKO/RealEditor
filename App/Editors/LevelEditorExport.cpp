@@ -66,6 +66,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
+      fbxCtx.ExportLightMapUVs = ctx.Config.ExportLightmapUVs;
       utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());

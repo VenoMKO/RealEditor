@@ -159,6 +159,9 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_DynamicShadows:
         s << c.ForceDynamicShadows;
         break;
+      case FMapExportConfig::CFG_LightmapUVs:
+        s << c.ExportLightmapUVs;
+        break;
       default:
         s.Close();
         // no break
@@ -192,6 +195,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKVIfNotDefault(FMapExportConfig::CFG_Lods, c.ExportLods, d.ExportLods);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_RBCollisions, c.ConvexCollisions, d.ConvexCollisions);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_MLods, c.ExportMLods, d.ExportMLods);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_LightmapUVs, c.ExportLightmapUVs, d.ExportLightmapUVs);
     
     SerializeKey(FMapExportConfig::CFG_End);
   }
