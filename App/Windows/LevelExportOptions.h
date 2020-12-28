@@ -102,8 +102,8 @@ struct LevelExportContext {
     }
   };
 
+  std::vector<std::string> Errors;
   std::vector<UObject*> UsedMaterials;
-  std::vector<UObject*> MaterialOverrides;
   std::map<std::string, UObject*> MasterMaterials;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   std::vector<std::string> ComplexCollisions;

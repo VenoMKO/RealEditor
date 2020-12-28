@@ -32,13 +32,27 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
 void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor);
 void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor);
 
+std::string GetActorName(UObject* actor)
+{
+  if (!actor)
+  {
+    return {};
+  }
+  return actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8();
+}
+
 ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UStaticMeshComponent* component = Cast<UStaticMeshComponent>(acomp);
   if (!component || !component->StaticMesh)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp->GetOuter()));
+    }
     return;
   }
   auto materials = SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials(ctx.Config.ExportLods ? -1 : 0));
+  bool hasNullMaterials = false;
   for (int32 idx = 0; idx < materials.size(); ++idx)
   {
     FString item = "None";
@@ -67,9 +81,16 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
       fbxCtx.ExportLightMapUVs = ctx.Config.ExportLightmapUVs;
-      utils.ExportStaticMesh(component->StaticMesh, fbxCtx);
+      if (!utils.ExportStaticMesh(component->StaticMesh, fbxCtx))
+      {
+        ctx.Errors.emplace_back("Error: Failed to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+      }
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
+  }
+  else
+  {
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 
@@ -101,6 +122,10 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
   USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(acomp);
   if (!component || !component->SkeletalMesh)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export  " + GetActorName(acomp->GetOuter()));
+    }
     return;
   }
   SaveMaterialMap(component, ctx, component->SkeletalMesh->GetMaterials());
@@ -122,9 +147,16 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
-      utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx);
+      if (!utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
+      {
+        ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+      }
     }
     f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
+  }
+  else
+  {
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
@@ -133,6 +165,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   USpeedTreeComponent* component = Cast<USpeedTreeComponent>(acomp);
   if (!component || !component->SpeedTree)
   {
+    ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp->GetOuter()));
     return;
   }
   std::map<std::string, UObject*> usedMaterials;
@@ -213,6 +246,10 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
   }
+  else
+  {
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save SpeedTree " + GetLocalDir(component->SpeedTree) + component->SpeedTree->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+  }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 
   // This is incorrect, but much better than nothing.
@@ -232,6 +269,10 @@ ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportCont
   UPointLightComponent* component = Cast<UPointLightComponent>(acomp);
   if (!component)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
     return;
   }
   f.AddFloat("LightFalloffExponent", component->FalloffExponent);
@@ -257,6 +298,10 @@ ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportConte
   USpotLightComponent* component = Cast<USpotLightComponent>(acomp);
   if (!component)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
     return;
   }
   f.AddFloat("LightFalloffExponent", component->FalloffExponent);
@@ -284,6 +329,10 @@ ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExpo
   UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(acomp);
   if (!component)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
     return;
   }
   f.AddFloat("Intensity", component->Brightness * ctx.Config.SpotLightMul);
@@ -306,6 +355,10 @@ ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContex
   USkyLightComponent* component = Cast<USkyLightComponent>(acomp);
   if (!component)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
     return;
   }
   if (component->LowerBrightness)
@@ -333,6 +386,10 @@ ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportConte
   UHeightFogComponent* component = Cast<UHeightFogComponent>(acomp);
   if (!component)
   {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
     return;
   }
   f.AddFloat("FogDensity", component->Density);
@@ -1064,6 +1121,10 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
           levels.push_back(streamedLevel->Level);
           maxProgress += streamedLevel->Level->GetActorsCount();
         }
+        else if (!streamedLevel->Level)
+        {
+          ctx.Errors.emplace_back("Error! Failed to load streamed level: " + streamedLevel->PackageName.UTF8() + ".gmp!");
+        }
       }
     }
 
@@ -1123,6 +1184,25 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   }).detach();
 
   progress.ShowModal();
+
+  if (!progress.IsCanceled())
+  {
+    if (ctx.Errors.empty())
+    {
+      wxMessageBox(wxT("Successfully exported the level."), wxT("Done!"), wxICON_INFORMATION);
+    }
+    else
+    {
+      {
+        std::ofstream s(ctx.Config.RootDir.WString() + L"/Errors.txt");
+        for (const std::string& err : ctx.Errors)
+        {
+          s << err << '\n';
+        }
+      }
+      wxMessageBox(wxT("Exported the level but some errors occurred!\nSee the Errors.txt file in the destination folder for more details."), wxT("Done!"), wxICON_WARNING);
+    }
+  }
 }
 
 void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx, ProgressWindow* progress)
@@ -1132,6 +1212,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
 
   if (actors.empty())
   {
+    ctx.Errors.emplace_back("Warning: " + level->GetPackage()->GetPackageName().UTF8() + " has no actors!");
     return;
   }
   T3DFile lightF;
@@ -1307,7 +1388,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     }
     if (UMaterial* mat = Cast<UMaterial>(obj))
     {
-      ctx.MasterMaterials[mat->GetObjectPath().UTF8()] = mat;
+      ctx.MasterMaterials[GetLocalDir(mat) + mat->GetObjectName().UTF8()] = mat;
     }
     else if (UMaterialInstance* instance = Cast<UMaterialInstance>(obj))
     {
@@ -1320,8 +1401,9 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     std::error_code err;
     if (!std::filesystem::exists(path, err))
     {
-      if (!std::filesystem::create_directories(path, err))
+      if (!std::filesystem::create_directories(path, err) && err)
       {
+        ctx.Errors.emplace_back("Error: Failed to create a folder to save material " + obj->GetObjectName().UTF8());
         LogW("Failed to save material %s", obj->GetObjectName().UTF8().c_str());
         continue;
       }
@@ -1954,6 +2036,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
       if (!processor.Process())
       {
+        ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " heightmap: " + processor.GetError());
         LogW("Failed to export %s heights: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
       }
     }
@@ -1989,6 +2072,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
       if (!processor.Process())
       {
+        ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " visibility mask: " + processor.GetError());
         LogW("Failed to export %s visibility: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
       }
     }
@@ -2032,6 +2116,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
         if (!processor.Process())
         {
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap: " + processor.GetError());
           LogW("Failed to export %s weightmap: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
         }
       }
@@ -2075,6 +2160,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
         if (inputFormat == TextureProcessor::TCFormat::None)
         {
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". Unsupported pixel format.");
           LogW("Failed to export %s weightmap %s: unsupported pixel format.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
           continue;
         }
@@ -2091,6 +2177,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         }
         if (!mip)
         {
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". No mipmaps.");
           LogW("Failed to export %s weightmap %s: mo mips.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
           continue;
         }
@@ -2102,6 +2189,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
         if (!processor.Process())
         {
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". " + processor.GetError());
           LogW("Failed to export %s weightmap %s: %s", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8(), processor.GetError().c_str());
         }
       }

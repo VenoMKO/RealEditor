@@ -124,7 +124,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 			std::error_code err;
 			if (!std::filesystem::exists(dest, err))
 			{
-				if (!std::filesystem::create_directories(dest, err))
+				if (!std::filesystem::create_directories(dest, err) && err)
 				{
 					failedExports.push_back(exp);
 					LogE("Failed to create a directory to export %s", exp->GetObjectName().UTF8().c_str());

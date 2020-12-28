@@ -100,7 +100,7 @@ private:
 };
 
 LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx)
-  : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(597, 576), wxDEFAULT_DIALOG_STYLE)
+  : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(597, 592), wxDEFAULT_DIALOG_STYLE)
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -268,7 +268,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   m_panel8->SetSizer(bSizer18);
   m_panel8->Layout();
   bSizer18->Fit(m_panel8);
-  bSizer24->Add(m_panel8, 0, wxALL | wxEXPAND | wxALIGN_CENTER_VERTICAL, 0);
+  bSizer24->Add(m_panel8, 0, wxALL | wxALIGN_CENTER_VERTICAL, 0);
 
   wxPanel* m_panel9;
   m_panel9 = new wxPanel(m_panel12, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -289,10 +289,10 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   m_panel9->SetSizer(bSizer19);
   m_panel9->Layout();
   bSizer19->Fit(m_panel9);
-  bSizer24->Add(m_panel9, 0, wxEXPAND | wxALL | wxALIGN_CENTER_VERTICAL, 0);
+  bSizer24->Add(m_panel9, 0, wxALL | wxALIGN_CENTER_VERTICAL, 0);
 
 
-  bSizer23->Add(bSizer24, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL, 5);
+  bSizer23->Add(bSizer24, 1, 0, 5);
 
   wxBoxSizer* bSizer15;
   bSizer15 = new wxBoxSizer(wxHORIZONTAL);
