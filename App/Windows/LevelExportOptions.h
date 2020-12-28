@@ -21,7 +21,7 @@ struct LevelExportContext {
   const char* MaterialStorage = "Materials";
   const char* MaterialMapStorage = "MaterialMap";
   const char* MasterMaterialStorage = "MasterMaterials.txt";
-  const char* MaterialOverridesStorage = "MaterialOverrides.txt";
+  const char* MaterialsListStorage = "MaterialsList.txt";
   const char* TerrainStorage = "Terrains";
 
   inline std::filesystem::path GetStaticMeshDir() const
@@ -44,24 +44,28 @@ struct LevelExportContext {
     return std::filesystem::path(Config.RootDir.WString()) / TextureStorage / DataDirName;
   }
 
+  // Contains material parameters dumps
   inline std::filesystem::path GetMaterialDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / MaterialStorage;
   }
 
+  // Per-actor material map
   inline std::filesystem::path GetMaterialMapDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / MaterialMapStorage;
   }
 
-  inline std::filesystem::path GetMaterialOverridesPath() const
-  {
-    return std::filesystem::path(Config.RootDir.WString()) / MaterialOverridesStorage;
-  }
-
+  // A list of master materials
   inline std::filesystem::path GetMasterMaterialsPath() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / MasterMaterialStorage;
+  }
+
+  // A list of all materials for RE Helper plugin
+  inline std::filesystem::path GetMaterialsListPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MaterialsListStorage;
   }
 
   inline std::filesystem::path GetTerrainDir() const
@@ -148,11 +152,13 @@ protected:
   wxTextCtrl* PointLightMultiplier = nullptr;
   wxTextCtrl* SpotLightMultiplier = nullptr;
   wxCheckBox* LightInvSqrt = nullptr;
+  wxCheckBox* DynamicShadows = nullptr;
   wxCheckBox* ResampleTerrain = nullptr;
   wxCheckBox* SplitTerrainWeightMaps = nullptr;
   wxCheckBox* Textures = nullptr;
   wxChoice* TextureFormatSelector = nullptr;
   wxCheckBox* ExportLods = nullptr;
+  wxCheckBox* ExportMLods = nullptr;
   wxCheckBox* ConvexCollisions = nullptr;
   wxCheckBox* IgnoreHidden = nullptr;
   wxButton* DefaultsButton = nullptr;

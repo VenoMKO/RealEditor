@@ -289,7 +289,7 @@ public:
 
   class URB_BodySetup* GetBodySetup() const;
 
-  std::vector<UObject*> GetMaterials() const;
+  std::vector<UObject*> GetMaterials(int32 lodIdx = -1) const;
 
 protected:
   DECL_UREF(UObject, FBodySetup);

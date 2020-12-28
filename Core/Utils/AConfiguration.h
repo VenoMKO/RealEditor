@@ -57,6 +57,8 @@ struct FMapExportConfig {
     CFG_RBCollisions,
     CFG_IgnoreHidden,
     CFG_SplitT3D,
+    CFG_MLods,
+    CFG_DynamicShadows,
     CFG_End = 0xFFFF
   };
 
@@ -79,13 +81,15 @@ struct FMapExportConfig {
   float DirectionalLightMul = 1.; // Not in UI
   float SkyLightMul = 1.; // Not in UI
   bool InvSqrtFalloff = false;
+  bool ForceDynamicShadows = true;
 
   // Terrains
   bool ResampleTerrain = true;
   bool SplitTerrainWeights = true;
   
   // Models
-  bool ExportLods = true;
+  bool ExportLods = false;
+  bool ExportMLods = false;
   bool ConvexCollisions = true;
   
 

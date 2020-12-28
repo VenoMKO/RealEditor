@@ -26,7 +26,7 @@
 typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
 
 std::string GetLocalDir(UObject* obj, const char* sep = "\\");
-void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* component);
+void AddCommonPrimitiveComponentParameters(T3DFile& f, LevelExportContext& ctx, UPrimitiveComponent* component);
 std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
 
 void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor);
@@ -38,13 +38,13 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     return;
   }
-  auto materials = SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials());
+  auto materials = SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials(ctx.Config.ExportLods ? -1 : 0));
   for (int32 idx = 0; idx < materials.size(); ++idx)
   {
     FString item = "None";
     if (materials[idx])
     {
-      item = FString::Sprintf("%s'\"Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
     }
     f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
   }
@@ -70,7 +70,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
   }
-  AddCommonPrimitiveComponentParameters(f, component);
+  AddCommonPrimitiveComponentParameters(f, ctx, component);
 
   if (ctx.Config.ConvexCollisions && !component->StaticMesh->GetBodySetup())
   {
@@ -84,7 +84,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     }
   }
 
-  if (component->ReplacementPrimitive)
+  if (component->ReplacementPrimitive && ctx.Config.ExportMLods)
   {
     const std::string itemPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->GetOuter()->GetObjectName().UTF8();
     const std::string mlodPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->ReplacementPrimitive->GetOuter()->GetObjectName().UTF8();
@@ -125,7 +125,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     }
     f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
   }
-  AddCommonPrimitiveComponentParameters(f, component);
+  AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
 
 ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
@@ -134,77 +134,59 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   {
     return;
   }
-  std::map<std::string, std::string> materialMap;
+  std::map<std::string, UObject*> usedMaterials;
   if (component->SpeedTree->BranchMaterial)
   {
     ctx.UsedMaterials.push_back(component->SpeedTree->BranchMaterial);
-    materialMap["brach"] = component->SpeedTree->BranchMaterial->GetObjectName().UTF8();
+    usedMaterials["brach"] = component->SpeedTree->BranchMaterial;
   }
   if (component->SpeedTree->FrondMaterial)
   {
     ctx.UsedMaterials.push_back(component->SpeedTree->FrondMaterial);
-    materialMap["frond"] = component->SpeedTree->FrondMaterial->GetObjectName().UTF8();
+    usedMaterials["frond"] = component->SpeedTree->FrondMaterial;
   }
   if (component->SpeedTree->LeafMaterial)
   {
     ctx.UsedMaterials.push_back(component->SpeedTree->LeafMaterial);
-    materialMap["leaf"] = component->SpeedTree->LeafMaterial->GetObjectName().UTF8();
+    usedMaterials["leaf"] = component->SpeedTree->LeafMaterial;
   }
-  bool hasOverrides = false;
+
   if (component->BranchMaterial)
   {
-    if (component->BranchMaterial != component->SpeedTree->BranchMaterial)
-    {
-      hasOverrides = true;
-    }
     ctx.UsedMaterials.push_back(component->BranchMaterial);
-    materialMap["brach"] = component->BranchMaterial->GetObjectName().UTF8();
+    usedMaterials["brach"] = component->BranchMaterial;
   }
   if (component->FrondMaterial)
   {
-    if (component->FrondMaterial != component->SpeedTree->FrondMaterial)
-    {
-      hasOverrides = true;
-    }
     ctx.UsedMaterials.push_back(component->FrondMaterial);
-    materialMap["frond"] = component->FrondMaterial->GetObjectName().UTF8();
-    hasOverrides = true;
+    usedMaterials["frond"] = component->FrondMaterial;
   }
   if (component->LeafMaterial)
   {
-    if (component->LeafMaterial != component->SpeedTree->LeafMaterial)
-    {
-      hasOverrides = true;
-    }
     ctx.UsedMaterials.push_back(component->LeafMaterial);
-    materialMap["leaf"] = component->LeafMaterial->GetObjectName().UTF8();
-    hasOverrides = true;
+    usedMaterials["leaf"] = component->LeafMaterial;
   }
-  if (materialMap.size())
+  if (usedMaterials.size())
   {
     std::error_code err;
     UActor* actor = Cast<UActor>(component->GetOuter());
-    if (hasOverrides)
-    {
-      ctx.MaterialOverrides.push_back(actor ? (UObject*)actor : (UObject*)component);
-    }
     
-    std::filesystem::path path = ctx.GetMaterialMapDir() / (actor ? (UObject*)actor : (UObject*)component)->GetPackage()->GetPackageName().UTF8();
+    std::filesystem::path path = ctx.GetMaterialMapDir();
     if (!std::filesystem::exists(path, err))
     {
       std::filesystem::create_directories(path, err);
     }
     if (std::filesystem::exists(path, err))
     {
-      path /= (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
+      path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
       path.replace_extension("txt");
 
       if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
       {
         std::ofstream s(path, std::ios::out);
-        for (const auto& p : materialMap)
+        for (const auto& p : usedMaterials)
         {
-          s << p.first << ": " << p.second << '\n';
+          s << p.first << ": " << GetLocalDir(p.second) << '\n';
         }
       }
     }
@@ -230,7 +212,19 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
   }
-  AddCommonPrimitiveComponentParameters(f, component);
+  AddCommonPrimitiveComponentParameters(f, ctx, component);
+
+  // This is incorrect, but much better than nothing.
+  // TODO: material order must match internal fbx order
+  // TODO: we need to check if a leaf material is shared with any
+  // other geometry elements, and change it to something different
+  // so we can use billboard material only on leafs geomtry
+  int32 idx = 0;
+  for (const auto& p : usedMaterials)
+  {
+    FString item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", p.second->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(p.second, "/").c_str(), p.second->GetObjectName().UTF8().c_str());
+    f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx++).UTF8().c_str(), item.UTF8().c_str());
+  }
 };
 
 ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
@@ -1153,6 +1147,25 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
     lightF.InitializeMap();
     lightInitialSize = lightF.GetBody().size();
   }
+
+  std::vector<UActor*> skip;
+  if (!ctx.Config.ExportMLods)
+  {
+    for (UActor* actor : actors)
+    {
+      UStaticMeshActor* smActor = Cast<UStaticMeshActor>(actor);
+      if (!smActor || !smActor->StaticMeshComponent || !smActor->StaticMeshComponent->ReplacementPrimitive)
+      {
+        continue;
+      }
+      UActor* mlodActor = Cast<UActor>(smActor->StaticMeshComponent->ReplacementPrimitive->GetOuter());
+      if (!mlodActor || std::find(skip.begin(), skip.end(), mlodActor) != skip.end())
+      {
+        continue;
+      }
+      skip.push_back(mlodActor);
+    }
+  }
   
   for (UActor* actor : actors)
   {
@@ -1181,6 +1194,10 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
         continue;
       }
       ExportTerrainActor(f, ctx, Cast<UTerrain>(actor));
+    }
+    if (skip.size() && std::find(skip.begin(), skip.end(), actor) != skip.end())
+    {
+      continue;
     }
     if (!ctx.Config.SplitT3D && Cast<ULight>(actor))
     {
@@ -1220,13 +1237,52 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     SendEvent(progress, UPDATE_PROGRESS, -1);
   }
 
-  if (ctx.Config.Materials && ctx.MaterialOverrides.size())
+  if (ctx.Config.Materials)
   {
-    const std::filesystem::path root = ctx.GetMaterialOverridesPath();
-    std::ofstream s(root);
-    for (UObject* obj : ctx.MaterialOverrides)
+    if (ctx.UsedMaterials.size())
     {
-      s << obj->GetPackage()->GetPackageName().UTF8() << '\\' << obj->GetObjectName().UTF8() << '\n';
+      std::vector<std::string> elements;
+
+      for (UObject* obj : ctx.UsedMaterials)
+      {
+        if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
+        {
+          if (UObject* mat = mi->GetParent())
+          {
+            std::string e = obj->GetClassName().UTF8() + ' ';
+            e += "Game/";
+            e += ctx.DataDirName;
+            e += '/' + GetLocalDir(mat, "/") + mat->GetObjectName().UTF8() + ' ';
+            e += "Game/";
+            e += ctx.DataDirName;
+            e += '/' + GetLocalDir(mi, "/") + mi->GetObjectName().UTF8() + '\n';
+            if (std::find(elements.begin(), elements.end(), e) == elements.end())
+            {
+              elements.push_back(e);
+            }
+          }
+        }
+        else if (UMaterial* mat = Cast<UMaterial>(obj))
+        {
+          std::string e = "Material Game/";
+          e += ctx.DataDirName;
+          e += '/' + GetLocalDir(mat, "/") + mat->GetObjectName().UTF8() + '\n';
+          if (std::find(elements.begin(), elements.end(), e) == elements.end())
+          {
+            elements.push_back(e);
+          }
+        }
+      }
+
+      if (elements.size())
+      {
+        const std::filesystem::path root = ctx.GetMaterialsListPath();
+        std::ofstream s(root);
+        for (const std::string& e : elements)
+        {
+          s << e;
+        }
+      }
     }
   }
   
@@ -1604,7 +1660,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
   return true;
 }
 
-void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* component)
+void AddCommonPrimitiveComponentParameters(T3DFile& f, LevelExportContext& ctx, UPrimitiveComponent* component)
 {
   if (component->MinDrawDistance)
   {
@@ -1619,7 +1675,7 @@ void AddCommonPrimitiveComponentParameters(T3DFile& f, UPrimitiveComponent* comp
     f.AddFloat("CachedMaxDrawDistance", component->CachedMaxDrawDistance);
   }
   f.AddBool("CastShadow", component->CastShadow);
-  f.AddBool("bCastDynamicShadow", component->bCastDynamicShadow);
+  f.AddBool("bCastDynamicShadow", ctx.Config.ForceDynamicShadows ? true : component->bCastDynamicShadow);
   f.AddBool("bCastStaticShadow", component->bCastStaticShadow);
   if (!component->bAcceptsLights)
   {
@@ -1635,21 +1691,12 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
   }
   UActor* actor = Cast<UActor>(component->GetOuter());
   std::vector<UObject*> materialsToSave = materials;
-  bool materialOverrides = false;
   for (int matIdx = 0; matIdx < component->Materials.size(); ++matIdx)
   {
     if (component->Materials[matIdx] && matIdx < materialsToSave.size())
     {
-      if (materialsToSave[matIdx] != component->Materials[matIdx])
-      {
-        materialOverrides = true;
-      }
       materialsToSave[matIdx] = component->Materials[matIdx];
     }
-  }
-  if (materialOverrides)
-  {
-    ctx.MaterialOverrides.push_back(actor ? (UObject*)actor : (UObject*)component);
   }
   ctx.UsedMaterials.insert(ctx.UsedMaterials.end(), materialsToSave.begin(), materialsToSave.end());
   if (ctx.Config.Materials)
@@ -1657,14 +1704,14 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
     if (materialsToSave.size())
     {
       std::error_code err;
-      std::filesystem::path path = ctx.GetMaterialMapDir() / (actor ? (UObject*)actor : (UObject*)component)->GetPackage()->GetPackageName().UTF8();
+      std::filesystem::path path = ctx.GetMaterialMapDir();
       if (!std::filesystem::exists(path, err))
       {
         std::filesystem::create_directories(path, err);
       }
       if (std::filesystem::exists(path, err))
       {
-        path /= (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
+        path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
         path.replace_extension("txt");
 
         if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))

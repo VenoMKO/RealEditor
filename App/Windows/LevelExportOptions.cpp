@@ -294,10 +294,21 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 
   bSizer23->Add(bSizer24, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL, 5);
 
+  wxBoxSizer* bSizer15;
+  bSizer15 = new wxBoxSizer(wxHORIZONTAL);
+
   LightInvSqrt = new wxCheckBox(m_panel12, wxID_ANY, wxT("Use inverse squared falloff"), wxDefaultPosition, wxDefaultSize, 0);
   LightInvSqrt->SetToolTip(wxT("Use physically based inverse squared distance falloff."));
 
-  bSizer23->Add(LightInvSqrt, 0, wxALL, 5);
+  bSizer15->Add(LightInvSqrt, 0, wxALL, 5);
+
+  DynamicShadows = new wxCheckBox(m_panel12, wxID_ANY, wxT("Force dynamic shadows"), wxDefaultPosition, wxDefaultSize, 0);
+  DynamicShadows->SetToolTip(wxT("Enables dynamic shadows for objects that have this option explicitly disabled by developers. Enable this if you plan to use dynamic lighting."));
+
+  bSizer15->Add(DynamicShadows, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+  bSizer23->Add(bSizer15, 0, wxEXPAND, 0);
 
 
   m_panel12->SetSizer(bSizer23);
@@ -330,9 +341,14 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   bSizer181 = new wxBoxSizer(wxHORIZONTAL);
 
   ExportLods = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export LODs"), wxDefaultPosition, wxDefaultSize, 0);
-  ExportLods->SetToolTip(wxT("Embed model LODs into fbx"));
+  ExportLods->SetToolTip(wxT("Embed model LODs into fbx."));
 
   bSizer181->Add(ExportLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+  ExportMLods = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export MLODs"), wxDefaultPosition, wxDefaultSize, 0);
+  ExportMLods->SetToolTip(wxT("Allow Real Editor to export MLOD/HLOD actors."));
+
+  bSizer181->Add(ExportMLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   ConvexCollisions = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export collisions"), wxDefaultPosition, wxDefaultSize, 0);
   ConvexCollisions->SetToolTip(wxT("Export Rigid Body collisions."));
@@ -419,6 +435,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
   SplitT3d->SetValue(ctx.Config.SplitT3D);
   Materials->SetValue(ctx.Config.Materials);
   LightInvSqrt->SetValue(ctx.Config.InvSqrtFalloff);
+  DynamicShadows->SetValue(ctx.Config.ForceDynamicShadows);
   ResampleTerrain->SetValue(ctx.Config.ResampleTerrain);
   SplitTerrainWeightMaps->SetValue(HasAVX2() && ctx.Config.SplitTerrainWeights);
   SplitTerrainWeightMaps->Enable(HasAVX2());
@@ -434,6 +451,7 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
   TextureFormatSelector->Enable(HasAVX2());
   OverrideFiles->SetValue(ctx.Config.OverrideData);
   ExportLods->SetValue(ctx.Config.ExportLods);
+  ExportMLods->SetValue(ctx.Config.ExportMLods);
   ConvexCollisions->SetValue(ctx.Config.ConvexCollisions);
   IgnoreHidden->SetValue(ctx.Config.IgnoreHidden);
 
@@ -455,6 +473,7 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
   ctx.Config.SplitT3D = SplitT3d->GetValue();
   ctx.Config.Materials = Materials->GetValue();
   ctx.Config.InvSqrtFalloff = LightInvSqrt->GetValue();
+  ctx.Config.ForceDynamicShadows = DynamicShadows->GetValue();
   ctx.Config.ResampleTerrain = ResampleTerrain->GetValue();
   ctx.Config.SplitTerrainWeights = SplitTerrainWeightMaps->GetValue();
   ctx.Config.Textures = Textures->GetValue();
@@ -463,6 +482,7 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
   ctx.Config.ExportLods = ExportLods->GetValue();
   ctx.Config.ConvexCollisions = ConvexCollisions->GetValue();
   ctx.Config.IgnoreHidden = IgnoreHidden->GetValue();
+  ctx.Config.ExportMLods = ExportMLods->GetValue();
 
   PointLightMultiplier->GetValidator()->TransferFromWindow();
   SpotLightMultiplier->GetValidator()->TransferFromWindow();

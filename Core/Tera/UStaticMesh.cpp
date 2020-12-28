@@ -354,11 +354,11 @@ URB_BodySetup* UStaticMesh::GetBodySetup() const
   return Cast<URB_BodySetup>(FBodySetup);
 }
 
-std::vector<UObject*> UStaticMesh::GetMaterials() const
+std::vector<UObject*> UStaticMesh::GetMaterials(int32 lodIdx) const
 {
   std::vector<UObject*> result;
-  for (const FStaticMeshRenderData& lod : LODModels)
-  {
+
+  auto AddLodMaterials = [](const FStaticMeshRenderData& lod, std::vector<UObject*>& result) {
     std::vector<UObject*> lodMaterials;
     for (const FStaticMeshElement& element : lod.Elements)
     {
@@ -380,6 +380,18 @@ std::vector<UObject*> UStaticMesh::GetMaterials() const
         result.push_back(lodMaterial);
       }
     }
+  };
+
+  if (lodIdx == -1 || lodIdx >= LODModels.size())
+  {
+    for (const FStaticMeshRenderData& lod : LODModels)
+    {
+      AddLodMaterials(lod, result);
+    }
+  }
+  else
+  {
+    AddLodMaterials(LODModels[lodIdx], result);
   }
   return result;
 }

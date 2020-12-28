@@ -153,6 +153,12 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_RBCollisions:
         s << c.ConvexCollisions;
         break;
+      case FMapExportConfig::CFG_MLods:
+        s << c.ExportMLods;
+        break;
+      case FMapExportConfig::CFG_DynamicShadows:
+        s << c.ForceDynamicShadows;
+        break;
       default:
         s.Close();
         // no break
@@ -178,12 +184,14 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKVIfNotDefault(FMapExportConfig::CFG_SpotLightMul, c.SpotLightMul, d.SpotLightMul);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_PointLightMul, c.PointLightMul, d.PointLightMul);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_InvSqrtFalloff, c.InvSqrtFalloff, d.InvSqrtFalloff);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_DynamicShadows, c.ForceDynamicShadows, d.ForceDynamicShadows);
     
     SerializeKVIfNotDefault(FMapExportConfig::CFG_TerrainResample, c.ResampleTerrain, d.ResampleTerrain);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_SplitTerrainWeights, c.SplitTerrainWeights, d.SplitTerrainWeights);
     
     SerializeKVIfNotDefault(FMapExportConfig::CFG_Lods, c.ExportLods, d.ExportLods);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_RBCollisions, c.ConvexCollisions, d.ConvexCollisions);
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_MLods, c.ExportMLods, d.ExportMLods);
     
     SerializeKey(FMapExportConfig::CFG_End);
   }
