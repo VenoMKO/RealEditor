@@ -362,7 +362,10 @@ std::vector<UObject*> UStaticMesh::GetMaterials(int32 lodIdx) const
     std::vector<UObject*> lodMaterials;
     for (const FStaticMeshElement& element : lod.Elements)
     {
-      lodMaterials.push_back(element.Material);
+      if (element.NumTriangles)
+      {
+        lodMaterials.push_back(element.Material);
+      }
     }
     for (UObject* lodMaterial : lodMaterials)
     {
