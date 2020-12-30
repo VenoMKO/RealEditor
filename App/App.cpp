@@ -609,6 +609,8 @@ void App::LoadCore(ProgressWindow* pWindow)
   }
   PERF_END(ClassPackagesLoad);
 
+#if 0
+  // Don't need this
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading persistent data...");
   try
   {
@@ -620,6 +622,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     SendEvent(this, LOAD_CORE_ERROR, e.what());
     return;
   }
+#endif
 
   if (pWindow->IsCanceled())
   {

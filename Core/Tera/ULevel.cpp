@@ -97,5 +97,4 @@ void ULevel::Serialize(FStream& s)
   s << PrecomputedVolumeDistanceField;
 
   s << Unk1;
-  DBreakIf(Unk1);
 }

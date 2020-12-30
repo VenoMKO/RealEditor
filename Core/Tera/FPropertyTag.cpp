@@ -6,6 +6,8 @@
 #include "FName.h"
 #include "FPackage.h"
 
+#include <Utils/ALog.h>
+
 bool FPropertyValue::GetVector(FVector& output)
 {
   if (Type != VID::Struct)
@@ -122,6 +124,10 @@ bool FPropertyTag::GetVector(FVector& output) const
       else if (v->Field->GetObjectName() == "Z")
       {
         output.Z = v->GetArray()[0]->GetFloat();
+      }
+      else if (v->Field->GetObjectName() == "W")
+      {
+        LogW("%s:%s: Getting FVector from a FVector4 property!", Owner->GetObjectPath().UTF8().c_str(), Name.String().UTF8().c_str());
       }
       else
       {
