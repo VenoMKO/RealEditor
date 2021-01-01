@@ -178,10 +178,10 @@ std::map<FString, float> UMaterialInterface::GetScalarParameters() const
   return result;
 }
 
-std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters() const
+std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes) const
 {
   std::map<FString, UTexture*> result;
-
+  std::vector<FString> textureParameterNames;
   if (UMaterial* mat = Cast<UMaterial>(this))
   {
     std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
@@ -189,7 +189,37 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters() const
     {
       if (UMaterialExpressionTextureSampleParameter* sexp = Cast<UMaterialExpressionTextureSampleParameter>(exp))
       {
+        if (!cubes)
+        {
+          if (Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+          {
+            continue;
+          }
+        }
+        textureParameterNames.emplace_back(sexp->ParameterName.String());
         result[sexp->ParameterName.String()] = Cast<UTexture>(sexp->Texture);
+      }
+    }
+  }
+  else if (UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent()))
+  {
+    while (parent->GetParent())
+    {
+      parent = Cast<UMaterialInterface>(parent->GetParent());
+    }
+    if (UMaterial* mat = Cast<UMaterial>(parent))
+    {
+      std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+      for (UMaterialExpression* exp : expressions)
+      {
+        if (UMaterialExpressionTextureSampleParameter* sexp = Cast<UMaterialExpressionTextureSampleParameter>(exp))
+        {
+          if (!cubes && Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+          {
+            continue;
+          }
+          textureParameterNames.emplace_back(sexp->ParameterName.String());
+        }
       }
     }
   }
@@ -204,12 +234,90 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters() const
       FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
       if (tmpTag->Name == "ParameterName")
       {
-        parameterName = tmpTag->GetName().String();
+        FString tmp = tmpTag->GetName().String();
+        if (std::find(textureParameterNames.begin(), textureParameterNames.end(), tmp) == textureParameterNames.end())
+        {
+          break;
+        }
+        parameterName = tmp;
         continue;
       }
       if (tmpTag->Name == "ParameterValue")
       {
         parameterValue = Cast<UTexture>(GetPackage()->GetObject(tmpTag->Value->GetObjectIndex()));
+      }
+    }
+    if (parameterName.Size())
+    {
+      result[parameterName] = parameterValue;
+    }
+  }
+  return result;
+}
+
+std::map<FString, UTexture*> UMaterialInterface::GetTextureCubeParameters() const
+{
+  std::map<FString, UTexture*> result;
+  
+  std::vector<FString> cubeParameterNames;
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionTextureSampleParameterCube* sexp = Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+      {
+        result[sexp->ParameterName.String()] = Cast<UTexture>(sexp->Texture);
+      }
+    }
+  }
+  else if (UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent()))
+  {
+    while (parent->GetParent())
+    {
+      parent = Cast<UMaterialInterface>(parent->GetParent());
+    }
+    if (UMaterial* mat = Cast<UMaterial>(parent))
+    {
+      std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+      for (UMaterialExpression* exp : expressions)
+      {
+        if (UMaterialExpressionTextureSampleParameterCube* sexp = Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+        {
+          cubeParameterNames.emplace_back(sexp->ParameterName.String());
+        }
+      }
+    }
+  }
+
+  for (FPropertyValue* container : TextureParameterValues)
+  {
+    std::vector<FPropertyValue*>& tmpArray = container->GetArray();
+    FString parameterName;
+    UTexture* parameterValue = nullptr;
+    for (FPropertyValue* subcontainer : tmpArray)
+    {
+      FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
+      if (tmpTag->Name == "ParameterName")
+      {
+        FString tmp = tmpTag->GetName().String();
+        if (std::find(cubeParameterNames.begin(), cubeParameterNames.end(), tmp) == cubeParameterNames.end())
+        {
+          break;
+        }
+        parameterName = tmp;
+        continue;
+      }
+      if (tmpTag->Name == "ParameterValue")
+      {
+        if (UTextureCube* cube = Cast<UTextureCube>(GetPackage()->GetObject(tmpTag->Value->GetObjectIndex())))
+        {
+          parameterValue = cube;
+        }
+        else
+        {
+          continue;
+        }
       }
     }
     if (parameterName.Size())
@@ -286,6 +394,36 @@ std::vector<UTexture*> UMaterialInterface::GetTextureSamples() const
   return result;
 }
 
+std::map<FString, bool> UMaterialInterface::GetStaticBoolParameters() const
+{
+  std::map<FString, bool> result;
+  if (UMaterial* mat = Cast<UMaterial>(this))
+  {
+    std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
+    for (UMaterialExpression* exp : expressions)
+    {
+      if (UMaterialExpressionStaticSwitchParameter* sexp = Cast<UMaterialExpressionStaticSwitchParameter>(exp))
+      {
+        result[sexp->ParameterName.String()] = sexp->DefaultValue;
+      }
+    }
+  }
+  else if (UMaterialInstance* mi = Cast<UMaterialInstance>(this))
+  {
+    if (mi->bHasStaticPermutationResource)
+    {
+      for (const FStaticSwitchParameter& param : mi->StaticParameters.StaticSwitchParameters)
+      {
+        if (param.bOverride)
+        {
+          result[param.ParameterName.String()] = param.Value;
+        }
+      }
+    }
+  }
+  return result;
+}
+
 UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) const
 {
   bool thisValue = false;
@@ -322,10 +460,8 @@ void UMaterial::Serialize(FStream& s)
 
 bool UMaterial::RegisterProperty(FPropertyTag* property)
 {
-  if (Super::RegisterProperty(property))
-  {
-    return true;
-  }
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(TwoSided);
   if (property->StructName.String().Find("MaterialInput") != std::string::npos)
   {
     MaterialInputs.push_back(property);

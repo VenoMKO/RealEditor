@@ -96,9 +96,11 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
   
   std::map<FString, float> GetScalarParameters() const;
-  std::map<FString, UTexture*> GetTextureParameters() const;
+  std::map<FString, UTexture*> GetTextureParameters(bool cubes = true) const;
+  std::map<FString, UTexture*> GetTextureCubeParameters() const;
   std::map<FString, FLinearColor> GetVectorParameters() const;
   std::vector<UTexture*> GetTextureSamples() const;
+  std::map<FString, bool> GetStaticBoolParameters() const;
 
   UTexture2D* GetTextureParameterValue(const FString& name) const;
   UTexture2D* GetDiffuseTexture() const;
@@ -116,6 +118,7 @@ protected:
 class UMaterial : public UMaterialInterface {
 public:
   DECL_UOBJ(UMaterial, UMaterialInterface);
+  UPROP(bool, TwoSided, false);
   std::vector<FPropertyTag*> MaterialInputs;
 
   void Serialize(FStream& s) override;

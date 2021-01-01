@@ -23,6 +23,8 @@
 
 #include <functional>
 
+const char* VSEP = "\t";
+
 typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
 
 std::string GetLocalDir(UObject* obj, const char* sep = "\\");
@@ -51,8 +53,31 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     }
     return;
   }
-  auto materials = SaveMaterialMap(component, ctx, component->StaticMesh->GetMaterials(ctx.Config.ExportLods ? -1 : 0));
-  bool hasNullMaterials = false;
+  auto materials = component->StaticMesh->GetMaterials(ctx.Config.ExportLods ? -1 : 0);
+  if (materials.size())
+  {
+    std::string key = "Game/";
+    key += ctx.DataDirName;
+    key += "/" + GetLocalDir(component->StaticMesh, "/") + component->StaticMesh->GetObjectName().UTF8();
+
+    if (!ctx.MeshDefaultMaterials.count(key))
+    {
+      for (UObject* material : materials)
+      {
+        if (!material)
+        {
+          ctx.MeshDefaultMaterials[key].push_back("None");
+          continue;
+        }
+        std::string materialPath = "Game/";
+        materialPath += ctx.DataDirName;
+        materialPath += "/" + GetLocalDir(material, "/") + material->GetObjectName().UTF8();
+        ctx.MeshDefaultMaterials[key].push_back(materialPath);
+      }
+    }
+    
+  }
+  materials = SaveMaterialMap(component, ctx, materials);
   for (int32 idx = 0; idx < materials.size(); ++idx)
   {
     FString item = "None";
@@ -128,7 +153,39 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     }
     return;
   }
-  SaveMaterialMap(component, ctx, component->SkeletalMesh->GetMaterials());
+  auto materials = component->SkeletalMesh->GetMaterials();
+  if (materials.size())
+  {
+    std::string key = "Game/";
+    key += ctx.DataDirName;
+    key += "/" + GetLocalDir(component->SkeletalMesh, "/") + component->SkeletalMesh->GetObjectName().UTF8();
+
+    if (!ctx.MeshDefaultMaterials.count(key))
+    {
+      for (UObject* material : materials)
+      {
+        if (!material)
+        {
+          ctx.MeshDefaultMaterials[key].push_back("None");
+          continue;
+        }
+        std::string materialPath = "Game/";
+        materialPath += ctx.DataDirName;
+        materialPath += "/" + GetLocalDir(material, "/") + material->GetObjectName().UTF8();
+        ctx.MeshDefaultMaterials[key].push_back(materialPath);
+      }
+    }
+  }
+  materials = SaveMaterialMap(component, ctx, materials);
+  for (int32 idx = 0; idx < materials.size(); ++idx)
+  {
+    FString item = "None";
+    if (materials[idx])
+    {
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
+    }
+    f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
+  }
   std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
   std::error_code err;
   if (!std::filesystem::exists(path, err))
@@ -185,6 +242,42 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     usedMaterials["leaf"] = component->SpeedTree->LeafMaterial;
   }
 
+  for (const auto& p : usedMaterials)
+  {
+    if (UMaterialInterface* m = Cast<UMaterialInterface>(p.second))
+    {
+      UMaterialInterface* parent = Cast<UMaterialInterface>(m->GetParent());
+      while (parent)
+      {
+        ctx.UsedMaterials.push_back(parent);
+        parent = Cast<UMaterialInterface>(parent->GetParent());
+      }
+    }
+  }
+
+  if (usedMaterials.size())
+  {
+    std::string key = "Game/";
+    key += ctx.DataDirName;
+    key += "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8();
+
+    if (!ctx.MeshDefaultMaterials.count(key))
+    {
+      for (const auto& p : usedMaterials)
+      {
+        if (!p.second)
+        {
+          ctx.MeshDefaultMaterials[key].push_back("None");
+          continue;
+        }
+        std::string materialPath = "Game/";
+        materialPath += ctx.DataDirName;
+        materialPath += "/" + GetLocalDir(p.second, "/") + p.second->GetObjectName().UTF8();
+        ctx.MeshDefaultMaterials[key].push_back(materialPath);
+      }
+    }
+  }
+
   if (component->BranchMaterial)
   {
     ctx.UsedMaterials.push_back(component->BranchMaterial);
@@ -200,6 +293,20 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     ctx.UsedMaterials.push_back(component->LeafMaterial);
     usedMaterials["leaf"] = component->LeafMaterial;
   }
+
+  for (const auto& p : usedMaterials)
+  {
+    if (UMaterialInterface* m = Cast<UMaterialInterface>(p.second))
+    {
+      UMaterialInterface* parent = Cast<UMaterialInterface>(m->GetParent());
+      while (parent)
+      {
+        ctx.UsedMaterials.push_back(parent);
+        parent = Cast<UMaterialInterface>(parent->GetParent());
+      }
+    }
+  }
+
   if (usedMaterials.size())
   {
     std::error_code err;
@@ -620,12 +727,15 @@ struct T3DActor {
     }
     Name = actor->GetObjectName();
     T3DComponent& component = Components.emplace_back(actor->SpeedTreeComponent, ExportSpeedTreeComponentData);
+    component.Class = "StaticMeshComponent";
+    component.Mobility = T3DComponent::ComponentMobility::Stationary;
     if (component.NeedsParent())
     {
       Class = "Actor";
       RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
-      component.Parent = RootComponent;
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Stationary;
       RootComponent->IsInstance = true;
+      component.Parent = RootComponent;
       component.IsInstance = true;
     }
     else
@@ -1321,10 +1431,32 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
 
   if (ctx.Config.Materials)
   {
+    if (ctx.MeshDefaultMaterials.size())
+    {
+      const std::filesystem::path root = ctx.GetMeshDefaultMaterialsPath();
+      std::ofstream s(root);
+      for (const auto& p : ctx.MeshDefaultMaterials)
+      {
+        s << p.first << '\n';
+        for (const auto& i : p.second)
+        {
+          s << "  " << i << '\n';
+        }
+      }
+    }
     if (ctx.UsedMaterials.size())
     {
+      struct MaterialParameters {
+        std::map<FString, UTexture*> TextureParameters;
+        std::map<FString, UTexture*> TextureCubeParameters;
+        std::map<FString, FLinearColor> VectorParameters;
+        std::map<FString, float> ScalarParameters;
+        std::map<FString, bool> BoolParameters;
+        bool DoubleSided = false;
+      };
+      std::map<std::string, MaterialParameters> masterMaterials;
+      std::map<std::string, MaterialParameters> materialInstances;
       std::vector<std::string> elements;
-
       for (UObject* obj : ctx.UsedMaterials)
       {
         if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
@@ -1341,6 +1473,13 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             if (std::find(elements.begin(), elements.end(), e) == elements.end())
             {
               elements.push_back(e);
+              MaterialParameters params;
+              params.TextureParameters = mi->GetTextureParameters(false);
+              params.TextureCubeParameters = mi->GetTextureCubeParameters();
+              params.VectorParameters = mi->GetVectorParameters();
+              params.ScalarParameters = mi->GetScalarParameters();
+              params.BoolParameters = mi->GetStaticBoolParameters();
+              materialInstances[e] = params;
             }
           }
         }
@@ -1352,6 +1491,14 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           if (std::find(elements.begin(), elements.end(), e) == elements.end())
           {
             elements.push_back(e);
+            MaterialParameters params;
+            params.DoubleSided = mat->TwoSided;
+            params.TextureParameters = mat->GetTextureParameters(false);
+            params.TextureCubeParameters = mat->GetTextureCubeParameters();
+            params.VectorParameters = mat->GetVectorParameters();
+            params.ScalarParameters = mat->GetScalarParameters();
+            params.BoolParameters = mat->GetStaticBoolParameters();
+            masterMaterials[e] = params;
           }
         }
       }
@@ -1363,6 +1510,63 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         for (const std::string& e : elements)
         {
           s << e;
+        }
+      }
+
+      if (masterMaterials.size() || materialInstances.size())
+      {
+        auto DumpMaterial = [&](auto& s, const auto& mat) {
+          s << mat.first;
+          if (mat.second.DoubleSided)
+          {
+            s << "  bDoubleSided\n";
+          }
+          for (auto const& p : mat.second.TextureParameters)
+          {
+            s << "  Texture" << VSEP << p.first.UTF8() << VSEP;
+            if (p.second)
+            {
+              s << "Game/" << ctx.DataDirName << '/' << GetLocalDir(p.second, "/") << p.second->GetObjectName().UTF8() << '\n';
+            }
+            else
+            {
+              s << "None\n";
+            }
+          }
+          for (auto const& p : mat.second.TextureCubeParameters)
+          {
+            s << "  Cube" << VSEP << p.first.UTF8() << VSEP;
+            if (p.second)
+            {
+              s << "Game/" << ctx.DataDirName << '/' << GetLocalDir(p.second, "/") << p.second->GetObjectName().UTF8() << '\n';
+            }
+            else
+            {
+              s << "None\n";
+            }
+          }
+          for (auto const& p : mat.second.ScalarParameters)
+          {
+            s << "  Scalar" << VSEP << p.first.UTF8() << VSEP << p.second << '\n';
+          }
+          for (auto const& p : mat.second.VectorParameters)
+          {
+            s << "  Vector" << VSEP << p.first.UTF8() << VSEP << p.second.R << VSEP << p.second.G << VSEP << p.second.B << VSEP << p.second.A << '\n';
+          }
+          for (auto const& p : mat.second.BoolParameters)
+          {
+            s << "  Bool" << VSEP << p.first.UTF8() << VSEP << (p.second ? "True" : "False") << '\n';
+          }
+        };
+        const std::filesystem::path root = ctx.GetMaterialsListPath();
+        std::ofstream s(root);
+        for (auto const& mat : masterMaterials)
+        {
+          DumpMaterial(s, mat);
+        }
+        for (auto const& mat : materialInstances)
+        {
+          DumpMaterial(s, mat);
         }
       }
     }
@@ -1774,13 +1978,43 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
   }
   UActor* actor = Cast<UActor>(component->GetOuter());
   std::vector<UObject*> materialsToSave = materials;
+  std::vector<UObject*> replacedMaterials;
   for (int matIdx = 0; matIdx < component->Materials.size(); ++matIdx)
   {
     if (component->Materials[matIdx] && matIdx < materialsToSave.size())
     {
+      replacedMaterials.push_back(materialsToSave[matIdx]);
       materialsToSave[matIdx] = component->Materials[matIdx];
     }
   }
+
+  for (UObject* object : replacedMaterials)
+  {
+    if (UMaterialInterface* m = Cast<UMaterialInterface>(object))
+    {
+      UMaterialInterface* parent = Cast<UMaterialInterface>(m->GetParent());
+      while (parent)
+      {
+        ctx.UsedMaterials.push_back(parent);
+        parent = Cast<UMaterialInterface>(parent->GetParent());
+      }
+    }
+    ctx.UsedMaterials.push_back(object);
+  }
+  
+  for (UObject* object : materialsToSave)
+  {
+    if (UMaterialInterface* m = Cast<UMaterialInterface>(object))
+    {
+      UMaterialInterface* parent = Cast<UMaterialInterface>(m->GetParent());
+      while (parent)
+      {
+        ctx.UsedMaterials.push_back(parent);
+        parent = Cast<UMaterialInterface>(parent->GetParent());
+      }
+    }
+  }
+  
   ctx.UsedMaterials.insert(ctx.UsedMaterials.end(), materialsToSave.begin(), materialsToSave.end());
   if (ctx.Config.Materials)
   {
@@ -2296,6 +2530,12 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         if (!tmat.Material || !tmat.Material->Material)
         {
           continue;
+        }
+        UMaterialInterface* parent = Cast<UMaterialInterface>(tmat.Material->Material->GetParent());
+        while (parent)
+        {
+          ctx.UsedMaterials.push_back(parent);
+          parent = Cast<UMaterialInterface>(parent->GetParent());
         }
         ctx.UsedMaterials.push_back(tmat.Material->Material);
       }

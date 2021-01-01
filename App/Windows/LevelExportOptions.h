@@ -22,6 +22,7 @@ struct LevelExportContext {
   const char* MaterialMapStorage = "MaterialMap";
   const char* MasterMaterialStorage = "MasterMaterials.txt";
   const char* MaterialsListStorage = "MaterialsList.txt";
+  const char* MeshDefaultMaterialStorage = "DefaultMaterials.txt";
   const char* TerrainStorage = "Terrains";
 
   inline std::filesystem::path GetStaticMeshDir() const
@@ -68,6 +69,12 @@ struct LevelExportContext {
     return std::filesystem::path(Config.RootDir.WString()) / MaterialsListStorage;
   }
 
+  // A list of default mesh materials before actor overrides for RE Helper plugin
+  inline std::filesystem::path GetMeshDefaultMaterialsPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / MeshDefaultMaterialStorage;
+  }
+
   inline std::filesystem::path GetTerrainDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / TerrainStorage;
@@ -105,6 +112,7 @@ struct LevelExportContext {
   std::vector<std::string> Errors;
   std::vector<UObject*> UsedMaterials;
   std::map<std::string, UObject*> MasterMaterials;
+  std::map<std::string, std::vector<std::string>> MeshDefaultMaterials;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   std::vector<std::string> ComplexCollisions;
   std::map<std::string, std::vector<std::string>> MLODs;

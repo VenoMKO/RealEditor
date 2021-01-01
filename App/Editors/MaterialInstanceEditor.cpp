@@ -62,69 +62,57 @@ void MaterialInstanceEditor::OnObjectLoaded()
       StaticParameterOverrides->AppendIn(root, cat);
       for (const FStaticSwitchParameter& param : mi->StaticParameters.StaticSwitchParameters)
       {
-        if (param.bOverride)
-        {
-          wxBoolProperty* prop = new wxBoolProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), param.Value);
-          prop->Enable(false);
-          StaticParameterOverrides->AppendIn(cat, prop);
-        }
+        wxBoolProperty* prop = new wxBoolProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), param.Value);
+        prop->Enable(false);
+        StaticParameterOverrides->AppendIn(cat, prop);
       }
 
       cat = new wxPropertyCategory("Tex. Compression", wxT("SNormals"));
       StaticParameterOverrides->AppendIn(root, cat);
       for (const FNormalParameter& param : mi->StaticParameters.NormalParameters)
       {
-        if (param.bOverride)
-        {
-          wxStringProperty* prop = new wxStringProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), TextureCompressionSettingsToString(param.CompressionSettings).WString());
-          prop->Enable(false);
-          StaticParameterOverrides->AppendIn(cat, prop);
-        }
+        wxStringProperty* prop = new wxStringProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), TextureCompressionSettingsToString(param.CompressionSettings).WString());
+        prop->Enable(false);
+        StaticParameterOverrides->AppendIn(cat, prop);
       }
 
       cat = new wxPropertyCategory("Layers", wxT("STWLayers"));
       StaticParameterOverrides->AppendIn(root, cat);
       for (const FStaticTerrainLayerWeightParameter& param : mi->StaticParameters.TerrainLayerWeightParameters)
       {
-        if (param.bOverride)
-        {
-          wxIntProperty* prop = new wxIntProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), param.WeightmapIndex);
-          prop->Enable(false);
-          StaticParameterOverrides->AppendIn(cat, prop);
-        }
+        wxIntProperty* prop = new wxIntProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), param.WeightmapIndex);
+        prop->Enable(false);
+        StaticParameterOverrides->AppendIn(cat, prop);
       }
 
       cat = new wxPropertyCategory("Masks", wxT("SCMasks"));
       StaticParameterOverrides->AppendIn(root, cat);
       for (const FStaticComponentMaskParameter& param : mi->StaticParameters.StaticComponentMaskParameters)
       {
-        if (param.bOverride)
+        wxString value;
+        if (param.R)
         {
-          wxString value;
-          if (param.R)
-          {
-            value += "R,";
-          }
-          if (param.G)
-          {
-            value += "G,";
-          }
-          if (param.B)
-          {
-            value += "B,";
-          }
-          if (param.A)
-          {
-            value += "A,";
-          }
-          if (value.size())
-          {
-            value = value.substr(0, value.size() - 1);
-          }
-          wxStringProperty* prop = new wxStringProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), value);
-          prop->Enable(false);
-          StaticParameterOverrides->AppendIn(cat, prop);
+          value += "R,";
         }
+        if (param.G)
+        {
+          value += "G,";
+        }
+        if (param.B)
+        {
+          value += "B,";
+        }
+        if (param.A)
+        {
+          value += "A,";
+        }
+        if (value.size())
+        {
+          value = value.substr(0, value.size() - 1);
+        }
+        wxStringProperty* prop = new wxStringProperty(param.ParameterName.String().WString(), wxString::Format("%016llx", (uint64)std::addressof(param)), value);
+        prop->Enable(false);
+        StaticParameterOverrides->AppendIn(cat, prop);
       }
       
       StaticParameterOverrides->Thaw();
