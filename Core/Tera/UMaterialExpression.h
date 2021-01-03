@@ -192,8 +192,8 @@ class UMaterialExpressionConstantBiasScale : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionConstantBiasScale, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
-  UPROP(float, Bias, 0.);
-  UPROP(float, Scale, 0.);
+  UPROP(float, Bias, 1.);
+  UPROP(float, Scale, .5);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -203,7 +203,7 @@ public:
   DECL_UOBJ(UMaterialExpressionConstantClamp, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   UPROP(float, Min, 0.);
-  UPROP(float, Max, 0.);
+  UPROP(float, Max, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -212,7 +212,7 @@ class UMaterialExpressionCosine : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionCosine, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
-  UPROP(float, Period, 0.);
+  UPROP(float, Period, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -238,7 +238,7 @@ class UMaterialExpressionDepthBiasedAlpha : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionDepthBiasedAlpha, UMaterialExpression);
   UPROP(bool, bNormalize, false);
-  UPROP(float, BiasScale, 0.);
+  UPROP(float, BiasScale, 1.);
   UPROP_NOINIT(FExpressionInput, Alpha);
   UPROP_NOINIT(FExpressionInput, Bias);
   bool RegisterProperty(FPropertyTag* property) override;
@@ -249,7 +249,7 @@ class UMaterialExpressionDepthBiasedBlend : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionDepthBiasedBlend, UMaterialExpression);
   UPROP(bool, bNormalize, false);
-  UPROP(float, BiasScale, 0.);
+  UPROP(float, BiasScale, 1.);
   UPROP_NOINIT(FExpressionInput, RGB);
   UPROP_NOINIT(FExpressionInput, Alpha);
   UPROP_NOINIT(FExpressionInput, Bias);
@@ -401,7 +401,7 @@ public:
 class UMaterialExpressionFresnel : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionFresnel, UMaterialExpression);
-  UPROP(float, Exponent, 0.);
+  UPROP(float, Exponent, 3.);
   UPROP_NOINIT(FExpressionInput, Normal);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
@@ -634,9 +634,9 @@ public:
   DECL_UOBJ(UMaterialExpressionRotator, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Coordinate);
   UPROP_NOINIT(FExpressionInput, Time);
-  UPROP(float, CenterX, 0.);
-  UPROP(float, CenterY, 0.);
-  UPROP(float, Speed, 0.);
+  UPROP(float, CenterX, 0.5);
+  UPROP(float, CenterY, 0.5);
+  UPROP(float, Speed, 0.25);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -672,7 +672,7 @@ class UMaterialExpressionSine : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionSine, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
-  UPROP(float, Period, 0.);
+  UPROP(float, Period, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -682,8 +682,8 @@ public:
   DECL_UOBJ(UMaterialExpressionSphereMask, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
-  UPROP(float, AttenuationRadius, 0.);
-  UPROP(float, HardnessPercent, 0.);
+  UPROP(float, AttenuationRadius, 256.);
+  UPROP(float, HardnessPercent, 100.);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
 };
@@ -734,8 +734,8 @@ class UMaterialExpressionTextureCoordinate : public UMaterialExpression {
 public:
   DECL_UOBJ(UMaterialExpressionTextureCoordinate, UMaterialExpression);
   UPROP(int32, CoordinateIndex, 0);
-  UPROP(float, UTiling, 0.);
-  UPROP(float, VTiling, 0.);
+  UPROP(float, UTiling, 1.);
+  UPROP(float, VTiling, 1.);
   UPROP(bool, UnMirrorU, false);
   UPROP(bool, UnMirrorV, false);
   bool RegisterProperty(FPropertyTag* property) override;
@@ -755,7 +755,7 @@ class UMaterialExpressionDepthBiasBlend : public UMaterialExpressionTextureSampl
 public:
   DECL_UOBJ(UMaterialExpressionDepthBiasBlend, UMaterialExpressionTextureSample);
   UPROP(bool, bNormalize, false);
-  UPROP(float, BiasScale, 0.);
+  UPROP(float, BiasScale, 1.);
   UPROP_NOINIT(FExpressionInput, Bias);
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
@@ -799,7 +799,7 @@ public:
 class UMaterialExpressionAntialiasedTextureMask : public UMaterialExpressionTextureSampleParameter2D {
 public:
   DECL_UOBJ(UMaterialExpressionAntialiasedTextureMask, UMaterialExpressionTextureSampleParameter2D);
-  UPROP(float, Threshold, 0.);
+  UPROP(float, Threshold, .5);
   UPROP(FString, Channel, "Alpha");
   bool RegisterProperty(FPropertyTag* property) override;
   void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
