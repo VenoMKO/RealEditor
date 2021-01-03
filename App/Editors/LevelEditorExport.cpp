@@ -1447,8 +1447,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
     if (ctx.UsedMaterials.size())
     {
       struct MaterialParameters {
-        std::map<FString, UTexture*> TextureParameters;
-        std::map<FString, UTexture*> TextureCubeParameters;
+        std::map<FString, FTextureParameter> TextureParameters;
         std::map<FString, FLinearColor> VectorParameters;
         std::map<FString, float> ScalarParameters;
         std::map<FString, bool> BoolParameters;
@@ -1474,8 +1473,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             {
               elements.push_back(e);
               MaterialParameters params;
-              params.TextureParameters = mi->GetTextureParameters(false);
-              params.TextureCubeParameters = mi->GetTextureCubeParameters();
+              params.TextureParameters = mi->GetTextureParameters();
               params.VectorParameters = mi->GetVectorParameters();
               params.ScalarParameters = mi->GetScalarParameters();
               params.BoolParameters = mi->GetStaticBoolParameters();
@@ -1493,8 +1491,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             elements.push_back(e);
             MaterialParameters params;
             params.DoubleSided = mat->TwoSided;
-            params.TextureParameters = mat->GetTextureParameters(false);
-            params.TextureCubeParameters = mat->GetTextureCubeParameters();
+            params.TextureParameters = mat->GetTextureParameters();
             params.VectorParameters = mat->GetVectorParameters();
             params.ScalarParameters = mat->GetScalarParameters();
             params.BoolParameters = mat->GetStaticBoolParameters();
@@ -1519,26 +1516,29 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           s << mat.first;
           if (mat.second.DoubleSided)
           {
-            s << "  bDoubleSided\n";
+            s << "  TwoSided\n";
           }
           for (auto const& p : mat.second.TextureParameters)
           {
-            s << "  Texture" << VSEP << p.first.UTF8() << VSEP;
-            if (p.second)
+            if (UTexture2D* tmp = Cast<UTexture2D>(p.second.Texture))
             {
-              s << "Game/" << ctx.DataDirName << '/' << GetLocalDir(p.second, "/") << p.second->GetObjectName().UTF8() << '\n';
+              if (p.second.AlphaChannelUsed && tmp->CompressionSettings == TC_NormalmapAlpha)
+              {
+                s << " TextureA";
+              }
+              else
+              {
+                s << " Texture";
+              }
             }
             else
             {
-              s << "None\n";
+              s << " Texture";
             }
-          }
-          for (auto const& p : mat.second.TextureCubeParameters)
-          {
-            s << "  Cube" << VSEP << p.first.UTF8() << VSEP;
-            if (p.second)
+            s << VSEP << p.first.UTF8() << VSEP;
+            if (p.second.Texture)
             {
-              s << "Game/" << ctx.DataDirName << '/' << GetLocalDir(p.second, "/") << p.second->GetObjectName().UTF8() << '\n';
+              s << "Game/" << ctx.DataDirName << '/' << GetLocalDir(p.second.Texture, "/") << p.second.Texture->GetObjectName().UTF8() << '\n';
             }
             else
             {
@@ -1639,9 +1639,9 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           for (const auto& p : textureParams)
           {
             s << "  " << p.first.UTF8() << ": ";
-            if (p.second)
+            if (p.second.Texture)
             {
-              s << GetLocalDir(p.second) << p.second->GetObjectName().UTF8();
+              s << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectName().UTF8();
             }
             else
             {
@@ -1684,22 +1684,22 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           auto parentTexParams = parent->GetTextureParameters();
           for (auto& p : parentTexParams)
           {
-            if (p.second && !textureParams.count(p.first))
+            if (p.second.Texture && !textureParams.count(p.first))
             {
-              textureParams[p.first] = p.second;
+              textureParams[p.first].Texture = p.second.Texture;
             }
           }
         }
         for (auto& p : textureParams)
         {
-          if (!p.second)
+          if (!p.second.Texture)
           {
             continue;
           }
-          std::string tpath = GetLocalDir(p.second) + p.second->GetObjectName().UTF8();
+          std::string tpath = GetLocalDir(p.second.Texture) + p.second.Texture->GetObjectName().UTF8();
           if (!textures.count(tpath))
           {
-            textures[tpath] = p.second;
+            textures[tpath] = p.second.Texture;
           }
         }
         auto constTextures = mat->GetTextureSamples();
@@ -1828,7 +1828,10 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
         processor.SetOutputPath(W2A(path.wstring()));
         processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
-
+        if (texture->CompressionSettings == TC_NormalmapAlpha)
+        {
+          processor.SetSplitAlpha(true);
+        }
         try
         {
           if (!processor.Process())
@@ -2227,6 +2230,10 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     f.AddString("FolderPath", untypedActor->GetPackage()->GetPackageName().UTF8().c_str());
     auto layers = untypedActor->GetLayers();
     layers.push_back("RE_All");
+    if (untypedActor->bHidden)
+    {
+      layers.push_back("RE_Hidden");
+    }
     for (int32 idx = 0; idx < layers.size(); ++idx)
     {
       f.AddString(FString::Sprintf("Layers(%d)", idx).UTF8().c_str(), W2A(layers[idx].WString()).c_str());

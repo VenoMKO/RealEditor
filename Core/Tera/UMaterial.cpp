@@ -5,6 +5,36 @@
 #include "FPackage.h"
 #include "Cast.h"
 
+class MaterialExpressionNormalAlphaVisitor : public UMaterialExpressionViewVisitor {
+public:
+  ~MaterialExpressionNormalAlphaVisitor()
+  {}
+
+  void SetTitle(const FString& title) override
+  {}
+  void SetValue(const FString& value) override
+  {}
+  void SetDescription(const FString& desc) override
+  {}
+  void SetInput(const std::vector<FExpressionInput>& input) override
+  {
+    for (const FExpressionInput& in : input)
+    {
+      if (in.MaskA && in.Expression == SearchExpression)
+      {
+        Found = true;
+        break;
+      }
+    }
+  }
+  void SetEditorPosition(int32 x, int32 y) override
+  {}
+  void SetEditorSize(int32 x, int32 y) override
+  {}
+
+  UMaterialExpression* SearchExpression = nullptr;
+  bool Found = false;
+};
 
 FStream& operator<<(FStream& s, FTextureLookup& l)
 {
@@ -178,10 +208,9 @@ std::map<FString, float> UMaterialInterface::GetScalarParameters() const
   return result;
 }
 
-std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes) const
+std::map<FString, FTextureParameter> UMaterialInterface::GetTextureParameters() const
 {
-  std::map<FString, UTexture*> result;
-  std::vector<FString> textureParameterNames;
+  std::map<FString, FTextureParameter> result;
   if (UMaterial* mat = Cast<UMaterial>(this))
   {
     std::vector<UMaterialExpression*> expressions = mat->GetExpressions();
@@ -189,15 +218,28 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes
     {
       if (UMaterialExpressionTextureSampleParameter* sexp = Cast<UMaterialExpressionTextureSampleParameter>(exp))
       {
-        if (!cubes)
+        result[sexp->ParameterName.String()].Texture = Cast<UTexture>(sexp->Texture);
+
+        MaterialExpressionNormalAlphaVisitor visitor;
+        visitor.SearchExpression = sexp;
+
+        for (UMaterialExpression* e : expressions)
         {
-          if (Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+          if (e == exp)
           {
             continue;
           }
+          e->AcceptVisitor(&visitor);
+          if (visitor.Found)
+          {
+            break;
+          }
         }
-        textureParameterNames.emplace_back(sexp->ParameterName.String());
-        result[sexp->ParameterName.String()] = Cast<UTexture>(sexp->Texture);
+
+        if (visitor.Found)
+        {
+          result[sexp->ParameterName.String()].AlphaChannelUsed = true;
+        }
       }
     }
   }
@@ -214,11 +256,23 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes
       {
         if (UMaterialExpressionTextureSampleParameter* sexp = Cast<UMaterialExpressionTextureSampleParameter>(exp))
         {
-          if (!cubes && Cast<UMaterialExpressionTextureSampleParameterCube>(exp))
+          MaterialExpressionNormalAlphaVisitor visitor;
+          visitor.SearchExpression = sexp;
+
+          for (UMaterialExpression* e : expressions)
           {
-            continue;
+            if (e == exp)
+            {
+              continue;
+            }
+            e->AcceptVisitor(&visitor);
+            if (visitor.Found)
+            {
+              break;
+            }
           }
-          textureParameterNames.emplace_back(sexp->ParameterName.String());
+
+          result[sexp->ParameterName.String()].AlphaChannelUsed = visitor.Found;
         }
       }
     }
@@ -235,7 +289,7 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes
       if (tmpTag->Name == "ParameterName")
       {
         FString tmp = tmpTag->GetName().String();
-        if (std::find(textureParameterNames.begin(), textureParameterNames.end(), tmp) == textureParameterNames.end())
+        if (!result.count(tmp))
         {
           break;
         }
@@ -249,7 +303,7 @@ std::map<FString, UTexture*> UMaterialInterface::GetTextureParameters(bool cubes
     }
     if (parameterName.Size())
     {
-      result[parameterName] = parameterValue;
+      result[parameterName].Texture = parameterValue;
     }
   }
   return result;

@@ -89,6 +89,11 @@ struct FStaticParameterSet {
   friend FStream& operator<<(FStream& s, FStaticParameterSet& ps);
 };
 
+struct FTextureParameter {
+  UTexture* Texture = nullptr;
+  bool AlphaChannelUsed = false;
+};
+
 class UMaterialInterface : public UObject {
 public:
   DECL_UOBJ(UMaterialInterface, UObject);
@@ -96,7 +101,7 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
   
   std::map<FString, float> GetScalarParameters() const;
-  std::map<FString, UTexture*> GetTextureParameters(bool cubes = true) const;
+  std::map<FString, FTextureParameter> GetTextureParameters() const;
   std::map<FString, UTexture*> GetTextureCubeParameters() const;
   std::map<FString, FLinearColor> GetVectorParameters() const;
   std::vector<UTexture*> GetTextureSamples() const;

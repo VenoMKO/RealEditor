@@ -8,6 +8,7 @@
 
 #include <ppl.h>
 #include <algorithm>
+#include <filesystem>
 
 #include "DDS.h"
 
@@ -405,7 +406,7 @@ bool TextureProcessor::BytesToFile()
     return false;
   }
 
-
+  uint8* SeparateAlphaChannel = nullptr;
   FreeImageHolder holder(true);
   int bits = hasAlpha ? 32 : 24;
   if (InputFormat == TCFormat::G8)
@@ -477,6 +478,19 @@ bool TextureProcessor::BytesToFile()
       return false;
     }
 
+    if (hasAlpha && SplitAlpha)
+    {
+      uint8* SrcPtr = (uint8*)ohandler.Mips[0].Data;
+      SeparateAlphaChannel = (uint8*)malloc(ohandler.Mips[0].SizeX * ohandler.Mips[0].SizeY);
+      for (int x = 0; x < ohandler.Mips[0].SizeX; ++x)
+      {
+        for (int y = 0; y < ohandler.Mips[0].SizeY; ++y)
+        {
+          SeparateAlphaChannel[x * ohandler.Mips[0].SizeX + y] = SrcPtr[(x * ohandler.Mips[0].SizeX + y) * sizeof(uint32) + 3];
+        }
+      }
+    }
+
     holder.bmp = FreeImage_Allocate(ohandler.Mips[0].SizeX, ohandler.Mips[0].SizeY, bits);
     memcpy(FreeImage_GetBits(holder.bmp), ohandler.Mips[0].Data, ohandler.Mips[0].Size);
   }
@@ -533,6 +547,45 @@ bool TextureProcessor::BytesToFile()
     Error = "Texture Processor: Failed to write data to the stream at: \"" + OutputPath + "\"";
     return false;
   }
+  
+  if (SeparateAlphaChannel)
+  {
+    FreeImageHolder holder(true);
+    holder.bmp = FreeImage_Allocate(InputDataSizeX, InputDataSizeY, 8);
+    for (int y = 0; y < InputDataSizeY; ++y)
+    {
+      uint8* scanline = FreeImage_GetScanLine(holder.bmp, y);
+      for (int x = 0; x < InputDataSizeX; ++x)
+      {
+        int32 offset = (InputDataSizeY - y - 1) * InputDataSizeX + x;
+        scanline[x * sizeof(uint8) + 0] = *((uint8*)SeparateAlphaChannel + offset);
+      }
+    }
+    free(SeparateAlphaChannel);
+    FreeImage_FlipVertical(holder.bmp);
+    holder.mem = FreeImage_OpenMemory();
+    if (OutputFormat == TCFormat::TGA)
+    {
+      FreeImage_SaveToMemory(FIF_TARGA, holder.bmp, holder.mem, 0);
+    }
+    else if (OutputFormat == TCFormat::PNG)
+    {
+      FreeImage_SaveToMemory(FIF_PNG, holder.bmp, holder.mem, 0);
+    }
+    DWORD memBufferSize = 0;
+    unsigned char* memBuffer = nullptr;
+    if (FreeImage_AcquireMemory(holder.mem, &memBuffer, &memBufferSize))
+    {
+      std::filesystem::path Dest = A2W(OutputPath);
+      auto ext = Dest.extension();
+      Dest.replace_extension();
+      Dest += "_Alpha";
+      Dest.replace_extension(ext);
+      FWriteStream s(W2A(Dest.wstring()));
+      s.SerializeBytes(memBuffer, (FILE_OFFSET)memBufferSize);
+    }
+  }
+
   return true;
 }
 

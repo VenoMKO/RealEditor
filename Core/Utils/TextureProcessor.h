@@ -127,6 +127,11 @@ public:
     OutputFormat = to;
   }
 
+  inline void SetSplitAlpha(bool flag)
+  {
+    SplitAlpha = flag;
+  }
+
   inline void ClearOutput()
   {
     if (OutputData)
@@ -209,6 +214,7 @@ private:
   bool Normal = false;
   bool GenerateMips = false;
   bool InIsCube = false;
+  bool SplitAlpha = false;
 
   MipFilterType MipFilter = MipFilterType::Mitchell;
 
