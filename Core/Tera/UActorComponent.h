@@ -27,6 +27,8 @@ public:
   UPROP(float, MaxDrawDistance, 0);
   UPROP(float, CachedMaxDrawDistance, 0);
   UPROP(bool, bAcceptsLights, true);
+  UPROP(bool, HiddenGame, false);
+  UPROP(bool, HiddenEditor, false);
 
   void PostLoad() override;
 };

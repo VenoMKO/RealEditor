@@ -28,6 +28,8 @@ bool UPrimitiveComponent::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(MaxDrawDistance);
   REGISTER_FLOAT_PROP(CachedMaxDrawDistance);
   REGISTER_BOOL_PROP(bAcceptsLights);
+  REGISTER_BOOL_PROP(HiddenGame);
+  REGISTER_BOOL_PROP(HiddenEditor);
   return false;
 }
 

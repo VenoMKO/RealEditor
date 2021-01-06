@@ -520,6 +520,9 @@ struct T3DComponent {
   FVector Scale3D = FVector::One;
   float Scale = 1.f;
 
+  // This flag is set inside of the Define() and indicates that actors needs to set bHidden 
+  mutable bool NeedsToBeHiddenInGame = false;
+
   ComponentMobility Mobility = ComponentMobility::Static;
   bool IsInstance = false;
 
@@ -623,10 +626,44 @@ struct T3DComponent {
         f.AddScale(Scale3D, Scale);
       }
     }
+
     if (IsInstance)
     {
       f.AddCustom("CreationMethod", "Instance");
     }
+
+    if (ActorComponent)
+    {
+      if (UActor* actor = Cast<UActor>(ActorComponent->GetOuter()))
+      {
+        if (ctx.Config.ConvexCollisions && !actor->bCollideActors)
+        {
+          f.AddBool("bUseDefaultCollision", false);
+          f.AddCustom("BodyInstance", "(CollisionEnabled=NoCollision,CollisionProfileName=\"NoCollision\")");
+        }
+        if (!ctx.Config.IgnoreHidden && actor->bHidden)
+        {
+          f.AddBool("bVisible", false);
+        }
+      }
+    }
+
+    if (UPrimitiveComponent* prim = Cast<UPrimitiveComponent>(ActorComponent))
+    {
+      if (prim->HiddenGame)
+      {
+        if (Parent)
+        {
+          f.AddBool("bHiddenInGame", true);
+        }
+        else
+        {
+          // Handle visibility in the actor's body
+          NeedsToBeHiddenInGame = true;
+        }
+      }
+    }
+
     if (Parent)
     {
       f.AddCustom("AttachParent", FString::Sprintf("%s'\"%s\"'", Parent->Class.UTF8().c_str(), Parent->Name.UTF8().c_str()).UTF8().c_str());
@@ -1753,6 +1790,33 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       break;
     }
 
+    std::vector<std::string> TextureInfo;
+
+    auto SaveTextureInfo = [&](UTexture2D* texture, const std::string& ext, bool alpha = false)
+    {
+      std::string result = TextureCompressionSettingsToString(alpha ? TC_Grayscale : texture->CompressionSettings).UTF8() + VSEP;
+      result += (texture->SRGB && !alpha ? "True" : "False");
+      result += VSEP;
+      result += (texture->Format == PF_DXT1 || texture->Format == PF_DXT3 || texture->Format == PF_DXT5) ? "True" : "False";
+      result += VSEP;
+      result += "Game/";
+      result += ctx.DataDirName;
+      result += '/';
+      result += GetLocalDir(texture, "/") + texture->GetObjectName().UTF8();
+      if (alpha)
+      {
+        result += "_Alpha";
+      }
+      result += VSEP;
+      result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectName().UTF8()).replace_extension().wstring());
+      if (alpha)
+      {
+        result += "_Alpha";
+      }
+      result += '.' + ext;
+      return result;
+    };
+
     for (auto& p : textures)
     {
       if (progress->IsCanceled())
@@ -1767,7 +1831,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         continue;
       }
 
-      SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporing: ") + p.second->GetObjectName().UTF8());
+      SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting texture: ") + p.second->GetObjectName().UTF8());
 
       std::error_code err;
       std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
@@ -1803,6 +1867,8 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           continue;
         }
 
+        TextureInfo.emplace_back(SaveTextureInfo(texture, ext));
+
         if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
         {
           continue;
@@ -1831,6 +1897,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         if (texture->CompressionSettings == TC_NormalmapAlpha)
         {
           processor.SetSplitAlpha(true);
+          TextureInfo.emplace_back(SaveTextureInfo(texture, ext, true));
         }
         try
         {
@@ -1896,7 +1963,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           continue;
         }
 
-        // UE4 accepts texture cubes only in a DDS container with A8R8G8B8 format anf proper flags. Export cubes this way regardless of the user's output format.
+        // UE4 accepts texture cubes only in a DDS container with A8R8G8B8 format and proper flags. Export cubes this way regardless of the user's output format.
         path.replace_extension("dds");
         TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::DDS);
         for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
@@ -1944,6 +2011,15 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       else
       {
         LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
+      }
+    }
+
+    if (TextureInfo.size())
+    {
+      std::ofstream s(ctx.GetTextureInfoPath());
+      for (const std::string& i : TextureInfo)
+      {
+        s << i << '\n';
       }
     }
   }
@@ -2205,9 +2281,19 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       component.Declare(f);
     }
+
+    bool needsHiddenInGameFlag = false;
     for (const T3DComponent& component : exportItem.Components)
     {
       component.Define(f, ctx);
+      if (component.NeedsToBeHiddenInGame)
+      {
+        needsHiddenInGameFlag = true;
+      }
+    }
+    if (needsHiddenInGameFlag)
+    {
+      f.AddBool("bHidden", true);
     }
 
     f.AddCustom("RootComponent", FString::Sprintf("%s'\"%s\"'", exportItem.RootComponent->Class.UTF8().c_str(), exportItem.RootComponent->Name.UTF8().c_str()).UTF8().c_str());

@@ -346,6 +346,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   osg::Geode* geode = new osg::Geode;
   std::vector<FStaticMeshElement> elements = model->GetElements();
   const FRawIndexBuffer& indexContainer = model->IndexBuffer;
+  int32 drawableCount = 0;
   for (const FStaticMeshElement& section : elements)
   {
     if (!section.NumTriangles)
@@ -381,8 +382,18 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
           geo->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
         }
       }
+      else if (material->GetBlendMode() == EBlendMode::BLEND_Additive || material->GetBlendMode() == EBlendMode::BLEND_Translucent)
+      {
+        continue;
+      }
     }
+    drawableCount++;
     geode->addDrawable(geo);
+  }
+
+  if (!drawableCount)
+  {
+    return nullptr;
   }
 
   FVector translation = component->Translation;

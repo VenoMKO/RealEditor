@@ -23,6 +23,7 @@ struct LevelExportContext {
   const char* MasterMaterialStorage = "MasterMaterials.txt";
   const char* MaterialsListStorage = "MaterialsList.txt";
   const char* MeshDefaultMaterialStorage = "DefaultMaterials.txt";
+  const char* TextureInfoStorage = "Textures.txt";
   const char* TerrainStorage = "Terrains";
 
   inline std::filesystem::path GetStaticMeshDir() const
@@ -43,6 +44,11 @@ struct LevelExportContext {
   inline std::filesystem::path GetTextureDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / TextureStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetTextureInfoPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / TextureInfoStorage;
   }
 
   // Contains material parameters dumps

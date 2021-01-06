@@ -157,7 +157,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	};
 
 	auto drawExpressionCaption = [&dc, &drawLabelFunc](const MaterialExpressionInfo& i) {
-		if (i.Title == "Comment")
+		if (i.Title.StartsWith("Comment"))
 		{
 			wxPoint at = i.Position;
 			wxSize size = dc.GetTextExtent(i.TextValue);
@@ -250,7 +250,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	// Draw comments
 	for (MaterialExpressionInfo& i : GraphNodes)
 	{
-		if (i.Title == "Comment")
+		if (i.Title.StartsWith("Comment"))
 		{
 			dc.DrawRectangle(i.Position, i.Size);
 			wxPoint at = i.Position;
@@ -267,7 +267,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	// Draw expressions
 	for (MaterialExpressionInfo& i : GraphNodes)
 	{
-		if (i.Title == "Comment")
+		if (i.Title.StartsWith("Comment"))
 		{
 			continue;
 		}
@@ -358,7 +358,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	ctx->SetPen(defaultPen);
 	for (MaterialExpressionInfo& i : GraphNodes)
 	{
-		if (i.Title == "Comment")
+		if (i.Title.StartsWith("Comment"))
 		{
 			continue;
 		}

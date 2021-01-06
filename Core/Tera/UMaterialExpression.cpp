@@ -587,7 +587,7 @@ void UMaterialExpressionBumpOffset::AcceptVisitor(UMaterialExpressionViewVisitor
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Height);
-  visitor->SetValue(FString::Sprintf("HeightRatio: %.2f\nReferencePlane: %.2f", HeightRatio, ReferencePlane));
+  visitor->SetValue(FString::Sprintf("HeightRatio:%f\nReferencePlane:%f", HeightRatio, ReferencePlane));
 }
 
 bool UMaterialExpressionCeil::RegisterProperty(FPropertyTag* property)
@@ -729,7 +729,7 @@ bool UMaterialExpressionConstant2Vector::RegisterProperty(FPropertyTag* property
 void UMaterialExpressionConstant2Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f, %.2f", R, G));
+  visitor->SetValue(FString::Sprintf("%.2f,%f", R, G));
 }
 
 bool UMaterialExpressionConstant3Vector::RegisterProperty(FPropertyTag* property)
@@ -744,7 +744,7 @@ bool UMaterialExpressionConstant3Vector::RegisterProperty(FPropertyTag* property
 void UMaterialExpressionConstant3Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f, %.2f, %.2f", R, G, B));
+  visitor->SetValue(FString::Sprintf("%.2f,%f,%f", R, G, B));
 }
 
 bool UMaterialExpressionConstant4Vector::RegisterProperty(FPropertyTag* property)
@@ -760,7 +760,7 @@ bool UMaterialExpressionConstant4Vector::RegisterProperty(FPropertyTag* property
 void UMaterialExpressionConstant4Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f, %.2f, %.2f, %.2f", R, G, B, A));
+  visitor->SetValue(FString::Sprintf("%.2f,%f,%f,%f", R, G, B, A));
 }
 
 bool UMaterialExpressionConstantBiasScale::RegisterProperty(FPropertyTag* property)
@@ -776,7 +776,7 @@ void UMaterialExpressionConstantBiasScale::AcceptVisitor(UMaterialExpressionView
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Bias: %.2f\nScale: %.2f", Bias, Scale));
+  visitor->SetValue(FString::Sprintf("Bias:%f\nScale:%f", Bias, Scale));
 }
 
 bool UMaterialExpressionConstantClamp::RegisterProperty(FPropertyTag* property)
@@ -792,7 +792,7 @@ void UMaterialExpressionConstantClamp::AcceptVisitor(UMaterialExpressionViewVisi
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Min: %.2f\nMax: %.2f", Min, Max));
+  visitor->SetValue(FString::Sprintf("Min:%f\nMax:%f", Min, Max));
 }
 
 bool UMaterialExpressionCosine::RegisterProperty(FPropertyTag* property)
@@ -807,7 +807,7 @@ void UMaterialExpressionCosine::AcceptVisitor(UMaterialExpressionViewVisitor* vi
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Period: %.2f", Period));
+  visitor->SetValue(FString::Sprintf("Period:%f", Period));
 }
 
 bool UMaterialExpressionCrossProduct::RegisterProperty(FPropertyTag* property)
@@ -851,7 +851,7 @@ void UMaterialExpressionDepthBiasedAlpha::AcceptVisitor(UMaterialExpressionViewV
 {
   SUPER_ACCEPT();
   SET_INPUT(Alpha, Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale: %.2f", bNormalize ? "true" : "false", BiasScale));
+  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
 }
 
 bool UMaterialExpressionDepthBiasedBlend::RegisterProperty(FPropertyTag* property)
@@ -869,7 +869,7 @@ void UMaterialExpressionDepthBiasedBlend::AcceptVisitor(UMaterialExpressionViewV
 {
   SUPER_ACCEPT();
   SET_INPUT(RGB, Alpha, Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale: %.2f", bNormalize ? "true" : "false", BiasScale));
+  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
 }
 
 bool UMaterialExpressionDepthOfFieldFunction::RegisterProperty(FPropertyTag* property)
@@ -913,7 +913,7 @@ void UMaterialExpressionDesaturation::AcceptVisitor(UMaterialExpressionViewVisit
 {
   SUPER_ACCEPT();
   SET_INPUT(Input, Percent);
-  visitor->SetValue(FString::Sprintf("LumFactors:\nR: %.2f G: %.2f\nB: %.2f A: %.2f", LuminanceFactors.R, LuminanceFactors.G, LuminanceFactors.B, LuminanceFactors.A));
+  visitor->SetValue(FString::Sprintf("LumFactors:\nR:%f G:%f\nB:%f A:%f", LuminanceFactors.R, LuminanceFactors.G, LuminanceFactors.B, LuminanceFactors.A));
 }
 
 bool UMaterialExpressionDestDepth::RegisterProperty(FPropertyTag* property)
@@ -1089,7 +1089,7 @@ void UMaterialExpressionFresnel::AcceptVisitor(UMaterialExpressionViewVisitor* v
 {
   SUPER_ACCEPT();
   SET_INPUT(Normal);
-  visitor->SetValue(FString::Sprintf("Exp: %.2f", Exponent));
+  visitor->SetValue(FString::Sprintf("Exp:%f", Exponent));
 }
 
 bool UMaterialExpressionIf::RegisterProperty(FPropertyTag* property)
@@ -1192,7 +1192,7 @@ void UMaterialExpressionPanner::AcceptVisitor(UMaterialExpressionViewVisitor* vi
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Time);
-  visitor->SetValue(FString::Sprintf("SpdX: %.2f\nSpdY: %.2f", SpeedX, SpeedY));
+  visitor->SetValue(FString::Sprintf("SpdX:%f\nSpdY:%f", SpeedX, SpeedY));
 }
 
 bool UMaterialExpressionParameter::RegisterProperty(FPropertyTag* property)
@@ -1283,7 +1283,7 @@ bool UMaterialExpressionVectorParameter::RegisterProperty(FPropertyTag* property
 void UMaterialExpressionVectorParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String() + FString::Sprintf("\n%.2f, %.2f, %.2f, %.2f", DefaultValue.R, DefaultValue.G, DefaultValue.B, DefaultValue.A));
+  visitor->SetValue(ParameterName.String() + FString::Sprintf("\n%.2f,%f,%f,%f", DefaultValue.R, DefaultValue.G, DefaultValue.B, DefaultValue.A));
 }
 
 bool UMaterialExpressionParticleMacroUV::RegisterProperty(FPropertyTag* property)
@@ -1356,7 +1356,7 @@ void UMaterialExpressionRotator::AcceptVisitor(UMaterialExpressionViewVisitor* v
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Time);
-  visitor->SetValue(FString::Sprintf("Center: %.2f, %.2f\nSpeed: %.2f", CenterX, CenterY, Speed));
+  visitor->SetValue(FString::Sprintf("Center:%f,%f\nSpeed:%f", CenterX, CenterY, Speed));
 }
 
 bool UMaterialExpressionSceneDepth::RegisterProperty(FPropertyTag* property)
@@ -1414,7 +1414,7 @@ void UMaterialExpressionSine::AcceptVisitor(UMaterialExpressionViewVisitor* visi
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Period: %.2f", Period));
+  visitor->SetValue(FString::Sprintf("Period:%f", Period));
 }
 
 bool UMaterialExpressionSphereMask::RegisterProperty(FPropertyTag* property)
@@ -1431,7 +1431,7 @@ void UMaterialExpressionSphereMask::AcceptVisitor(UMaterialExpressionViewVisitor
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
-  visitor->SetValue(FString::Sprintf("AttRadius: %.2f\nHrdsPercent: %.2f", AttenuationRadius, HardnessPercent));
+  visitor->SetValue(FString::Sprintf("AttRadius:%f\nHrdsPercent:%f", AttenuationRadius, HardnessPercent));
 }
 
 bool UMaterialExpressionSquareRoot::RegisterProperty(FPropertyTag* property)
@@ -1475,7 +1475,7 @@ bool UMaterialExpressionTerrainLayerCoords::RegisterProperty(FPropertyTag* prope
 void UMaterialExpressionTerrainLayerCoords::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Type: %s\nScale: %.2f\nRotation: %.2f\nPan: %.2f, %.2f", MappingType.UTF8().c_str(), MappingScale, MappingRotation, MappingPanU, MappingPanV));
+  visitor->SetValue(FString::Sprintf("Type: %s\nScale:%f\nRotation:%f\nPan:%f,%f", MappingType.UTF8().c_str(), MappingScale, MappingRotation, MappingPanU, MappingPanV));
 }
 
 bool UMaterialExpressionTerrainLayerWeight::RegisterProperty(FPropertyTag* property)
@@ -1508,7 +1508,7 @@ bool UMaterialExpressionTextureCoordinate::RegisterProperty(FPropertyTag* proper
 void UMaterialExpressionTextureCoordinate::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("CoordIdx: %d\nTilingUV: %.2f, %.2f\nUnMirrorUV: %s, %s", CoordinateIndex, UTiling, VTiling, UnMirrorU ? "true" : "false", UnMirrorV ? "true" : "false"));
+  visitor->SetValue(FString::Sprintf("CoordIdx: %d\nTilingUV:%f,%f\nUnMirrorUV: %s, %s", CoordinateIndex, UTiling, VTiling, UnMirrorU ? "true" : "false", UnMirrorV ? "true" : "false"));
 }
 
 bool UMaterialExpressionTextureSample::RegisterProperty(FPropertyTag* property)
@@ -1539,7 +1539,7 @@ void UMaterialExpressionDepthBiasBlend::AcceptVisitor(UMaterialExpressionViewVis
 {
   SUPER_ACCEPT();
   SET_INPUT(Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale: %.2f", bNormalize ? "true" : "false", BiasScale));
+  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
 }
 
 bool UMaterialExpressionAntialiasedTextureMask::RegisterProperty(FPropertyTag* property)
@@ -1553,7 +1553,7 @@ bool UMaterialExpressionAntialiasedTextureMask::RegisterProperty(FPropertyTag* p
 void UMaterialExpressionAntialiasedTextureMask::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Threshold: %.2f\nChannel: %s", Threshold, Channel.UTF8().c_str()));
+  visitor->SetValue(FString::Sprintf("Threshold:%f\nChannel: %s", Threshold, Channel.UTF8().c_str()));
 }
 
 bool UMaterialExpressionTime::RegisterProperty(FPropertyTag* property)
