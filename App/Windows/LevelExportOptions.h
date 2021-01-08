@@ -23,6 +23,7 @@ struct LevelExportContext {
   const char* MasterMaterialStorage = "MasterMaterials.txt";
   const char* MaterialsListStorage = "MaterialsList.txt";
   const char* MeshDefaultMaterialStorage = "DefaultMaterials.txt";
+  const char* SptMaterialOverrides = "SpeedTreeOverrides.txt";
   const char* TextureInfoStorage = "Textures.txt";
   const char* TerrainStorage = "Terrains";
 
@@ -81,6 +82,12 @@ struct LevelExportContext {
     return std::filesystem::path(Config.RootDir.WString()) / MeshDefaultMaterialStorage;
   }
 
+  // Per-actor material map for SpeedTrees
+  inline std::filesystem::path GetSpeedTreeMaterialOverridesPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / SptMaterialOverrides;
+  }
+
   inline std::filesystem::path GetTerrainDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / TerrainStorage;
@@ -117,11 +124,14 @@ struct LevelExportContext {
 
   std::vector<std::string> Errors;
   std::vector<UObject*> UsedMaterials;
+  std::vector<UObject*> SptLeafMaterials;
   std::map<std::string, UObject*> MasterMaterials;
   std::map<std::string, std::vector<std::string>> MeshDefaultMaterials;
+  std::map<std::string, std::map<std::string, std::string>> SpeedTreeMaterialOverrides;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   std::vector<std::string> ComplexCollisions;
   std::map<std::string, std::vector<std::string>> MLODs;
+  std::vector<std::string> TerrainInfo;
   int CurrentProgress = 0;
   int StaticMeshActorsCount = 0;
   int SkeletalMeshActorsCount = 0;

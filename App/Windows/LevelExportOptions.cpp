@@ -527,9 +527,7 @@ int32 LevelExportOptionsWindow::GetActorsTableMask() const
 
 void LevelExportOptionsWindow::OnDirChanged(wxFileDirPickerEvent& event)
 {
-  wxString path = PathPicker->GetPath();
-  std::error_code err;
-  ExportButton->Enable(path.size() && std::filesystem::exists(path.ToStdWstring(), err));
+  ExportButton->Enable(PathPicker->GetPath().size());
 }
 
 void LevelExportOptionsWindow::OnDefaultsClicked(wxCommandEvent& event)
