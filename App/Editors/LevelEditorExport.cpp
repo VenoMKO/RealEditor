@@ -383,7 +383,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
         std::ofstream s(path, std::ios::out);
         for (const auto& p : usedMaterials)
         {
-          s << p.first << ": " << GetLocalDir(p.second) << '\n';
+          s << p.first << ": " << GetLocalDirAndName(p.second) << '\n';
         }
       }
     }
@@ -1527,18 +1527,26 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
 
 bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWindow* progress)
 {
+  if (ctx.UsedMaterials.empty())
+  {
+    return true;
+  }
+
   if (ctx.Config.Materials)
   {
     SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Saving materials..."));
     SendEvent(progress, UPDATE_PROGRESS, 0);
-    SendEvent(progress, UPDATE_MAX_PROGRESS, ctx.UsedMaterials.size());
+    // Use 3x multiplier because collecting textures takes long. 2/3 proportion makes it feel a bit faster
+    SendEvent(progress, UPDATE_MAX_PROGRESS, ctx.UsedMaterials.size() * (ctx.Config.Textures ? 3 : 1)); 
   }
   else
   {
-    SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Gathering textures..."));
+    SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Preparing textures..."));
     SendEvent(progress, UPDATE_PROGRESS, -1);
   }
 
+  int32 curProgress = 0;
+  
   if (ctx.Config.Materials)
   {
     if (ctx.MeshDefaultMaterials.size())
@@ -1567,286 +1575,208 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         }
       }
     }
-    if (ctx.UsedMaterials.size())
+    
+    struct MaterialParameters {
+      std::map<FString, FTextureParameter> TextureParameters;
+      std::map<FString, FLinearColor> VectorParameters;
+      std::map<FString, float> ScalarParameters;
+      std::map<FString, bool> BoolParameters;
+      bool DoubleSided = false;
+    };
+    std::map<std::string, MaterialParameters> masterMaterials;
+    std::map<std::string, MaterialParameters> materialInstances;
+    std::vector<std::string> elements;
+
+    for (UObject* obj : ctx.UsedMaterials)
     {
-      struct MaterialParameters {
-        std::map<FString, FTextureParameter> TextureParameters;
-        std::map<FString, FLinearColor> VectorParameters;
-        std::map<FString, float> ScalarParameters;
-        std::map<FString, bool> BoolParameters;
-        bool DoubleSided = false;
-      };
-      std::map<std::string, MaterialParameters> masterMaterials;
-      std::map<std::string, MaterialParameters> materialInstances;
-      std::vector<std::string> elements;
-      for (UObject* obj : ctx.UsedMaterials)
+      SendEvent(progress, UPDATE_PROGRESS, curProgress);
+      if (progress->IsCanceled())
       {
-        if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
+        SendEvent(progress, UPDATE_PROGRESS_FINISH);
+        return false;
+      }
+      curProgress++;
+      if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
+      {
+        if (UObject* mat = mi->GetParent())
         {
-          if (UObject* mat = mi->GetParent())
-          {
-            std::string e = obj->GetClassName().UTF8() + ' ';
-            e += "Game/";
-            e += ctx.DataDirName;
-            e += '/' + GetLocalDirAndName(mat, "/") + ' ';
-            e += "Game/";
-            e += ctx.DataDirName;
-            e += '/' + GetLocalDirAndName(mi, "/") + '\n';
-            if (std::find(elements.begin(), elements.end(), e) == elements.end())
-            {
-              elements.push_back(e);
-              MaterialParameters params;
-              params.TextureParameters = mi->GetTextureParameters();
-              params.VectorParameters = mi->GetVectorParameters();
-              params.ScalarParameters = mi->GetScalarParameters();
-              params.BoolParameters = mi->GetStaticBoolParameters();
-              materialInstances[e] = params;
-            }
-          }
-        }
-        else if (UMaterial* mat = Cast<UMaterial>(obj))
-        {
-          std::string e = "Material Game/";
+          std::string e = obj->GetClassName().UTF8() + ' ';
+          e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(mat, "/") + '\n';
+          e += '/' + GetLocalDirAndName(mat, "/") + ' ';
+          e += "Game/";
+          e += ctx.DataDirName;
+          e += '/' + GetLocalDirAndName(mi, "/") + '\n';
           if (std::find(elements.begin(), elements.end(), e) == elements.end())
           {
             elements.push_back(e);
             MaterialParameters params;
-            params.DoubleSided = mat->TwoSided;
-            params.TextureParameters = mat->GetTextureParameters();
-            params.VectorParameters = mat->GetVectorParameters();
-            params.ScalarParameters = mat->GetScalarParameters();
-            params.BoolParameters = mat->GetStaticBoolParameters();
-            masterMaterials[e] = params;
+            params.TextureParameters = mi->GetTextureParameters();
+            params.VectorParameters = mi->GetVectorParameters();
+            params.ScalarParameters = mi->GetScalarParameters();
+            params.BoolParameters = mi->GetStaticBoolParameters();
+            materialInstances[e] = params;
           }
         }
       }
-
-      // Add separate leaf card materials
-      for (UObject* obj : ctx.SptLeafMaterials)
+      else if (UMaterial* mat = Cast<UMaterial>(obj))
       {
-        if (UMaterial* mat = Cast<UMaterial>(obj))
+        std::string e = "Material Game/";
+        e += ctx.DataDirName;
+        e += '/' + GetLocalDirAndName(mat, "/") + '\n';
+        if (std::find(elements.begin(), elements.end(), e) == elements.end())
         {
-          std::string e = "Material Game/";
+          elements.push_back(e);
+          MaterialParameters params;
+          params.DoubleSided = mat->TwoSided;
+          params.TextureParameters = mat->GetTextureParameters();
+          params.VectorParameters = mat->GetVectorParameters();
+          params.ScalarParameters = mat->GetScalarParameters();
+          params.BoolParameters = mat->GetStaticBoolParameters();
+          masterMaterials[e] = params;
+        }
+      }
+    }
+
+    // Add separate leaf card materials
+    for (UObject* obj : ctx.SptLeafMaterials)
+    {
+      if (UMaterial* mat = Cast<UMaterial>(obj))
+      {
+        std::string e = "Material Game/";
+        e += ctx.DataDirName;
+        e += '/' + GetLocalDirAndName(mat, "/") + "_leafs" + '\n';
+        if (std::find(elements.begin(), elements.end(), e) == elements.end())
+        {
+          elements.push_back(e);
+          MaterialParameters params;
+          params.DoubleSided = mat->TwoSided;
+          params.TextureParameters = mat->GetTextureParameters();
+          params.VectorParameters = mat->GetVectorParameters();
+          params.ScalarParameters = mat->GetScalarParameters();
+          params.BoolParameters = mat->GetStaticBoolParameters();
+          masterMaterials[e] = params;
+        }
+      }
+      else if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
+      {
+        if (UMaterialInterface* parent = Cast<UMaterialInterface>(mi->GetParent()))
+        {
+          std::string e = obj->GetClassName().UTF8() + ' ';
+          e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(mat, "/") + "_leafs" + '\n';
+          e += '/' + GetLocalDirAndName(parent, "/") + "_leafs" + ' ';
+          e += "Game/";
+          e += ctx.DataDirName;
+          e += '/' + GetLocalDirAndName(mi, "/") + "_leafs" + '\n';
           if (std::find(elements.begin(), elements.end(), e) == elements.end())
           {
             elements.push_back(e);
             MaterialParameters params;
-            params.DoubleSided = mat->TwoSided;
-            params.TextureParameters = mat->GetTextureParameters();
-            params.VectorParameters = mat->GetVectorParameters();
-            params.ScalarParameters = mat->GetScalarParameters();
-            params.BoolParameters = mat->GetStaticBoolParameters();
-            masterMaterials[e] = params;
-          }
-        }
-        else if (UMaterialInstance* mi = Cast<UMaterialInstance>(obj))
-        {
-          if (UMaterialInterface* parent = Cast<UMaterialInterface>(mi->GetParent()))
-          {
-            std::string e = obj->GetClassName().UTF8() + ' ';
-            e += "Game/";
-            e += ctx.DataDirName;
-            e += '/' + GetLocalDirAndName(parent, "/") + "_leafs" + ' ';
-            e += "Game/";
-            e += ctx.DataDirName;
-            e += '/' + GetLocalDirAndName(mi, "/") + "_leafs" + '\n';
-            if (std::find(elements.begin(), elements.end(), e) == elements.end())
-            {
-              elements.push_back(e);
-              MaterialParameters params;
-              params.TextureParameters = mi->GetTextureParameters();
-              params.VectorParameters = mi->GetVectorParameters();
-              params.ScalarParameters = mi->GetScalarParameters();
-              params.BoolParameters = mi->GetStaticBoolParameters();
-              materialInstances[e] = params;
-            }
+            params.TextureParameters = mi->GetTextureParameters();
+            params.VectorParameters = mi->GetVectorParameters();
+            params.ScalarParameters = mi->GetScalarParameters();
+            params.BoolParameters = mi->GetStaticBoolParameters();
+            materialInstances[e] = params;
           }
         }
       }
+    }
 
-      if (elements.size())
+    if (elements.size())
+    {
+      const std::filesystem::path root = ctx.GetMaterialsListPath();
+      std::ofstream s(root);
+      for (const std::string& e : elements)
       {
-        const std::filesystem::path root = ctx.GetMaterialsListPath();
-        std::ofstream s(root);
-        for (const std::string& e : elements)
-        {
-          s << e;
-        }
+        s << e;
       }
+    }
 
-      if (masterMaterials.size() || materialInstances.size())
-      {
-        auto DumpMaterial = [&](auto& s, const auto& mat) {
-          s << mat.first;
-          if (mat.second.DoubleSided)
+    if (masterMaterials.size() || materialInstances.size())
+    {
+      auto DumpMaterial = [&](auto& s, const auto& mat) {
+        s << mat.first;
+        if (mat.second.DoubleSided)
+        {
+          s << "  TwoSided\n";
+        }
+        for (auto const& p : mat.second.TextureParameters)
+        {
+          if (UTexture2D* tmp = Cast<UTexture2D>(p.second.Texture))
           {
-            s << "  TwoSided\n";
-          }
-          for (auto const& p : mat.second.TextureParameters)
-          {
-            if (UTexture2D* tmp = Cast<UTexture2D>(p.second.Texture))
+            if (p.second.AlphaChannelUsed && tmp->CompressionSettings == TC_NormalmapAlpha)
             {
-              if (p.second.AlphaChannelUsed && tmp->CompressionSettings == TC_NormalmapAlpha)
-              {
-                s << " TextureA";
-              }
-              else
-              {
-                s << " Texture";
-              }
+              s << " TextureA";
             }
             else
             {
               s << " Texture";
             }
-            s << VSEP << p.first.UTF8() << VSEP;
-            if (p.second.Texture)
-            {
-              s << "Game/" << ctx.DataDirName << '/' << GetLocalDirAndName(p.second.Texture, "/") << '\n';
-            }
-            else
-            {
-              s << "None\n";
-            }
           }
-          for (auto const& p : mat.second.ScalarParameters)
+          else
           {
-            s << "  Scalar" << VSEP << p.first.UTF8() << VSEP << p.second << '\n';
+            s << " Texture";
           }
-          for (auto const& p : mat.second.VectorParameters)
+          s << VSEP << p.first.UTF8() << VSEP;
+          if (p.second.Texture)
           {
-            s << "  Vector" << VSEP << p.first.UTF8() << VSEP << p.second.R << VSEP << p.second.G << VSEP << p.second.B << VSEP << p.second.A << '\n';
+            s << "Game/" << ctx.DataDirName << '/' << GetLocalDirAndName(p.second.Texture, "/") << '\n';
           }
-          for (auto const& p : mat.second.BoolParameters)
+          else
           {
-            s << "  Bool" << VSEP << p.first.UTF8() << VSEP << (p.second ? "True" : "False") << '\n';
+            s << "None\n";
           }
-        };
-        const std::filesystem::path root = ctx.GetMaterialsListPath();
-        std::ofstream s(root);
-        for (auto const& mat : masterMaterials)
-        {
-          DumpMaterial(s, mat);
         }
-        for (auto const& mat : materialInstances)
+        for (auto const& p : mat.second.ScalarParameters)
         {
-          DumpMaterial(s, mat);
+          s << "  Scalar" << VSEP << p.first.UTF8() << VSEP << p.second << '\n';
         }
+        for (auto const& p : mat.second.VectorParameters)
+        {
+          s << "  Vector" << VSEP << p.first.UTF8() << VSEP << p.second.R << VSEP << p.second.G << VSEP << p.second.B << VSEP << p.second.A << '\n';
+        }
+        for (auto const& p : mat.second.BoolParameters)
+        {
+          s << "  Bool" << VSEP << p.first.UTF8() << VSEP << (p.second ? "True" : "False") << '\n';
+        }
+      };
+      const std::filesystem::path root = ctx.GetMaterialsListPath();
+      std::ofstream s(root);
+      for (auto const& mat : masterMaterials)
+      {
+        DumpMaterial(s, mat);
+      }
+      for (auto const& mat : materialInstances)
+      {
+        DumpMaterial(s, mat);
       }
     }
   }
   
-  std::map<std::string, UTexture*> textures;
-  int curProgress = 0;
-  for (UObject* obj : ctx.UsedMaterials)
+  if (ctx.Config.Textures)
   {
-    if (ctx.Config.Materials)
+    std::map<std::string, UTexture*> textures;
+    for (UObject* obj : ctx.UsedMaterials)
     {
-      SendEvent(progress, UPDATE_PROGRESS, curProgress);
-    }
-    if (progress->IsCanceled())
-    {
-      SendEvent(progress, UPDATE_PROGRESS_FINISH);
-      return false;
-    }
-    curProgress++;
-    if (!obj)
-    {
-      continue;
-    }
-    if (UMaterial* mat = Cast<UMaterial>(obj))
-    {
-      ctx.MasterMaterials[GetLocalDir(mat) + mat->GetObjectName().UTF8()] = mat;
-    }
-    else if (UMaterialInstance* instance = Cast<UMaterialInstance>(obj))
-    {
-      if (UMaterial* mat = Cast<UMaterial>(instance->GetParent()))
-      {
-        ctx.MasterMaterials[GetLocalDirAndName(mat)] = mat;
-      }
-    }
-    std::filesystem::path path = ctx.GetMaterialDir() / GetLocalDir(obj);
-    std::error_code err;
-    if (!std::filesystem::exists(path, err))
-    {
-      if (!std::filesystem::create_directories(path, err) && err)
-      {
-        ctx.Errors.emplace_back("Error: Failed to create a folder to save material " + obj->GetObjectName().UTF8());
-        LogW("Failed to save material %s", obj->GetObjectName().UTF8().c_str());
-        continue;
-      }
-    }
-    path /= obj->GetObjectName().UTF8();
-    path.replace_extension("txt");
-    if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
-    {
-      continue;
-    }
-
-    if (UMaterialInterface* mat = Cast<UMaterialInterface>(obj))
-    {
-      mat->Load();
-      auto textureParams = mat->GetTextureParameters();
-
       if (ctx.Config.Materials)
       {
-        std::ofstream s(path, std::ios::out);
-        s << mat->GetObjectName().UTF8() << '(' << mat->GetClassName().UTF8() << ")\n";
-        if (UObject* parent = mat->GetParent())
-        {
-          s << "Parent: " << GetLocalDirAndName(parent) << '\n';
-        }
-
-        if (textureParams.size())
-        {
-          s << "\nTexture Parameters:\n";
-          for (const auto& p : textureParams)
-          {
-            s << "  " << p.first.UTF8() << ": ";
-            if (p.second.Texture)
-            {
-              s << GetLocalDirAndName(p.second.Texture);
-            }
-            else
-            {
-              s << "None";
-            }
-            s << '\n';
-          }
-        }
-
-        auto scalarParameters = mat->GetScalarParameters();
-        if (scalarParameters.size())
-        {
-          s << "\nScalar Parameters:\n";
-          for (const auto& p : scalarParameters)
-          {
-            s << "  " << p.first.UTF8() << ": " << std::to_string(p.second) << '\n';
-          }
-        }
-
-        auto vectorParameters = mat->GetVectorParameters();
-        if (vectorParameters.size())
-        {
-          s << "\nVector Parameters:\n";
-          for (const auto& p : vectorParameters)
-          {
-            s << "  " << p.first.UTF8() << ": ";
-            s << "( R: " << std::to_string(p.second.R);
-            s << ", G: " << std::to_string(p.second.G);
-            s << ", B: " << std::to_string(p.second.B);
-            s << ", A: " << std::to_string(p.second.A);
-            s << " )\n";
-          }
-        }
+        SendEvent(progress, UPDATE_PROGRESS, curProgress);
+        curProgress+=2;
+      }
+      if (progress->IsCanceled())
+      {
+        SendEvent(progress, UPDATE_PROGRESS_FINISH);
+        return false;
+      }
+      if (!obj)
+      {
+        continue;
       }
 
-      if (ctx.Config.Textures)
+      if (UMaterialInterface* mat = Cast<UMaterialInterface>(obj))
       {
+        auto textureParams = mat->GetTextureParameters();
         if (UMaterial* parent = Cast<UMaterial>(mat->GetParent()))
         {
           auto parentTexParams = parent->GetTextureParameters();
@@ -1886,221 +1816,117 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       }
     }
 
-    if (ctx.Config.Materials && ctx.MasterMaterials.size())
+    if (textures.size())
     {
-      std::ofstream s(ctx.GetMasterMaterialsPath());
-      for (const auto& p : ctx.MasterMaterials)
+      SendEvent(progress, UPDATE_PROGRESS, 0);
+      SendEvent(progress, UPDATE_MAX_PROGRESS, textures.size());
+      curProgress = 0;
+
+      TextureProcessor::TCFormat outputFormat = ctx.GetTextureFormat();
+      std::string ext;
+      switch (outputFormat)
       {
-        s << p.first << '\n';
-      }
-    }
-  }
-
-  if (ctx.Config.Textures && textures.size())
-  {
-    SendEvent(progress, UPDATE_PROGRESS, 0);
-    SendEvent(progress, UPDATE_MAX_PROGRESS, textures.size());
-    curProgress = 0;
-
-    TextureProcessor::TCFormat outputFormat = ctx.GetTextureFormat();
-    std::string ext;
-    switch (outputFormat)
-    {
-    case TextureProcessor::TCFormat::PNG:
-      ext = "png";
-      break;
-    case TextureProcessor::TCFormat::TGA:
-      ext = "tga";
-      break;
-    case TextureProcessor::TCFormat::DDS:
-      ext = "dds";
-      break;
-    default:
-      LogE("Invalid output format!");
-      SendEvent(progress, UPDATE_PROGRESS_FINISH);
-      break;
-    }
-
-    std::vector<std::string> TextureInfo;
-
-    auto SaveTextureInfo = [&](UTexture2D* texture, const std::string& ext, bool alpha = false)
-    {
-      std::string result = TextureCompressionSettingsToString(alpha ? TC_Grayscale : texture->CompressionSettings).UTF8() + VSEP;
-      result += (texture->SRGB && !alpha ? "True" : "False");
-      result += VSEP;
-      result += (texture->Format == PF_DXT1 || texture->Format == PF_DXT3 || texture->Format == PF_DXT5) ? "True" : "False";
-      result += VSEP;
-      result += "Game/";
-      result += ctx.DataDirName;
-      result += '/';
-      result += GetLocalDirAndName(texture, "/");
-      if (alpha)
-      {
-        result += "_Alpha";
-      }
-      result += VSEP;
-      result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectName().UTF8()).replace_extension().wstring());
-      if (alpha)
-      {
-        result += "_Alpha";
-      }
-      result += '.' + ext;
-      return result;
-    };
-
-    for (auto& p : textures)
-    {
-      if (progress->IsCanceled())
-      {
+      case TextureProcessor::TCFormat::PNG:
+        ext = "png";
+        break;
+      case TextureProcessor::TCFormat::TGA:
+        ext = "tga";
+        break;
+      case TextureProcessor::TCFormat::DDS:
+        ext = "dds";
+        break;
+      default:
+        LogE("Invalid output format!");
         SendEvent(progress, UPDATE_PROGRESS_FINISH);
-        return false;
-      }
-      SendEvent(progress, UPDATE_PROGRESS, curProgress);
-      curProgress++;
-      if (!p.second)
-      {
-        continue;
+        break;
       }
 
-      SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting texture: ") + p.second->GetObjectName().UTF8());
+      std::vector<std::string> textureInfo;
 
-      std::error_code err;
-      std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
-      if (!std::filesystem::exists(path, err))
+      auto SaveTextureInfo = [&](UTexture2D* texture, const std::string& ext, bool alpha = false)
       {
-        std::filesystem::create_directories(path, err);
-      }
-      path /= p.second->GetObjectName().UTF8();
-      path.replace_extension(ext);
-
-      if (UTexture2D* texture = Cast<UTexture2D>(p.second))
-      {
-        TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
-        switch (texture->Format)
+        std::string result = TextureCompressionSettingsToString(alpha ? TC_Grayscale : texture->CompressionSettings).UTF8() + VSEP;
+        result += (texture->SRGB && !alpha ? "True" : "False");
+        result += VSEP;
+        result += (texture->Format == PF_DXT1 || texture->Format == PF_DXT3 || texture->Format == PF_DXT5) ? "True" : "False";
+        result += VSEP;
+        result += "Game/";
+        result += ctx.DataDirName;
+        result += '/';
+        result += GetLocalDirAndName(texture, "/");
+        if (alpha)
         {
-        case PF_DXT1:
-          inputFormat = TextureProcessor::TCFormat::DXT1;
-          break;
-        case PF_DXT3:
-          inputFormat = TextureProcessor::TCFormat::DXT3;
-          break;
-        case PF_DXT5:
-          inputFormat = TextureProcessor::TCFormat::DXT5;
-          break;
-        case PF_A8R8G8B8:
-          inputFormat = TextureProcessor::TCFormat::ARGB8;
-          break;
-        case PF_G8:
-          inputFormat = TextureProcessor::TCFormat::G8;
-          break;
-        default:
-          LogE("Failed to export texture %s. Invalid format!", texture->GetObjectName().UTF8().c_str());
-          continue;
+          result += "_Alpha";
         }
+        result += VSEP;
+        result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectName().UTF8()).replace_extension().wstring());
+        if (alpha)
+        {
+          result += "_Alpha";
+        }
+        result += '.' + ext;
+        return result;
+      };
 
-        TextureInfo.emplace_back(SaveTextureInfo(texture, ext));
-
-        if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
+      for (auto& p : textures)
+      {
+        if (progress->IsCanceled())
+        {
+          SendEvent(progress, UPDATE_PROGRESS_FINISH);
+          return false;
+        }
+        SendEvent(progress, UPDATE_PROGRESS, curProgress);
+        curProgress++;
+        if (!p.second)
         {
           continue;
         }
 
-        FTexture2DMipMap* mip = nullptr;
-        for (FTexture2DMipMap* mipmap : texture->Mips)
-        {
-          if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
-          {
-            mip = mipmap;
-            break;
-          }
-        }
-        if (!mip)
-        {
-          LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectName().UTF8().c_str());
-          continue;
-        }
+        SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting textures: ") + p.second->GetObjectName().UTF8());
 
-        TextureProcessor processor(inputFormat, outputFormat);
+        std::error_code err;
+        std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
+        if (!std::filesystem::exists(path, err))
+        {
+          std::filesystem::create_directories(path, err);
+        }
+        path /= p.second->GetObjectName().UTF8();
+        path.replace_extension(ext);
 
-        processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
-        processor.SetOutputPath(W2A(path.wstring()));
-        processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
-        if (texture->CompressionSettings == TC_NormalmapAlpha)
+        if (UTexture2D* texture = Cast<UTexture2D>(p.second))
         {
-          processor.SetSplitAlpha(true);
-          TextureInfo.emplace_back(SaveTextureInfo(texture, ext, true));
-        }
-        try
-        {
-          if (!processor.Process())
-          {
-            LogE("Failed to export %s: %s", texture->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
-            continue;
-          }
-        }
-        catch (...)
-        {
-          LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectName().UTF8().c_str());
-          continue;
-        }
-      }
-      else if (UTextureCube* cube = Cast<UTextureCube>(p.second))
-      {
-        auto faces = cube->GetFaces();
-        bool ok = true;
-        TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
-        for (UTexture2D* face : faces)
-        {
-          if (!face)
-          {
-            LogW("Failed to export a texture cube %s. Can't get one of the faces.", p.second->GetObjectPath().UTF8().c_str());
-            ok = false;
-            break;
-          }
-          TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
-          switch (face->Format)
+          TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+          switch (texture->Format)
           {
           case PF_DXT1:
-            f = TextureProcessor::TCFormat::DXT1;
+            inputFormat = TextureProcessor::TCFormat::DXT1;
             break;
           case PF_DXT3:
-            f = TextureProcessor::TCFormat::DXT3;
+            inputFormat = TextureProcessor::TCFormat::DXT3;
             break;
           case PF_DXT5:
-            f = TextureProcessor::TCFormat::DXT5;
+            inputFormat = TextureProcessor::TCFormat::DXT5;
             break;
           case PF_A8R8G8B8:
-            f = TextureProcessor::TCFormat::ARGB8;
+            inputFormat = TextureProcessor::TCFormat::ARGB8;
             break;
           case PF_G8:
-            f = TextureProcessor::TCFormat::G8;
+            inputFormat = TextureProcessor::TCFormat::G8;
             break;
           default:
-            LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
-            ok = false;
-            break;
+            LogE("Failed to export texture %s. Invalid format!", texture->GetObjectName().UTF8().c_str());
+            continue;
           }
-          if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+
+          textureInfo.emplace_back(SaveTextureInfo(texture, ext));
+
+          if (!ctx.Config.OverrideData && std::filesystem::exists(path, err))
           {
-            LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
-            ok = false;
-            break;
+            continue;
           }
-          inputFormat = f;
-        }
 
-        if (!ok)
-        {
-          continue;
-        }
-
-        // UE4 accepts texture cubes only in a DDS container with A8R8G8B8 format and proper flags. Export cubes this way regardless of the user's output format.
-        path.replace_extension("dds");
-        TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::DDS);
-        for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
-        {
           FTexture2DMipMap* mip = nullptr;
-          for (FTexture2DMipMap* mipmap : faces[faceIdx]->Mips)
+          for (FTexture2DMipMap* mipmap : texture->Mips)
           {
             if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
             {
@@ -2110,50 +1936,146 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           }
           if (!mip)
           {
-            LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str());
-            ok = false;
-            break;
+            LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectName().UTF8().c_str());
+            continue;
           }
 
-          processor.SetInputCubeFace(faceIdx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);
-        }
+          TextureProcessor processor(inputFormat, outputFormat);
 
-        if (!ok)
-        {
-          continue;
-        }
-
-        processor.SetOutputPath(W2A(path.wstring()));
-
-        try
-        {
-          if (!processor.Process())
+          processor.SetInputData(mip->Data->GetAllocation(), mip->Data->GetBulkDataSize());
+          processor.SetOutputPath(W2A(path.wstring()));
+          processor.SetInputDataDimensions(mip->SizeX, mip->SizeY);
+          if (texture->CompressionSettings == TC_NormalmapAlpha)
           {
-            LogE("Failed to export %s: %s", cube->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+            processor.SetSplitAlpha(true);
+            textureInfo.emplace_back(SaveTextureInfo(texture, ext, true));
+          }
+          try
+          {
+            if (!processor.Process())
+            {
+              LogE("Failed to export %s: %s", texture->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
+              continue;
+            }
+          }
+          catch (...)
+          {
+            LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectName().UTF8().c_str());
             continue;
           }
         }
-        catch (...)
+        else if (UTextureCube* cube = Cast<UTextureCube>(p.second))
         {
-          LogE("Failed to export %s! Unknown texture processor error!", cube->GetObjectPath().UTF8().c_str());
-          continue;
+          auto faces = cube->GetFaces();
+          bool ok = true;
+          TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+          for (UTexture2D* face : faces)
+          {
+            if (!face)
+            {
+              LogW("Failed to export a texture cube %s. Can't get one of the faces.", p.second->GetObjectPath().UTF8().c_str());
+              ok = false;
+              break;
+            }
+            TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
+            switch (face->Format)
+            {
+            case PF_DXT1:
+              f = TextureProcessor::TCFormat::DXT1;
+              break;
+            case PF_DXT3:
+              f = TextureProcessor::TCFormat::DXT3;
+              break;
+            case PF_DXT5:
+              f = TextureProcessor::TCFormat::DXT5;
+              break;
+            case PF_A8R8G8B8:
+              f = TextureProcessor::TCFormat::ARGB8;
+              break;
+            case PF_G8:
+              f = TextureProcessor::TCFormat::G8;
+              break;
+            default:
+              LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              ok = false;
+              break;
+            }
+            if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+            {
+              LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              ok = false;
+              break;
+            }
+            inputFormat = f;
+          }
+
+          if (!ok)
+          {
+            continue;
+          }
+
+          // UE4 accepts texture cubes only in a DDS container with A8R8G8B8 format and proper flags. Export cubes this way regardless of the user's output format.
+          path.replace_extension("dds");
+          TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::DDS);
+          for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
+          {
+            FTexture2DMipMap* mip = nullptr;
+            for (FTexture2DMipMap* mipmap : faces[faceIdx]->Mips)
+            {
+              if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+              {
+                mip = mipmap;
+                break;
+              }
+            }
+            if (!mip)
+            {
+              LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str());
+              ok = false;
+              break;
+            }
+
+            processor.SetInputCubeFace(faceIdx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);
+          }
+
+          if (!ok)
+          {
+            continue;
+          }
+
+          processor.SetOutputPath(W2A(path.wstring()));
+
+          try
+          {
+            if (!processor.Process())
+            {
+              LogE("Failed to export %s: %s", cube->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+              continue;
+            }
+          }
+          catch (...)
+          {
+            LogE("Failed to export %s! Unknown texture processor error!", cube->GetObjectPath().UTF8().c_str());
+            continue;
+          }
+        }
+        else
+        {
+          LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
         }
       }
-      else
-      {
-        LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
-      }
-    }
 
-    if (TextureInfo.size())
-    {
-      std::ofstream s(ctx.GetTextureInfoPath());
-      for (const std::string& i : TextureInfo)
+      if (textureInfo.size())
       {
-        s << i << '\n';
+        std::ofstream s(ctx.GetTextureInfoPath());
+        for (const std::string& i : textureInfo)
+        {
+          s << i << '\n';
+        }
       }
     }
   }
+  
   return true;
 }
 
@@ -2249,7 +2171,7 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
             s << std::to_string(idx + 1) << ". ";
             if (UObject* mat = materialsToSave[idx])
             {
-              s << mat->GetObjectPath().UTF8();
+              s << GetLocalDirAndName(mat);
             }
             else
             {
@@ -2710,46 +2632,50 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         for (int32 mIdx = 0; mIdx < layerMaterials.size(); ++mIdx)
         {
           UTerrainMaterial* tm = layerMaterials[mIdx].Material;
-          s << padding << "TM " << mIdx << ":\n";
-          s << padding << padding << "Material: ";
-          if (!tm)
+          
+          if (!tm || !tm->Material)
           {
-            s << "NULL\n";
+            s << padding << padding << "None\n";
             continue;
           }
-          if (!tm->Material)
+
+          s << padding << padding << GetLocalDir(tm->Material) + tm->Material->GetObjectName().UTF8() << ":\n";
+          auto textures = tm->Material->GetTextureParameters();
+          for (const auto& p : textures)
           {
-            s << "NULL\n";
-          }
-          else
-          {
-            s << GetLocalDir(tm->Material) + tm->Material->GetObjectName().UTF8() << '\n';
-            auto textures = tm->Material->GetTextureParameters();
-            for (const auto& p : textures)
+            if (p.second.Texture)
             {
-              if (p.second.Texture)
-              {
-                s << padding << padding << p.first.UTF8() << ": " << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectName().UTF8() << '\n';
-              }
+              s << padding << padding << padding << p.first.UTF8() << ": " << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectName().UTF8() << '\n';
             }
+          }
+          auto vectors = tm->Material->GetVectorParameters();
+          for (const auto& p : vectors)
+          {
+            s << padding << padding << padding << p.first.UTF8() << ": " << p.second.R << ' ' << p.second.G;
+            s << ' ' << p.second.B << p.second.A << '\n';
+          }
+          auto scalars = tm->Material->GetScalarParameters();
+          for (const auto& p : scalars)
+          {
+            s << padding << padding << padding << p.first.UTF8() << ": " << p.second << '\n';
           }
           if (tm->DisplacementMap)
           {
-            s << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectName().UTF8() << '\n';
-            s << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
+            s << padding << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectName().UTF8() << '\n';
+            s << padding << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
           }
-          s << padding << padding << "Mapping Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
+          s << padding << padding << padding << "Mapping Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
           if (tm->MappingRotation)
           {
-            s << padding << padding << "Rotation: " << std::to_string(tm->MappingRotation) << '\n';
+            s << padding << padding << padding << "Rotation: " << std::to_string(tm->MappingRotation) << '\n';
           }
           if (tm->MappingPanU)
           {
-            s << padding << padding << "PanU: " << std::to_string(tm->MappingPanU) << '\n';
+            s << padding << padding << padding << "PanU: " << std::to_string(tm->MappingPanU) << '\n';
           }
           if (tm->MappingPanV)
           {
-            s << padding << padding << "PanV: " << std::to_string(tm->MappingPanV) << '\n';
+            s << padding << padding << padding << "PanV: " << std::to_string(tm->MappingPanV) << '\n';
           }
         }
       }
