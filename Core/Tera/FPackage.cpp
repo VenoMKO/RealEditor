@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <array>
 #include <ppl.h>
+#include <cwctype>
 
 const char* PackageMapperName = "PkgMapper";
 const char* CompositePackageMapperName = "CompositePackageMapper";
@@ -1170,7 +1171,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
     for (auto package : LoadedPackages)
     {
-      if (package->GetPackageName() == name)
+      if (package->GetPackageName().ToUpper() == name.ToUpper())
       {
         anyPackageFound = true;
         if (guid.IsValid())
@@ -1194,7 +1195,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     }
   }
   
-  // Check and load if the package is a composit package
+  // Check and load if the package is a composite package
   if (CoreVersion > VER_TERA_CLASSIC && CompositPackageMap.count(name))
   {
     const FCompositePackageMapEntry& entry = CompositPackageMap[name];
@@ -1246,10 +1247,13 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
     }
   }
 
-  std::wstring wname = name.WString();
+  std::wstring wname = name.ToUpper().WString();
   for (FString& path : DirCache)
   {
     std::wstring filename = path.FilenameWString();
+    std::transform(filename.begin(), filename.end(), filename.begin(),
+      [](std::wint_t c) { return std::towupper(c); }
+    );
     if (filename.size() < wname.size())
     {
       continue;
