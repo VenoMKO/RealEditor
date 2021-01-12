@@ -248,6 +248,9 @@
     <ClCompile Include="App\Editors\PrefabEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\ULightMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -344,6 +347,7 @@
     <ClInclude Include="App\Windows\LevelExportOptions.h" />
     <ClInclude Include="Core\Tera\UPrefab.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
+    <ClInclude Include="Core\Tera\ULightMap.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

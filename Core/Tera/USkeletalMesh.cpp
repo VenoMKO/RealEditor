@@ -335,7 +335,6 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner)
   }
   s << VertexInfluences;
   s << Unk;
-  DBreakIf(Unk.GetElementCount());
 }
 
 std::vector<FSoftSkinVertex> FStaticLODModel::GetVertices() const
@@ -402,19 +401,6 @@ void USkeletalMesh::Serialize(FStream& s)
   }
 
   s << NameIndexMap;
-
-#if _DEBUG
-  // Untested code
-  // TODO: remove the whole "#if _DEBUG ... #endif" block after UStaticMesh is implemented
-  if (s.IsReading())
-  {
-    FILE_OFFSET tmp = s.GetPosition();
-    int32 cnt = 0;
-    s << cnt;
-    DBreakIf(cnt); 
-    s.SetPosition(tmp);
-  }
-#endif
 
   if (s.GetFV() == VER_TERA_CLASSIC)
   {

@@ -604,6 +604,29 @@ public:
     , A(a)
   {}
 
+  FColor(uint32 dwColor)
+  {
+    union {
+      struct {
+        uint8 TB;
+        uint8 TG;
+        uint8 TR;
+        uint8 TA;
+      };
+      uint32 DW = 0;
+    };
+    DW = dwColor;
+    B = TB;
+    G = TG;
+    R = TR;
+    A = TA;
+  }
+
+  uint32 DWColor() const
+  {
+    return (*(uint32*)this);
+  }
+
   bool operator==(const FColor& v) const
   {
     return R == v.R && G == v.G && B == v.B && A == v.A;

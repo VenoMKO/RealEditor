@@ -416,12 +416,14 @@ void PackageWindow::OnImportObjectSelected(INT index)
   if (index == FAKE_IMPORT_ROOT)
   {
     ObjectTitleLabel->SetLabelText(GetPackage()->GetPackageName(true).WString() + L" imports");
+    ObjectTitleLabel->SetToolTip(wxEmptyString);
     SetPropertiesHidden(true);
     SetContentHidden(true);
     return;
   }
   FObjectImport* obj = Package->GetImportObject(index);
   ObjectTitleLabel->SetLabelText(wxString::Format(wxT("Import: %ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
+  ObjectTitleLabel->SetToolTip(wxEmptyString);
   SetPropertiesHidden(true);
   SetContentHidden(true);
 }
@@ -432,6 +434,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
   {
     ShowEditor(nullptr);
     ObjectTitleLabel->SetLabelText(GetPackage()->GetPackageName(true).WString());
+    ObjectTitleLabel->SetToolTip(wxEmptyString);
     SetPropertiesHidden(true);
     SetContentHidden(true);
     if (!PackageInfoView)
@@ -447,6 +450,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
   
   FObjectExport* fobj = Package->GetExportObject(index);
   ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
+  ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d"), index));
   ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
   ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", -1));
   ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));

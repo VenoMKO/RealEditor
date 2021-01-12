@@ -116,6 +116,57 @@ FStream& operator<<(FStream& s, FStaticMeshVertexColorBuffer& b)
   return s;
 }
 
+FStream& operator<<(FStream& s, FStaticMeshComponentLODInfo& i)
+{
+  s << i.ShadowMaps;
+  s << i.ShadowVertexBuffers;
+  if (s.IsReading())
+  {
+    uint32 Type = FLightMap::LMT_None;
+    s << Type;
+    switch (Type)
+    {
+    case FLightMap::LMT_1D:
+      i.LightMap = new FLightMap1D;
+      break;
+    case FLightMap::LMT_2D:
+      i.LightMap = new FLightMap2D;
+      break;
+    }
+    if (i.LightMap)
+    {
+      i.LightMap->Serialize(s);
+    }
+  }
+  else
+  {
+    if (i.LightMap)
+    {
+      i.LightMap->Serialize(s);
+    }
+    else
+    {
+      uint32 Type = FLightMap::LMT_None;
+      s << Type;
+    }
+  }
+
+  SERIALIZE_UREF(s, i.Unk1);
+
+  uint8 bHasVertexColorOverride = i.OverrideVertexColors != nullptr;
+  s << bHasVertexColorOverride;
+  if (s.IsReading() && bHasVertexColorOverride)
+  {
+    i.OverrideVertexColors = new FStaticMeshVertexColorBuffer;
+  }
+  if (bHasVertexColorOverride)
+  {
+    s << *i.OverrideVertexColors;
+  }
+  s << i.VertexColorPositions;
+  return s;
+}
+
 void UStaticMesh::ConfigureClassObject(UClass* object)
 {
   CreateProperty("UseSimpleLineCollision", UBoolProperty::StaticClassName(), object);
@@ -452,6 +503,12 @@ bool UStaticMeshComponent::RegisterProperty(FPropertyTag* property)
     return true;
   }
   return false;
+}
+
+void UStaticMeshComponent::Serialize(FStream& s)
+{
+  Super::Serialize(s);
+  s << LodData;
 }
 
 void UStaticMeshComponent::PostLoad()

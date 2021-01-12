@@ -3,6 +3,7 @@
 #include "FStream.h"
 #include "FStructs.h"
 #include "kDOP.h"
+#include "ULightMap.h"
 
 #include "UActorComponent.h"
 
@@ -320,6 +321,29 @@ protected:
   void* Unk = nullptr;
 };
 
+struct FStaticMeshComponentLODInfo {
+  std::vector<UObject*> ShadowMaps;
+  std::vector<UObject*> ShadowVertexBuffers;
+  FLightMap* LightMap = nullptr;
+  DECL_UREF(UObject*, Unk1);
+  FStaticMeshVertexColorBuffer* OverrideVertexColors = nullptr;
+  std::vector<FVector> VertexColorPositions;
+
+  ~FStaticMeshComponentLODInfo()
+  {
+    if (LightMap)
+    {
+      delete LightMap;
+    }
+    if (OverrideVertexColors)
+    {
+      delete OverrideVertexColors;
+    }
+  }
+
+  friend FStream& operator<<(FStream& s, FStaticMeshComponentLODInfo& i);
+};
+
 class UStaticMeshComponent : public UMeshComponent {
 public:
   DECL_UOBJ(UStaticMeshComponent, UMeshComponent);
@@ -328,5 +352,8 @@ public:
 
   UPROP(UStaticMesh*, StaticMesh, nullptr);
 
+  void Serialize(FStream& s) override;
   void PostLoad() override;
+
+  std::vector<FStaticMeshComponentLODInfo> LodData;
 };

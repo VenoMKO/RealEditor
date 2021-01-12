@@ -43,6 +43,7 @@
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
+    <ClCompile Include="Core\Tera\ULightMap.cpp" />
     <ClCompile Include="Core\Tera\UPrefab.cpp" />
     <ClCompile Include="Core\Utils\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
@@ -128,6 +129,7 @@
     <ClInclude Include="Core\Tera\ULevel.h" />
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
     <ClInclude Include="Core\Tera\ULight.h" />
+    <ClInclude Include="Core\Tera\ULightMap.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\UPrefab.h" />
