@@ -26,6 +26,7 @@ Currently under development. Some features are not implemented yet or may not wo
 
 * Opening/Saving 64-bit packages
 * GPK/GMP bulk export
+* GMP export to Unreal Engine 4
 * Textures export/import
 * Sounds export/import
 * 3D model export
@@ -45,7 +46,6 @@ Currently under development. Some features are not implemented yet or may not wo
 ### Plans
 
 * Mesh import from *.fbx
-* Map export to UE4 via *.t3d or custom Datasmith plugin
 * Animation renderer / exporter to *.fbx
 * HiDPI screen support
 
