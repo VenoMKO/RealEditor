@@ -110,6 +110,9 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
         s << c.ActorClasses;
         break;
       // General
+      case FMapExportConfig::CFG_GlobalScale:
+        s << c.GlobalScale;
+        break;
       case FMapExportConfig::CFG_Override:
         s << c.OverrideData;
         break;
@@ -176,6 +179,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKVIfNotDefault(FMapExportConfig::CFG_RootDir, c.RootDir, d.RootDir);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_ActorMask, c.ActorClasses, d.ActorClasses);
 
+    SerializeKVIfNotDefault(FMapExportConfig::CFG_GlobalScale, c.GlobalScale, d.GlobalScale);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_Override, c.OverrideData, d.OverrideData);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_IgnoreHidden, c.IgnoreHidden, d.IgnoreHidden);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_SplitT3D, c.SplitT3D, d.SplitT3D);

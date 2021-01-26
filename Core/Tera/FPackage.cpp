@@ -1248,6 +1248,30 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
   }
 
   std::wstring wname = name.ToUpper().WString();
+  // Exact name search
+  for (FString& path : DirCache)
+  {
+    std::wstring filename = path.FilenameWString(false);
+    std::transform(filename.begin(), filename.end(), filename.begin(),
+      [](std::wint_t c) { return std::towupper(c); }
+    );
+    if (filename.size() < wname.size())
+    {
+      continue;
+    }
+    if (filename == wname)
+    {
+      if (auto package = GetPackage(RootDir.FStringByAppendingPath(path)))
+      {
+        if (!guid.IsValid() || guid == package->GetGuid())
+        {
+          return package;
+        }
+        UnloadPackage(package);
+      }
+    }
+  }
+  // Masked search: Name****
   for (FString& path : DirCache)
   {
     std::wstring filename = path.FilenameWString();

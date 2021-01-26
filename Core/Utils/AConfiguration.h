@@ -60,6 +60,7 @@ struct FMapExportConfig {
     CFG_MLods,
     CFG_DynamicShadows,
     CFG_LightmapUVs,
+    CFG_GlobalScale,
     CFG_End = 0xFFFF
   };
 
@@ -70,6 +71,7 @@ struct FMapExportConfig {
   bool OverrideData = false;
   bool IgnoreHidden = true;
   bool SplitT3D = false;
+  float GlobalScale = 4.f;
   
   // Materials
   bool Materials = true;

@@ -173,6 +173,7 @@ protected:
   wxCheckBox* OverrideFiles = nullptr;
   wxCheckBox* SplitT3d = nullptr;
   wxCheckBox* Materials = nullptr;
+  wxTextCtrl* GlobalScale = nullptr;
   wxTextCtrl* PointLightMultiplier = nullptr;
   wxTextCtrl* SpotLightMultiplier = nullptr;
   wxCheckBox* LightInvSqrt = nullptr;
@@ -190,6 +191,7 @@ protected:
   wxButton* ExportButton = nullptr;
   wxButton* CancelButton = nullptr;
 
+  float GlobalScaleValue = 4.;
   float PointLightMultiplierValue = 1.;
   float SpotLightMultiplierValue = 1.;
   int32 DelayedTextureFormat = 0;

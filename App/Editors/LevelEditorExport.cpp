@@ -107,6 +107,11 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
       fbxCtx.ExportLightMapUVs = ctx.Config.ExportLightmapUVs;
+      if (ctx.Config.GlobalScale != 1.f)
+      {
+        fbxCtx.Scale3D = FVector(ctx.Config.GlobalScale);
+        fbxCtx.ApplyRootTransform = true;
+      }
       if (!utils.ExportStaticMesh(component->StaticMesh, fbxCtx))
       {
         ctx.Errors.emplace_back("Error: Failed to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
@@ -205,6 +210,11 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
+      if (ctx.Config.GlobalScale != 1.f)
+      {
+        fbxCtx.Scale3D = FVector(ctx.Config.GlobalScale);
+        fbxCtx.ApplyRootTransform = true;
+      }
       if (!utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
       {
         ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
@@ -442,7 +452,7 @@ ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportCont
   f.AddFloat("LightFalloffExponent", component->FalloffExponent);
   f.AddFloat("Intensity", component->Brightness* ctx.Config.PointLightMul);
   f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
-  f.AddFloat("AttenuationRadius", component->Radius);
+  f.AddFloat("AttenuationRadius", component->Radius * ctx.Config.GlobalScale);
   f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
   f.AddColor("LightColor", component->LightColor);
   f.AddBool("CastShadows", component->CastShadows);
@@ -473,7 +483,7 @@ ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportConte
   f.AddFloat("InnerConeAngle", component->InnerConeAngle);
   f.AddFloat("OuterConeAngle", component->OuterConeAngle);
   f.AddBool("bUseInverseSquaredFalloff", ctx.Config.InvSqrtFalloff);
-  f.AddFloat("AttenuationRadius", component->Radius);
+  f.AddFloat("AttenuationRadius", component->Radius * ctx.Config.GlobalScale);
   f.AddCustom("LightmassSettings", wxString::Format("(ShadowExponent=%.06f)", component->ShadowFalloffExponent).c_str());
   f.AddColor("LightColor", component->LightColor);
   f.AddBool("CastShadows", component->CastShadows);
@@ -664,7 +674,7 @@ struct T3DComponent {
     }
     if (!Location.IsZero())
     {
-      f.AddPosition(Location);
+      f.AddPosition(Location * ctx.Config.GlobalScale);
     }
     if (Scale3D.X < 0.f && Cast<USpotLightComponent>(ActorComponent))
     {
@@ -822,12 +832,12 @@ struct T3DActor {
     Name = actor->GetObjectName();
     T3DComponent& component = Components.emplace_back(actor->SpeedTreeComponent, ExportSpeedTreeComponentData);
     component.Class = "StaticMeshComponent";
-    component.Mobility = T3DComponent::ComponentMobility::Stationary;
+    component.Mobility = T3DComponent::ComponentMobility::Movable;
     if (component.NeedsParent())
     {
       Class = "Actor";
       RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
-      RootComponent->Mobility = T3DComponent::ComponentMobility::Stationary;
+      RootComponent->Mobility = T3DComponent::ComponentMobility::Movable;
       RootComponent->IsInstance = true;
       component.Parent = RootComponent;
       component.IsInstance = true;
@@ -1707,16 +1717,16 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           {
             if (p.second.AlphaChannelUsed && tmp->CompressionSettings == TC_NormalmapAlpha)
             {
-              s << " TextureA";
+              s << "  TextureA";
             }
             else
             {
-              s << " Texture";
+              s << "  Texture";
             }
           }
           else
           {
-            s << " Texture";
+            s << "  Texture";
           }
           s << VSEP << p.first.UTF8() << VSEP;
           if (p.second.Texture)
@@ -2083,15 +2093,15 @@ void AddCommonPrimitiveComponentParameters(T3DFile& f, LevelExportContext& ctx, 
 {
   if (component->MinDrawDistance)
   {
-    f.AddFloat("MinDrawDistance", component->MinDrawDistance);
+    f.AddFloat("MinDrawDistance", component->MinDrawDistance * ctx.Config.GlobalScale);
   }
   if (component->MaxDrawDistance)
   {
-    f.AddFloat("LDMaxDrawDistance", component->MaxDrawDistance);
+    f.AddFloat("LDMaxDrawDistance", component->MaxDrawDistance * ctx.Config.GlobalScale);
   }
   if (component->CachedMaxDrawDistance)
   {
-    f.AddFloat("CachedMaxDrawDistance", component->CachedMaxDrawDistance);
+    f.AddFloat("CachedMaxDrawDistance", component->CachedMaxDrawDistance * ctx.Config.GlobalScale);
   }
   f.AddBool("CastShadow", component->CastShadow);
   f.AddBool("bCastDynamicShadow", ctx.Config.ForceDynamicShadows ? true : component->bCastDynamicShadow);
@@ -2236,6 +2246,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
+    exportItem.RootComponent->Scale *= ctx.Config.GlobalScale;
   }
   else if (UPointLight* actor = Cast<UPointLight>(untypedActor))
   {
@@ -2596,26 +2607,27 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
     }
     std::ofstream s(dst);
     s << actor->GetObjectPath().UTF8() << "\n\n";
+    FVector loc = actor->Location * ctx.Config.GlobalScale;
     FVector rot = actor->Rotation.Normalized().Euler();
-    FVector scale = actor->DrawScale3D * actor->DrawScale;
+    FVector scale = actor->DrawScale3D * actor->DrawScale * ctx.Config.GlobalScale;
     if (ctx.Config.ResampleTerrain)
     {
       scale.X *= actor->GetHeightMapRatioX();
       scale.Y *= actor->GetHeightMapRatioY();
     }
     ctx.TerrainInfo.emplace_back(actor->GetPackage()->GetPackageName().UTF8() + '_' + actor->GetObjectName().UTF8() + '\n');
-    ctx.TerrainInfo.emplace_back("\tLocation: " + std::to_string(actor->Location.X) + " " + std::to_string(actor->Location.Y) + " " + std::to_string(actor->Location.Z) + '\n');
-    ctx.TerrainInfo.emplace_back("\tScale: " + std::to_string(scale.X) + " " + std::to_string(scale.Y) + " " + std::to_string(scale.Z) + '\n');
+    ctx.TerrainInfo.emplace_back(FString::Sprintf("\tLocation: (X=%06f,Y=%06f,Z=%06f)\n", loc.X, loc.Y, loc.Z).UTF8().c_str());
+    ctx.TerrainInfo.emplace_back(FString::Sprintf("\tScale: (X=%06f,Y=%06f,Z=%06f)\n", scale.X, scale.Y, scale.Z).UTF8().c_str());
     if (!rot.IsZero())
     {
-      ctx.TerrainInfo.emplace_back("\tRotation: " + std::to_string(rot.X) + " " + std::to_string(rot.Y) + " " + std::to_string(rot.Z) + '\n');
+      ctx.TerrainInfo.emplace_back(FString::Sprintf("\tRotation: (Pitch=%06f,Yaw=%06f,Roll=%06f)\n", rot.Y, rot.Z, rot.X).UTF8().c_str());
     }
-    s << "Location: (X=" << std::to_string(actor->Location.X) << ", Y=" << std::to_string(actor->Location.Y) << ", Z=" << std::to_string(actor->Location.Z) << ")\n";
+    s << "Location: (X=" << std::to_string(loc.X) << ",Y=" << std::to_string(loc.Y) << ",Z=" << std::to_string(loc.Z) << ")\n";
     if (!rot.IsZero())
     {
-      s << "Rotation: (X=" << std::to_string(rot.X) << ", Y=" << std::to_string(rot.Y) << ", Z=" << std::to_string(rot.Z) << ")\n";
+      s << "Rotation: (Pitch=" << std::to_string(rot.Y) << ",Yaw=" << std::to_string(rot.Z) << ",Roll=" << std::to_string(rot.X) << ")\n";
     }
-    s << "Scale: (X=" << std::to_string(scale.X) << ", Y=" << std::to_string(scale.Y) << ", Z=" << std::to_string(scale.Z) << ")\n\n";
+    s << "Scale: (X=" << std::to_string(scale.X) << ",Y=" << std::to_string(scale.Y) << ",Z=" << std::to_string(scale.Z) << ")\n\n";
     s << "Layers(" << std::to_string(actor->Layers.size()) << "):\n";
 
     const char* padding = "  ";

@@ -190,28 +190,51 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 
   wxPanel* m_panel10;
   m_panel10 = new wxPanel(m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  wxBoxSizer* bSizer141;
-  bSizer141 = new wxBoxSizer(wxHORIZONTAL);
+  wxBoxSizer* bSizer161;
+  bSizer161 = new wxBoxSizer(wxVERTICAL);
+
+  wxBoxSizer* bSizer191;
+  bSizer191 = new wxBoxSizer(wxHORIZONTAL);
+
+  wxStaticText* m_staticText8;
+  m_staticText8 = new wxStaticText(m_panel10, wxID_ANY, wxT("Global Scale:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText8->Wrap(-1);
+  bSizer191->Add(m_staticText8, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+  GlobalScale = new wxTextCtrl(m_panel10, wxID_ANY, wxT("4.0"), wxDefaultPosition, wxDefaultSize, 0);
+  GlobalScale->SetToolTip(wxT("World scale factor:\n1.0 - Match coordinates(NPC locations, pegasus paths, etc.)\n4.0 - Match units(1 Tera meter \u2248 1 UE4 meter)."));
+  GlobalScale->SetMinSize(wxSize(35, -1));
+
+  bSizer191->Add(GlobalScale, 0, wxTOP | wxBOTTOM | wxRIGHT, 10);
+
+
+  bSizer161->Add(bSizer191, 0, 0, 5);
+
+  wxBoxSizer* bSizer182;
+  bSizer182 = new wxBoxSizer(wxHORIZONTAL);
 
   OverrideFiles = new wxCheckBox(m_panel10, wxID_ANY, wxT("Override files"), wxDefaultPosition, wxDefaultSize, 0);
   OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)."));
 
-  bSizer141->Add(OverrideFiles, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(OverrideFiles, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   IgnoreHidden = new wxCheckBox(m_panel10, wxID_ANY, wxT("Make all visible"), wxDefaultPosition, wxDefaultSize, 0);
   IgnoreHidden->SetToolTip(wxT("Make hidden objects visible. If this is disabled, hidden actors will be shown in the World Outliner, but UE4 won't show them in the scene view."));
 
-  bSizer141->Add(IgnoreHidden, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(IgnoreHidden, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   SplitT3d = new wxCheckBox(m_panel10, wxID_ANY, wxT("Split T3D"), wxDefaultPosition, wxDefaultSize, 0);
   SplitT3d->SetToolTip(wxT("Save each streamed level to it's own T3D file."));
 
-  bSizer141->Add(SplitT3d, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(SplitT3d, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
 
-  m_panel10->SetSizer(bSizer141);
+  bSizer161->Add(bSizer182, 1, wxEXPAND, 5);
+
+
+  m_panel10->SetSizer(bSizer161);
   m_panel10->Layout();
-  bSizer141->Fit(m_panel10);
+  bSizer161->Fit(m_panel10);
   m_notebook1->AddPage(m_panel10, wxT("General"), true);
   wxPanel* m_panel11;
   m_panel11 = new wxPanel(m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -259,7 +282,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   m_staticText15->Wrap(-1);
   bSizer18->Add(m_staticText15, 0, wxTOP | wxBOTTOM | wxLEFT | wxALIGN_CENTER_VERTICAL, 5);
 
-  PointLightMultiplier = new wxTextCtrl(m_panel8, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(30, -1), 0);
+  PointLightMultiplier = new wxTextCtrl(m_panel8, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(35, -1), 0);
   PointLightMultiplier->SetToolTip(wxT("Multiply point light intensity by this value."));
 
   bSizer18->Add(PointLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
@@ -280,7 +303,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   m_staticText151->Wrap(-1);
   bSizer19->Add(m_staticText151, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
 
-  SpotLightMultiplier = new wxTextCtrl(m_panel9, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(30, -1), 0);
+  SpotLightMultiplier = new wxTextCtrl(m_panel9, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(35, -1), 0);
   SpotLightMultiplier->SetToolTip(wxT("Multiply spot light intensity by this value."));
 
   bSizer19->Add(SpotLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
@@ -396,6 +419,8 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
 
   Centre(wxBOTH);
 
+  GlobalScaleValue = ctx.Config.GlobalScale;
+  GlobalScale->SetValidator(wxFloatingPointValidator<float>(1, &GlobalScaleValue, wxNUM_VAL_DEFAULT));
   SpotLightMultiplierValue = ctx.Config.SpotLightMul;
   SpotLightMultiplier->SetValidator(wxFloatingPointValidator<float>(1, &SpotLightMultiplierValue, wxNUM_VAL_DEFAULT));
   PointLightMultiplierValue = ctx.Config.PointLightMul;
@@ -461,8 +486,10 @@ void LevelExportOptionsWindow::SetExportContext(const LevelExportContext& ctx)
   ExportLightmapUVs->SetValue(ctx.Config.ExportLightmapUVs);
   IgnoreHidden->SetValue(ctx.Config.IgnoreHidden);
 
+  GlobalScaleValue = ctx.Config.GlobalScale;
   SpotLightMultiplierValue = ctx.Config.SpotLightMul;
   PointLightMultiplierValue = ctx.Config.PointLightMul;
+  GlobalScale->GetValidator()->TransferToWindow();
   SpotLightMultiplier->GetValidator()->TransferToWindow();
   PointLightMultiplier->GetValidator()->TransferToWindow();
 
@@ -491,8 +518,10 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
   ctx.Config.ExportMLods = ExportMLods->GetValue();
   ctx.Config.ExportLightmapUVs = ExportLightmapUVs->GetValue();
 
+  GlobalScale->GetValidator()->TransferFromWindow();
   PointLightMultiplier->GetValidator()->TransferFromWindow();
   SpotLightMultiplier->GetValidator()->TransferFromWindow();
+  ctx.Config.GlobalScale = GlobalScaleValue;
   ctx.Config.PointLightMul = PointLightMultiplierValue;
   ctx.Config.SpotLightMul = SpotLightMultiplierValue;
 
@@ -539,6 +568,13 @@ void LevelExportOptionsWindow::OnDefaultsClicked(wxCommandEvent& event)
 
 void LevelExportOptionsWindow::OnExportClicked(wxCommandEvent& event)
 {
+  GlobalScale->GetValidator()->TransferFromWindow();
+  if (GlobalScaleValue <= 0.)
+  {
+    wxMessageBox(wxT("Global Scale must be greater than 0!"), wxT("Error!"), wxICON_ERROR);
+    GlobalScale->SetFocus();
+    return;
+  }
   EndModal(wxID_OK);
 }
 

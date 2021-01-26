@@ -57,7 +57,7 @@ void SetGlobalDefaultPosition(FbxNode* node, FbxAMatrix globalPosition)
   node->LclScaling.Set(localPosition.GetS());
 }
 
-FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene)
+FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene, const FbxVector4& scale)
 {
   if (!sourceMesh)
   {
@@ -72,7 +72,7 @@ FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& bo
     FbxNode* boneNode = FbxNode::Create(scene, bone.Name.String().C_str());
     boneNode->SetNodeAttribute(skeletonAttribute);
 
-    FbxVector4 lT = FbxVector4(bone.BonePos.Position.X, bone.BonePos.Position.Y * -1., bone.BonePos.Position.Z);
+    FbxVector4 lT = FbxVector4(bone.BonePos.Position.X * scale[0], bone.BonePos.Position.Y * -scale[1], bone.BonePos.Position.Z * scale[2]);
     FbxQuaternion lQ = FbxQuaternion(bone.BonePos.Orientation.X, bone.BonePos.Orientation.Y * -1., bone.BonePos.Orientation.Z, bone.BonePos.Orientation.W * 1.);
     lQ[3] *= -1.;
     FbxAMatrix lGM;
@@ -182,6 +182,17 @@ FbxUtils::FbxUtils()
   GetScene()->GetGlobalSettings().SetAxisSystem(UnrealZUp);
   GetScene()->GetGlobalSettings().SetOriginalUpAxis(UnrealZUp);
   GetScene()->GetGlobalSettings().SetSystemUnit(FbxSystemUnit::cm);
+
+  FbxDocumentInfo* sceneInfo = FbxDocumentInfo::Create(GetManager(), "SceneInfo");
+  sceneInfo->mTitle = "Real Editor Fbx Exporter";
+  sceneInfo->mSubject = "Export FBX meshes from Tera";
+  sceneInfo->Original_ApplicationVendor.Set("Yupi");
+  sceneInfo->Original_ApplicationName.Set("Real Editor");
+  sceneInfo->Original_ApplicationVersion.Set(FString::Sprintf("%.2f %s", APP_VER, BUILD_SUFFIX).UTF8().c_str());
+  sceneInfo->LastSaved_ApplicationVendor.Set("Yupi");
+  sceneInfo->LastSaved_ApplicationName.Set("Real Editor");
+  sceneInfo->LastSaved_ApplicationVersion.Set(FString::Sprintf("%.2f %s", APP_VER, BUILD_SUFFIX).UTF8().c_str());
+  GetScene()->SetSceneInfo(sceneInfo);
 }
 
 FbxUtils::~FbxUtils()
@@ -194,22 +205,10 @@ FbxUtils::~FbxUtils()
 
 bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx)
 {
-  FbxDocumentInfo* sceneInfo = FbxDocumentInfo::Create(GetManager(), "SceneInfo");
-  char* meshName = FbxWideToUtf8(sourceMesh->GetObjectName().WString().c_str());
-  sceneInfo->mTitle = meshName;
-  FbxFree(meshName);
-  sceneInfo->mAuthor = "RealEditor (yupimods.tumblr.com)";
-  GetScene()->SetSceneInfo(sceneInfo);
-
   FbxNode* meshNode = nullptr;
   if (!ExportSkeletalMesh(sourceMesh, ctx, (void**)&meshNode) || !meshNode)
   {
     return false;
-  }
-
-  if (ctx.ApplyRootTransform)
-  {
-    ApplyRootTransform(meshNode, ctx);
   }
 
   GetScene()->GetRootNode()->AddChild(meshNode);
@@ -223,13 +222,6 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
 
 bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
 {
-  FbxDocumentInfo* sceneInfo = FbxDocumentInfo::Create(GetManager(), "SceneInfo");
-  char* meshName = FbxWideToUtf8(sourceMesh->GetObjectName().WString().c_str());
-  sceneInfo->mTitle = meshName;
-  FbxFree(meshName);
-  sceneInfo->mAuthor = "RealEditor (yupimods.tumblr.com)";
-  GetScene()->SetSceneInfo(sceneInfo);
-
   FbxNode* firstLod = nullptr;
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
@@ -347,7 +339,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   for (uint32 idx = 0; idx < verticies.size(); ++idx)
   {
     const FSoftSkinVertex& v = verticies[idx];
-    mesh->GetControlPoints()[idx] = FbxVector4(v.Position.X, -v.Position.Y, v.Position.Z);
+    mesh->GetControlPoints()[idx] = FbxVector4(v.Position.X * ctx.Scale3D.X, -v.Position.Y * ctx.Scale3D.Y, v.Position.Z * ctx.Scale3D.Z);
   }
 
   FbxLayer* layer = mesh->GetLayer(0);
@@ -456,7 +448,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   }
 
   FbxDynamicArray<FbxNode*> bonesArray;
-  FbxNode* skelRootNode = CreateSkeleton(sourceMesh, bonesArray, GetScene());
+  FbxNode* skelRootNode = CreateSkeleton(sourceMesh, bonesArray, GetScene(), FbxVector4(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z));
 
   if (!skelRootNode)
   {
