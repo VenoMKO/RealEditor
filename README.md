@@ -3,7 +3,7 @@
 
 Currently under development. Some features are not implemented yet or may not work correctly.
 
-![Header Screenshot](.gitresources/new_header.jpg)
+![Header Screenshot](.gitresources/header_FDI.jpg)
 
 ### Wiki
 
