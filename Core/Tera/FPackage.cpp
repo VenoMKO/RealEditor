@@ -1483,7 +1483,7 @@ void FPackage::Load()
     }
   }
 
-  if (Summary.ImportExportGuidsOffset)
+  if (Summary.ImportExportGuidsOffset > 0)
   {
     if (Summary.ImportExportGuidsOffset != s.GetPosition())
     {
@@ -1842,7 +1842,7 @@ bool FPackage::Save(PackageSaveContext& context)
 
   std::vector<FObjectExport*> sortedExports = Exports;
   std::sort(sortedExports.begin(), sortedExports.end(), [](FObjectExport* a, FObjectExport* b) {
-    return a->SerialOffset < b->SerialOffset;
+    return a->SerialOffset < b->SerialOffset && a->SerialOffset;
   });
 
   // Check if header size did change and we honor offsets
@@ -2065,8 +2065,8 @@ bool FPackage::Save(PackageSaveContext& context)
          
           if (exp->SerialSize != writer.GetPosition() - exp->SerialOffset)
           {
-            context.Error = "Failed to save package due to ambiguos object size!";
-            LogE("Failed to save package due to ambiguos object size!");
+            context.Error = "Failed to save package due to ambiguous object size!";
+            LogE("Failed to save package due to ambiguous object size!");
             return false;
           }
           
@@ -2078,7 +2078,7 @@ bool FPackage::Save(PackageSaveContext& context)
         }
         else
         {
-          writer.SerializeBytes(tmpWriter.GetAllocation(), tmpWriter.GetSize() - tmpWriter.GetOffset());
+          writer.SerializeBytes(tmpWriter.GetAllocation(), exp->SerialSize);
         }
       }
     }
