@@ -1,4 +1,5 @@
 #include "ObjectRedirectorEditor.h"
+#include "../App.h"
 #include "../Windows/PackageWindow.h"
 #include <Tera/UObject.h>
 #include <Tera/FPackage.h>
@@ -129,6 +130,10 @@ void ObjectRedirectorEditor::OnToolBarEvent(wxCommandEvent& e)
     if (Source->GetPackage() == Window->GetPackage().get())
     {
       Window->SelectObject(Source);
+    }
+    else
+    {
+      App::GetSharedApp()->OpenPackage(Source->GetPackage()->GetSourcePath().WString(), Source->GetObjectPath().WString());
     }
   }
 }
