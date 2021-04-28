@@ -21,6 +21,38 @@ struct FLogConfig
   friend FStream& operator<<(FStream& s, FLogConfig& c);
 };
 
+struct FSkelMeshExportConfig {
+  enum ConfigKey : uint16 {
+    CFG_ExportMode = 1,
+    CFG_ExportTextures,
+    CFG_ScaleFactor,
+    CFG_TextureFormat,
+    CFG_End = 0xFFFF
+  };
+
+  int32 Mode = 0;
+  int32 TextureFormat = 0;
+  bool ExportTextures = true;
+  float ScaleFactor = 4.;
+
+  friend FStream& operator<<(FStream& s, FSkelMeshExportConfig& c);
+};
+
+struct FStaticMeshExportConfig {
+  enum ConfigKey : uint16 {
+    CFG_ExportTextures = 1,
+    CFG_ScaleFactor,
+    CFG_TextureFormat,
+    CFG_End = 0xFFFF
+  };
+
+  int32 TextureFormat = 0;
+  bool ExportTextures = true;
+  float ScaleFactor = 4.;
+
+  friend FStream& operator<<(FStream& s, FStaticMeshExportConfig& c);
+};
+
 struct FMapExportConfig {
   enum class ActorClass : uint32
   {
@@ -145,6 +177,14 @@ struct FAppConfig
     CFG_MapExportBegin = 110,
     CFG_MapExportEnd,
 
+    // SkelMeshExport
+    CFG_SkelMeshExportBegin = 120,
+    CFG_SkelMeshExportEnd,
+
+    // StaticMeshExport
+    CFG_StaticMeshExportBegin = 130,
+    CFG_StaticMeshExportEnd,
+
     CFG_End = 0xFFFF
   };
   uint32 Magic = PACKAGE_MAGIC;
@@ -173,6 +213,12 @@ struct FAppConfig
 
   // CFG_MapExportBegin: Map export settings
   FMapExportConfig MapExportConfig;
+
+  // CFG_SkelMeshExportBegin: SkelMesh export settings
+  FSkelMeshExportConfig SkelMeshExportConfig;
+
+  // CFG_StaticMeshExportBegin: StaticMesh export settings
+  FStaticMeshExportConfig StaticMeshExportConfig;
 
   friend FStream& operator<<(FStream& s, FAppConfig& c);
 };

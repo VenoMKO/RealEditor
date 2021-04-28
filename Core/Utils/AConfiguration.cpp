@@ -258,6 +258,14 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.MapExportConfig;
         CheckKey(FAppConfig::CFG_MapExportEnd);
         break;
+      case FAppConfig::CFG_SkelMeshExportBegin:
+        s << c.SkelMeshExportConfig;
+        CheckKey(FAppConfig::CFG_SkelMeshExportEnd);
+        break;
+      case FAppConfig::CFG_StaticMeshExportBegin:
+        s << c.StaticMeshExportConfig;
+        CheckKey(FAppConfig::CFG_StaticMeshExportEnd);
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -291,6 +299,16 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     s << c.MapExportConfig;
     SerializeKey(FAppConfig::CFG_MapExportEnd);
 
+    // SkelMeshExport
+    SerializeKey(FAppConfig::CFG_SkelMeshExportBegin);
+    s << c.SkelMeshExportConfig;
+    SerializeKey(FAppConfig::CFG_SkelMeshExportEnd);
+
+    // StaticMeshExport
+    SerializeKey(FAppConfig::CFG_StaticMeshExportBegin);
+    s << c.StaticMeshExportConfig;
+    SerializeKey(FAppConfig::CFG_StaticMeshExportEnd);
+
     // End
     SerializeKey(FAppConfig::CFG_End);
 
@@ -298,6 +316,86 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     c.Size = s.GetSize();
     s.SetPosition(8);
     s << c.Size;
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FSkelMeshExportConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FSkelMeshExportConfig::CFG_ExportMode:
+        s << c.Mode;
+        break;
+      case FSkelMeshExportConfig::CFG_ExportTextures:
+        s << c.ExportTextures;
+        break;
+      case FSkelMeshExportConfig::CFG_ScaleFactor:
+        s << c.ScaleFactor;
+        break;
+      case FSkelMeshExportConfig::CFG_TextureFormat:
+        s << c.TextureFormat;
+        break;
+      default:
+        s.Close();
+        // no break
+      case FSkelMeshExportConfig::CFG_End:
+        return s;
+      }
+    }
+  }
+  else
+  {
+    FSkelMeshExportConfig d;
+    SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_ExportMode, c.Mode, d.Mode);
+    SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_ExportTextures, c.ExportTextures, d.ExportTextures);
+    SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
+    SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
+    SerializeKey(FSkelMeshExportConfig::CFG_End);
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FStaticMeshExportConfig::CFG_ExportTextures:
+        s << c.ExportTextures;
+        break;
+      case FStaticMeshExportConfig::CFG_ScaleFactor:
+        s << c.ScaleFactor;
+        break;
+      case FStaticMeshExportConfig::CFG_TextureFormat:
+        s << c.TextureFormat;
+        break;
+      default:
+        s.Close();
+        // no break
+      case FStaticMeshExportConfig::CFG_End:
+        return s;
+      }
+    }
+  }
+  else
+  {
+    FStaticMeshExportConfig d;
+    SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ExportTextures, c.ExportTextures, d.ExportTextures);
+    SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
+    SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
+    SerializeKey(FStaticMeshExportConfig::CFG_End);
   }
   return s;
 }
