@@ -198,6 +198,12 @@ public:
 	// Add an object to package imports. Returns true if added
 	bool AddImport(UObject* object, FObjectImport*& output);
 
+	// Add an export to the exports table and create a UObject
+	FObjectExport* AddExport(const FString& objectName, const FString& objectClass, FObjectExport* parent);
+
+	// Remove an export added by AddExport. Invalidates exp pointer!!!
+	void RemoveExport(FObjectExport* exp);
+
 	// Convert source object to a UObjectRedirector pointing to the target object
 	// Dangerous!!!
 	// After this call all old pointers to the source object will point to a freed region of memory!!!
@@ -353,7 +359,7 @@ private:
 	std::atomic_bool Loading = { false };
 	// Load finished 
 	std::atomic_bool Ready = { false };
-	// Load was cancelled
+	// Load was canceled
 	std::atomic_bool Cancelled = { false };
 
 	bool AllowEdit = true;

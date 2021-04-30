@@ -116,6 +116,9 @@ void PackageWindow::InitLayout()
   _DebugTestCookObject = new wxMenuItem(m_menu2, ControlElementId::DebugTestCookObj, wxString(wxT("Cook an object...")), wxEmptyString, wxITEM_NORMAL);
   m_menu3->Append(_DebugTestCookObject);
 
+  _DebugSplitMod = new wxMenuItem(m_menu2, ControlElementId::DebugSplitMod, wxString(wxT("Split Mod...")), wxEmptyString, wxITEM_NORMAL);
+  m_menu3->Append(_DebugSplitMod);
+
   menuBar->Append(m_menu3, wxT("Debug"));
 #endif
 

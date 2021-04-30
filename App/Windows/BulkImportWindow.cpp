@@ -590,7 +590,7 @@ protected:
 		wxString path;
 		if (className == UTexture2D::StaticClassName())
 		{
-			path = TextureImporter::LoadImageDialog(this);
+			path = TextureImporterOptions::LoadImageDialog(this);
 		}
 		else if (className == USoundNodeWave::StaticClassName())
 		{

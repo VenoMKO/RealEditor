@@ -35,8 +35,8 @@ std::vector<UActor*> ULevelBase::GetActors() const
 
 void ULevel::ConfigureClassObject(UClass* object)
 {
-  CreateProperty("LightmapTotalSize", UFloatProperty::StaticClassName(), object);
-  CreateProperty("ShadowmapTotalSize", UFloatProperty::StaticClassName(), object);
+  CreateClassProperty("LightmapTotalSize", UFloatProperty::StaticClassName(), object);
+  CreateClassProperty("ShadowmapTotalSize", UFloatProperty::StaticClassName(), object);
 
   object->Link();
 }

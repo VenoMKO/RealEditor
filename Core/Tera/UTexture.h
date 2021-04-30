@@ -13,8 +13,8 @@ class UTexture : public UObject {
 public:
   DECL_UOBJ(UTexture, UObject);
 
-  UPROP(bool, SRGB, true);
-  UPROP(TextureCompressionSettings, CompressionSettings, TC_Default);
+  UPROP_CREATABLE(bool, SRGB, true);
+  UPROP_CREATABLE_ENUM(TextureCompressionSettings, CompressionSettings, TC_Default);
 
   bool RegisterProperty(FPropertyTag* property) override;
 
@@ -35,16 +35,16 @@ public:
 
   bool RegisterProperty(FPropertyTag* property) override;
 
-  UPROP(EPixelFormat, Format, PF_Unknown);
-  UPROP(int32, SizeX, 0);
-  UPROP(int32, SizeY, 0);
-  UPROP(TextureAddress, AddressX, TA_Wrap);
-  UPROP(TextureAddress, AddressY, TA_Wrap);
-  UPROP(TextureGroup, LODGroup, TEXTUREGROUP_World);
-  UPROP(int32, MipTailBaseIdx, 0);
-  UPROP(int32, FirstResourceMemMip, 0);
-  UPROP(bool, bNoTiling, false);
-  UPROP(bool, NeverStream, false);
+  UPROP_CREATABLE_ENUM(EPixelFormat, Format, PF_Unknown);
+  UPROP_CREATABLE(int32, SizeX, 0);
+  UPROP_CREATABLE(int32, SizeY, 0);
+  UPROP_CREATABLE_ENUM(TextureAddress, AddressX, TA_Wrap);
+  UPROP_CREATABLE_ENUM(TextureAddress, AddressY, TA_Wrap);
+  UPROP_CREATABLE_ENUM(TextureGroup, LODGroup, TEXTUREGROUP_World);
+  UPROP_CREATABLE(int32, MipTailBaseIdx, 0);
+  UPROP_CREATABLE(int32, FirstResourceMemMip, 0);
+  UPROP_CREATABLE(bool, bNoTiling, false);
+  UPROP_CREATABLE(bool, NeverStream, false);
   UPROP(FName*, TextureFileCacheName, nullptr);
 
   bool RenderTo(osg::Image* target, int32 maxWidth = 0, int32 maxHeight = 0);

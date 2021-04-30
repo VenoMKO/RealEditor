@@ -19,6 +19,11 @@ public:\
 #define UPROP(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
 #define UPROP_NOINIT(TType, TName) TType TName; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
 #define PROP_IS(prop, TName) (prop->Name == P_##TName)
+#define UPROP_CREATABLE(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
+FPropertyTag* CreateProperty##TName(const TType& value) { if (FPropertyTag* tag = CreateProperty(P_##TName)) { tag->Value->GetTypedValue<TType>() = value; AddProperty(tag); RegisterProperty(tag); return tag; } return nullptr; }
+#define UPROP_CREATABLE_ENUM(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
+FPropertyTag* CreateProperty##TName(const TType& value) { if (FPropertyTag* tag = CreateProperty(P_##TName)) { tag->Value->GetByte() = (uint8)value; AddProperty(tag); tag->Value->RegisterEnumNames(); RegisterProperty(tag); return tag; } return nullptr; }
+
 
 #define __REGISTER_PROP(TName, TType)\
 if (PROP_IS(property, TName))\
@@ -266,10 +271,20 @@ public:
     return Loaded;
   }
 
+  inline void SetLoaded(bool loaded)
+  {
+    Loaded = loaded;
+  }
+
   // Get object's class object
   inline UClass* GetClass() const
   {
     return Class;
+  }
+
+  inline void SetClass(UClass* cls)
+  {
+    Class = cls;
   }
 
   // Get object's root properties
@@ -277,6 +292,9 @@ public:
   {
     return Properties;
   }
+
+  // Create a new property. Allocates properties value. Doesn't add the property to objects Properties!
+  virtual FPropertyTag* CreateProperty(const FString& name);
 
   // Add root property to the object. Don't call this with a struct/array element property!
   void AddProperty(FPropertyTag* property);
@@ -296,7 +314,7 @@ public:
     Inner.push_back(inner);
   }
 
-  // Get objects raw binary data. The data is unmodifed unless SetRawData was called.
+  // Get objects raw binary data. The data is unmodified unless SetRawData was called.
   void* GetRawData();
 
   // Set raw binary data
@@ -343,4 +361,9 @@ protected:
 #endif
 private:
   bool Loading = false;
+};
+
+class UPackage : public UObject {
+public:
+  DECL_UOBJ(UPackage, UObject);
 };

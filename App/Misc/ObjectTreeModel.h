@@ -133,6 +133,7 @@ private:
 class ObjectTreeDataViewCtrl : public wxDataViewCtrl {
 public:
   using wxDataViewCtrl::wxDataViewCtrl;
+  void AddExportObject(FObjectExport* exp);
 private:
   void OnSize(wxSizeEvent& e);
   wxDECLARE_EVENT_TABLE();

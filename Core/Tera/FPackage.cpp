@@ -2762,6 +2762,75 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   return true;
 }
 
+FObjectExport* FPackage::AddExport(const FString& objectName, const FString& objectClass, FObjectExport* parent)
+{
+  if (objectName.Empty() || objectClass.Empty())
+  {
+    return nullptr;
+  }
+
+  UClass* cls = GetClass(objectClass);
+  if (!cls)
+  {
+    LogE("Failed to create object. Couldn't get the class %s!", objectClass.UTF8().c_str());
+    return nullptr;
+  }
+  FObjectImport* clsImp = nullptr;
+  AddImport(cls, clsImp);
+
+  FObjectExport* exp = new FObjectExport(this, objectName);
+  exp->ExportFlags = EF_None;
+  exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
+  exp->ClassIndex = clsImp->ObjectIndex;
+  Exports.emplace_back(exp);
+  Depends.emplace_back();
+  exp->ObjectIndex = (PACKAGE_INDEX)Exports.size();
+
+  if (parent)
+  {
+    parent->Inner.emplace_back(exp);
+    exp->Outer = parent;
+    exp->OuterIndex = parent->ObjectIndex;
+  }
+  else
+  {
+    RootExports.emplace_back(exp);
+    exp->OuterIndex = 0;
+  }
+
+  UObject* object = UObject::Object(exp);
+  object->SetClass(cls);
+  object->MarkDirty();
+  object->SetLoaded(true);
+
+  std::scoped_lock<std::mutex> l(ExportObjectsMutex);
+  ExportObjects[exp->ObjectIndex] = object;
+  return exp;
+}
+
+void FPackage::RemoveExport(FObjectExport* exp)
+{
+  if (!exp)
+  {
+    return;
+  }
+  // TODO: remove Class if necessary
+  // TODO: remove Name
+  delete ExportObjects[exp->ObjectIndex];
+  ExportObjects.erase(exp->ObjectIndex);
+  if (!exp->OuterIndex)
+  {
+    RootExports.erase(std::remove(RootExports.begin(), RootExports.end(), exp), RootExports.end());
+  }
+  else
+  {
+    exp->Outer->Inner.erase(std::remove(exp->Outer->Inner.begin(), exp->Outer->Inner.end(), exp), exp->Outer->Inner.end());
+  }
+  Exports.erase(std::remove(Exports.begin(), Exports.end(), exp), Exports.end());
+  Depends.erase(Depends.begin() + exp->ObjectIndex - 1);
+  delete exp;
+}
+
 void FPackage::ConvertObjectToRedirector(UObject*& source, UObject* targer)
 {
   UClass* cls = GetClass(UObjectRedirector::StaticClassName());

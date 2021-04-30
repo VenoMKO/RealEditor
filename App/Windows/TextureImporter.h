@@ -2,13 +2,14 @@
 #include <wx/wx.h>
 #include <Tera/UTexture.h>
 
-class TextureImporter : public wxDialog {
+class TextureImporterOptions : public wxDialog {
 public:
 
   static wxString LoadImageDialog(wxWindow* parent);
   static wxString SaveImageDialog(wxWindow* parent, const wxString& defaultFileName = wxEmptyString);
+  static EPixelFormat GetDDSPixelFormat(const wxString& ddsPath);
 
-  TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY);
+  TextureImporterOptions(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY);
 
   EPixelFormat GetPixelFormat() const;
   TextureAddress GetAddressX() const;
@@ -35,4 +36,22 @@ protected:
   wxButton* ImportButton = nullptr;
 
   DECLARE_EVENT_TABLE();
+};
+
+class TextureImporter {
+public:
+  TextureImporter(wxWindow* parent, class UTexture2D* texture, bool createMode = false);
+
+  void SetCustomPath(const wxString& path)
+  {
+    CustomPath = path;
+  }
+  
+  bool Run();
+
+private:
+  wxWindow* Parent = nullptr;
+  class UTexture2D* Texture = nullptr;
+  bool CreateMode = false;
+  wxString CustomPath;
 };

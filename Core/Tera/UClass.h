@@ -8,7 +8,7 @@
   uint32 GetStaticClassCastFlags() const override\
   { return StaticClassCastFlags | Super::GetStaticClassCastFlags(); }\
 
-UProperty* CreateProperty(const char* name, const  char* className, UStruct* parent);
+UProperty* CreateClassProperty(const char* name, const  char* className, UStruct* parent);
 
 class FImplementedInterface {
 public:
@@ -95,6 +95,18 @@ public:
   DECL_CLASS_CAST(UEnum);
 
   int32 FindEnumIndex(FName& inName) const
+  {
+    for (int32 i = 0; i < Names.size(); ++i)
+    {
+      if (Names[i] == inName)
+      {
+        return i;
+      }
+    }
+    return INT32_MAX;
+  }
+
+  int32 FindEnumIndex(const FString& inName) const
   {
     for (int32 i = 0; i < Names.size(); ++i)
     {

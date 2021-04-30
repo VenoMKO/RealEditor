@@ -6,6 +6,9 @@
 struct FGuid
 {
 public:
+
+  static FGuid Generate();
+
   FGuid()
   {}
 

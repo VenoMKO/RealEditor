@@ -10,6 +10,7 @@ public:
   void SetAddressY(TextureAddress y);
   void SetCompression(TextureCompressionSettings compression);
   void SetSRGB(bool srgb);
+  void SetIsNew(bool flag);
 
   void SetRawData(void* data, int32 size, bool transferOwnership = false);
   void AddMipMap(int32 sizeX, int32 sizeY, int32 size, void* data);
@@ -34,7 +35,33 @@ private:
   TextureAddress AddressY = TA_Wrap;
   TextureCompressionSettings Compression = TC_Default;
   bool SRGB = false;
+  bool ConfigureAsNew = false;
+  FString SourcePath;
 
+  bool OwnsData = false;
+  uint8* Data = nullptr;
+  int32 Size = 0;
+  std::vector<TMipMap> Mips;
+};
+
+struct TextureInfo {
+  void SetRawData(void* data, int32 size, bool transferOwnership = false);
+  void AddMipMap(int32 sizeX, int32 sizeY, int32 size, void* data);
+
+  struct TMipMap {
+    int32 SizeX = 0;
+    int32 SizeY = 0;
+    int32 Size = 0;
+    void* Data = nullptr;
+  };
+
+  EPixelFormat Format = PF_Unknown;
+  TextureAddress AddressX = TA_Wrap;
+  TextureAddress AddressY = TA_Wrap;
+  TextureCompressionSettings Compression = TC_Default;
+  bool SRGB = false;
+
+  // MipMaps
   bool OwnsData = false;
   uint8* Data = nullptr;
   int32 Size = 0;

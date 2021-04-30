@@ -169,21 +169,21 @@ FStream& operator<<(FStream& s, FStaticMeshComponentLODInfo& i)
 
 void UStaticMesh::ConfigureClassObject(UClass* object)
 {
-  CreateProperty("UseSimpleLineCollision", UBoolProperty::StaticClassName(), object);
-  CreateProperty("UseSimpleBoxCollision", UBoolProperty::StaticClassName(), object);
-  CreateProperty("UseSimpleRigidBodyCollision", UBoolProperty::StaticClassName(), object);
-  CreateProperty("UseFullPrecisionUVs", UBoolProperty::StaticClassName(), object);
-  CreateProperty("bUsedForInstancing", UBoolProperty::StaticClassName(), object);
-  CreateProperty("bUseMaximumStreamingTexelRatio", UBoolProperty::StaticClassName(), object);
-  CreateProperty("bCanBecomeDynamic", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("UseSimpleLineCollision", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("UseSimpleBoxCollision", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("UseSimpleRigidBodyCollision", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("UseFullPrecisionUVs", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("bUsedForInstancing", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("bUseMaximumStreamingTexelRatio", UBoolProperty::StaticClassName(), object);
+  CreateClassProperty("bCanBecomeDynamic", UBoolProperty::StaticClassName(), object);
 
-  CreateProperty("LightMapResolution", UIntProperty::StaticClassName(), object);
-  CreateProperty("LightMapCoordinateIndex", UIntProperty::StaticClassName(), object);
-  CreateProperty("LODDistanceRatio", UFloatProperty::StaticClassName(), object);
-  CreateProperty("LODMaxRange", UFloatProperty::StaticClassName(), object);
-  CreateProperty("StreamingDistanceMultiplier", UFloatProperty::StaticClassName(), object);
+  CreateClassProperty("LightMapResolution", UIntProperty::StaticClassName(), object);
+  CreateClassProperty("LightMapCoordinateIndex", UIntProperty::StaticClassName(), object);
+  CreateClassProperty("LODDistanceRatio", UFloatProperty::StaticClassName(), object);
+  CreateClassProperty("LODMaxRange", UFloatProperty::StaticClassName(), object);
+  CreateClassProperty("StreamingDistanceMultiplier", UFloatProperty::StaticClassName(), object);
 
-  CreateProperty("BodySetup", UObjectProperty::StaticClassName(), object);
+  CreateClassProperty("BodySetup", UObjectProperty::StaticClassName(), object);
 
   object->Link();
 }

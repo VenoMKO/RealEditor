@@ -7,37 +7,59 @@
 
 class ObjectPicker : public wxDialog {
 public:
-	ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection = 0);
-	~ObjectPicker();
+  ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection = 0);
+  ~ObjectPicker();
 
-	void SetCanChangePackage(bool flag);
+  void SetCanChangePackage(bool flag);
 
-	inline bool IsValid() const
-	{
-		return Package != nullptr;
-	}
+  inline bool IsValid() const
+  {
+    return Package != nullptr;
+  }
 
-	UObject* GetSelectedObject() const
-	{
-		return Selection;
-	}
-
-protected:
-	void OnObjectSelected(wxDataViewEvent& event);
-	void OnPackageClicked(wxCommandEvent& event);
-	void OnOkClicked(wxCommandEvent& event);
-	void OnCancelClicked(wxCommandEvent& event);
-	void LoadObjectTree();
-	void UpdateTableTitle();
+  UObject* GetSelectedObject() const
+  {
+    return Selection;
+  }
 
 protected:
-	UObject* Selection = nullptr;
-	std::shared_ptr<FPackage> Package = nullptr;
-	bool AllowDifferentPackage = false;
+  void OnObjectSelected(wxDataViewEvent& event);
+  void OnPackageClicked(wxCommandEvent& event);
+  void OnOkClicked(wxCommandEvent& event);
+  void OnCancelClicked(wxCommandEvent& event);
+  void LoadObjectTree();
+  void UpdateTableTitle();
 
-	wxString TableTitle;
-	wxDataViewCtrl* ObjectTreeCtrl = nullptr;
-	wxButton* PackageButton = nullptr;
-	wxButton* OkButton = nullptr;
-	wxButton* CancelButton = nullptr;
+protected:
+  UObject* Selection = nullptr;
+  std::shared_ptr<FPackage> Package = nullptr;
+  bool AllowDifferentPackage = false;
+
+  wxString TableTitle;
+  wxDataViewCtrl* ObjectTreeCtrl = nullptr;
+  wxButton* PackageButton = nullptr;
+  wxButton* OkButton = nullptr;
+  wxButton* CancelButton = nullptr;
+};
+
+class ObjectNameDialog : public wxDialog {
+public:
+  ObjectNameDialog(wxWindow* parent, const wxString& objectName = wxEmptyString);
+  ~ObjectNameDialog();
+
+  typedef std::function<bool(const wxString&)> Validator;
+  void SetValidator(Validator& validator);
+  wxString GetObjectName() const;
+
+protected:
+  void OnName(wxCommandEvent&);
+  void OnNameEnter(wxCommandEvent&);
+  void OnOkClicked(wxCommandEvent&);
+  void OnCancelClicked(wxCommandEvent&);
+
+protected:
+  wxTextCtrl* NameField = nullptr;
+  wxButton* OkButton = nullptr;
+  wxButton* CancelButton = nullptr;
+  std::function<bool(const wxString&)> ValidatorFunc;
 };

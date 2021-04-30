@@ -80,9 +80,7 @@ public:
 
 class FObjectExport : public FObjectResource {
 public:
-  FObjectExport(FPackage* p)
-    : FObjectResource(p)
-  {}
+  using FObjectResource::FObjectResource;
 
   friend FStream& operator<<(FStream& s, FObjectExport& e);
 

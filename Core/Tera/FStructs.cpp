@@ -4,6 +4,8 @@
 
 #include "Utils/ALog.h"
 
+#include <objbase.h>
+
 const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
 const FVector FVector::One(1, 1, 1);
 
@@ -33,6 +35,17 @@ void VectorMatrixMultiply(void* output, const void* m1, const void* m2)
   tmp[3][2] = A[3][0] * B[0][2] + A[3][1] * B[1][2] + A[3][2] * B[2][2] + A[3][3] * B[3][2];
   tmp[3][3] = A[3][0] * B[0][3] + A[3][1] * B[1][3] + A[3][2] * B[2][3] + A[3][3] * B[3][3];
   memcpy(output, &tmp, 16 * sizeof(float));
+}
+
+FGuid FGuid::Generate()
+{
+  GUID v;
+  if (!FAILED(CoCreateGuid(&v)))
+  {
+    int32* vInt32 = (int32*)&v;
+    return FGuid(vInt32[0], vInt32[1], vInt32[2], vInt32[3]);
+  }
+  return FGuid();
 }
 
 FStream& operator<<(FStream& s, FGuid& g)

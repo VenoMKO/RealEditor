@@ -37,6 +37,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UClass(exp, false);
   }
+  else if (c == UPackage::StaticClassName())
+  {
+    result = new UPackage(exp);
+  }
   else if (c == UTexture2D::StaticClassName())
   {
     result = new UTexture2D(exp);

@@ -4,6 +4,8 @@
 #include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
+#include "ObjectPicker.h"
+#include "TextureImporter.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -21,11 +23,13 @@
 #include <wx/clipbrd.h>
 
 #include <Utils/ALog.h>
+#include <Tera/Cast.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
 #include <Tera/UClass.h>
 #include <Tera/ULevel.h>
+#include <Utils/TextureProcessor.h>
 
 #include <ShlObj.h>
 
@@ -51,6 +55,7 @@ enum ControlElementId {
   Import,
   Export,
   DebugTestCookObj,
+  DebugSplitMod,
   Back,
   Forward,
   ContentSplitter,
@@ -62,6 +67,10 @@ enum ObjTreeMenuId {
   CopyPath,
   BulkImport,
   BulkExport,
+  Add,
+  AddPackage,
+  AddTexture,
+  AddMaterial,
 };
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
@@ -351,14 +360,23 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 
   wxMenu menu;
   menu.SetClientData((void*)node);
-  
+  bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript);
   if (node->GetObjectIndex() >= 0)
   {
     if (node->GetClassName() == NAME_Package || node->GetObjectIndex() == FAKE_EXPORT_ROOT)
     {
+      if (allowEdit)
+      {
+        wxMenu* addMenu = new wxMenu;
+        addMenu->Append(ObjTreeMenuId::AddPackage, wxT("Package..."));
+        // TODO: implement material wizard
+        // addMenu->Append(ObjTreeMenuId::AddMaterial, wxT("Material Instance..."));
+        addMenu->Append(ObjTreeMenuId::AddTexture, wxT("Texture..."));
+        menu.AppendSubMenu(addMenu, wxT("Add"));
+      }
       menu.Append(ObjTreeMenuId::BulkExport, wxT("Export package..."));
     }
-    else
+    else if (allowEdit)
     {
       menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
     }
@@ -399,6 +417,15 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     break;
   case BulkExport:
     OnBulkPackageExport(node->GetObjectIndex());
+    break;
+  case AddPackage:
+    OnAddPackageClicked(node->GetObjectIndex());
+    break;
+  case AddTexture:
+    OnAddTextureClicked(node->GetObjectIndex());
+    break;
+  case AddMaterial:
+    OnAddMaterialClicked(node->GetObjectIndex());
     break;
   default:
     break;
@@ -526,10 +553,87 @@ void PackageWindow::DebugOnTestCookObject(wxCommandEvent&)
   ActiveEditor->GetObject()->Serialize(s);
 }
 
+void PackageWindow::DebugOnSplitMod(wxCommandEvent&)
+{
+  wxString path = wxLoadFileSelector("Mod", wxT("GPK file|*.gpk"), wxEmptyString, this);
+  if (path.empty())
+  {
+    return;
+  }
+  FReadStream rs(path.ToStdWstring());
+  rs.SetPosition(rs.GetSize() - 4);
+  int32 magic = 0;
+  rs << magic;
+  if (magic != PACKAGE_MAGIC)
+  {
+    return;
+  }
+
+  int32 containerOffset = 0;
+  int32 containerOffsets = 0;
+  int32 containerOffsetsCount = 0;
+  int32 metaSize = 0;
+
+  rs.SetPosition(rs.GetSize() - (5 * sizeof(int32)));
+  rs << containerOffset;
+  rs << containerOffsets;
+  rs << containerOffsetsCount;
+  rs << metaSize;
+
+  std::vector<int32> offsets;
+  rs.SetPosition(containerOffsets);
+  for (int32 idx = 0; idx < containerOffsetsCount; ++idx)
+  {
+    int32 tmp = 0;
+    rs << tmp;
+    offsets.push_back(tmp);
+  }
+
+  if (offsets.empty())
+  {
+    return;
+  }
+
+  wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+  if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
+  {
+    return;
+  }
+
+  for (int32 idx = 0; idx < offsets.size(); ++idx)
+  {
+    rs.SetPosition(offsets[idx]);
+    int32 len = 0;
+    if (idx + 1 < offsets.size())
+    {
+      len = offsets[idx + 1] - offsets[idx];
+    }
+    else
+    {
+      len = rs.GetSize() - metaSize;
+    }
+
+    if (len <= 0)
+    {
+      continue;
+    }
+
+    void* data = malloc(len);
+    FWriteStream ws(dlg.GetPath().ToStdWstring() + L"\\Package_" + std::to_wstring(idx) + L".gpk");
+    rs.SerializeBytes(data, len);
+    ws.SerializeBytes(data, len);
+    free(data);
+  }
+
+  offsets.clear();
+
+
+}
+
 void PackageWindow::FixOSG()
 {
   // Osg refuses to process events
-  // Resizing the window for some reasone fixes the issue
+  // Resizing the window for some reasons fixes the issue
   // TODO: fix the issue and get rid of the shitty hack below
   if (FixedOSG)
   {
@@ -1094,6 +1198,154 @@ void PackageWindow::OnHelpClicked(wxCommandEvent&)
   wxLaunchDefaultBrowser(HelpUrl);
 }
 
+void PackageWindow::OnAddPackageClicked(int parentIdx)
+{
+  FObjectExport* parent = parentIdx != FAKE_EXPORT_ROOT ? Package->GetExportObject(parentIdx) : nullptr;
+  std::weak_ptr packageWeak = Package;
+  ObjectNameDialog::Validator validatorFunc = [&](const wxString& name) {
+    std::shared_ptr<FPackage> package = packageWeak.lock();
+    if (!package)
+    {
+      return false;
+    }
+    if (name.Find(" ") != wxString::npos)
+    {
+      return false;
+    }
+    FString tmpName = name.ToStdWstring();
+    if (!tmpName.IsAnsi())
+    {
+      return false;
+    }
+    std::vector<FObjectExport*> exps;
+    if (parent)
+    {
+      exps = parent->Inner;
+    }
+    else
+    {
+      exps = package->GetRootExports();
+    }
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetObjectName() == tmpName)
+      {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  ObjectNameDialog nameDialog = ObjectNameDialog(this, wxT("Untitled"));
+  nameDialog.SetValidator(validatorFunc);
+
+  if (nameDialog.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  wxString name = nameDialog.GetObjectName();
+  if (name.empty())
+  {
+    return;
+  }
+
+  if (FObjectExport* newExp = Package->AddExport(FString(name.ToStdWstring()), NAME_Package, parent))
+  {
+    ObjectTreeCtrl->AddExportObject(newExp);
+    OnExportObjectSelected(newExp->ObjectIndex);
+  }
+}
+
+void PackageWindow::OnAddTextureClicked(int parentIdx)
+{
+  FObjectExport* parent = parentIdx != FAKE_EXPORT_ROOT ? Package->GetExportObject(parentIdx) : nullptr;
+  wxString path = TextureImporterOptions::LoadImageDialog(this);
+  if (path.empty())
+  {
+    return;
+  }
+
+  wxString name;
+  wxString extension;
+  wxFileName::SplitPath(path, nullptr, nullptr, &name, &extension);
+  extension.MakeLower();
+
+  std::weak_ptr packageWeak = Package;
+  ObjectNameDialog::Validator validatorFunc = [&](const wxString& name) {
+    std::shared_ptr<FPackage> package = packageWeak.lock();
+    if (!package)
+    {
+      return false;
+    }
+    if (name.Find(" ") != wxString::npos)
+    {
+      return false;
+    }
+    FString tmpName = name.ToStdWstring();
+    if (!tmpName.IsAnsi())
+    {
+      return false;
+    }
+    std::vector<FObjectExport*> exps;
+    if (parent)
+    {
+      exps = parent->Inner;
+    }
+    else
+    {
+      exps = package->GetRootExports();
+    }
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetObjectName() == tmpName)
+      {
+        return false;
+      }
+    }
+    return true;
+  };
+  ObjectNameDialog nameDialog = ObjectNameDialog(this, name);
+  nameDialog.SetValidator(validatorFunc);
+
+  if (nameDialog.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  name = nameDialog.GetObjectName();
+  if (name.empty())
+  {
+    return;
+  }
+
+  FObjectExport* exp = Package->AddExport(FString(name.ToStdWstring()), UTexture2D::StaticClassName(), parent);
+  UTexture2D* texture = Cast<UTexture2D>(Package->GetObject(exp));
+
+  if (!texture)
+  {
+    Package->RemoveExport(exp);
+    return;
+  }
+
+  TextureImporter importer(this, texture, true);
+  importer.SetCustomPath(path);
+
+  if (!importer.Run())
+  {
+    Package->RemoveExport(exp);
+    return;
+  }
+
+  ObjectTreeCtrl->AddExportObject(exp);
+  OnExportObjectSelected(exp->ObjectIndex);
+}
+
+void PackageWindow::OnAddMaterialClicked(int parentIdx)
+{
+  FObjectExport* parent = parentIdx != FAKE_EXPORT_ROOT ? Package->GetExportObject(parentIdx) : nullptr;
+}
+
 void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
 {
   if (!ContentSplitter->IsSashInvisible())
@@ -1136,5 +1388,5 @@ EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 
 EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObject)
-
+EVT_MENU(ControlElementId::DebugSplitMod, PackageWindow::DebugOnSplitMod)
 wxEND_EVENT_TABLE()

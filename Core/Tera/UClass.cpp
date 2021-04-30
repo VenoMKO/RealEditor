@@ -15,7 +15,7 @@
 
 #define FUNC_Net 0x00000040
 
-UProperty* CreateProperty(const char* name, const  char* className, UStruct* parent)
+UProperty* CreateClassProperty(const char* name, const  char* className, UStruct* parent)
 {
   VObjectExport* exp = parent->GetPackage()->CreateVirtualExport(name, className);
   parent->GetExportObject()->Inner.push_back(exp);
@@ -313,7 +313,6 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         }
         tagPtr = array[idx]->GetPropertyTagPtr();
       }
-
       s << *tagPtr;
       FILE_OFFSET size = s.GetPosition();
       if (tagPtr->ClassProperty)
@@ -331,11 +330,17 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       size = tmpPos - size;
       if (size != tagPtr->Size)
       {
+        tagPtr->Size = size;
         s.SetPosition(tagPtr->SizeOffset);
-        s << size;
+        s << tagPtr->Size;
         s.SetPosition(tmpPos);
       }
       idx++;
+    }
+    if (!tagPtr)
+    {
+      FName none(s.GetPackage(), NAME_None);
+      s << none;
     }
   }
 }

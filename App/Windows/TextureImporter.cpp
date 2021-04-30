@@ -1,5 +1,17 @@
 #include "TextureImporter.h"
+#include "../App.h"
+#include "../Windows/ProgressWindow.h"
+
+#include <Tera/FStream.h>
+#include <Tera/UTexture.h>
+
+#include <Utils/ALog.h>
+#include <Utils/DDS.h>
+#include <Utils/TextureProcessor.h>
+#include <Utils/TextureTravaller.h>
+
 #include <wx/statline.h>
+#include <wx/filename.h>
 
 enum ControlElementId {
   Format = wxID_HIGHEST + 1,
@@ -79,7 +91,7 @@ inline TextureAddress WxToTextureAddress(int address)
   }
 }
 
-wxString TextureImporter::LoadImageDialog(wxWindow* parent)
+wxString TextureImporterOptions::LoadImageDialog(wxWindow* parent)
 {
   wxString ext;
   if (HasAVX2())
@@ -94,7 +106,7 @@ wxString TextureImporter::LoadImageDialog(wxWindow* parent)
 }
 
 
-wxString TextureImporter::SaveImageDialog(wxWindow* parent, const wxString& defaultFileName)
+wxString TextureImporterOptions::SaveImageDialog(wxWindow* parent, const wxString& defaultFileName)
 {
   wxString allowedExts;
   if (HasAVX2())
@@ -108,7 +120,19 @@ wxString TextureImporter::SaveImageDialog(wxWindow* parent, const wxString& defa
   return wxSaveFileSelector("texture", allowedExts, defaultFileName, parent);
 }
 
-TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
+EPixelFormat TextureImporterOptions::GetDDSPixelFormat(const wxString& ddsPath)
+{
+  FReadStream s(ddsPath.ToStdWstring());
+  if (!s.IsGood())
+  {
+    return PF_Unknown;
+  }
+  DDS::DDSHeader header;
+  s << header;
+  return header.GetPixelFormat();
+}
+
+TextureImporterOptions::TextureImporterOptions(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
   : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -355,58 +379,248 @@ TextureImporter::TextureImporter(wxWindow* parent, EPixelFormat fmt, bool bNorma
   Centre(wxBOTH);
 }
 
-EPixelFormat TextureImporter::GetPixelFormat() const
+EPixelFormat TextureImporterOptions::GetPixelFormat() const
 {
   return WxToPixelFormat(PixelFormat->GetSelection());
 }
 
-TextureAddress TextureImporter::GetAddressX() const
+TextureAddress TextureImporterOptions::GetAddressX() const
 {
   return WxToTextureAddress(AddressX->GetSelection());
 }
 
-TextureAddress TextureImporter::GetAddressY() const
+TextureAddress TextureImporterOptions::GetAddressY() const
 {
   return WxToTextureAddress(AddressY->GetSelection());
 }
 
-MipFilterType TextureImporter::GetMipFilter() const
+MipFilterType TextureImporterOptions::GetMipFilter() const
 {
   return (MipFilterType)MipFilter->GetSelection();
 }
 
-bool TextureImporter::IsNormal() const
+bool TextureImporterOptions::IsNormal() const
 {
   return Normal->GetValue();
 }
 
-bool TextureImporter::IsSRGB() const
+bool TextureImporterOptions::IsSRGB() const
 {
   return SRGB->GetValue();
 }
 
-bool TextureImporter::GetGenerateMips() const
+bool TextureImporterOptions::GetGenerateMips() const
 {
   return GenMips->GetValue();
 }
 
-void TextureImporter::OnNormalClick(wxCommandEvent&)
+void TextureImporterOptions::OnNormalClick(wxCommandEvent&)
 {
   SRGB->Enable(!Normal->GetValue());
 }
 
-void TextureImporter::OnGenMipsClicked(wxCommandEvent&)
+void TextureImporterOptions::OnGenMipsClicked(wxCommandEvent&)
 {
   MipFilter->Enable(GenMips->GetValue());
 }
 
-void TextureImporter::OnSRGBClick(wxCommandEvent&)
+void TextureImporterOptions::OnSRGBClick(wxCommandEvent&)
 {
   Normal->Enable(!SRGB->GetValue());
 }
 
-wxBEGIN_EVENT_TABLE(TextureImporter, wxDialog)
-EVT_CHECKBOX(ControlElementId::Normal, TextureImporter::OnNormalClick)
-EVT_CHECKBOX(ControlElementId::MipGen, TextureImporter::OnGenMipsClicked)
-EVT_CHECKBOX(ControlElementId::SRGB, TextureImporter::OnSRGBClick)
+wxBEGIN_EVENT_TABLE(TextureImporterOptions, wxDialog)
+EVT_CHECKBOX(ControlElementId::Normal, TextureImporterOptions::OnNormalClick)
+EVT_CHECKBOX(ControlElementId::MipGen, TextureImporterOptions::OnGenMipsClicked)
+EVT_CHECKBOX(ControlElementId::SRGB, TextureImporterOptions::OnSRGBClick)
 wxEND_EVENT_TABLE()
+
+TextureImporter::TextureImporter(wxWindow* parent, class UTexture2D* texture, bool createMode)
+  : Parent(parent)
+  , Texture(texture)
+  , CreateMode(createMode)
+{}
+
+bool TextureImporter::Run()
+{
+  wxString path = CustomPath;
+  if (path.empty())
+  {
+    path = TextureImporterOptions::LoadImageDialog(Parent);
+  }
+  if (path.empty())
+  {
+    LogI("Import canceled by user.");
+    return false;
+  }
+
+  bool isNormal = Texture->CompressionSettings == TC_Normalmap ||
+    Texture->CompressionSettings == TC_NormalmapAlpha ||
+    Texture->CompressionSettings == TC_NormalmapUncompressed ||
+    Texture->CompressionSettings == TC_NormalmapBC5;
+
+  wxString extension;
+  wxFileName::SplitPath(path, nullptr, nullptr, nullptr, &extension);
+  extension.MakeLower();
+
+  TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
+  TextureProcessor::TCFormat inFormat = TextureProcessor::TCFormat::None;
+
+  TextureImporterOptions importer(Parent, Texture->Format, isNormal, Texture->SRGB, Texture->AddressX, Texture->AddressY);
+  if (extension != wxT("dds"))
+  {
+    if (extension == wxT("png"))
+    {
+      inFormat = TextureProcessor::TCFormat::PNG;
+    }
+    else if (extension == wxT("tga"))
+    {
+      inFormat = TextureProcessor::TCFormat::TGA;
+    }
+
+    if (importer.ShowModal() != wxID_OK)
+    {
+      LogI("Import canceled by user.");
+      return false;
+    }
+
+    switch (importer.GetPixelFormat())
+    {
+    case PF_DXT1:
+      outputFormat = TextureProcessor::TCFormat::DXT1;
+      break;
+    case PF_DXT3:
+      outputFormat = TextureProcessor::TCFormat::DXT3;
+      break;
+    case PF_DXT5:
+      outputFormat = TextureProcessor::TCFormat::DXT5;
+      break;
+    case PF_A8R8G8B8:
+      outputFormat = TextureProcessor::TCFormat::ARGB8;
+      break;
+    case PF_G8:
+      outputFormat = TextureProcessor::TCFormat::G8;
+      break;
+    default:
+    {
+      std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+      LogE(errmsg.c_str());
+      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      return false;
+    }
+    }
+  }
+  else
+  {
+    inFormat = TextureProcessor::TCFormat::DDS;
+    switch (Texture->Format)
+    {
+    case PF_DXT1:
+    case PF_DXT3:
+    case PF_DXT5:
+      outputFormat = TextureProcessor::TCFormat::DXT;
+      break;
+    case PF_A8R8G8B8:
+      outputFormat = TextureProcessor::TCFormat::ARGB8;
+      break;
+    case PF_G8:
+      outputFormat = TextureProcessor::TCFormat::G8;
+      break;
+    default:
+    {
+      std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+      LogE(errmsg.c_str());
+      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      return false;
+    }
+    }
+  }
+
+  TextureProcessor processor(inFormat, outputFormat);
+  processor.SetInputPath(W2A(path.ToStdWstring()));
+  processor.SetSrgb(importer.IsSRGB());
+  processor.SetNormal(importer.IsNormal());
+  processor.SetAddressX(importer.GetAddressX());
+  processor.SetAddressY(importer.GetAddressY());
+  processor.SetGenerateMips(importer.GetGenerateMips());
+  processor.SetMipFilter(importer.GetMipFilter());
+
+  ProgressWindow progress(Parent, "Please, wait...");
+  progress.SetCurrentProgress(-1);
+  progress.SetCanCancel(false);
+  progress.SetActionText("Processing the image");
+  progress.Layout();
+
+  std::thread([&processor, &progress] {
+    bool result = false;
+    try
+    {
+      result = processor.Process();
+    }
+    catch (const std::exception& e)
+    {
+      result = false;
+      LogE(e.what());
+    }
+    catch (const char* msg)
+    {
+      result = false;
+      std::string err = std::string("Failed to process the image: ") + msg;
+      LogE(err.c_str());
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+
+  if (!progress.ShowModal())
+  {
+    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    return false;
+  }
+
+  EPixelFormat resultFormat = importer.GetPixelFormat();
+  if (extension == wxT("dds"))
+  {
+    switch (processor.GetOutputFormat())
+    {
+    case TextureProcessor::TCFormat::DXT1:
+      resultFormat = PF_DXT1;
+      break;
+    case TextureProcessor::TCFormat::DXT3:
+      resultFormat = PF_DXT3;
+      break;
+    case TextureProcessor::TCFormat::DXT5:
+      resultFormat = PF_DXT5;
+      break;
+    }
+  }
+
+  TextureTravaller travaller;
+  travaller.SetFormat(resultFormat);
+  travaller.SetSRGB(importer.IsSRGB());
+  travaller.SetAddressX(importer.GetAddressX());
+  travaller.SetAddressY(importer.GetAddressY());
+  travaller.SetIsNew(CreateMode);
+
+  if (isNormal == importer.IsNormal())
+  {
+    travaller.SetCompression(Texture->CompressionSettings);
+  }
+  else
+  {
+    travaller.SetCompression(importer.IsNormal() ? processor.GetAlpha() ? TC_NormalmapAlpha : TC_Normalmap : TC_Default);
+  }
+
+  const auto& mips = processor.GetOutputMips();
+  for (const auto mip : mips)
+  {
+    travaller.AddMipMap(mip.SizeX, mip.SizeY, mip.Size, mip.Data);
+  }
+
+  if (!travaller.Visit(Texture))
+  {
+    wxMessageBox(travaller.GetError(), wxT("Error!"), wxICON_ERROR);
+    return false;
+  }
+
+  return true;
+}

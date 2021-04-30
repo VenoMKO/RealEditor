@@ -29,6 +29,11 @@ void TextureTravaller::SetSRGB(bool srgb)
   SRGB = srgb;
 }
 
+void TextureTravaller::SetIsNew(bool flag)
+{
+  ConfigureAsNew = flag;
+}
+
 void TextureTravaller::SetRawData(void* data, int32 size, bool transferOwnership)
 {
   Data = (uint8*)data;
@@ -53,14 +58,20 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     Error = "Texture is NULL.";
     return false;
   }
-
-  // TODO: Create properties if they don't exist and remove nullptr check
-  // TODO: Apply AddressMode & CompressionMode changes.
-
   if (!Mips.size())
   {
     Error = "Texture has no mipmaps.";
     return false;
+  }
+
+  if (ConfigureAsNew)
+  {
+    for (FPropertyTag* p : texture->Properties)
+    {
+      delete p;
+    }
+    texture->Properties.clear();
+    texture->SourceFilePath = SourcePath;
   }
 
   // TODO: patch Resource allocation
@@ -68,19 +79,58 @@ bool TextureTravaller::Visit(UTexture2D* texture)
   // Invalidate texture cache
   texture->TextureFileCacheGuid = FGuid();
 
+  if (Compression != TC_Default)
+  {
+    if (!texture->CompressionSettingsProperty)
+    {
+      texture->CreatePropertyCompressionSettings(Compression);
+    }
+    else
+    {
+      texture->CompressionSettings = Compression;
+      texture->CompressionSettingsProperty->GetByte() = (uint8)Compression;
+    }
+  }
+
+  if (AddressX != TA_Wrap || AddressY != TA_Wrap)
+  {
+    if (!texture->AddressXProperty)
+    {
+      texture->CreatePropertyAddressX(AddressX);
+    }
+    else
+    {
+      texture->AddressX = AddressX;
+    }
+    if (!texture->AddressYProperty)
+    {
+      texture->CreatePropertyAddressY(AddressY);
+    }
+    else
+    {
+      texture->AddressY = AddressY;
+    }
+  }
+
+  if (!texture->FormatProperty)
+  {
+    texture->CreatePropertyFormat(Format);
+    texture->Format = Format;
+  }
   if (Format != texture->Format)
   {
     texture->Format = Format;
-    if (texture->FormatProperty)
-    {
-      texture->FormatProperty->Value->GetByte() = Format;
-    }
+    texture->FormatProperty->Value->GetByte() = Format;
   }
 
   if (Mips[0].SizeX != texture->SizeX)
   {
     texture->SizeX = Mips[0].SizeX;
-    if (texture->SizeXProperty)
+    if (!texture->SizeXProperty)
+    {
+      texture->CreatePropertySizeX(Mips[0].SizeX);
+    }
+    else
     {
       texture->SizeXProperty->Value->GetInt() = Mips[0].SizeX;
     }
@@ -89,28 +139,34 @@ bool TextureTravaller::Visit(UTexture2D* texture)
   if (Mips[0].SizeY != texture->SizeY)
   {
     texture->SizeY = Mips[0].SizeY;
-    if (texture->SizeYProperty)
+    if (!texture->SizeYProperty)
+    {
+      texture->CreatePropertySizeY(Mips[0].SizeY);
+    }
+    else
     {
       texture->SizeYProperty->Value->GetInt() = Mips[0].SizeY;
     }
   }
 
+  if (!SRGB && !texture->SRGBProperty)
+  {
+    texture->CreatePropertySRGB(SRGB);
+  }
   if (SRGB != texture->SRGB)
   {
     texture->SRGB = SRGB;
-    if (texture->SRGBProperty)
-    {
-      texture->SRGBProperty->Value->GetBool() = SRGB;
-    }
+    texture->SRGBProperty->Value->GetBool() = SRGB;
   }
 
+  if (!texture->MipTailBaseIdxProperty)
+  {
+    texture->CreatePropertyMipTailBaseIdx(Mips.size() - 1);
+  }
   if (Mips.size() - 1 != texture->MipTailBaseIdx)
   {
     texture->MipTailBaseIdx = Mips.size() - 1;
-    if (texture->MipTailBaseIdxProperty)
-    {
-      texture->MipTailBaseIdxProperty->Value->GetInt() = Mips.size() - 1;
-    }
+    texture->MipTailBaseIdxProperty->Value->GetInt() = Mips.size() - 1;
   }
 
   if (texture->TextureFileCacheNameProperty)
@@ -120,13 +176,14 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     texture->TextureFileCacheNameProperty = nullptr;
   }
 
+  if (!texture->FirstResourceMemMipProperty)
+  {
+    texture->CreatePropertyFirstResourceMemMip(0);
+  }
   if (texture->FirstResourceMemMip != 0)
   {
     texture->FirstResourceMemMip = 0;
-    if (texture->FirstResourceMemMipProperty)
-    {
-      texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
-    }
+    texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
   }
   // We pulled all the data, so it should be safe to turn off fexp flag
   texture->Export->ExportFlags &= ~EF_ForcedExport;

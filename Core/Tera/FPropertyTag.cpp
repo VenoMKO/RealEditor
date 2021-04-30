@@ -92,6 +92,23 @@ FPropertyValue::~FPropertyValue()
   }
 }
 
+void FPropertyValue::RegisterEnumNames()
+{
+  if (Type == FPropertyValue::VID::Byte && Enum)
+  {
+    if (Property && Property->Owner)
+    {
+      Property->Owner->GetPackage()->GetNameIndex(Enum->GetObjectName(), true);
+      Property->Owner->GetPackage()->GetNameIndex(Enum->GetEnum(GetByte()).String(), true);
+    }
+    else
+    {
+      LogW("Too early Enum property value registraion!");
+      DBreak();
+    }
+  }
+}
+
 FPropertyTag::FPropertyTag(UObject* owner, const FString& name, const FString& type)
 {
   Owner = owner;

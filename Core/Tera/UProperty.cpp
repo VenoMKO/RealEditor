@@ -121,6 +121,26 @@ void UByteProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject*
   }
 }
 
+FPropertyTag* UByteProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ByteProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Byte;
+  tag->Value->Data = new uint8;
+  tag->Value->Enum = Enum;
+  if (Enum)
+  {
+    tag->EnumName = FName(object->GetPackage(), Enum->GetObjectName());
+  }
+  return tag;
+}
+
 void UDelegateProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
   if (s.IsReading())
@@ -136,9 +156,24 @@ void UIntProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* 
   if (s.IsReading())
   {
     valuePtr->Type = FPropertyValue::VID::Int;
-    valuePtr->Data = new int;
+    valuePtr->Data = new int32;
   }
   s << valuePtr->GetInt();
+}
+
+FPropertyTag* UIntProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_IntProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Int;
+  tag->Value->Data = new int32;
+  return tag;
 }
 
 void UBoolProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
@@ -160,6 +195,21 @@ void UBoolProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject*
   }
 }
 
+FPropertyTag* UBoolProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_BoolProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Bool;
+  tag->Value->Data = new bool;
+  return tag;
+}
+
 void UFloatProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
   if (s.IsReading())
@@ -168,6 +218,21 @@ void UFloatProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject
     valuePtr->Data = new float;
   }
   s << valuePtr->GetFloat();
+}
+
+FPropertyTag* UFloatProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_FloatProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Float;
+  tag->Value->Data = new float;
+  return tag;
 }
 
 void UNameProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
@@ -180,6 +245,21 @@ void UNameProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject*
   s << valuePtr->GetName();
 }
 
+FPropertyTag* UNameProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_NameProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Name;
+  tag->Value->Data = new FName(object->GetPackage());
+  return tag;
+}
+
 void UStrProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
   if (s.IsReading())
@@ -188,6 +268,21 @@ void UStrProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* 
     valuePtr->Data = new FString;
   }
   s << valuePtr->GetString();
+}
+
+FPropertyTag* UStrProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StrProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::String;
+  tag->Value->Data = new FString;
+  return tag;
 }
 
 void UArrayProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
@@ -211,6 +306,21 @@ void UArrayProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject
   }
 }
 
+FPropertyTag* UArrayProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ArrayProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Array;
+  tag->Value->Data = new std::vector<FPropertyValue*>;
+  return tag;
+}
+
 void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
   bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) || (Struct->StructFlags & STRUCT_Immutable);
@@ -231,6 +341,26 @@ void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObjec
   }
 }
 
+FPropertyTag* UStructProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StructProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Struct = Struct;
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Struct;
+  tag->Value->Data = new std::vector<FPropertyValue*>;
+  if (Struct)
+  {
+    tag->StructName = FName(object->GetPackage(), Struct->GetObjectName());
+  }
+  return tag;
+}
+
 void UObjectProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
   if (s.IsReading())
@@ -239,4 +369,19 @@ void UObjectProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObjec
     valuePtr->Data = new PACKAGE_INDEX;
   }
   s << valuePtr->GetObjectIndex();
+}
+
+FPropertyTag* UObjectProperty::CreatePropertyTag(UObject* object)
+{
+  if (!object)
+  {
+    return nullptr;
+  }
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ObjectProperty);
+  tag->ClassProperty = this;
+  tag->Value = new FPropertyValue(tag);
+  tag->Value->Field = this;
+  tag->Value->Type = FPropertyValue::VID::Object;
+  tag->Value->Data = new PACKAGE_INDEX(INDEX_NONE);
+  return tag;
 }

@@ -314,6 +314,21 @@ ObjectTreeNode* ObjectTreeModel::FindItemByObjectIndex(PACKAGE_INDEX index)
   return nullptr;
 }
 
+void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp)
+{
+  ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  if (ObjectTreeNode* parentNode = exp->GetOuter() ? model->FindItemByObjectIndex(exp->OuterIndex) : model->GetRootExport())
+  {
+    ObjectTreeNode* itemNode = new ObjectTreeNode(parentNode, exp);
+    parentNode->GetChildren().Add(itemNode);
+    wxDataViewItem parent = wxDataViewItem((void*)parentNode);
+    wxDataViewItem item = wxDataViewItem((void*)itemNode);
+    model->ItemAdded(parent, item);
+    Select(item);
+    EnsureVisible(item);
+  }
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())

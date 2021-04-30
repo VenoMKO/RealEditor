@@ -68,6 +68,10 @@ private:
   void OnBulkPackageExport(PACKAGE_INDEX objIndex);
   void OnHelpClicked(wxCommandEvent&);
 
+  void OnAddPackageClicked(int parent);
+  void OnAddTextureClicked(int parent);
+  void OnAddMaterialClicked(int parent);
+
   void OnPackageReady(wxCommandEvent&);
   void OnPackageError(wxCommandEvent& e);
   void OnSelectObject(wxCommandEvent& e);
@@ -90,6 +94,7 @@ private:
   void OnPropertiesSplitter(wxSplitterEvent& e);
 
   void DebugOnTestCookObject(wxCommandEvent&);
+  void DebugOnSplitMod(wxCommandEvent&);
 
   wxDECLARE_EVENT_TABLE();
 
@@ -124,6 +129,7 @@ private:
   ArchiveInfoView* PackageInfoView = nullptr;
 
   wxMenuItem* _DebugTestCookObject = nullptr;
+  wxMenuItem* _DebugSplitMod = nullptr;
 
   std::map<PACKAGE_INDEX, GenericEditor*> Editors;
   GenericEditor* ActiveEditor = nullptr;

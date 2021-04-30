@@ -15,6 +15,8 @@ public:
 
   virtual void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const = 0;
 
+  virtual FPropertyTag* CreatePropertyTag(UObject* object) = 0;
+
   int32 ArrayDim = 1;
   uint64 PropertyFlags = 0;
   uint16 RepOffset = 0;
@@ -34,6 +36,8 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
+
   FString GetID() override
   {
     return NAME_ByteProperty;
@@ -50,6 +54,8 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
+
   FString GetID() override
   {
     return NAME_IntProperty;
@@ -62,6 +68,8 @@ public:
   DECL_CLASS_CAST(UBoolProperty);
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
 
   FString GetID() override
   {
@@ -79,6 +87,8 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
+
   FString GetID() override
   {
     return NAME_FloatProperty;
@@ -93,6 +103,8 @@ public:
   void Serialize(FStream& s) override;
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
 
   FString GetID() override
   {
@@ -129,6 +141,12 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject*) override
+  {
+    DBreak();
+    return nullptr;
+  }
+
   FString GetID() override
   {
     return NAME_InterfaceProperty;
@@ -145,6 +163,8 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
+
   FString GetID() override
   {
     return NAME_NameProperty;
@@ -157,6 +177,8 @@ public:
   DECL_CLASS_CAST(UStrProperty);
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
 
   FString GetID() override
   {
@@ -172,6 +194,8 @@ public:
   void Serialize(FStream& s) override;
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
 
   FString GetID() override
   {
@@ -191,6 +215,12 @@ public:
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
+  FPropertyTag* CreatePropertyTag(UObject*) override
+  {
+    DBreak();
+    return nullptr;
+  }
+
   FString GetID() override
   {
     return NAME_MapProperty;
@@ -206,13 +236,16 @@ public:
   DECL_UOBJ(UStructProperty, UProperty);
   DECL_CLASS_CAST(UStructProperty);
 
+  void Serialize(FStream& s) override;
+
+  void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject* object) override;
+
   FString GetID() override
   {
     return NAME_StructProperty;
   }
-
-  void Serialize(FStream& s) override;
-  void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
 
 public:
   DECL_UREF(UScriptStruct, Struct);
@@ -226,6 +259,12 @@ public:
   void Serialize(FStream& s) override;
 
   void SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults = nullptr) const override;
+
+  FPropertyTag* CreatePropertyTag(UObject*) override
+  {
+    DBreak();
+    return nullptr;
+  }
 
   FString GetID() override
   {

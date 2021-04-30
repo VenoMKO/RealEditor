@@ -78,6 +78,20 @@ FILE_OFFSET UObject::GetDataSize() const
   return RawDataOffset ? (GetSerialOffset() + GetSerialSize() - RawDataOffset) : -1;
 }
 
+FPropertyTag* UObject::CreateProperty(const FString& name)
+{
+  if (!Class)
+  {
+    LogE("Failed to create a property %s. Object %s(%s) has no class.", name.UTF8().c_str(), GetObjectName().UTF8().c_str(), GetClassName().UTF8().c_str());
+    return nullptr;
+  }
+  if (UProperty* classProperty = Class->GetProperty(name))
+  {
+    return classProperty->CreatePropertyTag(this);
+  }
+  return nullptr;
+}
+
 void UObject::AddProperty(FPropertyTag* property)
 {
   if (!property)
@@ -179,6 +193,13 @@ void UObject::SerializeScriptProperties(FStream& s)
   if (Class && s.GetFV() == FPackage::GetCoreVersion())
   {
     Class->SerializeTaggedProperties(s, (UObject*)this, nullptr, HasAnyFlags(RF_ClassDefaultObject) ? Class->GetSuperClass() : Class, nullptr);
+    if (!s.IsReading() && Properties.size() && Properties.back()->Name != NAME_None)
+    {
+      FPropertyTag* none = new FPropertyTag(this, NAME_None, NAME_None);
+      Properties.push_back(none);
+      s << *none;
+      LogW("Object %s doesn't have a terminating property! RE has terminated the property list manually.", GetObjectName().UTF8().c_str());
+    }
   }
   else
   {
@@ -300,7 +321,7 @@ void UObject::Serialize(FStream& s)
 #if _DEBUG
   FILE_OFFSET curPos = s.GetPosition();
   FILE_OFFSET fileEnd = Export->SerialOffset + Export->SerialSize;
-  DBreakIf(fileEnd < curPos);
+  DBreakIf(s.IsReading() && fileEnd < curPos);
 #endif
 
   if (s.IsReading())
