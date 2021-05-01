@@ -110,7 +110,21 @@ public:
     {
       return true;
     }
-    return *this == std::string(a);
+    size_t lenA = strlen(a);
+    size_t lenB = Data.size();
+    if (lenA && a[lenA - 1] == '\0')
+    {
+      lenA--;
+    }
+    if (lenB && Data[lenB - 1] == '\0')
+    {
+      lenB--;
+    }
+    if (lenA != lenB)
+    {
+      return false;
+    }
+    return memcmp(a, Data.c_str(), lenB) == 0;
   }
 
   inline std::wstring FStringByAppendingPath(const FString& path)
@@ -209,61 +223,57 @@ public:
 
   inline bool operator==(const FString& a) const
   {
-    if (Data.empty())
-    {
-      return a.Data.empty() ? true : a.Data.size() == 1 && a.Data.front() == 0;
-    }
-    else if (a.Data.empty())
-    {
-      return Data.empty() ? true : Data.size() == 1 && Data.front() == 0;
-    }
+    size_t lenA = a.Data.size();
+    size_t lenB = Data.size();
 
-    if (Data.back() == 0 && a.Data.back() != 0)
+    if (lenA && a.Data[lenA - 1] == '\0')
     {
-      return Data.substr(0, Data.size() - 1) == a.Data;
+      lenA--;
     }
-    else if (a.Data.back() == 0 && Data.back() != 0)
+    if (lenB && Data[lenB - 1] == '\0')
     {
-      return a.Data.substr(0, a.Data.size() - 1) == Data;
+      lenB--;
     }
-    return Data == a.Data;
+    if (lenA != lenB)
+    {
+      return false;
+    }
+    return memcmp(a.Data.c_str(), Data.c_str(), lenB) == 0;
   }
 
   inline bool operator==(const std::string& a) const
   {
-    if (Data.empty())
+    size_t lenA = a.size();
+    size_t lenB = Data.size();
+
+    if (lenA && a[lenA - 1] == '\0')
     {
-      return a.empty() ? true : a.size() == 1 && a.front() == 0;
+      lenA--;
     }
-    else if (a.empty())
+    if (lenB && Data[lenB - 1] == '\0')
     {
-      return Data.empty() ? true : Data.size() == 1 && Data.front() == 0;
+      lenB--;
     }
-    
-    if (Data.back() == 0 && a.back() != 0)
+    if (lenA != lenB)
     {
-      return Data.substr(0, Data.size() - 1) == a;
+      return false;
     }
-    else if (a.back() == 0 && Data.back() != 0)
-    {
-      return a.substr(0, a.size() - 1) == Data;
-    }
-    return Data == a;
+    return memcmp(a.c_str(), Data.c_str(), lenB) == 0;
   }
 
   inline bool operator!=(const char* a) const
   {
-    return (*this) != std::string(a);
+    return !((*this) == a);
   }
 
   inline bool operator!=(const FString& a) const
   {
-    return !(*this == a);
+    return !((*this) == a);
   }
 
   inline bool operator!=(const std::string& a) const
   {
-    return !(*this == a);
+    return !((*this) == a);
   }
 
   inline operator std::string() const
