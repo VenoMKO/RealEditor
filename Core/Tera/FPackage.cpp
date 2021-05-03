@@ -819,6 +819,7 @@ void FPackage::LoadPkgMapper(bool rebuild)
     if (fts == ts || !fts)
     {
       rs << PkgMap;
+      LogI("Loaded cached %s storage.", PackageMapperName);
       return;
     }
     else
@@ -957,6 +958,8 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
   std::ofstream os(debugPath.wstring());
   os.write(&buffer[0], buffer.Size());
 #endif
+
+  LogI("Loaded %s storage", CompositePackageMapperName);
 }
 
 void FPackage::LoadObjectRedirectorMapper(bool rebuild)
@@ -976,6 +979,7 @@ void FPackage::LoadObjectRedirectorMapper(bool rebuild)
     if (fts == ts || !fts)
     {
       rs << ObjectRedirectorMap;
+      LogI("Loaded cached %s storage.", ObjectRedirectorMapperName);
       return;
     }
     else

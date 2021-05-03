@@ -2,6 +2,20 @@
 #include <Tera/USkeletalMesh.h>
 #include <Tera/UStaticMesh.h>
 
+#include <Utils/MeshTravaller.h>
+
+struct FbxImportContext {
+  std::wstring Path;
+  std::string Error;
+  bool ImportTangents = true;
+  MeshTravallerData ImportData;
+  FVector Scale3D = FVector(1, 1, 1);
+
+  bool MissingUVs = false;
+  bool MissingNormals = false;
+  bool MissingTangents = false;
+};
+
 struct FbxExportContext {
   std::wstring Path;
   bool EmbedMedia = false;
@@ -26,6 +40,9 @@ public:
 
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx);
   bool ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx);
+
+  bool ImportSkeletalMesh(FbxImportContext& ctx);
+  bool ImportStaticMesh(FbxImportContext& ctx);
 
   bool SaveScene(const std::wstring& path, bool embedMedia);
 

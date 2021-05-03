@@ -577,6 +577,29 @@ public:
     return Data.substr(0, Data.size() - 1);
   }
 
+  inline std::vector<FString> Split(char sep) const
+  {
+    std::vector<FString> result;
+    int32 start = 0;
+    int32 idx = 0;
+    for (; idx < Data.size(); ++idx)
+    {
+      if (Data[idx] == sep)
+      {
+        if (idx > start)
+        {
+          result.emplace_back(Data.substr(start, idx - start));
+        }
+        start = idx + 1;
+      }
+    }
+    if (idx > 0 && Data[idx-1] != sep && idx > start)
+    {
+      result.emplace_back(Data.substr(start, idx - start));
+    }
+    return result;
+  }
+
 private:
   std::string Data;
 };

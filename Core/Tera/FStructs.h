@@ -275,13 +275,20 @@ struct FVector {
     return X != v.X || Y != v.Y || Z != v.Z;
   }
 
-  FVector operator^(const FVector& V) const
+  // Dot product
+  float operator|(const FVector& v) const
+  {
+    return X * v.X + Y * v.Y + Z * v.Z;
+  }
+
+  // Cross product
+  FVector operator^(const FVector& v) const
   {
     return FVector
     (
-      Y * V.Z - Z * V.Y,
-      Z * V.X - X * V.Z,
-      X * V.Y - Y * V.X
+      Y * v.Z - Z * v.Y,
+      Z * v.X - X * v.Z,
+      X * v.Y - Y * v.X
     );
   }
 
@@ -332,6 +339,12 @@ struct FVector {
   FVector operator+(const FVector& v) const
   {
     return FVector(X + v.X, Y + v.Y, Z + v.Z);
+  }
+
+  FVector& operator+=(const FVector& v)
+  {
+    X += v.X; Y += v.Y; Z += v.Z;
+    return *this;
   }
 
   bool Normalize()

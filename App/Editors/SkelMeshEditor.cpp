@@ -1,4 +1,5 @@
 #include "SkelMeshEditor.h"
+#include "../Windows/IODialogs.h"
 #include "../Windows/PackageWindow.h"
 #include "../App.h"
 #include <wx/valnum.h>
@@ -228,6 +229,10 @@ void SkelMeshEditor::OnObjectLoaded()
 void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
+  if (auto item = toolbar->FindById(eID_Import))
+  {
+    item->Enable(true);
+  }
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
@@ -264,7 +269,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
 
   FbxExportContext ctx;
   ctx.ExportSkeleton = opts.GetExportMode() == ExportMode::ExportFull;
-  wxString fbxpath = wxSaveFileSelector("mesh", wxT("FBX file|*.fbx"), Object->GetObjectName().WString(), Window);
+  wxString fbxpath = IODialog::SaveMeshDialog(Window, Object->GetObjectName().WString());
   if (fbxpath.empty())
   {
     return;
@@ -520,6 +525,24 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
         }
       }
     }
+  }
+}
+
+void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
+{
+  wxString path = IODialog::OpenMeshDialog(Window);
+  if (path.empty())
+  {
+    return;
+  }
+  FbxImportContext ctx;
+  ctx.ImportTangents = true;
+  ctx.Path = path.ToStdWstring();
+  FbxUtils utils;
+  if (!utils.ImportSkeletalMesh(ctx))
+  {
+    wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
+    return;
   }
 }
 

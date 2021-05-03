@@ -26,6 +26,7 @@
     <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
     <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
+    <ClCompile Include="App\Windows\IODialogs.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
     <ClCompile Include="App\Misc\ObjectProperties.cpp" />
@@ -107,6 +108,7 @@
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
+    <ClInclude Include="App\Windows\IODialogs.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Misc\ObjectProperties.h" />
@@ -140,6 +142,7 @@
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
+    <ClInclude Include="Core\Utils\MeshTravaller.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="Core\Utils\T3DUtils.h" />
     <ClInclude Include="Core\Utils\TextureTravaller.h" />

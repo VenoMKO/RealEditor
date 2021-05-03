@@ -251,6 +251,9 @@
     <ClCompile Include="Core\Tera\ULightMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\IODialogs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -348,6 +351,8 @@
     <ClInclude Include="Core\Tera\UPrefab.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
     <ClInclude Include="Core\Tera\ULightMap.h" />
+    <ClInclude Include="Core\Utils\MeshTravaller.h" />
+    <ClInclude Include="App\Windows\IODialogs.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
