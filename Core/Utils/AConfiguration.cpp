@@ -245,10 +245,23 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.LastImportPath;
         break;
       case FAppConfig::CFG_LastPkgOpen:
-        s << c.LastPkgOpenPath;
+      {
+        // Discard legacy
+        FString tmp;
+        s << tmp;
         break;
+      }
       case FAppConfig::CFG_LastPkgSave:
         s << c.LastPkgSavePath;
+        break;
+      case FAppConfig::CFG_MaxLastFilePackages:
+        s << c.MaxLastFilePackages;
+        break;
+      case FAppConfig::CFG_LastFilePackages:
+        s << c.LastFilePackages;
+        break;
+      case FAppConfig::CFG_LastTextureExtension:
+        s << c.LastTextureExtension;
         break;
       case FAppConfig::CFG_LogBegin:
         s << c.LogConfig;
@@ -286,8 +299,12 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastExportPath);
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastImportPath);
-    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastPkgOpenPath);
-    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastPkgSavePath);
+
+    SerializeKeyValue(FAppConfig::CFG_LastPkgSave, c.LastPkgSavePath);
+
+    SerializeKeyValue(FAppConfig::CFG_MaxLastFilePackages, c.MaxLastFilePackages);
+    SerializeKeyValue(FAppConfig::CFG_LastFilePackages, c.LastFilePackages);
+    SerializeKeyValue(FAppConfig::CFG_LastTextureExtension, c.LastTextureExtension);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

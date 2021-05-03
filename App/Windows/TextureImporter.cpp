@@ -1,6 +1,7 @@
 #include "TextureImporter.h"
 #include "../App.h"
 #include "../Windows/ProgressWindow.h"
+#include "../Windows/IODialogs.h"
 
 #include <Tera/FStream.h>
 #include <Tera/UTexture.h>
@@ -93,31 +94,13 @@ inline TextureAddress WxToTextureAddress(int address)
 
 wxString TextureImporterOptions::LoadImageDialog(wxWindow* parent)
 {
-  wxString ext;
-  if (HasAVX2())
-  {
-    ext = wxT("Image files (*.png, *.tga, *.dds)|*.png;*.tga;*.dds");
-  }
-  else
-  {
-    ext = wxT("DDS files (*.dds)|*.dds");
-  }
-  return wxFileSelector("Import a texture", wxEmptyString, wxEmptyString, ext, ext, wxFD_OPEN, parent);
+  return IODialog::OpenTextureDialog(parent);
 }
 
 
 wxString TextureImporterOptions::SaveImageDialog(wxWindow* parent, const wxString& defaultFileName)
 {
-  wxString allowedExts;
-  if (HasAVX2())
-  {
-    allowedExts = wxT("TGA image|*.tga|*.PNG image|*.png|*.DDS texture|*.dds");
-  }
-  else
-  {
-    allowedExts = wxT("DDS texture|*.dds");
-  }
-  return wxSaveFileSelector("texture", allowedExts, defaultFileName, parent);
+  return IODialog::SaveTextureDialog(parent, defaultFileName);
 }
 
 EPixelFormat TextureImporterOptions::GetDDSPixelFormat(const wxString& ddsPath)

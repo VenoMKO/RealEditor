@@ -3,6 +3,7 @@
 #include <Tera\FStructs.h>
 
 #include <fstream>
+#include <algorithm>
 
 // Logger config
 struct FLogConfig
@@ -33,7 +34,7 @@ struct FSkelMeshExportConfig {
   int32 Mode = 0;
   int32 TextureFormat = 0;
   bool ExportTextures = true;
-  float ScaleFactor = 4.;
+  float ScaleFactor = 1.;
 
   friend FStream& operator<<(FStream& s, FSkelMeshExportConfig& c);
 };
@@ -48,7 +49,7 @@ struct FStaticMeshExportConfig {
 
   int32 TextureFormat = 0;
   bool ExportTextures = true;
-  float ScaleFactor = 4.;
+  float ScaleFactor = 1.;
 
   friend FStream& operator<<(FStream& s, FStaticMeshExportConfig& c);
 };
@@ -166,8 +167,11 @@ struct FAppConfig
     CFG_LastModAuthor,
     CFG_LastExport,
     CFG_LastImport,
-    CFG_LastPkgOpen,
+    CFG_LastPkgOpen/*legacy, replaced with CFG_LastFilePackages*/,
     CFG_LastPkgSave,
+    CFG_MaxLastFilePackages,
+    CFG_LastFilePackages,
+    CFG_LastTextureExtension,
 
     // Log
     CFG_LogBegin = 100,
@@ -201,12 +205,40 @@ struct FAppConfig
   FString CompositeDumpPath;
   // CFG_LastModAuthor: Last composite mod author
   FString LastModAuthor;
-
+  // CFG_LastExport: last export dialog path
   FString LastExportPath;
+  // CFG_LastImport: last import dialog path
   FString LastImportPath;
-  FString LastPkgOpenPath;
+  // CFG_LastPkgSavePath: last path used to save a GPK
   FString LastPkgSavePath;
+  // CFG_MaxLastFilePackages: number of maximum entries to store in LastFilePackages
+  int32 MaxLastFilePackages = 10;
+  // CFG_LastFilePackages: list of opened GPK files. New entries add to the beginning of the vector.
+  std::vector<FString> LastFilePackages;
+  // CFG_LastTextureExtension: last file extension used to save a texture
+  uint8 LastTextureExtension = 0;
 
+  // Fast accessor to the last opened GPK file path
+  FString GetLastFilePackagePath() const
+  {
+    return LastFilePackages.size() ? LastFilePackages.front() : FString();
+  }
+
+  // Add a path to the last opened GPK files
+  void AddLastFilePackagePath(const FString& path)
+  {
+    auto it = std::find(LastFilePackages.begin(), LastFilePackages.end(), path);
+    if (it != LastFilePackages.end())
+    {
+      LastFilePackages.erase(it);
+    }
+    LastFilePackages.insert(LastFilePackages.begin(), path);
+    if (MaxLastFilePackages > 0 && (static_cast<int32>(LastFilePackages.size()) - MaxLastFilePackages) > 0)
+    {
+      // Remove old entries
+      LastFilePackages.erase(LastFilePackages.begin() + MaxLastFilePackages, LastFilePackages.end());
+    }
+  }
 
   // CFG_LogBegin: Logger config
   FLogConfig LogConfig;

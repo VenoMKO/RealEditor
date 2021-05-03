@@ -67,7 +67,7 @@ public:
 
   static wxString GetPackageOpenPath()
   {
-    return GetSharedApp()->GetConfig().LastPkgOpenPath.WString();
+    return GetSharedApp()->GetConfig().GetLastFilePackagePath().WString();
   }
 
   static wxString GetPackageSavePath()
@@ -89,7 +89,7 @@ public:
 
   static void SavePackageOpenPath(const wxString& path)
   {
-    GetSharedApp()->GetConfig().LastPkgOpenPath = path.ToStdWstring();
+    GetSharedApp()->GetConfig().AddLastFilePackagePath(path.ToStdWstring());
     GetSharedApp()->SaveConfig();
   }
 
@@ -143,6 +143,11 @@ public:
 
   void SaveConfig();
 
+  bool IsShuttingDown() const
+  {
+    return ShuttingDown;
+  }
+
 private:
   bool OnInit();
   int OnRun();
@@ -171,5 +176,6 @@ private:
   wxArrayString CompositePackageNames;
 
   bool NeedsRestart = false;
+  bool ShuttingDown = false;
 };
 

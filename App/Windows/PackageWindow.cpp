@@ -6,6 +6,7 @@
 #include "CreateModWindow.h"
 #include "ObjectPicker.h"
 #include "TextureImporter.h"
+#include "IODialogs.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -720,7 +721,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
 
 void PackageWindow::OnOpenClicked(wxCommandEvent&)
 {
-  wxString path = Application->ShowOpenDialog();
+  wxString path = IODialog::OpenPackageDialog(this);
   if (path.size())
   {
     Application->OpenPackage(path);
@@ -765,7 +766,7 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 
 void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 {
-  wxString path = wxSaveFileSelector("package", wxT("GPK package|*.gpk|*.GMP package|*.gmp"), Package->GetPackageName().WString(), this);
+  wxString path = IODialog::SavePackageDialog(this, Package->GetPackageName(true).WString());
   if (path.empty())
   {
     return;

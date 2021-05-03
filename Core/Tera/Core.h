@@ -248,7 +248,7 @@ bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* comp
 // Misc
 // --------------------------------------------------------------------
 
-// Performance measure
+// Performance measurement
 #if ENABLE_PERF_SAMPLE
 #define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
 #define PERF_END(ID) LogE("Perf %s: %dms", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())

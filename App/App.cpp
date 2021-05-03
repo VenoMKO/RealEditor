@@ -3,6 +3,7 @@
 #include "Windows/SettingsWindow.h"
 #include "Windows/CompositePackagePicker.h"
 #include "Windows/BulkImportWindow.h"
+#include "Windows/IODialogs.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -256,8 +257,7 @@ App::~App()
 
 wxString App::ShowOpenDialog(const wxString& rootDir)
 {
-  wxString extensions = wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk");
-  return wxFileSelector("Open a package", rootDir, wxEmptyString, extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+  return IODialog::OpenPackageDialog(nullptr, rootDir);
 }
 
 wxString App::ShowOpenCompositeDialog(wxWindow* parent)
@@ -481,6 +481,7 @@ void App::PackageWindowWillClose(const PackageWindow* frame)
   }
   if (PackageWindows.empty())
   {
+    ShuttingDown = true;
     ALog::Show(false);
   }
 }
