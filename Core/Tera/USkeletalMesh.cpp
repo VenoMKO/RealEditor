@@ -421,6 +421,11 @@ void USkeletalMesh::Serialize(FStream& s)
   }
 }
 
+void USkeletalMesh::Accept(MeshTravallerData* data, uint32 lodIdx)
+{
+
+}
+
 bool USkeletalMeshComponent::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();

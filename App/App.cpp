@@ -275,9 +275,27 @@ wxString App::ShowOpenByNameDialog(wxWindow* parent)
 {
   CompositePackagePicker picker(parent, "Open package...", true);
   picker.CenterOnParent();
-  if (picker.ShowModal() == wxID_OK)
+  while (picker.ShowModal() == wxID_OK)
   {
-    return picker.GetResult();
+    wxString result = picker.GetResult();
+    bool exists = FPackage::NamedPackageExists(result.ToStdWstring(), false);
+    if (!exists)
+    {
+      ProgressWindow progress(nullptr);
+      progress.SetActionText(wxS("Looking for the package..."));
+      progress.SetCurrentProgress(-1);
+      progress.SetCanCancel(false);
+      std::thread([&]{
+        exists = FPackage::NamedPackageExists(result.ToStdWstring(), true);
+        SendEvent(&progress, UPDATE_PROGRESS_FINISH, exists);
+      }).detach();
+      progress.ShowModal();
+    }
+    if (exists)
+    {
+      return result;
+    }
+    wxMessageBox("The specified package file does not exists! Check the name or try a different one.", "Failed to open the package!", wxICON_ERROR);
   }
   return wxString();
 }
@@ -388,6 +406,14 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
   {
     if (window->GetPackage()->GetPackageName().String() == name)
     {
+      if (!window->GetPackage()->IsComposite())
+      {
+        App::SavePackageOpenPath(window->GetPackage()->GetSourcePath().WString());
+      }
+      else
+      {
+        App::SavePackageOpenPath(L"composite\\" + window->GetPackage()->GetCompositePath().WString());
+      }
       window->Raise();
       window->SelectObject(selection);
       return true;
@@ -424,7 +450,14 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
     wxMessageBox("Unknown error!", "Failed to open the package!", wxICON_ERROR);
     return false;
   }
-
+  if (!package->IsComposite())
+  {
+    App::SavePackageOpenPath(package->GetSourcePath().WString());
+  }
+  else
+  {
+    App::SavePackageOpenPath(L"composite\\" + package->GetCompositePath().WString());
+  }
   PackageWindow* window = new PackageWindow(package, this);
   PackageWindows.push_back(window);
   window->Show();

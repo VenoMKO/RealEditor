@@ -22,7 +22,7 @@ struct RawInfluence {
 struct RawWedge {
   int32 pointIndex = 0;
   int32 materialIndex = 0;
-  FVector2D UV[4] = { 0 };
+  FVector2D UV[MAX_TEXCOORDS] = { 0 };
 };
 
 struct RawBone {

@@ -21,7 +21,7 @@ struct VTriangle {
 
 struct VVertex {
   int32 VertexIndex = 0;
-  FVector2D UVs[4];
+  FVector2D UVs[MAX_TEXCOORDS];
   uint16 MatIndex = 0;
 };
 
@@ -37,20 +37,6 @@ struct VBone {
   int32 ParentIndex = 0;
   int32 NumChildren = 0;
   int32 Depth = 0;
-};
-
-struct FMeshFace {
-  uint32 iWedge[3] = { 0 };
-  uint16 MeshMaterialIndex = 0;
-
-  FVector TangentX[3];
-  FVector TangentY[3];
-  FVector TangentZ[3];
-};
-
-struct FMeshWedge {
-  uint32 iVertex = 0;
-  FVector2D UVs[4];
 };
 
 struct VMaterial {

@@ -1343,6 +1343,40 @@ void FPackage::UnloadPackage(std::shared_ptr<FPackage> package)
   }
 }
 
+bool FPackage::NamedPackageExists(const FString& name, bool updateDirCache)
+{
+  if (name.Empty())
+  {
+    return false;
+  }
+  if (CompositPackageMap.count(name))
+  {
+    return true;
+  }
+  std::wstring wname = name.ToUpper().WString();
+  for (FString& path : DirCache)
+  {
+    std::wstring filename = path.FilenameWString(false);
+    std::transform(filename.begin(), filename.end(), filename.begin(),
+      [](std::wint_t c) { return std::towupper(c); }
+    );
+    if (filename.size() < wname.size())
+    {
+      continue;
+    }
+    if (filename == wname)
+    {
+      return true;
+    }
+  }
+  if (updateDirCache)
+  {
+    UpdateDirCache();
+    return NamedPackageExists(name, false);
+  }
+  return false;
+}
+
 FPackage::~FPackage()
 {
   if (Stream)

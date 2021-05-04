@@ -51,6 +51,8 @@ public:
 	static std::shared_ptr<FPackage> GetPackageNamed(const FString& name, FGuid guid = FGuid());
 	// Release a package. 
 	static void UnloadPackage(std::shared_ptr<FPackage> package);
+	// Check if the package exists
+	static bool NamedPackageExists(const FString& name, bool updateDirCache = false);
 	// Find and cache all packages
 	static void SetRootPath(const FString& path);
 	// Set global meta data

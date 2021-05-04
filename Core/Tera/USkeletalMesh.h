@@ -516,6 +516,8 @@ public:
     return RefSkeleton;
   }
 
+  void Accept(class MeshTravallerData* data, uint32 lodIdx = 0);
+
 private:
   FBoxSphereBounds Bounds;
   FVector Origin;

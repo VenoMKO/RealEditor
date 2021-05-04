@@ -17,22 +17,24 @@ void PackageWindow::InitLayout()
   m_menuItem3->Enable(false);
   fileMenu->Append(m_menuItem3);*/
 
-  wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create a mod..."), wxS("Create a mod from existing modded GPKs"));
+  wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create mod..."), wxS("Create a mod from existing modded GPKs"));
   fileMenu->Append(m_menuItem68);
 
   fileMenu->AppendSeparator();
 
-  wxMenuItem* m_menuItem4;
-  m_menuItem4 = new wxMenuItem(fileMenu, ControlElementId::Open, wxString(wxT("Open...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
-  fileMenu->Append(m_menuItem4);
-
+  wxMenu* openMenu = new wxMenu;
+  wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(wxT("Package...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
+  openMenu->Append(m_menuItem4);
   wxMenuItem* m_menuItem41;
-  m_menuItem41 = new wxMenuItem(fileMenu, ControlElementId::OpenByName, wxString(wxT("Open by name...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
-  fileMenu->Append(m_menuItem41);
-
+  m_menuItem41 = new wxMenuItem(openMenu, ControlElementId::OpenByName, wxString(wxT("Named package...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
+  openMenu->Append(m_menuItem41);
   wxMenuItem* m_menuItem5;
-  m_menuItem5 = new wxMenuItem(fileMenu, ControlElementId::OpenComposite, wxString(wxT("Open composite...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
-  fileMenu->Append(m_menuItem5);
+  m_menuItem5 = new wxMenuItem(openMenu, ControlElementId::OpenComposite, wxString(wxT("Composite package...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
+  openMenu->Append(m_menuItem5);
+  fileMenu->AppendSubMenu(openMenu, "Open");
+
+  wxMenu* menuRecent = new wxMenu;
+  fileMenu->AppendSubMenu(menuRecent, "Open recent");
 
   fileMenu->AppendSeparator();
 
@@ -394,6 +396,16 @@ void PackageWindow::InitLayout()
   Centre(wxBOTH);
   Layout();
 
+  auto& config = App::GetSharedApp()->GetConfig();
+  FileHistory = new wxFileHistory(config.MaxLastFilePackages, PackageWindow::GetOpenRecentId());
+  FileHistory->UseMenu(menuRecent);
+  auto it = config.LastFilePackages.rbegin();
+  while (it != config.LastFilePackages.rend())
+  {
+    FileHistory->AddFileToHistory((*it).WString());
+    it++;
+  }
+  menuRecent->Bind(wxEVT_COMMAND_MENU_SELECTED, &PackageWindow::OnRecentClicked, this);
   // TODO: add progress UI
   //StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
 }

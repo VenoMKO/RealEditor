@@ -60,7 +60,8 @@ enum ControlElementId {
   Back,
   Forward,
   ContentSplitter,
-  HeartBeat
+  HeartBeat,
+  OpenRecentStart /* OpenRecentStart must be the last id. OpenRecentStart + n - recent file at index n */
 };
 
 enum ObjTreeMenuId {
@@ -314,6 +315,23 @@ void PackageWindow::OnTick(wxTimerEvent& e)
   if (ActiveEditor && !IsIconized() && GetForegroundWindow() == GetHWND())
   {
     ActiveEditor->OnTick();
+  }
+}
+
+void PackageWindow::OnRecentClicked(wxCommandEvent& e)
+{
+  wxString path(FileHistory->GetHistoryFile(e.GetId() - ControlElementId::OpenRecentStart));
+  if (path.StartsWith("composite\\"))
+  {
+    if (App::GetSharedApp()->OpenNamedPackage(path.Mid(10, path.Find('.') - 10)))
+    {
+      App::SavePackageOpenPath(path);
+    }
+    return;
+  }
+  if (App::GetSharedApp()->OpenPackage(path))
+  {
+    App::SavePackageOpenPath(path);
   }
 }
 
@@ -657,6 +675,11 @@ void PackageWindow::FixOSG()
   }
   FixedOSG = true;
   Thaw();
+}
+
+int PackageWindow::GetOpenRecentId()
+{
+  return ControlElementId::OpenRecentStart;
 }
 
 void PackageWindow::OnNoneObjectSelected()

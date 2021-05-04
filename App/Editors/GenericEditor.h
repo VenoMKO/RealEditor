@@ -9,6 +9,7 @@ enum ToolEventID : int {
   eID_Class,
   eID_Origin,
   eID_Refresh,
+  eID_Materials,
   eID_Texture2D_Channel_R,
   eID_Texture2D_Channel_G,
   eID_Texture2D_Channel_B,

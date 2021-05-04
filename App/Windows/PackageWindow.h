@@ -2,6 +2,7 @@
 #include <wx/frame.h>
 #include <wx/splitter.h>
 #include <wx/toolbar.h>
+#include <wx/filehistory.h>
 #include <wx/propgrid/manager.h>
 
 #include "../Editors/GenericEditor.h"
@@ -29,6 +30,10 @@ public:
     return Package;
   }
   wxString GetPackagePath() const;
+  void UpdateRecent(const wxString& path)
+  {
+    FileHistory->AddFileToHistory(path);
+  }
 
   void SelectObject(const wxString& objectPath);
   void SelectObject(UObject* object);
@@ -37,11 +42,14 @@ public:
   void OnUpdateProperties(wxCommandEvent&);
   void FixOSG();
 
+  static int GetOpenRecentId();
+
 private:
 
   void InitLayout();
   void LoadObjectTree();
   void OnTick(wxTimerEvent& e);
+  void OnRecentClicked(wxCommandEvent& e);
 
   // Menu
   void OnNewClicked(wxCommandEvent&);
@@ -127,6 +135,7 @@ private:
   wxImageList* ImageList = nullptr;
   wxStatusBar* StatusBar = nullptr;
   ArchiveInfoView* PackageInfoView = nullptr;
+  wxFileHistory* FileHistory = nullptr;
 
   wxMenuItem* _DebugTestCookObject = nullptr;
   wxMenuItem* _DebugSplitMod = nullptr;

@@ -91,6 +91,10 @@ public:
   {
     GetSharedApp()->GetConfig().AddLastFilePackagePath(path.ToStdWstring());
     GetSharedApp()->SaveConfig();
+    for (PackageWindow* window : GetSharedApp()->PackageWindows)
+    {
+      window->UpdateRecent(path);
+    }
   }
 
   static void SavePackageSavePath(const wxString& path)
@@ -149,12 +153,12 @@ public:
   }
 
 private:
-  bool OnInit();
-  int OnRun();
-  int OnExit();
-  void OnInitCmdLine(wxCmdLineParser& parser);
+  bool OnInit() override;
+  int OnRun() override;
+  int OnExit() override;
+  void OnInitCmdLine(wxCmdLineParser& parser) override;
   void OnLoadError(wxCommandEvent& e);
-  bool OnCmdLineParsed(wxCmdLineParser& parser);
+  bool OnCmdLineParsed(wxCmdLineParser& parser) override;
   void OnObjectLoaded(wxCommandEvent& e);
 
   // Build DirCache and load class packages
