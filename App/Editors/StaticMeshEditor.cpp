@@ -20,6 +20,12 @@
 #include <filesystem>
 #include <functional>
 
+enum MaterialsMenuID {
+  EditMaterials = wxID_HIGHEST + 1,
+  ShowMaterials,
+  FirstMaterial,
+};
+
 class StaticMeshExportOptions : public wxDialog {
 public:
   StaticMeshExportOptions(wxWindow* parent, const FStaticMeshExportConfig& cfg)
@@ -199,6 +205,7 @@ void StaticMeshEditor::OnObjectLoaded()
 void StaticMeshEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
+  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
@@ -216,6 +223,10 @@ void StaticMeshEditor::OnToolBarEvent(wxCommandEvent& e)
   {
     OnRefreshClicked();
     Renderer->requestRedraw();
+  }
+  else if (eId == eID_Materials)
+  {
+    OnMaterialsClicked();
   }
 }
 
@@ -608,4 +619,31 @@ void StaticMeshEditor::CreateRenderModel()
 void StaticMeshEditor::OnRefreshClicked()
 {
   CreateRenderModel();
+}
+
+void StaticMeshEditor::OnMaterialsClicked()
+{
+  auto mats = Mesh->GetMaterials();
+  wxMenu menu;
+  // Sub Menu
+  {
+    wxMenu* addMenu = new wxMenu;
+    for (int32 idx = 0; idx < mats.size(); ++idx)
+    {
+      addMenu->Append(MaterialsMenuID::ShowMaterials + idx, mats[idx] ? mats[idx]->GetObjectName().WString() : wxT("NULL"));
+    }
+    menu.AppendSubMenu(addMenu, wxT("Show material"));
+  }
+
+  menu.Append(MaterialsMenuID::EditMaterials, wxT("Edit materials..."));
+  dynamic_cast<wxMenuItem*>(menu.GetMenuItems().GetLast()->GetData())->Enable(false);
+
+  int selection = GetPopupMenuSelectionFromUser(menu);
+  if (selection >= MaterialsMenuID::ShowMaterials)
+  {
+    if (UObject* selectedObject = mats[selection - MaterialsMenuID::ShowMaterials])
+    {
+      Window->SelectObject(selectedObject);
+    }
+  }
 }

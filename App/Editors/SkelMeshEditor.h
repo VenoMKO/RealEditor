@@ -24,6 +24,7 @@ protected:
   void CreateRenderer();
   void CreateRenderModel();
   void OnRefreshClicked();
+  void OnMaterialsClicked();
 
 protected:
   USkeletalMesh* Mesh = nullptr;

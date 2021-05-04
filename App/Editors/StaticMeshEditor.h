@@ -23,6 +23,7 @@ protected:
   void CreateRenderer();
   void CreateRenderModel();
   void OnRefreshClicked();
+  void OnMaterialsClicked();
 
 protected:
   UStaticMesh* Mesh = nullptr;

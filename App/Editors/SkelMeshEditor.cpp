@@ -26,6 +26,12 @@ enum ExportMode {
   ExportFull
 };
 
+enum MaterialsMenuID {
+  EditMaterials = wxID_HIGHEST + 1,
+  ShowMaterials,
+  FirstMaterial,
+};
+
 class SkelMeshExportOptions : public wxDialog {
 public:
   SkelMeshExportOptions(wxWindow* parent, const FSkelMeshExportConfig& cfg)
@@ -233,6 +239,7 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
   {
     item->Enable(true);
   }
+  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
@@ -250,6 +257,10 @@ void SkelMeshEditor::OnToolBarEvent(wxCommandEvent& e)
   {
     OnRefreshClicked();
     Renderer->requestRedraw();
+  }
+  else if (eId == eID_Materials)
+  {
+    OnMaterialsClicked();
   }
 }
 
@@ -658,4 +669,31 @@ void SkelMeshEditor::CreateRenderModel()
 void SkelMeshEditor::OnRefreshClicked()
 {
   CreateRenderModel();
+}
+
+void SkelMeshEditor::OnMaterialsClicked()
+{
+  auto mats = Mesh->GetMaterials();
+  wxMenu menu;
+  // Sub Menu
+  {
+    wxMenu* addMenu = new wxMenu;
+    for (int32 idx = 0; idx < mats.size(); ++idx)
+    {
+      addMenu->Append(MaterialsMenuID::ShowMaterials + idx, mats[idx] ? mats[idx]->GetObjectName().WString() : wxT("NULL"));
+    }
+    menu.AppendSubMenu(addMenu, wxT("Show material"));
+  }
+  
+  menu.Append(MaterialsMenuID::EditMaterials, wxT("Edit materials..."));
+  dynamic_cast<wxMenuItem*>(menu.GetMenuItems().GetLast()->GetData())->Enable(false);
+
+  int selection = GetPopupMenuSelectionFromUser(menu);
+  if (selection >= MaterialsMenuID::ShowMaterials)
+  {
+    if (UObject* selectedObject = mats[selection - MaterialsMenuID::ShowMaterials])
+    {
+      Window->SelectObject(selectedObject);
+    }
+  }
 }
