@@ -44,6 +44,8 @@ public:
 
   static int GetOpenRecentId();
 
+  bool Show(bool show = true) override;
+
 private:
 
   void InitLayout();

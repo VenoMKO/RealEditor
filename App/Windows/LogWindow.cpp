@@ -81,6 +81,16 @@ void LogWindow::PumpMessages(wxCommandEvent&)
   LogCtrl->ScrollIntoView(LogCtrl->GetCaretPosition(), WXK_PAGEDOWN);
 }
 
+bool LogWindow::Show(bool show /*= true*/)
+{
+  bool result = wxFrame::Show(show);
+  if (show && !MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL))
+  {
+    Center();
+  }
+  return result;
+}
+
 wxBEGIN_EVENT_TABLE(LogWindow, wxFrame)
 EVT_COMMAND(wxID_ANY, PUMP_LOG_WINDOW, LogWindow::PumpMessages)
 EVT_CLOSE(OnCloseWindow)

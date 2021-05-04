@@ -682,6 +682,16 @@ int PackageWindow::GetOpenRecentId()
   return ControlElementId::OpenRecentStart;
 }
 
+bool PackageWindow::Show(bool show /*= true*/)
+{
+  bool result = wxFrame::Show(show);
+  if (show && !MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL))
+  {
+    Center();
+  }
+  return result;
+}
+
 void PackageWindow::OnNoneObjectSelected()
 {
   ObjectTitleLabel->SetLabelText("No selection");
