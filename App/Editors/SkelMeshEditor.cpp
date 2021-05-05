@@ -237,7 +237,7 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
   GenericEditor::PopulateToolBar(toolbar);
   if (auto item = toolbar->FindById(eID_Import))
   {
-    item->Enable(true);
+    item->Enable(false);
   }
   toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");

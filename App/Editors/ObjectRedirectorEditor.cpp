@@ -47,10 +47,16 @@ void ObjectRedirectorEditor::OnObjectLoaded()
 {
   if (Loading)
   {
-    Redirector = (UObjectRedirector*)Object;
-    if (Redirector && Redirector->GetObject())
+    if (Redirector = (UObjectRedirector*)Object)
     {
-      Source = Redirector->GetObject();
+      if (Redirector->GetObject())
+      {
+        Source = Redirector->GetObject();
+      }
+      else if (Redirector->GetAltObject())
+      {
+        Source = Redirector->GetAltObject();
+      }
     }
   }
 

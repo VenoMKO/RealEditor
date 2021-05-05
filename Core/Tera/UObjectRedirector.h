@@ -11,6 +11,11 @@ public:
     return Object;
   }
 
+  UObject* GetAltObject() const
+  {
+    return AltObject;
+  }
+
   PACKAGE_INDEX GetObjectRefIndex() const
   {
     return ObjectRefIndex;
@@ -22,4 +27,5 @@ public:
 
 private:
   DECL_UREF(UObject, Object);
+  UObject* AltObject = nullptr;
 };
