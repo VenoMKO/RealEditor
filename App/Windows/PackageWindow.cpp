@@ -75,6 +75,8 @@ enum ObjTreeMenuId {
   AddMaterial,
 };
 
+#define MAX_SELECTION_HISTORY 50
+
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
 wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDEFINE_EVENT(SELECT_OBJECT, wxCommandEvent);
@@ -107,6 +109,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   {
     title += package->GetSourcePath().WString();
   }
+  SelectionHistory.reserve(MAX_SELECTION_HISTORY);
   SetTitle(title);
   SetIcon(wxICON(#114));
   SetSizeHints(wxSize(1024, 700), wxDefaultSize);
@@ -459,6 +462,22 @@ void PackageWindow::OnImportObjectSelected(INT index)
     PackageInfoView->Show(false);
     EditorContainer->Show(true);
   }
+  if (!PerformingHistoryNavigation)
+  {
+    if (SelectionHistoryPos && SelectionHistoryPos < SelectionHistory.size())
+    {
+      SelectionHistory.erase(SelectionHistory.begin(), SelectionHistory.begin() + SelectionHistoryPos);
+    }
+    auto it = std::find(SelectionHistory.begin(), SelectionHistory.end(), index);
+    if (it != SelectionHistory.end())
+    {
+      SelectionHistory.erase(it);
+    }
+    SelectionHistory.insert(SelectionHistory.begin(), index);
+    SelectionHistoryPos = 0;
+  }
+  BackButton->Enable(SelectionHistory.size() && SelectionHistory.size() - 1 > SelectionHistoryPos);
+  ForwardButton->Enable(SelectionHistory.size() && SelectionHistoryPos);
   if (index == FAKE_IMPORT_ROOT)
   {
     ObjectTitleLabel->SetLabelText(GetPackage()->GetPackageName(true).WString() + L" imports");
@@ -476,6 +495,25 @@ void PackageWindow::OnImportObjectSelected(INT index)
 
 void PackageWindow::OnExportObjectSelected(INT index)
 {
+  if (!PerformingHistoryNavigation)
+  {
+    if (SelectionHistoryPos && SelectionHistoryPos < SelectionHistory.size())
+    {
+      SelectionHistory.erase(SelectionHistory.begin(), SelectionHistory.begin() + SelectionHistoryPos);
+    }
+    if (SelectionHistory.empty() || SelectionHistory.front() != index)
+    {
+      SelectionHistory.insert(SelectionHistory.begin(), index);
+    }
+    if (SelectionHistory.size() > MAX_SELECTION_HISTORY)
+    {
+      SelectionHistory.pop_back();
+    }
+    SelectionHistoryPos = 0;
+  }
+  BackButton->Enable(SelectionHistory.size() && SelectionHistory.size() - 1 > SelectionHistoryPos);
+  ForwardButton->Enable(SelectionHistory.size() && SelectionHistoryPos);
+
   if (index == FAKE_EXPORT_ROOT || !index)
   {
     ShowEditor(nullptr);
@@ -1388,6 +1426,63 @@ void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
   }
 }
 
+void PackageWindow::OnBackClicked(wxCommandEvent&)
+{
+  SelectionHistoryPos++;
+  NavigateHistory();
+}
+
+void PackageWindow::OnForwardClicked(wxCommandEvent&)
+{
+  SelectionHistoryPos--;
+  NavigateHistory();
+}
+
+void PackageWindow::NavigateHistory()
+{
+  PerformingHistoryNavigation = true;
+  if (SelectionHistoryPos < 0)
+  {
+    SelectionHistoryPos = 0;
+  }
+  else if (SelectionHistoryPos >= SelectionHistory.size() && SelectionHistory.size())
+  {
+    SelectionHistoryPos = SelectionHistory.size() - 1;
+  }
+
+  PACKAGE_INDEX idx = SelectionHistory[SelectionHistoryPos];
+  if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(idx))
+  {
+    wxDataViewItem item = wxDataViewItem(node);
+    ObjectTreeCtrl->Select(item);
+    if (idx >= 0)
+    {
+      OnExportObjectSelected(idx);
+    }
+    else
+    {
+      OnImportObjectSelected(idx);
+    }
+    ObjectTreeCtrl->EnsureVisible(item);
+  }
+  else if (idx == FAKE_EXPORT_ROOT)
+  {
+    wxDataViewItem item = wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport());
+    ObjectTreeCtrl->Select(item);
+    OnExportObjectSelected(idx);
+    ObjectTreeCtrl->EnsureVisible(item);
+  }
+  else if (idx == FAKE_IMPORT_ROOT)
+  {
+    wxDataViewItem item = wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootImport());
+    ObjectTreeCtrl->Select(item);
+    OnImportObjectSelected(idx);
+    ObjectTreeCtrl->EnsureVisible(item);
+  }
+  PerformingHistoryNavigation = false;
+}
+
+
 wxBEGIN_EVENT_TABLE(PackageWindow, wxFrame)
 EVT_MENU(ControlElementId::New, PackageWindow::OnNewClicked)
 EVT_MENU(ControlElementId::CreateMod, PackageWindow::OnCreateModClicked)
@@ -1419,6 +1514,9 @@ EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
 EVT_COMMAND(wxID_ANY, SELECT_OBJECT, PackageWindow::OnSelectObject)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
+EVT_BUTTON(ControlElementId::Back, PackageWindow::OnBackClicked)
+EVT_BUTTON(ControlElementId::Forward, PackageWindow::OnForwardClicked)
+
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 
 EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObject)

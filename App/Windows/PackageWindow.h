@@ -103,6 +103,10 @@ private:
 
   void OnPropertiesSplitter(wxSplitterEvent& e);
 
+  void OnBackClicked(wxCommandEvent&);
+  void OnForwardClicked(wxCommandEvent&);
+  void NavigateHistory();
+
   void DebugOnTestCookObject(wxCommandEvent&);
   void DebugOnSplitMod(wxCommandEvent&);
 
@@ -138,6 +142,9 @@ private:
   wxStatusBar* StatusBar = nullptr;
   ArchiveInfoView* PackageInfoView = nullptr;
   wxFileHistory* FileHistory = nullptr;
+  bool PerformingHistoryNavigation = false;
+  std::vector<PACKAGE_INDEX> SelectionHistory;
+  int64 SelectionHistoryPos = 0;
 
   wxMenuItem* _DebugTestCookObject = nullptr;
   wxMenuItem* _DebugSplitMod = nullptr;
