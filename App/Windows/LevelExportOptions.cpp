@@ -546,7 +546,9 @@ void LevelExportOptionsWindow::FillActorsTable(const FMapExportConfig& cfg)
   // TODO: implement
   // list.emplace_back("Sound Nodes", FMapExportConfig::ActorClass::Sounds, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Sounds));
 
-  ActorTable->AssociateModel(new ActorExportEntryModel(list));
+  wxDataViewModel* model = new ActorExportEntryModel(list);
+  ActorTable->AssociateModel(model);
+  model->DecRef();
 }
 
 int32 LevelExportOptionsWindow::GetActorsTableMask() const

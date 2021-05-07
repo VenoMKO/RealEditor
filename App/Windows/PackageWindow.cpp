@@ -172,6 +172,7 @@ void PackageWindow::OnCloseWindow(wxCloseEvent& event)
 PackageWindow::~PackageWindow()
 {
   FPackage::UnloadPackage(Package);
+  delete FileHistory;
   delete ImageList;
 }
 

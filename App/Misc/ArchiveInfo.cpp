@@ -443,9 +443,12 @@ void ArchiveInfoView::UpdateInfo()
     AdditionalPackages->SetLabelText(result.WString());
     AdditionalPackages->SetToolTip(result.WString());
   }
-  
-  GenerationsTable->AssociateModel(new GenerationDataModel(s.Generations));
-  NamesTable->AssociateModel(new NameDataModel(Package->GetNames()));
+  wxDataViewModel* model = new GenerationDataModel(s.Generations);
+  GenerationsTable->AssociateModel(model);
+  model->DecRef();
+  model = new NameDataModel(Package->GetNames());
+  NamesTable->AssociateModel(model);
+  model->DecRef();
 }
 
 void ArchiveInfoView::OnFindObjectByName(wxCommandEvent& event)

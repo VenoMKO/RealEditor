@@ -215,6 +215,7 @@ void ObjectPicker::LoadObjectTree()
   model->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   ObjectTreeCtrl->AssociateModel(model);
   ObjectTreeCtrl->GetColumn(0)->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
+  model->DecRef();
 }
 
 void ObjectPicker::UpdateTableTitle()

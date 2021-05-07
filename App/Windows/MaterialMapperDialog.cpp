@@ -223,8 +223,9 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<M
   }
   wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
   MaterialsList->AppendColumn(m_dataViewListColumn1);
-
-  MaterialsList->AssociateModel(new MaterialMapperModel(map, objectMaterials));
+  wxDataViewModel* model = new MaterialMapperModel(map, objectMaterials);
+  MaterialsList->AssociateModel(model);
+  model->DecRef();
 }
 
 std::vector<MaterialMapperItem> MaterialMapperDialog::GetResult() const
