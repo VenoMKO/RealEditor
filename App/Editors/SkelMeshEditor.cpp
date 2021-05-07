@@ -1,6 +1,7 @@
 #include "SkelMeshEditor.h"
 #include "../Windows/IODialogs.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/MaterialMapperDialog.h"
 #include "../App.h"
 #include <wx/valnum.h>
 
@@ -237,7 +238,7 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
   GenericEditor::PopulateToolBar(toolbar);
   if (auto item = toolbar->FindById(eID_Import))
   {
-    item->Enable(false);
+    item->Enable(true);
   }
   toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
@@ -555,6 +556,18 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
     return;
   }
+
+  std::vector<FString> fbxMaterials = ctx.ImportData.Materials;
+  std::vector<UObject*> objectMaterials = Mesh->GetMaterials();
+  std::vector<MaterialMapperItem> items = MaterialMapperDialog::AutomaticallyMapMaterials(fbxMaterials, objectMaterials);
+
+  MaterialMapperDialog mapper(this, items, objectMaterials);
+  if (mapper.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  items = mapper.GetResult();
 }
 
 void SkelMeshEditor::SetNeedsUpdate()

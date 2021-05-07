@@ -101,7 +101,7 @@ public:
     return true;
   }
 
-  virtual bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override
+  bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override
   {
     return true;
   }

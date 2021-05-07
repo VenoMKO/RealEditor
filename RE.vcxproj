@@ -37,6 +37,7 @@
     <ClCompile Include="App\Windows\CookingOptions.cpp" />
     <ClCompile Include="App\Windows\CreateModWindow.cpp" />
     <ClCompile Include="App\Windows\LevelExportOptions.cpp" />
+    <ClCompile Include="App\Windows\MaterialMapperDialog.cpp" />
     <ClCompile Include="App\Windows\MaterialView.cpp" />
     <ClCompile Include="App\Windows\ObjectPicker.cpp" />
     <ClCompile Include="App\Windows\PackageWindowExport.cpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="App\Windows\CookingOptions.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
     <ClInclude Include="App\Windows\LevelExportOptions.h" />
+    <ClInclude Include="App\Windows\MaterialMapperDialog.h" />
     <ClInclude Include="App\Windows\MaterialView.h" />
     <ClInclude Include="App\Windows\ObjectPicker.h" />
     <ClInclude Include="App\Windows\ProgressWindow.h" />

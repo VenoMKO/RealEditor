@@ -254,6 +254,9 @@
     <ClCompile Include="App\Windows\IODialogs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\MaterialMapperDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -353,6 +356,7 @@
     <ClInclude Include="Core\Tera\ULightMap.h" />
     <ClInclude Include="Core\Utils\MeshTravaller.h" />
     <ClInclude Include="App\Windows\IODialogs.h" />
+    <ClInclude Include="App\Windows\MaterialMapperDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

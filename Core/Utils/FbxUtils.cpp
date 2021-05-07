@@ -910,7 +910,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
       if (LayerElementUV[layerIndex] != nullptr)
       {
         // Get each UV from the layer
-        for (int vertexIndex = 0; vertexIndex < 3; +vertexIndex)
+        for (int vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
         {
           // If there are odd number negative scale, invert the vertex order for triangles
           int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
