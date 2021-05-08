@@ -3,20 +3,17 @@
 #include <wx/dataview.h>
 
 class UObject;
-struct MaterialMapperItem {
-  wxString FbxName;
-  UObject* Material = nullptr;
-};
-
+class FString;
 class MaterialMapperDialog : public wxDialog {
 public:
-  static std::vector<MaterialMapperItem> AutomaticallyMapMaterials(std::vector<class FString>& fbxMaterials, const std::vector<UObject*>& objectMaterials);
+  // Returns true if all fbxMaterials names perfectly match objectMaterials.
+  static bool AutomaticallyMapMaterials(std::vector<class FString>& fbxMaterials, const std::vector<UObject*>& objectMaterials, std::vector<std::pair<class FString, class UObject*>>& output);
 
-  MaterialMapperDialog(wxWindow* parent, const std::vector<MaterialMapperItem>& map, const std::vector<UObject*>& objectMaterials);
+  MaterialMapperDialog(wxWindow* parent, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials);
   ~MaterialMapperDialog()
   {}
 
-  std::vector<MaterialMapperItem> GetResult() const;
+  std::vector<std::pair<FString, UObject*>> GetResult() const;
 
 protected:
   wxDataViewListCtrl* MaterialsList = nullptr;

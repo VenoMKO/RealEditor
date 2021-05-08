@@ -39,6 +39,8 @@ struct RawMaterial {
 };
 
 struct MeshTravallerData {
+  bool ImportSkeleton = false;
+
   std::vector<FVector> Points;
   std::vector<RawTriangle> Faces;
   std::vector<int32> Indices;
@@ -46,6 +48,13 @@ struct MeshTravallerData {
   std::vector<RawBone> Bones;
   std::vector<RawWedge> Wedges;
   std::vector<RawInfluence> Influences;
+
   int32 UVSetCount = 0;
+
   bool FlipTangents = false;
+  bool MissingUVs = false;
+  bool MissingNormals = false;
+  bool MissingTangents = false;
+
+  std::vector<std::pair<FString, UObject*>> MaterialMap;
 };

@@ -1,6 +1,11 @@
 #include "MaterialMapperDialog.h"
 #include <Tera/UObject.h>
 
+struct MaterialMapperItem {
+  wxString FbxName;
+  UObject* Material = nullptr;
+};
+
 class MaterialMapperModel : public wxDataViewListModel {
 public:
   MaterialMapperModel(const std::vector<MaterialMapperItem>& map, const std::vector<UObject*>& objectMaterials)
@@ -136,28 +141,38 @@ protected:
   std::vector<UObject*> ObjectMaterials;
 };
 
-std::vector<MaterialMapperItem> MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<FString>& fbxMaterials, const std::vector<UObject*>& objectMaterials)
+bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>& fbxMaterials, const std::vector<UObject*>& objectMaterials, std::vector<std::pair<FString, UObject*>>& output)
 {
-  std::vector<MaterialMapperItem> map(fbxMaterials.size());
-  for (int32 mapIdx = 0; mapIdx < map.size(); ++mapIdx)
+  output.resize(fbxMaterials.size());
+  std::vector<bool> exact(fbxMaterials.size());
+  for (int32 fbxIdx = 0; fbxIdx < fbxMaterials.size(); ++fbxIdx)
   {
     int32 dist = INT_MAX;
-    MaterialMapperItem& mapEntry = map[mapIdx];
-    mapEntry.FbxName = fbxMaterials[mapIdx].WString();
+    const wxString fbxName = fbxMaterials[fbxIdx].ToUpper().WString();
     for (auto objectMaterial : objectMaterials)
     {
-      int32 cmp = mapEntry.FbxName.Cmp(objectMaterial->GetObjectName().UTF8().c_str());
+      int32 cmp = fbxName.Cmp(objectMaterial->GetObjectName().ToUpper().UTF8().c_str());
       if (cmp >= 0 && dist > cmp)
       {
+        exact[fbxIdx] = !cmp;
         dist = cmp;
-        mapEntry.Material = objectMaterial;
+        output[fbxIdx] = std::make_pair(fbxMaterials[fbxIdx], objectMaterial);
       }
     }
   }
-  return map;
+  bool exactMatch = true;
+  for (bool e : exact)
+  {
+    if (!e)
+    {
+      exactMatch = false;
+      break;
+    }
+  }
+  return exactMatch;
 }
 
-MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<MaterialMapperItem>& map, const std::vector<UObject*>& objectMaterials)
+MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)
   : wxDialog(parent, wxID_ANY, wxT("Material mapping"), wxDefaultPosition, wxSize(462, 333), wxDEFAULT_DIALOG_STYLE)
 {
   ObjectMaterials = objectMaterials;
@@ -208,7 +223,7 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<M
   m_button3->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnOkClicked), nullptr, this);
   m_button4->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnCancelClicked), nullptr, this);
 
-  MaterialsList->AppendTextColumn(wxT("FBX Material"), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  MaterialsList->AppendTextColumn(wxT("FBX Material"), wxDATAVIEW_CELL_INERT, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
 
   // Populate choices
   wxArrayString choices;
@@ -223,15 +238,26 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<M
   }
   wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
   MaterialsList->AppendColumn(m_dataViewListColumn1);
-  wxDataViewModel* model = new MaterialMapperModel(map, objectMaterials);
+  std::vector<MaterialMapperItem> items;
+  for (const auto& p : map)
+  {
+    items.push_back({ wxString(p.first.WString()), p.second });
+  }
+  wxDataViewModel* model = new MaterialMapperModel(items, objectMaterials);
   MaterialsList->AssociateModel(model);
   model->DecRef();
 }
 
-std::vector<MaterialMapperItem> MaterialMapperDialog::GetResult() const
+std::vector<std::pair<FString, UObject*>> MaterialMapperDialog::GetResult() const
 {
   MaterialMapperModel* model = (MaterialMapperModel*)MaterialsList->GetModel();
-  return model->GetMaterials();
+  auto materials = model->GetMaterials();
+  std::vector<std::pair<FString, UObject*>> result;
+  for (const auto& item : materials)
+  {
+    result.emplace_back(std::make_pair(FString(item.FbxName.ToStdWstring()), item.Material));
+  }
+  return result;
 }
 
 void MaterialMapperDialog::OnEditClicked(wxCommandEvent&)

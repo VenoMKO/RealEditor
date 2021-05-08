@@ -557,17 +557,45 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     return;
   }
 
-  std::vector<FString> fbxMaterials = ctx.ImportData.Materials;
-  std::vector<UObject*> objectMaterials = Mesh->GetMaterials();
-  std::vector<MaterialMapperItem> items = MaterialMapperDialog::AutomaticallyMapMaterials(fbxMaterials, objectMaterials);
-
-  MaterialMapperDialog mapper(this, items, objectMaterials);
-  if (mapper.ShowModal() != wxID_OK)
   {
-    return;
+    FString error;
+    bool askUser = false;
+    int32 warningIndex = 0;
+    while (1)
+    {
+      if (!Mesh->ValidateVisitor(ctx.ImportData, 0, error, askUser, warningIndex))
+      {
+        wxMessageBox(error.WString(), wxT("Error!"), wxICON_ERROR);
+        return;
+      }
+      if (error.Empty())
+      {
+        break;
+      }
+      warningIndex++;
+      auto userResponse = wxMessageBox(error.WString(), wxT("Warning!"), askUser ? (wxYES_NO | wxICON_WARNING) : wxICON_WARNING);
+      if (askUser && userResponse != wxYES)
+      {
+        return;
+      }
+    }
   }
 
-  items = mapper.GetResult();
+  std::vector<FString> fbxMaterials = ctx.ImportData.Materials;
+  std::vector<UObject*> objectMaterials = Mesh->GetMaterials();
+  std::vector<std::pair<FString, UObject*>> matMap;
+  if (!MaterialMapperDialog::AutomaticallyMapMaterials(fbxMaterials, objectMaterials, matMap))
+  {
+    MaterialMapperDialog mapper(this, matMap, objectMaterials);
+    if (mapper.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    matMap = mapper.GetResult();
+  }
+  ctx.ImportData.MaterialMap = matMap;
+  FString err;
+  Mesh->AcceptVisitor(ctx.ImportData, 0, err);
 }
 
 void SkelMeshEditor::SetNeedsUpdate()

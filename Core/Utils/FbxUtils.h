@@ -10,10 +10,6 @@ struct FbxImportContext {
   bool ImportTangents = true;
   MeshTravallerData ImportData;
   FVector Scale3D = FVector(1, 1, 1);
-
-  bool MissingUVs = false;
-  bool MissingNormals = false;
-  bool MissingTangents = false;
 };
 
 struct FbxExportContext {

@@ -807,7 +807,11 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   bool bHasTangentInformation = layerElementTangent != nullptr && layerElementBinormal != nullptr;
   if (!bHasNormalInformation)
   {
-    ctx.MissingNormals = true;
+    ctx.ImportData.MissingNormals = true;
+  }
+  if (!bHasTangentInformation)
+  {
+    ctx.ImportData.MissingTangents = true;
   }
   std::vector<FbxVector4> points;
   points.reserve(controlPointsCount);
@@ -941,7 +945,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
     if (!hasUVs)
     {
-      return false;
+      ctx.ImportData.MissingUVs = true;
     }
 
     for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
