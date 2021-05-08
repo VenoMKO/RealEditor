@@ -924,6 +924,9 @@ struct FPackedNormal
 
   operator FVector() const;
 
+  void operator=(const FVector& vec);
+  void operator=(const FVector4& vec);
+
   friend FStream& operator<<(FStream& s, FPackedNormal& n);
 };
 

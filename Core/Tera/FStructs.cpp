@@ -618,6 +618,22 @@ FPackedNormal::operator FVector() const
   return FVector(tmp[0], tmp[1], tmp[2]);
 }
 
+void FPackedNormal::operator=(const FVector& vec)
+{
+  Vector.X = std::clamp(Trunc(vec.X * 127.5f + 127.5f), 0, 255);
+  Vector.Y = std::clamp(Trunc(vec.Y * 127.5f + 127.5f), 0, 255);
+  Vector.Z = std::clamp(Trunc(vec.Z * 127.5f + 127.5f), 0, 255);
+  Vector.W = 128;
+}
+
+void FPackedNormal::operator=(const FVector4& vec)
+{
+  Vector.X = std::clamp(Trunc(vec.X * 127.5f + 127.5f), 0, 255);
+  Vector.Y = std::clamp(Trunc(vec.Y * 127.5f + 127.5f), 0, 255);
+  Vector.Z = std::clamp(Trunc(vec.Z * 127.5f + 127.5f), 0, 255);
+  Vector.W = std::clamp(Trunc(vec.W * 127.5f + 127.5f), 0, 255);
+}
+
 FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c)
 {
   if (s.GetFV() > VER_TERA_CLASSIC)
