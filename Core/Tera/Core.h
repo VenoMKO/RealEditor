@@ -173,6 +173,8 @@ inline double Bilerp(double a, double b, double c, double d, double x, double y)
   return Lerp(Lerp(a, b, x), Lerp(c, d, x), y);
 }
 
+int32 Trunc(float v);
+
 std::string GetAppVersion();
 
 void InitCRCTable();
@@ -206,17 +208,15 @@ std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);
 
+#ifndef DBreak()
 #if _DEBUG
-inline void DBreak()
-{
-  // BP here
-  int stop = 1;
-}
-
-inline void DBreakIf(bool test) { if (test) DBreak(); }
+#include <intrin.h>
+#define DBreak() __debugbreak()
+#define DBreakIf(test) if (test) __debugbreak()
 #else
 #define DBreak()
 #define DBreakIf(expr)
+#endif
 #endif
 
 // --------------------------------------------------------------------

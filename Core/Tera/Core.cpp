@@ -880,6 +880,11 @@ FString TextureCompressionSettingsToString(uint8 flags)
   return result;
 }
 
+int32 Trunc(float v)
+{
+  return _mm_cvtt_ss2si(_mm_set_ss(v));
+}
+
 std::string GetAppVersion()
 {
   std::stringstream stream;
