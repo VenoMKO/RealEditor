@@ -1,4 +1,5 @@
 #include "UPhysAsset.h"
+#include "FPackage.h"
 
 FRigidBodyIndexPair::FRigidBodyIndexPair(int32 idx1, int32 idx2)
 {
@@ -66,7 +67,7 @@ void URB_BodySetup::LoadAggGeom(const std::vector<FPropertyValue*>& root)
         Geomtry.ConvexElems[idx].SetupFromPropertyValue(tag->GetArray()[idx]);
       }
     }
-    else if (name == "BoxElems" || name == "SphylElems" || name == "SphereElems")
+    else if (!GetPackage()->GetPackageFlag(PKG_ContainsScript) && (name == "BoxElems" || name == "SphylElems" || name == "SphereElems"))
     {
       // TODO: implement if necessary
       DBreak();
