@@ -53,11 +53,20 @@ namespace IODialog
     wxString path = inPath;
     if (path.empty())
     {
-      wxString tmp = App::GetSharedApp()->GetPackageOpenPath();
-      if (tmp.Length())
+      FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+      for (const FString& item : cfg.LastFilePackages)
       {
-        wxFileName f(tmp);
-        path = f.GetPath(true);
+        if (item.StartWith("composite"))
+        {
+          continue;
+        }
+        path = item.WString();
+        break;
+      }
+      if (path.Length())
+      {
+        wxFileName f(path);
+        path = f.GetPathWithSep();
       }
     }
     wxString result = wxFileSelector(caption, path, wxEmptyString, wxEmptyString, wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
@@ -79,7 +88,7 @@ namespace IODialog
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SavePackageSavePath(f.GetPath(true));
+      App::GetSharedApp()->SavePackageSavePath(f.GetPathWithSep());
     }
     return result;
   }
@@ -105,7 +114,7 @@ namespace IODialog
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SaveImportPath(f.GetPath(true));
+      App::GetSharedApp()->SaveImportPath(f.GetPathWithSep());
     }
     return result;
   }
@@ -136,7 +145,7 @@ namespace IODialog
     if (result.Length())
     {
       wxFileName f(result);
-      cfg.LastExportPath = f.GetPath(true).ToStdWstring();
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
       cfg.LastTextureExtension = extension;
       App::GetSharedApp()->SaveConfig();
     }
@@ -149,18 +158,13 @@ namespace IODialog
     wxString path = inPath;
     if (path.empty())
     {
-      wxString tmp = App::GetSharedApp()->GetImportPath();
-      if (tmp.Length())
-      {
-        wxFileName f(tmp);
-        path = f.GetPath(true);
-      }
+      path = App::GetSharedApp()->GetImportPath();
     }
     wxString result = wxFileSelector(caption, path, wxEmptyString, wxT("*.fbx"), wxT("FBX scene file (*.fbx)|*.fbx"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SaveImportPath(f.GetPath(true));
+      App::GetSharedApp()->SaveImportPath(f.GetPathWithSep());
     }
     return result;
   }
@@ -176,7 +180,7 @@ namespace IODialog
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SaveExportPath(f.GetPath(true));
+      App::GetSharedApp()->SaveExportPath(f.GetPathWithSep());
     }
     return result;
   }
