@@ -137,7 +137,17 @@ ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectImport* imp)
 
 wxString ObjectTreeNode::GetObjectName() const
 {
-  return Resource ? Resource->GetObjectName().WString() : Name;
+  if (Resource)
+  {
+    if (Resource->ObjectIndex > 0)
+    {
+      // TODO: Need to notify PackageWindow about new changes
+      bool isDirty = (((FObjectExport*)Resource)->ObjectFlags & RF_Marked);
+      return isDirty ? L"*" + Resource->GetObjectName().WString() : Resource->GetObjectName().WString();
+    }
+    return Resource->GetObjectName().WString();
+  }
+  return Name;
 }
 
 wxString ObjectTreeNode::GetClassName() const
