@@ -188,7 +188,11 @@ wxSize App::GetLastWindowPropSash() const
 
 void App::OnOpenPackage(wxCommandEvent& e)
 {
-  OpenPackage(e.GetString());
+  wxString path = e.GetString();
+  if (OpenPackage(path) && path.length())
+  {
+    App::SavePackageOpenPath(path.ToStdWstring());
+  }
 }
 
 void App::OnShowSettings(wxCommandEvent& e)
