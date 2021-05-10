@@ -368,6 +368,7 @@ void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 {
 	// TODO: reset hidden message boxes here
 	NewConfig.CompositeDumpPath = FString();
+	NewConfig.SavePackageDontShowAgain = false;
 	wxMessageBox(wxS("UI Warnings were cleared!\nPress Apply to save changes."), wxS("Done"), wxICON_INFORMATION);
 }
 

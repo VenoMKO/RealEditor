@@ -152,6 +152,8 @@ public:
     return ShuttingDown;
   }
 
+  void SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString& tmp, const FString dest);
+
 private:
   bool OnInit() override;
   int OnRun() override;

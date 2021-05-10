@@ -172,6 +172,7 @@ struct FAppConfig
     CFG_MaxLastFilePackages,
     CFG_LastFilePackages,
     CFG_LastTextureExtension,
+    CFG_SavePackageDontAskAgain,
 
     // Log
     CFG_LogBegin = 100,
@@ -217,6 +218,8 @@ struct FAppConfig
   std::vector<FString> LastFilePackages;
   // CFG_LastTextureExtension: last file extension used to save a texture
   uint8 LastTextureExtension = 0;
+  // CFG_SavePackageDontAskAgain: Save package warning
+  bool SavePackageDontShowAgain = false;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const

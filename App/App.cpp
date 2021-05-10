@@ -11,6 +11,8 @@
 #include <wx/fileconf.h>
 #include <wx/mstream.h>
 
+#include <filesystem>
+
 #include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
@@ -909,6 +911,50 @@ void App::SaveConfig()
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   cfg.SetConfig(Config);
   cfg.Save();
+}
+
+void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString& tmp, const FString dest)
+{
+  PackageWindow* win = nullptr;
+  for (PackageWindow* window : PackageWindows)
+  {
+    if (window->GetPackage() == package)
+    {
+      win = window;
+      break;
+    }
+  }
+  if (win)
+  {
+    // TODO: this is incorrect. The package can be retained by other packages and closing its stream may cause bugs or crash the app
+    // Need to iterate over all open packages, release this package and unload all objects
+    package->GetStream().Close();
+    FPackage::UnloadPackage(win->GetPackage());
+    PackageWindows.erase(std::remove(PackageWindows.begin(), PackageWindows.end(), win), PackageWindows.end());
+    win->Close();
+    try
+    {
+      std::filesystem::path backup = GetTempFilePath().WString();
+      std::error_code err;
+      std::filesystem::copy_file(dest.WString(), backup, err);
+      std::filesystem::rename(tmp.WString(), dest.WString(), err);
+      if (err)
+      {
+        std::filesystem::rename(backup, dest.WString());
+        wxMessageBox(wxT("Failed to write package to the disk."), wxT("Error!"), wxICON_ERROR);
+      }
+      else
+      {
+        OpenPackage(dest.WString());
+      }
+    }
+    catch (const std::exception& e)
+    {
+      std::string text = "Failed to write package to the disk.\n";
+      wxMessageBox(text + e.what(), wxT("Error!"), wxICON_ERROR);
+    }
+  }
+  
 }
 
 void App::OnFatalException()

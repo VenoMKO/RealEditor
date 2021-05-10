@@ -279,6 +279,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.StaticMeshExportConfig;
         CheckKey(FAppConfig::CFG_StaticMeshExportEnd);
         break;
+      case  FAppConfig::CFG_SavePackageDontAskAgain:
+        s << c.SavePackageDontShowAgain;
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -305,6 +308,8 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_MaxLastFilePackages, c.MaxLastFilePackages);
     SerializeKeyValue(FAppConfig::CFG_LastFilePackages, c.LastFilePackages);
     SerializeKeyValue(FAppConfig::CFG_LastTextureExtension, c.LastTextureExtension);
+
+    SerializeKeyValue(FAppConfig::CFG_SavePackageDontAskAgain, c.SavePackageDontShowAgain);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

@@ -208,6 +208,9 @@ std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);
 
+FString GetTempDir();
+FString GetTempFilePath();
+
 #ifndef DBreak()
 #if _DEBUG
 #include <intrin.h>

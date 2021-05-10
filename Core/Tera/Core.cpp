@@ -8,6 +8,7 @@
 #include <array>
 #include <bitset>
 #include <cstring>
+#include <filesystem>
 #define NOGDICAPMASKS
 #define NOMENUS
 #define NOATOM
@@ -314,6 +315,29 @@ void memswap(void* a, void* b, size_t size)
   memcpy(a, b, size);
   memcpy(b, tmp, size);
   free(tmp);
+}
+
+FString GetTempDir()
+{
+  auto result = std::filesystem::temp_directory_path() / "RealEditor";
+  std::error_code err;
+  if (!std::filesystem::exists(result, err))
+  {
+    std::filesystem::create_directories(result, err);
+  }
+  return result.wstring();
+}
+
+FString GetTempFilePath()
+{
+  std::error_code err;
+  const std::filesystem::path root = GetTempDir().WString();
+  std::filesystem::path result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
+  while (std::filesystem::exists(result, err))
+  {
+    result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
+  }
+  return result.wstring();
 }
 
 void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)

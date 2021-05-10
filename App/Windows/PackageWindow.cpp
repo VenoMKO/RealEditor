@@ -22,6 +22,7 @@
 #include <wx/collpane.h>
 #include <wx/evtloop.h>
 #include <wx/clipbrd.h>
+#include <wx/richmsgdlg.h>
 
 #include <Utils/ALog.h>
 #include <Tera/Cast.h>
@@ -833,7 +834,83 @@ void PackageWindow::OnShowInExplorerClicked(wxCommandEvent&)
 
 void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 {
+  if (Package->IsComposite())
+  {
+    wxMessageBox(wxT("This package is composite. To save this package use \"Save as\"."), wxT("Error!"), wxICON_ERROR, this);
+    return;
+  }
 
+  FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+  if (!cfg.SavePackageDontShowAgain)
+  {
+    wxRichMessageDialog dlg(this, wxT("You are about to overwrite the original package. This action can not be undone.\nPress \"Yes\" to save the package."), wxT("Are you sure?"), wxICON_INFORMATION | wxYES_NO);
+    dlg.ShowCheckBox(wxT("Don't show again"));
+    if (dlg.ShowModal() != wxID_YES)
+    {
+      return;
+    }
+
+    if (dlg.IsCheckBoxChecked())
+    {
+      cfg.SavePackageDontShowAgain = true;
+      App::GetSharedApp()->SaveConfig();
+    }
+  }
+  
+  
+
+  CookingOptionsWindow optionsWindow(this, Package.get());
+  if (optionsWindow.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  wxString path = GetTempFilePath().WString();
+  ProgressWindow progress(this, "Saving");
+  progress.SetCurrentProgress(-1);
+  progress.SetActionText(wxT("Preparing..."));
+
+  PackageSaveContext context;
+  optionsWindow.ConfigureSaveContext(context);
+  context.Path = W2A(path.ToStdWstring());
+
+  context.ProgressCallback = [&progress](int value) {
+    wxCommandEvent* e = new wxCommandEvent;
+    e->SetId(UPDATE_PROGRESS);
+    e->SetInt(value);
+    wxQueueEvent(&progress, e);
+  };
+
+  context.MaxProgressCallback = [&progress](int value) {
+    wxCommandEvent* e = new wxCommandEvent;
+    e->SetId(UPDATE_MAX_PROGRESS);
+    e->SetInt(value);
+    wxQueueEvent(&progress, e);
+  };
+
+  context.IsCancelledCallback = [&progress] {
+    return progress.IsCanceled();
+  };
+
+  context.ProgressDescriptionCallback = [&progress](std::string desc) {
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, A2W(desc));
+  };
+
+  FPackage* package = Package.get();
+  std::thread([&progress, &context, package] {
+    bool result = package->Save(context);
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+
+  if (!progress.ShowModal())
+  {
+    wxString err = wxT("Failed to save the package! Error: ");
+    err += A2W(context.Error);
+    wxMessageBox(err, "Error!", wxICON_ERROR);
+    return;
+  }
+
+  App::GetSharedApp()->SaveAndReopenPackage(Package, path.ToStdWstring(), Package->GetSourcePath());
 }
 
 void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
@@ -1209,7 +1286,7 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
   ObjectTreeCtrl->Freeze();
   LoadObjectTree();
   ObjectTreeCtrl->Thaw();
-  SaveMenu->Enable(false); // TODO: track package dirty state
+  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE); // TODO: track package dirty state
   SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
   bool selected = false;
 

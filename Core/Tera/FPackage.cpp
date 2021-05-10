@@ -195,29 +195,6 @@ void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
   }
 }
 
-std::filesystem::path GetTempDir()
-{
-  auto result = std::filesystem::temp_directory_path() / "RealEditor";
-  std::error_code err;
-  if (!std::filesystem::exists(result, err))
-  {
-    std::filesystem::create_directories(result, err);
-  }
-  return result;
-}
-
-std::filesystem::path GetTempFilePath()
-{
-  std::error_code err;
-  const auto root = GetTempDir();
-  std::filesystem::path result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
-  while (std::filesystem::exists(result, err))
-  {
-    result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
-  }
-  return result;
-}
-
 void FPackage::SetRootPath(const FString& path)
 {
   RootDir = path;
@@ -505,7 +482,7 @@ void FPackage::RegisterClass(UClass* classObject)
 void FPackage::CleanCacheDir()
 {
   std::error_code err;
-  for (auto& p : std::filesystem::directory_iterator(GetTempDir()))
+  for (auto& p : std::filesystem::directory_iterator(GetTempDir().WString()))
   {
     std::filesystem::remove(p, err);
   }
@@ -1091,7 +1068,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       }
     }
 
-    std::filesystem::path decompressedPath = GetTempFilePath();
+    std::filesystem::path decompressedPath = GetTempFilePath().WString();
     sum.DataPath = W2A(decompressedPath.wstring());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
 
@@ -1231,7 +1208,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
           UThrow("Failed to read %s", name.C_str());
         }
       }
-      std::filesystem::path tmpPath = GetTempFilePath();
+      std::filesystem::path tmpPath = GetTempFilePath().WString();
       {
         FWriteStream ws(tmpPath);
         ws.SerializeBytes(rawData, entry.Size);
