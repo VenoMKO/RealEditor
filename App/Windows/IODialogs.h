@@ -1,6 +1,11 @@
 #pragma once
 namespace IODialog
 {
+  wxString OpenMapperForEncryption(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
+  wxString OpenMapperForDecryption(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
+  wxString SaveEncryptedMapperFile(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
+  wxString SaveDecryptedMapperFile(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
+
   wxString OpenPackageDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Open Tera package..."));
   wxString SavePackageDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save Tera package..."));
 

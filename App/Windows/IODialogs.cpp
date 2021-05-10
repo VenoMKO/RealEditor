@@ -48,6 +48,39 @@ namespace
 
 namespace IODialog
 {
+
+  wxString OpenMapperForEncryption(wxWindow* parent, const wxString& filename)
+  {
+    wxString path;
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    if (cfg.RootDir.Length())
+    {
+      path = cfg.RootDir.WString();
+    }
+    return wxFileSelector(wxT("Mapper file to encrypt..."), path, filename, wxEmptyString, wxS("Text files (*.txt)|*.txt"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
+  }
+
+  wxString OpenMapperForDecryption(wxWindow* parent, const wxString& filename)
+  {
+    wxString path;
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    if (cfg.RootDir.Length())
+    {
+      path = cfg.RootDir.WString();
+    }
+    return wxFileSelector(wxT("Mapper file to decrypt..."), path, filename, wxEmptyString, wxS("Mapper files (*.dat)|*.dat"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
+  }
+
+  wxString SaveEncryptedMapperFile(wxWindow* parent, const wxString& filename)
+  {
+    return wxFileSelector(wxT("Save encrypted file"), wxEmptyString, filename, wxEmptyString, wxS("Mapper file (*.dat)|*.dat"), wxFD_SAVE, parent);
+  }
+
+  wxString SaveDecryptedMapperFile(wxWindow* parent, const wxString& filename)
+  {
+    return wxFileSelector(wxT("Save decrypted file"), wxEmptyString, filename, wxEmptyString, wxS("Text file (*.txt)|*.txt"), wxFD_SAVE, parent);
+  }
+
   wxString OpenPackageDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
     wxString path = inPath;

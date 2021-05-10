@@ -1051,14 +1051,14 @@ void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
 void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 {
   wxMessageBox(_("Select a source file you want to decrypt(e.g. CompositePackageMapper.dat). You can find these files in your S1Game\\CookedPC folder."), _("Select source..."), wxICON_INFORMATION);
-  wxString source = wxLoadFileSelector(_("source"), _(".dat"), wxEmptyString, this);
+  wxString source = IODialog::OpenMapperForDecryption(this);
   if (source.empty())
   {
     return;
   }
   wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".txt").wstring();
   wxMessageBox(_("Select where you want to save the decrypted file."), _("Select destination..."), wxICON_INFORMATION);
-  wxString destination = wxSaveFileSelector(_("destination"), _(".txt"), destFileName, this);
+  wxString destination = IODialog::SaveDecryptedMapperFile(this, destFileName);
   if (destination.empty())
   {
     return;
@@ -1101,14 +1101,14 @@ void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 void PackageWindow::OnEncryptClicked(wxCommandEvent&)
 {
   wxMessageBox(_("Select a source file you want to encrypt(e.g. CompositePackageMapper.txt)"), _("Select source..."), wxICON_INFORMATION);
-  wxString source = wxLoadFileSelector(_("source"), _(".txt"), wxEmptyString, this);
+  wxString source = IODialog::OpenMapperForEncryption(this);
   if (source.empty())
   {
     return;
   }
   wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".dat").wstring();
   wxMessageBox(_("Select where you want to save the encrypted file."), _("Select destination..."), wxICON_INFORMATION);
-  wxString destination = wxSaveFileSelector(_("destination"), _(".dat"), destFileName, this);
+  wxString destination = IODialog::SaveEncryptedMapperFile(this, destFileName);
   if (destination.empty())
   {
     return;
