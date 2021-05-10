@@ -89,6 +89,8 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     {
       texture->CompressionSettings = Compression;
       texture->CompressionSettingsProperty->GetByte() = (uint8)Compression;
+      FString enumName = texture->CompressionSettingsProperty->Value->Enum->GetEnum(Compression).String();
+      texture->GetPackage()->GetNameIndex(enumName, true);
     }
   }
 
@@ -101,6 +103,8 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     else
     {
       texture->AddressX = AddressX;
+      FString enumName = texture->AddressXProperty->Value->Enum->GetEnum(AddressX).String();
+      texture->GetPackage()->GetNameIndex(enumName, true);
     }
     if (!texture->AddressYProperty)
     {
@@ -109,6 +113,8 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     else
     {
       texture->AddressY = AddressY;
+      FString enumName = texture->AddressYProperty->Value->Enum->GetEnum(Compression).String();
+      texture->GetPackage()->GetNameIndex(enumName, true);
     }
   }
 
@@ -121,6 +127,8 @@ bool TextureTravaller::Visit(UTexture2D* texture)
   {
     texture->Format = Format;
     texture->FormatProperty->Value->GetByte() = Format;
+    FString enumName = texture->FormatProperty->Value->Enum->GetEnum(Format).String();
+    texture->GetPackage()->GetNameIndex(enumName, true);
   }
 
   if (Mips[0].SizeX != texture->SizeX)
