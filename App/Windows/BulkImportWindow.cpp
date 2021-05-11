@@ -164,7 +164,7 @@ private:
 class AddImportOperationDialog : public wxDialog {
 public:
 
-  AddImportOperationDialog(wxWindow* parent, std::stringstream& objectDumpBuffer, const wxString& confirmTitle = wxT("Add"), const wxString& objectClass = wxT("Texture2D"), const wxString& objectName = wxEmptyString)
+  AddImportOperationDialog(wxWindow* parent, const std::string& objectDumpBuffer, const wxString& confirmTitle = wxT("Add"), const wxString& objectClass = wxT("Texture2D"), const wxString& objectName = wxEmptyString)
     : wxDialog(parent, wxID_ANY, wxT("Add bulk action"), wxDefaultPosition, wxSize(605, 619))
     , ObjectDumpBuffer(objectDumpBuffer)
   {
@@ -423,7 +423,7 @@ public:
     UpdateControls();
   }
 
-  AddImportOperationDialog(wxWindow* parent, std::stringstream& objectDumpBuffer, const BulkImportAction& op, const wxString& confirmTitle = wxT("Apply"))
+  AddImportOperationDialog(wxWindow* parent, const std::string& objectDumpBuffer, const BulkImportAction& op, const wxString& confirmTitle = wxT("Apply"))
     : AddImportOperationDialog(parent, objectDumpBuffer, confirmTitle, op.ClassName, op.ObjectName)
   {
     wxDataViewModel* model = new BulkImportOperationEntryModel(op.Entries);
@@ -523,13 +523,27 @@ protected:
     progress.SetActionText(desc);
     progress.SetCanCancel(false);
     progress.SetCurrentProgress(-1);
-    std::stringstream& buffer = ObjectDumpBuffer;
+    const std::string& buffer = ObjectDumpBuffer;
     std::vector<BulkImportAction::Entry> found;
     std::thread([&] {
-      buffer.clear();
-      buffer.seekg(0);
+      size_t bufPos = 0;
+      auto GetLine = [&](const std::string& buf, size_t& pos, std::string& l)
+      {
+        size_t start = pos;
+        for (; pos < buf.size(); ++pos)
+        {
+          if (buf[pos] == '\n')
+          {
+            break;
+          }
+        }
+        l.resize(pos - start);
+        std::memcpy(l.data(), buf.data() + start, l.size());
+        pos++;
+        return pos < buf.size();
+      };
       std::string line;
-      while (std::getline(buffer, line))
+      while (GetLine(buffer, bufPos, line))
       {
         if (line.empty() || line.size() < 2 || !line._Starts_with(className))
         {
@@ -758,7 +772,7 @@ protected:
   wxButton* AddButton = nullptr;
   wxButton* CancelButton = nullptr;
 
-  std::stringstream& ObjectDumpBuffer;
+  const std::string& ObjectDumpBuffer;
   PACKAGE_INDEX RedirectIndex = 0;
   bool AutoSearch = false;
 };
@@ -1219,15 +1233,17 @@ bool BulkImportWindow::LoadBuffer()
   progress.SetCanCancel(false);
   progress.SetCurrentProgress(-1);
 
-  std::ifstream s(PathPicker->GetPath().ToStdWstring());
+  std::ifstream s(PathPicker->GetPath().ToStdWstring(), std::ios::binary | std::ios::ate);
+  size_t len = s.tellg();
+  s.seekg(std::ios::beg, 0);
 
-  std::stringstream& buffer = ObjectDumpBuffer;
+  std::string& buffer = ObjectDumpBuffer;
+  buffer.resize(len);
   bool err = false;
   std::thread([&buffer, &s, &progress, &err] {
     try
     {
-      buffer = std::stringstream();
-      buffer << s.rdbuf();
+      s.read(buffer.data(), buffer.size());
     }
     catch (...)
     {

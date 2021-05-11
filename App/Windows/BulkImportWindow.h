@@ -46,7 +46,7 @@ protected:
 	wxButton* CancelButton = nullptr;
 
 	wxString PreviousStreamPath;
-	std::stringstream ObjectDumpBuffer;
+	std::string ObjectDumpBuffer;
 	bool BufferLoaded = false;
 
 	std::vector<BulkImportAction> Actions;
