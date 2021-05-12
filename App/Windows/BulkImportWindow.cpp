@@ -15,6 +15,8 @@
 #include <Tera/UTexture.h>
 #include <Tera/Cast.h>
 
+#include <Utils/ALog.h>
+
 enum ObjTreeMenuId {
   ObjectList = wxID_HIGHEST + 1,
   ShowObject,
@@ -526,13 +528,14 @@ protected:
     const std::string& buffer = ObjectDumpBuffer;
     std::vector<BulkImportAction::Entry> found;
     std::thread([&] {
+      PERF_START(DumpSearch);
       size_t bufPos = 0;
       auto GetLine = [&](const std::string& buf, size_t& pos, std::string_view& l)
       {
         size_t start = pos;
         for (; pos < buf.size(); ++pos)
         {
-          if (buf[pos] == '\n')
+          if (buf[pos] == '\n' && pos - start > 1)
           {
             break;
           }
@@ -566,7 +569,7 @@ protected:
             continue;
           }
           auto end = line.find('\t', pos + 1);
-          if (pos == std::string::npos)
+          if (end == std::string::npos)
           {
             continue;
           }
@@ -593,6 +596,7 @@ protected:
           found.push_back({ objectPath, std::string(&line[pos + 1], end - pos - 1), objIndex, true });
         }
       }
+      PERF_END(DumpSearch);
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
     }).detach();
     progress.ShowModal();
