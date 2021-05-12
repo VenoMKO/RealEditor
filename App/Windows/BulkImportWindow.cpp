@@ -403,7 +403,7 @@ public:
     CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AddImportOperationDialog::OnCancelClicked), NULL, this);
     List->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler(AddImportOperationDialog::OnListContextMenu), NULL, this);
     List->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_VALUE_CHANGED, wxDataViewEventHandler(AddImportOperationDialog::OnListValueChanged), NULL, this);
-    
+
     Connect(wxEVT_IDLE, wxIdleEventHandler(AddImportOperationDialog::OnFirstIdle), NULL, this);
 
     OperationView->SetSelection(0);
@@ -527,7 +527,7 @@ protected:
     std::vector<BulkImportAction::Entry> found;
     std::thread([&] {
       size_t bufPos = 0;
-      auto GetLine = [&](const std::string& buf, size_t& pos, std::string& l)
+      auto GetLine = [&](const std::string& buf, size_t& pos, std::string_view& l)
       {
         size_t start = pos;
         for (; pos < buf.size(); ++pos)
@@ -537,12 +537,14 @@ protected:
             break;
           }
         }
-        l.resize(pos - start);
-        std::memcpy(l.data(), buf.data() + start, l.size());
+        if (pos > start)
+        {
+          l = std::string_view(&buf[start], pos - start);
+        }
         pos++;
         return pos < buf.size();
       };
-      std::string line;
+      std::string_view line;
       while (GetLine(buffer, bufPos, line))
       {
         if (line.empty() || line.size() < 2 || !line._Starts_with(className))
@@ -555,7 +557,7 @@ protected:
           continue;
         }
         PACKAGE_INDEX objIndex = INDEX_NONE;
-        std::string_view lineObjectName(&line[pos + 1]);
+        std::string_view lineObjectName(&line[pos + 1], line.size() - pos - 1);
         if (lineObjectName == objectName || lineObjectName._Starts_with(dupObjectName))
         {
           pos = line.find_first_of('\t');
