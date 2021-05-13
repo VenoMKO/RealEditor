@@ -40,7 +40,7 @@ public:
   bool ImportSkeletalMesh(FbxImportContext& ctx);
   bool ImportStaticMesh(FbxImportContext& ctx);
 
-  bool SaveScene(const std::wstring& path, bool embedMedia);
+  bool SaveScene(const std::wstring& path);
 
 protected:
   bool ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode);

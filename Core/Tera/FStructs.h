@@ -305,9 +305,14 @@ struct FVector {
     return *this;
   }
 
-  FVector operator-(const FVector& v)
+  FVector operator-(const FVector& v) const
   {
     return FVector(X - v.X, Y - v.Y, Z - v.Z);
+  }
+
+  FVector operator-() const
+  {
+    return FVector(-X, -Y, -Z);
   }
 
   FVector& operator*=(float s)

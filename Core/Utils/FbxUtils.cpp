@@ -370,7 +370,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   }
 
   GetScene()->GetRootNode()->AddChild(meshNode);
-  if (!SaveScene(ctx.Path, ctx.EmbedMedia))
+  if (!SaveScene(ctx.Path))
   {
     ctx.Error = "Failed to write data!";
     return false;
@@ -447,7 +447,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
     }
   }
   
-  if (!SaveScene(ctx.Path, ctx.EmbedMedia))
+  if (!SaveScene(ctx.Path))
   {
     ctx.Error = "Failed to write data!";
     return false;
@@ -1151,20 +1151,18 @@ bool FbxUtils::ImportStaticMesh(FbxImportContext& ctx)
   return false;
 }
 
-bool FbxUtils::SaveScene(const std::wstring& path, bool embedMedia)
+bool FbxUtils::SaveScene(const std::wstring& path)
 {
   FbxExporter* exporter = FbxExporter::Create(GetManager(), "");
   char* uniPath = nullptr;
   size_t uniPathSize = 0;
   FbxWCToUTF8(path.c_str(), uniPath, &uniPathSize);
 
-  if (exporter->Initialize(uniPath, 0, GetManager()->GetIOSettings()) == false)
+  if (exporter->Initialize(uniPath, -1, GetManager()->GetIOSettings()) == false)
   {
     return false;
   }
-
-  int lMajor, lMinor, lRevision;
-  FbxManager::GetFileFormatVersion(lMajor, lMinor, lRevision);
+  exporter->SetFileExportVersion(FBX_2013_00_COMPATIBLE);
   bool result = exporter->Export(GetScene());
   exporter->Destroy();
   FbxFree(uniPath);
@@ -1217,23 +1215,29 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
 
   uvDiffuseLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
   uvDiffuseLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementBinormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementTangent->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
 
+  std::vector<FbxVector4> tmpNormals;
+  std::vector<FbxVector4> tmpTangents;
+  std::vector<FbxVector4> tmpBinormals;
+  tmpNormals.reserve(verticies.size());
+  tmpTangents.reserve(verticies.size());
+  tmpBinormals.reserve(verticies.size());
   for (uint32 idx = 0; idx < verticies.size(); ++idx)
   {
     const FSoftSkinVertex& v = verticies[idx];
     FVector tmp;
     tmp = v.TangentX;
-    layerElementTangent->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
-    tmp = v.TangentY;
-    layerElementBinormal->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
+    tmpTangents.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+    tmp = -(FVector)v.TangentY;
+    tmpBinormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
     tmp = v.TangentZ;
-    layerElementNormal->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
+    tmpNormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
 
     uvDiffuseLayer->GetDirectArray().Add(FbxVector2(v.UVs[0].X, -v.UVs[0].Y + 1.f));
     for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
@@ -1241,6 +1245,16 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
       customUVLayers[uvIdx]->GetDirectArray().Add(FbxVector2(v.UVs[uvIdx + 1].X, -v.UVs[uvIdx + 1].Y + 1.f));
     }
   }
+
+  for (int32 idx = 0; idx < lod->GetIndexContainer()->GetElementCount(); ++idx)
+  {
+    layerElementTangent->GetDirectArray().Add(tmpTangents[lod->GetIndexContainer()->GetIndex(idx)]);
+    layerElementBinormal->GetDirectArray().Add(tmpBinormals[lod->GetIndexContainer()->GetIndex(idx)]);
+    layerElementNormal->GetDirectArray().Add(tmpNormals[lod->GetIndexContainer()->GetIndex(idx)]);
+  }
+  tmpNormals.clear();
+  tmpTangents.clear();
+  tmpBinormals.clear();
 
   layer->SetNormals(layerElementNormal);
   layer->SetBinormals(layerElementBinormal);
@@ -1279,6 +1293,10 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
       mesh->EndPolygon();
     }
   }
+  
+  FbxGeometryConverter lGeometryConverter(GetManager());
+  lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
+  lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
 
   char* meshName = FbxWideToUtf8(sourceMesh->GetObjectName().WString().c_str());
   FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
@@ -1398,23 +1416,30 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
 
   uvDiffuseLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
   uvDiffuseLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementBinormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
-  layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+  layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
   layerElementTangent->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+  std::vector<FbxVector4> tmpNormals;
+  std::vector<FbxVector4> tmpTangents;
+  std::vector<FbxVector4> tmpBinormals;
+  tmpNormals.reserve(verticies.size());
+  tmpTangents.reserve(verticies.size());
+  tmpBinormals.reserve(verticies.size());
 
   for (uint32 idx = 0; idx < verticies.size(); ++idx)
   {
     const FStaticVertex& v = verticies[idx];
     FVector tmp;
     tmp = v.TangentX;
-    layerElementTangent->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
-    tmp = v.TangentY;
-    layerElementBinormal->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
+    tmpTangents.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+    tmp = -(FVector)v.TangentY;
+    tmpBinormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
     tmp = v.TangentZ;
-    layerElementNormal->GetDirectArray().Add(FbxVector4(tmp.X, -tmp.Y, tmp.Z));
+    tmpNormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
 
     uvDiffuseLayer->GetDirectArray().Add(FbxVector2(v.UVs[0].X, -v.UVs[0].Y + 1.f));
     for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
@@ -1422,6 +1447,16 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
       customUVLayers[uvIdx]->GetDirectArray().Add(FbxVector2(v.UVs[uvIdx + 1].X, -v.UVs[uvIdx + 1].Y + 1.f));
     }
   }
+
+  for (int32 idx = 0; idx < lod->IndexBuffer.GetElementCount(); ++idx)
+  {
+    layerElementTangent->GetDirectArray().Add(tmpTangents[lod->IndexBuffer.GetIndex(idx)]);
+    layerElementBinormal->GetDirectArray().Add(tmpBinormals[lod->IndexBuffer.GetIndex(idx)]);
+    layerElementNormal->GetDirectArray().Add(tmpNormals[lod->IndexBuffer.GetIndex(idx)]);
+  }
+  tmpNormals.clear();
+  tmpTangents.clear();
+  tmpBinormals.clear();
 
   layer->SetNormals(layerElementNormal);
   layer->SetBinormals(layerElementBinormal);
@@ -1478,6 +1513,11 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
       mesh->EndPolygon();
     }
   }
+
+  FbxGeometryConverter lGeometryConverter(GetManager());
+  lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
+  lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
+
   FString objectName = sourceMesh->GetObjectName();
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
