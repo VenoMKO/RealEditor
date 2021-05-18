@@ -9,7 +9,6 @@ struct RawTriangle {
   FVector tangentX[3] = { 0 };
   FVector tangentY[3] = { 0 };
   FVector tangentZ[3] = { 0 };
-  float basis[3] = { 0 };
 };
 
 struct RawInfluence {
@@ -39,7 +38,18 @@ struct RawMaterial {
 };
 
 struct MeshTravallerData {
+  // TODO: implement skeleton import
   bool ImportSkeleton = false;
+  // If false RE will calculate tangents
+  bool ImportTangents = true;
+  // Invert binormal direction
+  bool FlipBinormals = false;
+  // Calculate binormal direction based on UV coordinates
+  bool BinormalsByUV = true;
+  // Average normals of different vertecies sharing the same position. Works only if ImportTangents == true
+  bool AverageNormals = false;
+  // Optimize index buffer via NvTriStrip
+  bool OptimizeIndexBuffer = true;
 
   std::vector<FVector> Points;
   std::vector<RawTriangle> Faces;
@@ -48,6 +58,8 @@ struct MeshTravallerData {
   std::vector<RawBone> Bones;
   std::vector<RawWedge> Wedges;
   std::vector<RawInfluence> Influences;
+
+  std::map<int32, int32> Fbx2GpkBoneMap;
 
   int32 UVSetCount = 0;
 

@@ -275,6 +275,10 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.SkelMeshExportConfig;
         CheckKey(FAppConfig::CFG_SkelMeshExportEnd);
         break;
+      case FAppConfig::CFG_SkelMeshImportBegin:
+        s << c.SkelMeshImportConfig;
+        CheckKey(FAppConfig::CFG_SkelMeshImportEnd);
+        break;
       case FAppConfig::CFG_StaticMeshExportBegin:
         s << c.StaticMeshExportConfig;
         CheckKey(FAppConfig::CFG_StaticMeshExportEnd);
@@ -325,6 +329,11 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKey(FAppConfig::CFG_SkelMeshExportBegin);
     s << c.SkelMeshExportConfig;
     SerializeKey(FAppConfig::CFG_SkelMeshExportEnd);
+
+    // SkelMeshImport
+    SerializeKey(FAppConfig::CFG_SkelMeshImportBegin);
+    s << c.SkelMeshImportConfig;
+    SerializeKey(FAppConfig::CFG_SkelMeshImportEnd);
 
     // StaticMeshExport
     SerializeKey(FAppConfig::CFG_StaticMeshExportBegin);
@@ -418,6 +427,56 @@ FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
     SerializeKey(FStaticMeshExportConfig::CFG_End);
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FSkelMeshImportConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FSkelMeshImportConfig::CFG_ImportSkel:
+        s << c.ImportSkeleton;
+        break;
+      case FSkelMeshImportConfig::CFG_ImportTangents:
+        s << c.ImportTangents;
+        break;
+      case FSkelMeshImportConfig::CFG_FlipTangentY:
+        s << c.FlipTangentY;
+        break;
+      case FSkelMeshImportConfig::CFG_TangentYByUV:
+        s << c.TangentYBasisByUV;
+        break;
+      case FSkelMeshImportConfig::CFG_AverageTangentZ:
+        s << c.AverageTangentZ;
+        break;
+      case  FSkelMeshImportConfig::CFG_OptimizeIndices:
+        s << c.OptimizeIndexBuffer;
+        break;
+      default:
+        s.Close();
+        // no break
+      case FSkelMeshImportConfig::CFG_End:
+        return s;
+      }
+    }
+  }
+  else
+  {
+    FSkelMeshImportConfig d;
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_ImportSkel, c.ImportSkeleton, d.ImportSkeleton);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_ImportTangents, c.ImportTangents, d.ImportTangents);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_FlipTangentY, c.FlipTangentY, d.FlipTangentY);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_TangentYByUV, c.TangentYBasisByUV, d.TangentYBasisByUV);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_AverageTangentZ, c.AverageTangentZ, d.AverageTangentZ);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_OptimizeIndices, c.OptimizeIndexBuffer, c.OptimizeIndexBuffer);
+    SerializeKey(FSkelMeshImportConfig::CFG_End);
   }
   return s;
 }

@@ -39,6 +39,27 @@ struct FSkelMeshExportConfig {
   friend FStream& operator<<(FStream& s, FSkelMeshExportConfig& c);
 };
 
+struct FSkelMeshImportConfig {
+  enum ConfigKey : uint16 {
+    CFG_ImportSkel = 1,
+    CFG_ImportTangents,
+    CFG_FlipTangentY,
+    CFG_TangentYByUV,
+    CFG_AverageTangentZ,
+    CFG_OptimizeIndices,
+    CFG_End = 0xFFFF
+  };
+
+  bool ImportSkeleton = false;
+  bool ImportTangents = true;
+  bool FlipTangentY = false;
+  bool TangentYBasisByUV = true;
+  bool AverageTangentZ = false;
+  bool OptimizeIndexBuffer = true;
+
+  friend FStream& operator<<(FStream& s, FSkelMeshImportConfig& c);
+};
+
 struct FStaticMeshExportConfig {
   enum ConfigKey : uint16 {
     CFG_ExportTextures = 1,
@@ -190,6 +211,10 @@ struct FAppConfig
     CFG_StaticMeshExportBegin = 130,
     CFG_StaticMeshExportEnd,
 
+    // SkelMeshImport
+    CFG_SkelMeshImportBegin = 140,
+    CFG_SkelMeshImportEnd,
+
     CFG_End = 0xFFFF
   };
   uint32 Magic = PACKAGE_MAGIC;
@@ -251,6 +276,9 @@ struct FAppConfig
 
   // CFG_SkelMeshExportBegin: SkelMesh export settings
   FSkelMeshExportConfig SkelMeshExportConfig;
+
+  // CFG_SkelMeshImportBegin: SkelMesh export settings
+  FSkelMeshImportConfig SkelMeshImportConfig;
 
   // CFG_StaticMeshExportBegin: StaticMesh export settings
   FStaticMeshExportConfig StaticMeshExportConfig;

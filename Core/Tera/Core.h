@@ -24,6 +24,11 @@ static const float APP_VER = 1.77f;
 // Packed positions are allowed on consoles only.
 #define ENABLE_PACKED_VERTEX_POSITION 0
 
+// For testing only.
+// GPU buffer has lower quality due to packed positions and half precision UVs,
+// so its better to use CPU buffer instead. (Tera uses GPU buffer to render models)
+#define USE_GPU_VERTEX_BUFFER 0
+
 #if _DEBUG
 // DUMP_PATH should be set in the ENV
 #if defined(DUMP_PATH)
@@ -76,6 +81,7 @@ typedef unsigned long BITFIELD;
 
 enum { INDEX_NONE = -1 };
 enum { MAX_TEXCOORDS = 4 };
+enum { MAX_GPUSKIN_BONES = 75 };
 enum { MSP_MAX = 1 };
 
 #define PACKAGE_MAGIC 0x9E2A83C1

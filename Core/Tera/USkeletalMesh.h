@@ -206,6 +206,8 @@ struct FSkelMeshChunk {
 
   int32 MaxBoneInfluences = 4;
 
+  void CalcMaxBoneInfluences();
+
   friend FStream& operator<<(FStream& s, FSkelMeshChunk& c);
 };
 
@@ -224,12 +226,6 @@ struct FGPUSkinVertexBase {
   uint8 BoneWeight[MAX_INFLUENCES];
 
   void Serialize(FStream& s);
-
-  virtual ~FGPUSkinVertexBase()
-  {}
-
-  virtual FVector GetPosition() const = 0;
-  virtual FVector2D GetUVs(int32 idx) const = 0;
 };
 
 template<uint32 NumTexCoords = 1>
@@ -248,16 +244,6 @@ struct FGPUSkinVertexFloatAABB : public FGPUSkinVertexBase {
       s << v.UV[idx];
     }
     return s;
-  }
-
-  FVector GetPosition() const override
-  {
-    return Position;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
   }
 };
 
@@ -278,16 +264,6 @@ struct FGPUSkinVertexFloatAAB : public FGPUSkinVertexBase {
     }
     return s;
   }
-
-  FVector GetPosition() const override
-  {
-    return Position;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
-  }
 };
 
 template<uint32 NumTexCoords = 1>
@@ -306,16 +282,6 @@ struct FGPUSkinVertexFloatABB : public FGPUSkinVertexBase {
       s << v.UV[idx];
     }
     return s;
-  }
-
-  FVector GetPosition() const override
-  {
-    return Position;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
   }
 };
 
@@ -336,35 +302,67 @@ struct FGPUSkinVertexFloatAB : public FGPUSkinVertexBase {
     }
     return s;
   }
-
-  FVector GetPosition() const override
-  {
-    return Position;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
-  }
 };
 
 struct  FSkeletalMeshVertexBuffer {
+  FSkeletalMeshVertexBuffer() = default;
+
+  FSkeletalMeshVertexBuffer(const FSkeletalMeshVertexBuffer& a)
+  {
+    bUseFullPrecisionUVs = a.bUseFullPrecisionUVs;
+    bUsePackedPosition = a.bUsePackedPosition;
+    NumVertices = a.NumVertices;
+    NumTexCoords = a.NumTexCoords;
+    MeshOrigin = a.MeshOrigin;
+    MeshExtension = a.MeshExtension;
+    ElementSize = a.ElementSize;
+    ElementCount = a.ElementCount;
+    if (ElementCount && ElementSize)
+    {
+      AllocateBuffer();
+      std::memcpy(Data, a.Data, ElementSize * ElementCount);
+    }
+  }
+
+  FSkeletalMeshVertexBuffer& operator=(const FSkeletalMeshVertexBuffer& a)
+  {
+    bUseFullPrecisionUVs = a.bUseFullPrecisionUVs;
+    bUsePackedPosition = a.bUsePackedPosition;
+    NumVertices = a.NumVertices;
+    NumTexCoords = a.NumTexCoords;
+    MeshOrigin = a.MeshOrigin;
+    MeshExtension = a.MeshExtension;
+    ElementSize = a.ElementSize;
+    ElementCount = a.ElementCount;
+    if (ElementCount && ElementSize)
+    {
+      AllocateBuffer();
+      std::memcpy(Data, a.Data, ElementSize * ElementCount);
+    }
+    return *this;
+  }
+
   bool bUseFullPrecisionUVs = false;
   bool bUsePackedPosition = true;
 
   uint32 NumVertices = 0;
   uint32 NumTexCoords = 1;
   FVector MeshOrigin;
-  FVector MeshExtension;
+  FVector MeshExtension = FVector::One;
   uint32 ElementSize = 32;
   uint32 ElementCount = 0;
   FGPUSkinVertexBase* Data = nullptr;
+
+  void AllocateBuffer(uint32 count = 0);
+  void SetVertex(int32 vertexIndex, const FSoftSkinVertex& src, bool UVSpaceBinormalDir = true, bool flipBinormals = false);
+  void GetVertex(int32 vertexIndex, FSoftSkinVertex& dst) const;
 
   friend FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b);
   
   ~FSkeletalMeshVertexBuffer()
   {
     delete[] Data;
+    Data = nullptr;
   }
 };
 
@@ -446,6 +444,8 @@ public:
   void Serialize(FStream& s, UObject* owner);
 
   std::vector<FSoftSkinVertex> GetVertices() const;
+  // Buffer: true - GPU, false - CPU.
+  std::vector<FSoftSkinVertex> GetVertices(bool gpuBuffer) const;
 
   std::vector<const FSkelMeshSection*> GetSections() const
   {
@@ -467,6 +467,8 @@ public:
     return &IndexContainer;
   }
 
+  void _DebugVerify(UObject* owner) const;
+
 private:
   std::vector<FSkelMeshSection> Sections;
   std::vector<uint16> LegacyShadowIndices;
@@ -487,6 +489,7 @@ private:
   FSkeletalMeshColorBuffer ColorBuffer;
   std::vector<FSkeletalMeshVertexInfluences> VertexInfluences;
   FMultiSizeIndexContainer Unk;
+  friend class USkeletalMesh;
 };
 
 class USkeletalMesh : public UObject {
@@ -516,7 +519,8 @@ public:
     return RefSkeleton;
   }
 
-  void Accept(class MeshTravallerData* data, uint32 lodIdx = 0);
+  bool AcceptVisitor(class MeshTravallerData* importData, uint32 lodIdx, FString& error);
+  bool ValidateVisitor(class MeshTravallerData* importData, uint32 lodIdx, FString& error, bool& askUser, int32 warningIndex);
 
 private:
   FBoxSphereBounds Bounds;

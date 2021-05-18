@@ -859,7 +859,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
         triangle.TangentZ[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
         triangle.TangentZ[unrealVertexIndex].Normalize();
 
-        if (bHasTangentInformation && ctx.ImportTangents)
+        if (bHasTangentInformation && ctx.ImportData.ImportTangents)
         {
           tempValue = layerElementTangent->GetDirectArray().GetAt(tangentMapIndex);
           tempValue = totalMatrixForNormal.MultT(tempValue);
@@ -961,6 +961,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
       triangle.WedgeIndex[vertexIndex] = (int)wedges.Size() - 1;
     }
   }
+
   // weights
   std::vector<FVertInfluence> influences;
   if (FbxSkin* skin = (FbxSkin*)static_cast<FbxGeometry*>(mesh)->GetDeformer(0, FbxDeformer::eSkin))
@@ -1054,69 +1055,36 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     }
   }
 
-  std::vector<FVector> tan1;
-  std::vector<FVector> tan2;
-  tan1.resize(points.size());
-  tan2.resize(points.size());
-
-  if (!ctx.ImportTangents || !bHasTangentInformation)
+  if (ctx.ImportData.AverageNormals && bHasNormalInformation)
   {
-    for (int32 faceIndex = 0; faceIndex < triangleCount; ++faceIndex)
-    {
-      unsigned int i1 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[0]].pointIndex;
-      unsigned int i2 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[1]].pointIndex;
-      unsigned int i3 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[2]].pointIndex;
-
-      FVector v1 = ctx.ImportData.Points[i1];
-      FVector v2 = ctx.ImportData.Points[i2];
-      FVector v3 = ctx.ImportData.Points[i3];
-
-      FVector2D w1 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[0]].UV[0];
-      FVector2D w2 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[1]].UV[0];
-      FVector2D w3 = ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[2]].UV[0];
-
-      float x1 = v2.X - v1.X;
-      float x2 = v3.X - v1.X;
-      float y1 = v2.Y - v1.Y;
-      float y2 = v3.Y - v1.Y;
-      float z1 = v2.Z - v1.Z;
-      float z2 = v3.Z - v1.Z;
-
-      float s1 = w2.X - w1.X;
-      float s2 = w3.X - w1.X;
-      float t1 = w2.Y - w1.Y;
-      float t2 = w3.Y - w1.Y;
-
-      float div = s1 * t2 - s2 * t1;
-      float r = div == 0.0f ? 0.0f : 1.0f / div;
-
-      FVector sdir = FVector((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
-      FVector tdir = FVector((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
-
-      tan1[i1] += sdir;
-      tan1[i2] += sdir;
-      tan1[i3] += sdir;
-
-      tan2[i1] += tdir;
-      tan2[i2] += tdir;
-      tan2[i3] += tdir;
-    }
     for (int32 faceIndex = 0; faceIndex < triangleCount; ++faceIndex)
     {
       for (int32 wedgeIndex = 0; wedgeIndex < 3; ++wedgeIndex)
       {
-        FVector normal = ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex];
-        FVector tangent = tan1[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[wedgeIndex]].pointIndex];
-
-        // Gram-Schmidt orthogonalize
-        tangent = (tangent - (normal * (normal | tangent))).Normalize();
-        ctx.ImportData.Faces[faceIndex].tangentX[wedgeIndex] = tangent;
-        ctx.ImportData.Faces[faceIndex].basis[wedgeIndex] = ((normal ^ tangent) | tan2[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[wedgeIndex]].pointIndex]) < 0 ? -1.f : 1.f;
-        ctx.ImportData.Faces[faceIndex].tangentY[wedgeIndex] = (tangent ^ normal);
+        FVector currentPoint = ctx.ImportData.Points[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[wedgeIndex]].pointIndex];
+        for (int32 faceIndex2 = faceIndex + 1; faceIndex2 < triangleCount; ++faceIndex2)
+        {
+          for (int32 wedgeIndex2 = 0; wedgeIndex2 < 3; ++wedgeIndex2)
+          {
+            FVector testPoint = ctx.ImportData.Points[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex2].wedgeIndices[wedgeIndex2]].pointIndex];
+            if (testPoint == currentPoint)
+            {
+              FVector currentNormal = ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex];
+              FVector testNormal = ctx.ImportData.Faces[faceIndex2].tangentZ[wedgeIndex2];
+              if (currentNormal != testNormal)
+              {
+                FVector result = ((currentNormal + testNormal) / 2.).SafeNormal();
+                ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex] = result;
+                ctx.ImportData.Faces[faceIndex2].tangentZ[wedgeIndex2] = result;
+              }
+              break;
+            }
+          }
+        }
       }
     }
   }
-  ctx.ImportData.FlipTangents = !ctx.ImportTangents || !bHasTangentInformation;
+
   ctx.ImportData.Influences.resize(influences.size());
   for (int32 influenceIndex = 0; influenceIndex < (int)influences.size(); ++influenceIndex)
   {
@@ -1124,6 +1092,19 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     ctx.ImportData.Influences[influenceIndex].boneIndex = (int)influences[influenceIndex].BoneIndex;
     ctx.ImportData.Influences[influenceIndex].vertexIndex = (int)influences[influenceIndex].VertIndex;
   }
+
+  std::qsort(ctx.ImportData.Influences.data(), ctx.ImportData.Influences.size(), sizeof(decltype(ctx.ImportData.Influences)::value_type), [](const void* a, const void* b)
+  {
+    const RawInfluence* A = (const RawInfluence*)a;
+    const RawInfluence* B = (const RawInfluence*)b;
+    if (A->vertexIndex > B->vertexIndex) return  1;
+    else if (A->vertexIndex < B->vertexIndex) return -1;
+    else if (A->weight < B->weight) return  1;
+    else if (A->weight > B->weight) return -1;
+    else if (A->boneIndex > B->boneIndex) return  1;
+    else if (A->boneIndex < B->boneIndex) return -1;
+    else									    return  0;
+  });
 
   ctx.ImportData.Materials = mats;
   ctx.ImportData.Bones.resize(refBones.size());
@@ -1246,11 +1227,12 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
     }
   }
 
-  for (int32 idx = 0; idx < lod->GetIndexContainer()->GetElementCount(); ++idx)
+  for (uint32 idx = 0; idx < lod->GetIndexContainer()->GetElementCount(); ++idx)
   {
-    layerElementTangent->GetDirectArray().Add(tmpTangents[lod->GetIndexContainer()->GetIndex(idx)]);
-    layerElementBinormal->GetDirectArray().Add(tmpBinormals[lod->GetIndexContainer()->GetIndex(idx)]);
-    layerElementNormal->GetDirectArray().Add(tmpNormals[lod->GetIndexContainer()->GetIndex(idx)]);
+    int32 index = lod->GetIndexContainer()->GetIndex(idx);
+    layerElementTangent->GetDirectArray().Add(tmpTangents[index]);
+    layerElementBinormal->GetDirectArray().Add(tmpBinormals[index]);
+    layerElementNormal->GetDirectArray().Add(tmpNormals[index]);
   }
   tmpNormals.clear();
   tmpTangents.clear();
@@ -1347,7 +1329,6 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
     {
       for (int influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
       {
-
         uint16 influenceBone = v.BoneMap->at(v.InfluenceBones[influenceIndex]);
         float w = (float)v.InfluenceWeights[influenceIndex];
         float influenceWeight = w / 255.0f;

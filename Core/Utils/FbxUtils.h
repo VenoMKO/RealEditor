@@ -7,7 +7,6 @@
 struct FbxImportContext {
   std::wstring Path;
   std::string Error;
-  bool ImportTangents = true;
   MeshTravallerData ImportData;
   FVector Scale3D = FVector(1, 1, 1);
 };
