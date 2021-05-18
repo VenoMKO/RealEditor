@@ -12,3 +12,6 @@
 [submodule "Extern/glew"]
 	path = Extern/glew
 	url = https://github.com/VenoMKO/glew.git
+[submodule "Extern/NvTriStrip"]
+	path = Extern/NvTriStrip
+	url = https://github.com/VenoMKO/NvTriStrip.git

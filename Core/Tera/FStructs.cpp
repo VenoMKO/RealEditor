@@ -5,6 +5,7 @@
 #include "Utils/ALog.h"
 
 #include <objbase.h>
+#include <NvTriStrip/NvTriStrip.h>
 
 const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
 const FVector FVector::One(1, 1, 1);
@@ -55,11 +56,7 @@ FStream& operator<<(FStream& s, FGuid& g)
 
 FStream& operator<<(FStream& s, FFloat16& v)
 {
-  s << v.Packed;
-#if _DEBUG
-  v.Value = (float)v;
-#endif
-  return s;
+  return s << v.Packed;
 }
 
 FStream& operator<<(FStream& s, FCompressedChunk& c)
@@ -816,6 +813,13 @@ void FMatrix::operator*=(const FMatrix& b)
   VectorMatrixMultiply(&M, &M, &b.M);
 }
 
+FMatrix FMatrix::operator*(const FMatrix& a) const
+{
+  FMatrix Result;
+  VectorMatrixMultiply(&Result, this, &a);
+  return Result;
+}
+
 FVector FMatrix::Rotate(FVector& v)
 {
   float d[] = { v.X, v.Y, v.Z, 0 };
@@ -982,4 +986,48 @@ FColor FLinearColor::ToFColor(bool sRGB) const
   result.B = floorf(b * 255.999f);
 
   return result;
+}
+
+void FRawIndexBuffer::SortIndices()
+{
+  PrimitiveGroup* PrimitiveGroups = nullptr;
+  uint32 NumPrimitiveGroups = 0;
+  bool isInt = ElementSize == sizeof(uint32);
+  SetListsOnly(true);
+  if (!isInt)
+  {
+    void* tmpData = malloc(sizeof(uint32) * ElementCount);
+    for (uint32 idx = 0; idx < ElementCount; ++idx)
+    {
+      ((uint32*)tmpData)[idx] = GetIndex(idx);
+    }
+    GenerateStrips((const unsigned int*)tmpData, ElementCount, &PrimitiveGroups, &NumPrimitiveGroups);
+    free(tmpData);
+  }
+  else
+  {
+    GenerateStrips((const unsigned int*)Data, ElementCount, &PrimitiveGroups, &NumPrimitiveGroups);
+  }
+
+  if (PrimitiveGroups)
+  {
+    free(Data);
+    Data = nullptr;
+
+    ElementCount = PrimitiveGroups->numIndices;
+    AllocateBuffer(ElementCount, ElementSize);
+    if (isInt)
+    {
+      std::memcpy(Data, PrimitiveGroups->indices, ElementCount * ElementSize);
+    }
+    else
+    {
+      for (uint32 idx = 0; idx < PrimitiveGroups->numIndices; ++idx)
+      {
+        SetIndex(idx, (uint16)PrimitiveGroups->indices[idx]);
+      }
+    }
+
+    delete[] PrimitiveGroups;
+  }
 }

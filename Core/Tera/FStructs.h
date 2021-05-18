@@ -364,6 +364,22 @@ struct FVector {
     return false;
   }
 
+  FVector SafeNormal(float tolerance = 1.e-8) const
+  {
+    float ss = X * X + Y * Y + Z * Z;
+
+    if (ss == 1.f)
+    {
+      return *this;
+    }
+    if (ss < tolerance)
+    {
+      return FVector(0.f);
+    }
+    float s = 1.f / sqrtf(ss);
+    return FVector(X * s, Y * s, Z * s);
+  }
+
   friend FStream& operator<<(FStream& s, FVector& v);
 
   float X = 0;
@@ -372,15 +388,23 @@ struct FVector {
 };
 
 struct FVector4 {
-  FVector4()
-  {}
-
-  FVector4(float x, float y, float z, float w)
+  FVector4(float x = 0., float y = 0., float z = 0., float w = 0.)
     : X(x)
     , Y(y)
     , Z(z)
     , W(w)
   {}
+
+  FVector4 SafeNormal(float tolerance = 1.e-8) const
+  {
+    const float ss = X * X + Y * Y + Z * Z;
+    if (ss > tolerance)
+    {
+      const float s = 1.f / sqrtf(ss);
+      return FVector4(X * s, Y * s, Z * s, 0.0f);
+    }
+    return FVector4(0.f);
+  }
 
   float X = 0;
   float Y = 0;
@@ -418,8 +442,7 @@ struct FCookedBulkDataInfo
 
 struct FBulkDataInfo
 {
-  FBulkDataInfo()
-  {}
+  FBulkDataInfo() = default;
 
   FBulkDataInfo(const FCookedBulkDataInfo& v)
     : SavedBulkDataFlags(v.SavedBulkDataFlags)
@@ -516,8 +539,74 @@ protected:
 
 struct FUntypedBulkData
 {
-  FUntypedBulkData()
-  {}
+  FUntypedBulkData() = default;
+
+  FUntypedBulkData(const FUntypedBulkData& a)
+  {
+    BulkDataFlags = a.BulkDataFlags;
+    ElementCount = a.ElementCount;
+    BulkDataOffsetInFile = a.BulkDataOffsetInFile;
+    BulkDataSizeOnDisk = a.BulkDataSizeOnDisk;
+
+    SavedBulkDataFlags = a.SavedBulkDataFlags;
+    SavedElementCount = a.SavedElementCount;
+    SavedBulkDataOffsetInFile = a.SavedBulkDataOffsetInFile;
+    SavedBulkDataSizeOnDisk = a.SavedBulkDataSizeOnDisk;
+
+    if (OwnsMemory && BulkData)
+    {
+      free(BulkData);
+    }
+    
+    OwnsMemory = a.OwnsMemory;
+    Package = a.Package;
+    if (ElementCount)
+    {
+      if (OwnsMemory)
+      {
+        BulkData = malloc(a.GetElementSize() * ElementCount);
+        std::memcpy(BulkData, a.BulkData, a.GetElementSize() * ElementCount);
+      }
+      else
+      {
+        BulkData = a.BulkData;
+      }
+    }
+  }
+
+  FUntypedBulkData& operator=(const FUntypedBulkData& a)
+  {
+    BulkDataFlags = a.BulkDataFlags;
+    ElementCount = a.ElementCount;
+    BulkDataOffsetInFile = a.BulkDataOffsetInFile;
+    BulkDataSizeOnDisk = a.BulkDataSizeOnDisk;
+
+    SavedBulkDataFlags = a.SavedBulkDataFlags;
+    SavedElementCount = a.SavedElementCount;
+    SavedBulkDataOffsetInFile = a.SavedBulkDataOffsetInFile;
+    SavedBulkDataSizeOnDisk = a.SavedBulkDataSizeOnDisk;
+
+    if (OwnsMemory && BulkData)
+    {
+      free(BulkData);
+    }
+
+    OwnsMemory = a.OwnsMemory;
+    Package = a.Package;
+    if (ElementCount)
+    {
+      if (OwnsMemory)
+      {
+        BulkData = malloc(a.GetElementSize() * ElementCount);
+        std::memcpy(BulkData, a.BulkData, a.GetElementSize() * ElementCount);
+      }
+      else
+      {
+        BulkData = a.BulkData;
+      }
+    }
+    return *this;
+  }
 
   FUntypedBulkData(FPackage* package, uint32 bulkDataFlags, int32 elementCount, void* bulkData, bool transferOwnership)
   {
@@ -786,6 +875,16 @@ struct FPlane : FVector {
     , W(w)
   {}
 
+  FPlane(const FVector& a, float w)
+    : FVector(a)
+    , W(w)
+  {}
+
+  FPlane(FVector A, FVector B, FVector C)
+    : FVector(((B - A) ^ (C - A)).SafeNormal())
+    , W(A | ((B - A) ^ (C - A)).SafeNormal())
+  {}
+
   float W = 0;
 };
 
@@ -814,7 +913,155 @@ struct FMatrix {
     return TransformFVector4(FVector4(V.X, V.Y, V.Z, 1.0f));
   }
 
+  inline FVector4 TransformNormal(const FVector& V) const
+  {
+    return TransformFVector4(FVector4(V.X, V.Y, V.Z, 0.0f));
+  }
+
+  inline float Determinant() const
+  {
+    return	M[0][0] * (
+      M[1][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+      M[2][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) +
+      M[3][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2])
+      ) -
+      M[1][0] * (
+        M[0][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+        M[2][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+        M[3][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2])
+        ) +
+      M[2][0] * (
+        M[0][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) -
+        M[1][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+        M[3][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+        ) -
+      M[3][0] * (
+        M[0][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2]) -
+        M[1][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2]) +
+        M[2][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+        );
+  }
+
+  inline FMatrix Inverse() const
+  {
+    FMatrix Result;
+    const float	Det = Determinant();
+
+    if (Det == 0.0f)
+      return FMatrix::Identity;
+
+    const float	RDet = 1.0f / Det;
+
+    Result.M[0][0] = RDet * (
+      M[1][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+      M[2][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) +
+      M[3][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2])
+      );
+    Result.M[0][1] = -RDet * (
+      M[0][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+      M[2][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+      M[3][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2])
+      );
+    Result.M[0][2] = RDet * (
+      M[0][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) -
+      M[1][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+      M[3][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+      );
+    Result.M[0][3] = -RDet * (
+      M[0][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2]) -
+      M[1][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2]) +
+      M[2][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+      );
+
+    Result.M[1][0] = -RDet * (
+      M[1][0] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+      M[2][0] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) +
+      M[3][0] * (M[1][2] * M[2][3] - M[1][3] * M[2][2])
+      );
+    Result.M[1][1] = RDet * (
+      M[0][0] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+      M[2][0] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+      M[3][0] * (M[0][2] * M[2][3] - M[0][3] * M[2][2])
+      );
+    Result.M[1][2] = -RDet * (
+      M[0][0] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) -
+      M[1][0] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+      M[3][0] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+      );
+    Result.M[1][3] = RDet * (
+      M[0][0] * (M[1][2] * M[2][3] - M[1][3] * M[2][2]) -
+      M[1][0] * (M[0][2] * M[2][3] - M[0][3] * M[2][2]) +
+      M[2][0] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+      );
+
+    Result.M[2][0] = RDet * (
+      M[1][0] * (M[2][1] * M[3][3] - M[2][3] * M[3][1]) -
+      M[2][0] * (M[1][1] * M[3][3] - M[1][3] * M[3][1]) +
+      M[3][0] * (M[1][1] * M[2][3] - M[1][3] * M[2][1])
+      );
+    Result.M[2][1] = -RDet * (
+      M[0][0] * (M[2][1] * M[3][3] - M[2][3] * M[3][1]) -
+      M[2][0] * (M[0][1] * M[3][3] - M[0][3] * M[3][1]) +
+      M[3][0] * (M[0][1] * M[2][3] - M[0][3] * M[2][1])
+      );
+    Result.M[2][2] = RDet * (
+      M[0][0] * (M[1][1] * M[3][3] - M[1][3] * M[3][1]) -
+      M[1][0] * (M[0][1] * M[3][3] - M[0][3] * M[3][1]) +
+      M[3][0] * (M[0][1] * M[1][3] - M[0][3] * M[1][1])
+      );
+    Result.M[2][3] = -RDet * (
+      M[0][0] * (M[1][1] * M[2][3] - M[1][3] * M[2][1]) -
+      M[1][0] * (M[0][1] * M[2][3] - M[0][3] * M[2][1]) +
+      M[2][0] * (M[0][1] * M[1][3] - M[0][3] * M[1][1])
+      );
+
+    Result.M[3][0] = -RDet * (
+      M[1][0] * (M[2][1] * M[3][2] - M[2][2] * M[3][1]) -
+      M[2][0] * (M[1][1] * M[3][2] - M[1][2] * M[3][1]) +
+      M[3][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1])
+      );
+    Result.M[3][1] = RDet * (
+      M[0][0] * (M[2][1] * M[3][2] - M[2][2] * M[3][1]) -
+      M[2][0] * (M[0][1] * M[3][2] - M[0][2] * M[3][1]) +
+      M[3][0] * (M[0][1] * M[2][2] - M[0][2] * M[2][1])
+      );
+    Result.M[3][2] = -RDet * (
+      M[0][0] * (M[1][1] * M[3][2] - M[1][2] * M[3][1]) -
+      M[1][0] * (M[0][1] * M[3][2] - M[0][2] * M[3][1]) +
+      M[3][0] * (M[0][1] * M[1][2] - M[0][2] * M[1][1])
+      );
+    Result.M[3][3] = RDet * (
+      M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) -
+      M[1][0] * (M[0][1] * M[2][2] - M[0][2] * M[2][1]) +
+      M[2][0] * (M[0][1] * M[1][2] - M[0][2] * M[1][1])
+      );
+
+    return Result;
+  }
+
+  inline FMatrix operator*(float scale) const
+  {
+    FMatrix ResultMat;
+
+    for (int32 X = 0; X < 4; X++)
+    {
+      for (int32 Y = 0; Y < 4; Y++)
+      {
+        ResultMat.M[X][Y] = M[X][Y] * scale;
+      }
+    }
+
+    return ResultMat;
+  }
+
+  inline void operator*=(float Other)
+  {
+    *this = *this * Other;
+  }
+
   void operator*=(const FMatrix& b);
+
+  FMatrix operator*(const FMatrix& a) const;
 
   FVector Rotate(FVector& v);
 
@@ -927,6 +1174,12 @@ struct FPackedNormal
     uint32 Packed = 0;
   } Vector;
 
+  FPackedNormal() = default;
+  FPackedNormal(const FVector& vec)
+  {
+    *this = vec;
+  }
+
   operator FVector() const;
 
   void operator=(const FVector& vec);
@@ -974,6 +1227,7 @@ public:
   {}
 };
 
+
 class FFloat16
 {
 public:
@@ -987,10 +1241,6 @@ public:
     } Components;
     uint16 Packed = 0;
   };
-
-#if _DEBUG
-  float Value = 0;
-#endif
 
   FFloat16()
     : Packed(0)
@@ -1075,6 +1325,27 @@ struct FVector2DHalf {
   FFloat16 X = 0;
   FFloat16 Y = 0;
 
+  FVector2DHalf() = default;
+
+  FVector2DHalf(const FFloat16& x, const FFloat16& y)
+    : X(x), Y(y)
+  {}
+  
+  FVector2DHalf(float x, float y)
+    : X(x), Y(y)
+  {}
+  
+  FVector2DHalf(const FVector2D& v)
+    : X(v.X), Y(v.Y)
+  {}
+
+  FVector2DHalf& operator=(const FVector2D& v)
+  {
+    X = FFloat16(v.X);
+    Y = FFloat16(v.Y);
+    return *this;
+  }
+
   operator FVector2D() const
   {
     return FVector2D(X, Y);
@@ -1119,6 +1390,33 @@ public:
     free(IndexBuffer);
   }
 
+  FMultiSizeIndexContainer() = default;
+
+  FMultiSizeIndexContainer(const FMultiSizeIndexContainer& a)
+  {
+    ElementCount = a.ElementCount;
+    ElementSize = a.ElementSize;
+    BulkElementSize = a.BulkElementSize;
+    if (ElementCount && ElementSize)
+    {
+      AllocateBuffer(ElementCount, ElementSize);
+      std::memcpy(IndexBuffer, a.IndexBuffer, ElementCount * ElementSize);
+    }
+  }
+
+  FMultiSizeIndexContainer& operator=(const FMultiSizeIndexContainer& a)
+  {
+    ElementCount = a.ElementCount;
+    ElementSize = a.ElementSize;
+    BulkElementSize = a.BulkElementSize;
+    if (ElementCount && ElementSize)
+    {
+      AllocateBuffer(ElementCount, ElementSize);
+      std::memcpy(IndexBuffer, a.IndexBuffer, ElementCount * ElementSize);
+    }
+    return *this;
+  }
+
   friend FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c);
 
   uint8 GetElementSize() const
@@ -1126,9 +1424,60 @@ public:
     return ElementSize;
   }
 
+  void SetElementSize(size_t size)
+  {
+    if (size == ElementSize)
+    {
+      return;
+    }
+    DBreakIf(size > sizeof(int32) || !size);
+    uint8 oldSize = ElementSize;
+    ElementSize = (uint8)size;
+    BulkElementSize = ElementSize;
+    void* oldBuffer = IndexBuffer;
+    IndexBuffer = nullptr;
+    if (ElementCount)
+    {
+      AllocateBuffer(ElementCount, ElementSize);
+    }
+    if (oldBuffer)
+    {
+      if (oldSize == sizeof(uint16))
+      {
+        for (uint32 idx = 0; idx < ElementCount; ++idx)
+        {
+          ((uint32*)IndexBuffer)[idx] = (uint32)((uint16*)oldBuffer)[idx];
+        }
+      }
+      else
+      {
+        uint32 tmp = 0;
+        for (uint32 idx = 0; idx < ElementCount; ++idx)
+        {
+          tmp = ((uint32*)oldBuffer)[idx];
+          DBreakIf(tmp > 0xFFFF);
+          ((uint16*)IndexBuffer)[idx] = (uint16)tmp;
+        }
+      }
+      free(oldBuffer);
+    }
+  }
+
   uint32 GetElementCount() const
   {
     return ElementCount;
+  }
+
+  void SetIndex(uint32 elementIndex, uint32 value)
+  {
+    if (ElementSize == sizeof(uint16))
+    {
+      Get16BitBuffer()[elementIndex] = (uint16)value;
+    }
+    else
+    {
+      Get32BitBuffer()[elementIndex] = value;
+    }
   }
 
   void AllocateBuffer(uint32 elementCount, uint8 elementSize)
@@ -1164,6 +1513,36 @@ public:
     return *(tmp + elementIndex);
   }
 
+  void AddIndex(int32 elementIndex)
+  {
+    ElementCount++;
+    if (!IndexBuffer)
+    {
+      IndexBuffer = malloc(ElementCount * ElementSize);
+    }
+    else
+    {
+      if (void* tmp = realloc(IndexBuffer, ElementCount * ElementSize))
+      {
+        IndexBuffer = tmp;
+      }
+      else
+      {
+        DBreak();
+        ElementCount--;
+        return;
+      }
+    }
+    if (ElementSize == sizeof(uint16))
+    {
+      Get16BitBuffer()[ElementCount - 1] = elementIndex;
+    }
+    else
+    {
+      Get32BitBuffer()[ElementCount - 1] = elementIndex;
+    }
+  }
+
   friend FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c);
 
 private:
@@ -1176,6 +1555,18 @@ private:
 
 class FRawIndexBuffer {
 public:
+  FRawIndexBuffer() = default;
+
+  FRawIndexBuffer(const FRawIndexBuffer& a)
+  {
+    ElementCount = a.ElementCount;
+    ElementSize = a.ElementSize;
+    if (ElementSize && ElementCount)
+    {
+      AllocateBuffer(ElementCount, ElementSize);
+      std::memcpy(Data, a.Data, ElementCount * ElementSize);
+    }
+  }
 
   ~FRawIndexBuffer()
   {
@@ -1183,6 +1574,8 @@ public:
   }
 
   friend FStream& operator<<(FStream& s, FRawIndexBuffer& b);
+
+  void SortIndices();
 
   uint32 GetElementSize() const
   {
@@ -1197,7 +1590,6 @@ public:
   void AllocateBuffer(uint32 elementCount, uint8 elementSize)
   {
     free(Data);
-    Data = nullptr;
     ElementSize = elementSize;
     ElementCount = elementCount;
     if (elementCount * elementSize)
@@ -1225,6 +1617,48 @@ public:
     }
     uint32* tmp = (uint32*)Data;
     return *(tmp + elementIndex);
+  }
+
+  void SetIndex(uint32 elementIndex, uint32 value)
+  {
+    if (ElementSize == sizeof(uint16))
+    {
+      Get16BitBuffer()[elementIndex] = (uint16)value;
+    }
+    else
+    {
+      Get32BitBuffer()[elementIndex] = value;
+    }
+  }
+
+  void AddIndex(int32 elementIndex)
+  {
+    ElementCount++;
+    if (!Data)
+    {
+      Data = malloc(ElementCount * ElementSize);
+    }
+    else
+    {
+      if (void* tmp = realloc(Data, ElementCount * ElementSize))
+      {
+        Data = tmp;
+      }
+      else
+      {
+        DBreak();
+        ElementCount--;
+        return;
+      }
+    }
+    if (ElementSize == sizeof(uint16))
+    {
+      Get16BitBuffer()[ElementCount - 1] = elementIndex;
+    }
+    else
+    {
+      Get32BitBuffer()[ElementCount - 1] = elementIndex;
+    }
   }
 
 protected:
