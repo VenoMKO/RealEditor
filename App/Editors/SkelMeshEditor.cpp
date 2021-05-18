@@ -200,6 +200,149 @@ protected:
   float ScaleFactorValue = 1.;
 };
 
+class SkelMeshImportOptions : public wxDialog {
+public:
+  SkelMeshImportOptions(wxWindow* parent)
+    : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(263, 274), wxDEFAULT_DIALOG_STYLE)
+  {
+    SetSizeHints(wxDefaultSize, wxDefaultSize);
+
+    wxBoxSizer* bSizer1;
+    bSizer1 = new wxBoxSizer(wxVERTICAL);
+
+    wxBoxSizer* bSizer2;
+    bSizer2 = new wxBoxSizer(wxVERTICAL);
+
+    ImportSkeleton = new wxCheckBox(this, wxID_ANY, wxT("Import skeleton"), wxDefaultPosition, wxDefaultSize, 0);
+    ImportSkeleton->SetToolTip(wxT("Overwrite an existing skeleton with the new in the FBX file."));
+
+    bSizer2->Add(ImportSkeleton, 0, wxALL, 5);
+
+    ImportTangents = new wxCheckBox(this, wxID_ANY, wxT("Import normals"), wxDefaultPosition, wxDefaultSize, 0);
+    ImportTangents->SetToolTip(wxT("Import vertex normals from the FBX. RE will calculate smooth normals if the options is disabled."));
+
+    bSizer2->Add(ImportTangents, 0, wxALL, 5);
+
+    FlipBinormals = new wxCheckBox(this, wxID_ANY, wxT("Flip binormals"), wxDefaultPosition, wxDefaultSize, 0);
+    FlipBinormals->SetToolTip(wxT("Invert binormals. May help with texture seams."));
+
+    bSizer2->Add(FlipBinormals, 0, wxALL, 5);
+
+    BinormalsUV = new wxCheckBox(this, wxID_ANY, wxT("Binormal direction by UV"), wxDefaultPosition, wxDefaultSize, 0);
+    BinormalsUV->SetToolTip(wxT("Calculate binormals direction by vertex UV range. May help with texture seams."));
+
+    bSizer2->Add(BinormalsUV, 0, wxALL, 5);
+
+    AverageNormals = new wxCheckBox(this, wxID_ANY, wxT("Average overlapping vertex normals"), wxDefaultPosition, wxDefaultSize, 0);
+    AverageNormals->SetToolTip(wxT("Calculates an average normal for overlapping vertices. Fixes normals between mesh parts."));
+
+    bSizer2->Add(AverageNormals, 0, wxALL, 5);
+
+    IndexBuffer = new wxCheckBox(this, wxID_ANY, wxT("Optimize index buffer"), wxDefaultPosition, wxDefaultSize, 0);
+    IndexBuffer->SetToolTip(wxT("Sort the index buffer. May improve in-game perfomance."));
+
+    bSizer2->Add(IndexBuffer, 0, wxALL, 5);
+    bSizer1->Add(bSizer2, 1, wxEXPAND | wxTOP | wxRIGHT | wxLEFT, 7);
+    bSizer1->Add(0, 0, 1, wxEXPAND, 5);
+
+    wxStdDialogButtonSizer* m_sdbSizer1;
+    wxButton* m_sdbSizer1OK;
+    wxButton* m_sdbSizer1Cancel;
+    m_sdbSizer1 = new wxStdDialogButtonSizer();
+    m_sdbSizer1OK = new wxButton(this, wxID_OK);
+    m_sdbSizer1->AddButton(m_sdbSizer1OK);
+    m_sdbSizer1Cancel = new wxButton(this, wxID_CANCEL);
+    m_sdbSizer1->AddButton(m_sdbSizer1Cancel);
+    m_sdbSizer1->Realize();
+
+    bSizer1->Add(m_sdbSizer1, 0, wxEXPAND | wxTOP | wxBOTTOM, 15);
+
+
+    SetSizer(bSizer1);
+    Layout();
+
+    Centre(wxBOTH);
+
+    // Connect Events
+    ImportTangents->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnImportNormalsChanged), NULL, this);
+    m_sdbSizer1Cancel->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnCancelClicked), NULL, this);
+    m_sdbSizer1OK->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnOkClicked), NULL, this);
+
+    FAppConfig cfg = App::GetSharedApp()->GetConfig();
+
+    ImportSkeleton->Enable(false);
+    ImportSkeleton->SetValue(cfg.SkelMeshImportConfig.ImportSkeleton);
+    ImportTangents->SetValue(cfg.SkelMeshImportConfig.ImportTangents);
+    FlipBinormals->SetValue(cfg.SkelMeshImportConfig.FlipTangentY);
+    BinormalsUV->SetValue(cfg.SkelMeshImportConfig.TangentYBasisByUV);
+    IndexBuffer->SetValue(cfg.SkelMeshImportConfig.OptimizeIndexBuffer);
+    AverageNormals->Enable(ImportTangents->GetValue());
+    AverageNormals->SetValue(cfg.SkelMeshImportConfig.AverageTangentZ);
+  }
+
+  bool GetImportSkeleton() const
+  {
+    return ImportSkeleton->GetValue();
+  }
+
+  bool GetImportTangents() const
+  {
+    return ImportTangents->GetValue();
+  }
+
+  bool GetFlipTangents() const
+  {
+    return FlipBinormals->GetValue();
+  }
+
+  bool GetTangentYByUVs() const
+  {
+    return BinormalsUV->GetValue();
+  }
+
+  bool GetAverageTangentZ() const
+  {
+    return AverageNormals->GetValue();
+  }
+
+  bool GetOptimizeIndexBuffer() const
+  {
+    return IndexBuffer->GetValue();
+  }
+
+protected:
+  void OnOkClicked(wxCommandEvent&)
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    cfg.SkelMeshImportConfig.ImportSkeleton = ImportSkeleton->GetValue();
+    cfg.SkelMeshImportConfig.ImportTangents = ImportTangents->GetValue();
+    cfg.SkelMeshImportConfig.FlipTangentY = FlipBinormals->GetValue();
+    cfg.SkelMeshImportConfig.TangentYBasisByUV = BinormalsUV->GetValue();
+    cfg.SkelMeshImportConfig.AverageTangentZ = AverageNormals->GetValue();
+    cfg.SkelMeshImportConfig.OptimizeIndexBuffer = IndexBuffer->GetValue();
+    App::GetSharedApp()->SaveConfig();
+    EndModal(wxID_OK);
+  }
+
+  void OnCancelClicked(wxCommandEvent&)
+  {
+    EndModal(wxID_CANCEL);
+  }
+
+  void OnImportNormalsChanged(wxCommandEvent&)
+  {
+    AverageNormals->Enable(ImportTangents->GetValue());
+  }
+
+protected:
+  wxCheckBox* ImportSkeleton = nullptr;
+  wxCheckBox* ImportTangents = nullptr;
+  wxCheckBox* FlipBinormals = nullptr;
+  wxCheckBox* BinormalsUV = nullptr;
+  wxCheckBox* AverageNormals = nullptr;
+  wxCheckBox* IndexBuffer = nullptr;
+};
+
 SkelMeshEditor::SkelMeshEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
 {
@@ -238,7 +381,7 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
   GenericEditor::PopulateToolBar(toolbar);
   if (auto item = toolbar->FindById(eID_Import))
   {
-    item->Enable(false);
+    item->Enable(true);
   }
   toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
@@ -289,7 +432,19 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
   ctx.Path = fbxpath.ToStdWstring();
   ctx.Scale3D = FVector(opts.GetScaleFactor());
   FbxUtils utils;
-  if (!utils.ExportSkeletalMesh((USkeletalMesh*)Object, ctx))
+  bool r = false;
+  
+  try
+  {
+    r = utils.ExportSkeletalMesh((USkeletalMesh*)Object, ctx);
+  }
+  catch (const std::exception& e)
+  {
+    wxMessageBox(e.what(), wxT("Error!"), wxICON_ERROR);
+    return;
+  }
+
+  if (!r)
   {
     wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
     return;
@@ -548,7 +703,19 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     return;
   }
   FbxImportContext ctx;
-  ctx.ImportTangents = true;
+
+  SkelMeshImportOptions opts(this);
+  if (opts.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  ctx.ImportData.ImportSkeleton = opts.GetImportSkeleton();
+  ctx.ImportData.AverageNormals = opts.GetAverageTangentZ();
+  ctx.ImportData.BinormalsByUV = opts.GetTangentYByUVs();
+  ctx.ImportData.FlipBinormals = opts.GetFlipTangents();
+  ctx.ImportData.ImportTangents = opts.GetImportTangents();
+  ctx.ImportData.OptimizeIndexBuffer = opts.GetOptimizeIndexBuffer();
+
   ctx.Path = path.ToStdWstring();
   FbxUtils utils;
   if (!utils.ImportSkeletalMesh(ctx))
@@ -556,14 +723,13 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
     return;
   }
-  /*
   {
     FString error;
     bool askUser = false;
     int32 warningIndex = 0;
     while (1)
     {
-      if (!Mesh->ValidateVisitor(ctx.ImportData, 0, error, askUser, warningIndex))
+      if (!Mesh->ValidateVisitor(&ctx.ImportData, 0, error, askUser, warningIndex))
       {
         wxMessageBox(error.WString(), wxT("Error!"), wxICON_ERROR);
         return;
@@ -580,7 +746,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
       }
     }
   }
-  */
+
   std::vector<FString> fbxMaterials = ctx.ImportData.Materials;
   std::vector<UObject*> objectMaterials = Mesh->GetMaterials();
   std::vector<std::pair<FString, UObject*>> matMap;
@@ -594,8 +760,11 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     matMap = mapper.GetResult();
   }
   ctx.ImportData.MaterialMap = matMap;
-  //FString err;
-  //Mesh->AcceptVisitor(ctx.ImportData, 0, err);
+  FString err;
+  if (Mesh->AcceptVisitor(&ctx.ImportData, 0, err))
+  {
+    OnRefreshClicked();
+  }
 }
 
 void SkelMeshEditor::SetNeedsUpdate()
@@ -669,7 +838,7 @@ void SkelMeshEditor::CreateRenderModel()
   {
     osg::ref_ptr<osg::Geometry> geo = new osg::Geometry;
     osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
-    for (int32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
+    for (uint32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
     {
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 0));
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
