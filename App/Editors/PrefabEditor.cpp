@@ -207,7 +207,7 @@ osg::MatrixTransform* CreateStaticMesh(UStaticMeshComponent* component)
     }
     osg::Geometry* geo = new osg::Geometry;
     osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
-    for (int32 faceIndex = 0; faceIndex < section.NumTriangles; ++faceIndex)
+    for (uint32 faceIndex = 0; faceIndex < section.NumTriangles; ++faceIndex)
     {
       indices->push_back(indexContainer.GetIndex(section.FirstIndex + (faceIndex * 3) + 0));
       indices->push_back(indexContainer.GetIndex(section.FirstIndex + (faceIndex * 3) + 1));
@@ -300,7 +300,7 @@ osg::MatrixTransform* CreateSkelMesh(USkeletalMeshComponent* component)
   {
     osg::ref_ptr<osg::Geometry> geo = new osg::Geometry;
     osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
-    for (int32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
+    for (uint32 faceIndex = 0; faceIndex < section->NumTriangles; ++faceIndex)
     {
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 0));
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
