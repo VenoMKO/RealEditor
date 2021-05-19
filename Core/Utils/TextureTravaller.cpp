@@ -92,6 +92,21 @@ bool TextureTravaller::Visit(UTexture2D* texture)
       FString enumName = texture->CompressionSettingsProperty->Value->Enum->GetEnum(Compression).String();
       texture->GetPackage()->GetNameIndex(enumName, true);
     }
+    if (Compression == TC_NormalmapAlpha || Compression == TC_Normalmap)
+    {
+      for (int32 idx = 0; idx < 3; ++idx)
+      {
+        if (!texture->UnpackMinProperty[idx])
+        {
+          texture->CreatePropertyUnpackMin(-1., idx);
+        }
+        else
+        {
+          texture->UnpackMinProperty[idx]->GetFloat() = -1.;
+          texture->UnpackMin[idx] = -1.;
+        }
+      }
+    }
   }
 
   if (AddressX != TA_Wrap || AddressY != TA_Wrap)

@@ -15,15 +15,108 @@ public:\
   using TSuper::TSuper
 
 // Common property helpers for faster property definition and registration
-#define __GLUE_PROP(TName, Suffix) TName##Suffix
-#define UPROP(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
-#define UPROP_NOINIT(TType, TName) TType TName; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
-#define PROP_IS(prop, TName) (prop->Name == P_##TName)
-#define UPROP_CREATABLE(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
-FPropertyTag* CreateProperty##TName(const TType& value) { if (FPropertyTag* tag = CreateProperty(P_##TName)) { tag->Value->GetTypedValue<TType>() = value; AddProperty(tag); RegisterProperty(tag); return tag; } return nullptr; }
-#define UPROP_CREATABLE_ENUM(TType, TName, TDefault) TType TName = TDefault; const char* P_##TName = #TName; FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
-FPropertyTag* CreateProperty##TName(const TType& value) { if (FPropertyTag* tag = CreateProperty(P_##TName)) { tag->Value->GetByte() = (uint8)value; AddProperty(tag); tag->Value->RegisterEnumNames(); RegisterProperty(tag); return tag; } return nullptr; }
 
+// Private macro for naming
+#define __GLUE_PROP(TName, Suffix) TName##Suffix
+
+// Check if the PropertyTag matches TName
+#define PROP_IS(prop, TName) (prop->Name == P_##TName)
+
+// Basic property declaration
+#define UPROP(TType, TName, TDefault)\
+TType TName = TDefault;\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
+
+// Basic property declaration with a default value
+#define UPROP_NOINIT(TType, TName)\
+TType TName;\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) = nullptr
+
+// Property with a custom method to create it
+#define UPROP_CREATABLE(TType, TName, TDefault)\
+TType TName = TDefault;\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
+FPropertyTag* CreateProperty##TName(const TType& value)\
+{\
+  if (FPropertyTag* tag = CreateProperty(P_##TName))\
+  {\
+    tag->Value->GetTypedValue<TType>() = value;\
+    AddProperty(tag);\
+    RegisterProperty(tag);\
+    return tag;\
+  }\
+  return nullptr;\
+}\
+//
+
+// Enum property with a custom method to create it
+#define UPROP_CREATABLE_ENUM(TType, TName, TDefault)\
+TType TName = TDefault;\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
+FPropertyTag* CreateProperty##TName(const TType& value)\
+{\
+  if (FPropertyTag* tag = CreateProperty(P_##TName))\
+  {\
+    tag->Value->GetByte() = (uint8)value;\
+    AddProperty(tag);\
+    tag->Value->RegisterEnumNames();\
+    RegisterProperty(tag);\
+    return tag;\
+  }\
+  return nullptr;\
+}\
+//
+
+// Static array property with a custom method to create it
+#define UPROP_CREATABLE_STATIC_ARR(TType, TCount, TName, ...)\
+TType TName [ TCount ] = { __VA_ARGS__ };\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) [ TCount ] = { nullptr };\
+FPropertyTag* CreateProperty##TName(const TType& value, int32 arrayIdx)\
+{\
+  if (FPropertyTag* tag = CreateProperty(P_##TName))\
+  {\
+    tag->Value->GetTypedValue<TType>() = value;\
+    if (arrayIdx &&  __GLUE_PROP(TName, Property)[arrayIdx - 1])\
+    {\
+      __GLUE_PROP(TName, Property)[arrayIdx - 1]->StaticArrayNext = tag;\
+    }\
+    else if (arrayIdx + 1 < TCount && __GLUE_PROP(TName, Property)[arrayIdx + 1])\
+    {\
+      tag->StaticArrayNext = __GLUE_PROP(TName, Property)[arrayIdx - 1];\
+    }\
+    tag->ArrayIndex = arrayIdx;\
+    AddProperty(tag);\
+    RegisterProperty(tag);\
+    return tag;\
+  }\
+  return nullptr;\
+}\
+//
+
+// Array property with a custom method to create it
+#define UPROP_CREATABLE_ARR_PTR(TName)\
+std::vector<FPropertyValue*>* TName = nullptr;\
+const char* P_##TName = #TName;\
+FPropertyTag* __GLUE_PROP(TName, Property) = nullptr;\
+FPropertyTag* CreateProperty##TName()\
+{\
+  if (FPropertyTag* tag = CreateProperty(P_##TName))\
+  {\
+    tag->Value->GetArray() = *(new std::vector<FPropertyValue*>);\
+    AddProperty(tag);\
+    RegisterProperty(tag);\
+    return tag;\
+  }\
+  return nullptr;\
+}
+//
+
+// Private registration macros
 
 #define __REGISTER_PROP(TName, TType)\
 if (PROP_IS(property, TName))\
@@ -58,6 +151,8 @@ if (PROP_IS(property, TName))\
   return true;\
 }\
 //
+
+// Public registration macros
 
 #define REGISTER_FLOAT_PROP(TName) __REGISTER_PROP(TName, Float)
 

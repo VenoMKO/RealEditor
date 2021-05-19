@@ -142,10 +142,16 @@ bool UTexture::RegisterProperty(FPropertyTag* property)
     SRGBProperty = property;
     return true;
   }
-  else if (PROP_IS(property, CompressionSettings))
+  if (PROP_IS(property, CompressionSettings))
   {
     CompressionSettings = (TextureCompressionSettings)property->Value->GetByte();
     CompressionSettingsProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, UnpackMin))
+  {
+    UnpackMin[property->ArrayIndex] = property->GetFloat();
+    UnpackMinProperty[property->ArrayIndex] = property;
     return true;
   }
   return false;

@@ -443,12 +443,15 @@ bool TextureProcessor::BytesToFile()
     nvtt::CompressionOptions compressionOptions;
     compressionOptions.setFormat(hasAlpha ? nvtt::Format_RGBA : nvtt::Format_RGB);
     compressionOptions.setPixelFormat(hasAlpha ? 32 : 24, 0xFF0000, 0xFF00, 0xFF, hasAlpha ? 0xFF000000 : 0);
-
+    if (Normal)
+    {
+      compressionOptions.setColorWeights(.4, .4, .2);
+      surface.setNormalMap(Normal);
+    }
     nvtt::OutputOptions outputOptions;
     TPOutputHandler ohandler;
     outputOptions.setSrgbFlag(SRGB);
     outputOptions.setOutputHandler(&ohandler);
-
     LogI("Texture Processor: Decompress DXT data");
     nvtt::Context ctx;
 
@@ -872,8 +875,11 @@ bool TextureProcessor::FileToBytes()
     FreeImage_Unload(holder.bmp);
     return false;
   }
-
-  if (Normal)
+  if (SRGB)
+  {
+    surface.toSrgb();
+  }
+  else if (Normal)
   {
     surface.setNormalMap(true);
   }
@@ -884,6 +890,14 @@ bool TextureProcessor::FileToBytes()
   nvtt::CompressionOptions compressionOptions;
   compressionOptions.setFormat(outFmt);
   compressionOptions.setQuality(nvtt::Quality_Production);
+  if (Normal)
+  {
+    compressionOptions.setColorWeights(.4, .4, .2);
+  }
+  else
+  {
+    compressionOptions.setColorWeights(1, 1, 1);
+  }
   if (outFmt == nvtt::Format_DXT3)
   {
     compressionOptions.setQuantization(false, true, false);

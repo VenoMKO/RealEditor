@@ -15,6 +15,7 @@ public:
 
   UPROP_CREATABLE(bool, SRGB, true);
   UPROP_CREATABLE_ENUM(TextureCompressionSettings, CompressionSettings, TC_Default);
+  UPROP_CREATABLE_STATIC_ARR(float, 4, UnpackMin, 0,0,0,0);
 
   bool RegisterProperty(FPropertyTag* property) override;
 
