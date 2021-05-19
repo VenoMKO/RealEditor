@@ -405,14 +405,14 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     else if (allowEdit)
     {
       menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
+      if (node->GetClassName() != NAME_Package && node->GetChildren().IsEmpty())
+      {
+        menu.Append(ObjTreeMenuId::Duplicate, wxT("Duplicate..."));
+      }
     }
   }
   if (node->GetParent())
   {
-    if (node->GetClassName() != NAME_Package)
-    {
-      menu.Append(ObjTreeMenuId::Duplicate, wxT("Duplicate..."));
-    }
     menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
     menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
   }
