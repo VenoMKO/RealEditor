@@ -58,6 +58,7 @@ enum ControlElementId {
   Export,
   DebugTestCookObj,
   DebugSplitMod,
+  DebugDup,
   Back,
   Forward,
   ContentSplitter,
@@ -74,6 +75,7 @@ enum ObjTreeMenuId {
   AddPackage,
   AddTexture,
   AddMaterial,
+  Duplicate,
 };
 
 #define MAX_SELECTION_HISTORY 50
@@ -369,7 +371,7 @@ void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
     OnExportObjectSelected(index);
   }
 }
-
+                                           
 void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 {
   if (!e.GetItem().IsOk())
@@ -407,6 +409,10 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
   }
   if (node->GetParent())
   {
+    if (node->GetClassName() != NAME_Package)
+    {
+      menu.Append(ObjTreeMenuId::Duplicate, wxT("Duplicate..."));
+    }
     menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
     menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
   }
@@ -450,6 +456,9 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     break;
   case AddMaterial:
     OnAddMaterialClicked(node->GetObjectIndex());
+    break;
+  case Duplicate:
+    OnDuplicateClicked(node->GetObjectIndex());
     break;
   default:
     break;
@@ -685,8 +694,74 @@ void PackageWindow::DebugOnSplitMod(wxCommandEvent&)
   }
 
   offsets.clear();
+}
 
+void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
+{
+  if (!ActiveEditor)
+  {
+    return;
+  }
+  UObject* mi = ActiveEditor->GetObject();
+  FObjectExport* parent = mi->GetExportObject()->Outer;
+  if (!mi)
+  {
+    return;
+  }
+  std::weak_ptr packageWeak = Package;
+  ObjectNameDialog::Validator validatorFunc = [&](const wxString& name) {
+    std::shared_ptr<FPackage> package = packageWeak.lock();
+    if (!package)
+    {
+      return false;
+    }
+    if (name.Find(" ") != wxString::npos)
+    {
+      return false;
+    }
+    FString tmpName = name.ToStdWstring();
+    if (!tmpName.IsAnsi())
+    {
+      return false;
+    }
+    std::vector<FObjectExport*> exps;
+    if (parent)
+    {
+      exps = parent->Inner;
+    }
+    else
+    {
+      exps = package->GetRootExports();
+    }
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetObjectName() == tmpName)
+      {
+        return false;
+      }
+    }
+    return true;
+  };
+  wxString name = mi->GetObjectName().WString();
+  ObjectNameDialog nameDialog = ObjectNameDialog(this, name);
+  nameDialog.SetValidator(validatorFunc);
 
+  if (nameDialog.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  name = nameDialog.GetObjectName();
+  if (name.empty())
+  {
+    return;
+  }
+
+  if (FObjectExport* exp = Package->DuplicateExport(mi->GetExportObject(), mi->GetExportObject()->Outer, name.ToStdWstring()))
+  {
+    ObjectTreeCtrl->AddExportObject(exp);
+    OnExportObjectSelected(exp->ObjectIndex);
+  }
 }
 
 void PackageWindow::FixOSG()
@@ -1496,6 +1571,103 @@ void PackageWindow::OnAddMaterialClicked(int parentIdx)
   FObjectExport* parent = parentIdx != FAKE_EXPORT_ROOT ? Package->GetExportObject(parentIdx) : nullptr;
 }
 
+void PackageWindow::OnDuplicateClicked(PACKAGE_INDEX objIndex)
+{
+  ObjectPicker picker(this, wxS("Select destination folder..."), false, Package, 0, { NAME_Package });
+  picker.SetAllowRootExport(true);
+  UObject* dest = nullptr;
+  while (!dest)
+  {
+    if (picker.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    dest = picker.GetSelectedObject();
+    if (!dest)
+    {
+      // ROOT_EXPORT
+      break;
+    }
+    if (dest->GetClassName() != NAME_Package)
+    {
+      wxMessageBox(wxT("The selected object is not a package/folder."), "Error!", wxICON_ERROR, this);
+      dest = nullptr;
+    }
+  }
+
+  FObjectExport* source = Package->GetExportObject(objIndex);
+  FObjectExport* parent = dest ? dest->GetExportObject() : nullptr;
+  wxString name = source->GetObjectName().WString();
+  std::weak_ptr packageWeak = Package;
+  ObjectNameDialog::Validator validatorFunc = [&](const wxString& name) {
+    std::shared_ptr<FPackage> package = packageWeak.lock();
+    if (!package)
+    {
+      return false;
+    }
+    if (name.Find(" ") != wxString::npos)
+    {
+      return false;
+    }
+    FString tmpName = name.ToStdWstring();
+    if (!tmpName.IsAnsi())
+    {
+      return false;
+    }
+    std::vector<FObjectExport*> exps;
+    if (parent)
+    {
+      exps = parent->Inner;
+    }
+    else
+    {
+      exps = package->GetRootExports();
+    }
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetObjectName() == tmpName)
+      {
+        return false;
+      }
+    }
+    return true;
+  };
+  ObjectNameDialog nameDialog = ObjectNameDialog(this, name);
+  nameDialog.SetValidator(validatorFunc);
+
+  if (nameDialog.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+
+  name = nameDialog.GetObjectName();
+  if (name.empty())
+  {
+    return;
+  }
+
+  std::function<void(FObjectExport*)> addExpRec;
+  addExpRec = [&](FObjectExport* exp) {
+    ObjectTreeCtrl->AddExportObject(exp);
+    for (FObjectExport* inner : exp->Inner)
+    {
+      addExpRec(inner);
+    }
+  };
+
+  if (FObjectExport* result = Package->DuplicateExport(source, parent, name.ToStdWstring()))
+  {
+    ObjectTreeCtrl->Freeze();
+    addExpRec(result);
+    wxDataViewItem item(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(result->ObjectIndex));
+    ObjectTreeCtrl->Select(item);
+    ObjectTreeCtrl->Collapse(item);
+    ObjectTreeCtrl->EnsureVisible(item);
+    ObjectTreeCtrl->Thaw();
+    OnExportObjectSelected(result->ObjectIndex);
+  }
+}
+
 void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
 {
   if (!ContentSplitter->IsSashInvisible())
@@ -1599,4 +1771,5 @@ EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 
 EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObject)
 EVT_MENU(ControlElementId::DebugSplitMod, PackageWindow::DebugOnSplitMod)
+EVT_MENU(ControlElementId::DebugDup, PackageWindow::DebugOnDupSelection)
 wxEND_EVENT_TABLE()

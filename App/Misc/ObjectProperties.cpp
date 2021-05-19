@@ -709,7 +709,20 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
   PACKAGE_INDEX idx = Value->GetObjectIndex();
   FPackage* thisPackage = Value->Property->Owner->GetPackage();
   UObject* selection =thisPackage->GetObject(idx);
-  ObjectPicker picker = ObjectPicker(pg->GetPanel(), GetLabel(), true, selection ? selection->GetPackage()->GetPackageName().WString() : thisPackage->GetPackageName().WString(), selection ? selection->GetExportObject()->ObjectIndex : 0);
+  
+  std::vector<FString> filter;
+  if (UObjectProperty* oprop = Cast<UObjectProperty>(Value->Property->ClassProperty))
+  {
+    if (UClass* cls = oprop->PropertyClass)
+    {
+      std::vector<UClass*> inherited = cls->GetInheritedClasses(true);
+      for (UClass* cls : inherited)
+      {
+        filter.emplace_back(cls->GetObjectName());
+      }
+    }
+  }
+  ObjectPicker picker = ObjectPicker(pg->GetPanel(), GetLabel(), true, selection ? selection->GetPackage()->GetPackageName().WString() : thisPackage->GetPackageName().WString(), selection ? selection->GetExportObject()->ObjectIndex : 0, filter);
   if (!picker.IsValid() || picker.ShowModal() != wxID_OK)
   {
     AllowChanges = false;

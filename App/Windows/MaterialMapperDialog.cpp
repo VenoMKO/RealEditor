@@ -1,5 +1,9 @@
 #include "MaterialMapperDialog.h"
+#include "ObjectPicker.h"
 #include <Tera/UObject.h>
+#include <Tera/FPackage.h>
+#include <Tera/Cast.h>
+#include <Tera/UMaterial.h>
 
 struct MaterialMapperItem {
   wxString FbxName;
@@ -12,7 +16,7 @@ public:
   {
     Materials = map;
     ObjectMaterials = objectMaterials;
-    if (ObjectMaterials.front())
+    if (!ObjectMaterials.size() || ObjectMaterials.front())
     {
       ObjectMaterials.insert(ObjectMaterials.begin(), nullptr);
     }
@@ -159,6 +163,10 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
         output[fbxIdx] = std::make_pair(fbxMaterials[fbxIdx], objectMaterial);
       }
     }
+    if (output[fbxIdx].first.Empty())
+    {
+      output[fbxIdx] = std::make_pair(fbxMaterials[fbxIdx], nullptr);
+    }
   }
   bool exactMatch = true;
   for (bool e : exact)
@@ -172,9 +180,10 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
   return exactMatch;
 }
 
-MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)
+MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)
   : wxDialog(parent, wxID_ANY, wxT("Material mapping"), wxDefaultPosition, wxSize(462, 333), wxDEFAULT_DIALOG_STYLE)
 {
+  Object = object;
   ObjectMaterials = objectMaterials;
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -186,15 +195,14 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<s
   m_staticText1->Wrap(-1);
   bSizer1->Add(m_staticText1, 0, wxALL, 5);
 
-  MaterialsList = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
+  MaterialsList = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
   bSizer1->Add(MaterialsList, 1, wxALL | wxEXPAND, 5);
 
   wxBoxSizer* bSizer3;
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
   wxButton* m_button5;
-  m_button5 = new wxButton(this, wxID_ANY, wxT("Edit..."), wxDefaultPosition, wxDefaultSize, 0);
-  m_button5->Enable(false);
+  m_button5 = new wxButton(this, wxID_ANY, wxT("Add..."), wxDefaultPosition, wxDefaultSize, 0);
 
   bSizer3->Add(m_button5, 0, wxALL, 5);
 
@@ -219,11 +227,11 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<s
   this->Centre(wxBOTH);
 
   // Connect Events
-  m_button5->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnEditClicked), nullptr, this);
+  m_button5->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnAddClicked), nullptr, this);
   m_button3->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnOkClicked), nullptr, this);
   m_button4->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnCancelClicked), nullptr, this);
 
-  MaterialsList->AppendTextColumn(wxT("FBX Material"), wxDATAVIEW_CELL_INERT, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  MaterialsList->AppendTextColumn(wxT("FBX Material"), 0, wxDATAVIEW_CELL_INERT, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
 
   // Populate choices
   wxArrayString choices;
@@ -248,7 +256,7 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, const std::vector<s
   model->DecRef();
 }
 
-std::vector<std::pair<FString, UObject*>> MaterialMapperDialog::GetResult() const
+std::vector<std::pair<FString, UObject*>> MaterialMapperDialog::GetMaterialMap() const
 {
   MaterialMapperModel* model = (MaterialMapperModel*)MaterialsList->GetModel();
   auto materials = model->GetMaterials();
@@ -260,9 +268,49 @@ std::vector<std::pair<FString, UObject*>> MaterialMapperDialog::GetResult() cons
   return result;
 }
 
-void MaterialMapperDialog::OnEditClicked(wxCommandEvent&)
+void MaterialMapperDialog::OnAddClicked(wxCommandEvent&)
 {
-  // TODO: Modify model materials
+  ObjectPicker picker(this, wxS("Select a material..."), false, Object->GetPackage()->Ref(), 0, { "Material", "MaterialInstance", "MaterialInstanceConstant" });
+  UObject* material = nullptr;
+  while (!material)
+  {
+    if (picker.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    material = picker.GetSelectedObject();
+    if (!material)
+    {
+      wxMessageBox(wxT("Selected object is not a Material Instance Constant!"), wxT("Error!"), wxICON_ERROR);
+    }
+    if (std::find(ObjectMaterials.begin(), ObjectMaterials.end(), material) != ObjectMaterials.end())
+    {
+      wxMessageBox(wxT("Selected object already exists in the model materials list!"), wxT("Error!"), wxICON_ERROR);
+      material = nullptr;
+    }
+  }
+  ObjectMaterials.emplace_back(material);
+
+
+  MaterialsList->DeleteColumn(MaterialsList->GetColumnAt(MaterialsList->GetColumnCount() - 1));
+  wxArrayString choices;
+  choices.Add("None");
+  for (const auto& mat : ObjectMaterials)
+  {
+    if (!mat)
+    {
+      continue;
+    }
+    choices.Add(mat->GetObjectName().WString());
+  }
+  wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
+  MaterialsList->AppendColumn(m_dataViewListColumn1);
+
+  MaterialMapperModel* model = (MaterialMapperModel*)MaterialsList->GetModel();
+  auto materials = model->GetMaterials();
+  model = new MaterialMapperModel(materials, ObjectMaterials);
+  MaterialsList->AssociateModel(model);
+  model->DecRef();
 }
 
 void MaterialMapperDialog::OnOkClicked(wxCommandEvent&)

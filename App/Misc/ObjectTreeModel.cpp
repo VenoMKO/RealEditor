@@ -5,6 +5,36 @@
 #include <Tera/Core.h>
 #include <Tera/FObjectResource.h>
 
+inline int GetSuitableExportsCount(FObjectExport* exp, const std::vector<FString>& filter, bool recursivly)
+{
+  int result = 0;
+  if (std::find_if(filter.begin(), filter.end(), [&](const FString& cls) { return cls.ToUpper() == exp->GetClassName().ToUpper(); }) != filter.end())
+  {
+    result++;
+  }
+  else
+  {
+    bool contains = false;
+    for (FObjectExport* child : exp->Inner)
+    {
+      int tmp = GetSuitableExportsCount(child, filter, true);
+      if (recursivly)
+      {
+        result += tmp;
+      }
+      if (tmp)
+      {
+        contains = true;
+      }
+    }
+    if (contains)
+    {
+      result++;
+    }
+  }
+  return result;
+}
+
 enum ClassIco : int {
   IcoPackage = 0,
   IcoField,
@@ -91,13 +121,16 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   return IcoGeneric;
 }
 
-ObjectTreeNode::ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps)
+ObjectTreeNode::ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const std::vector<FString>& allowedClasses)
 {
   Name = A2W(name);
   for (FObjectExport* exp : exps)
   {
-    ObjectTreeNode* child = new ObjectTreeNode(this, exp);
-    Children.Add(child);
+    if (allowedClasses.empty() || GetSuitableExportsCount(exp, allowedClasses, true))
+    {
+      ObjectTreeNode* child = new ObjectTreeNode(this, exp, allowedClasses);
+      Children.Add(child);
+    }
   }
 }
 
@@ -111,15 +144,18 @@ ObjectTreeNode::ObjectTreeNode(std::vector<FObjectImport*> imps)
   }
 }
 
-ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp)
+ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const std::vector<FString>& allowedClasses)
   : Export(exp)
   , Parent(parent)
 {
   Resource = (FObjectResource*)exp;
   for (FObjectExport* expChild : exp->Inner)
   {
-    ObjectTreeNode* child = new ObjectTreeNode(this, expChild);
-    Children.Add(child);
+    if (allowedClasses.empty() || GetSuitableExportsCount(expChild, allowedClasses, true))
+    {
+      ObjectTreeNode* child = new ObjectTreeNode(this, expChild, allowedClasses);
+      Children.Add(child);
+    }
   }
 }
 
@@ -191,9 +227,10 @@ ObjectTreeNode* ObjectTreeNode::FindItemByObjectIndex(PACKAGE_INDEX index)
   return nullptr;
 }
 
-ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports)
+ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const std::vector<FString>& allowedClasses)
 {
-  RootExport = new ObjectTreeNode(packageName, rootExports);
+  Filter = allowedClasses;
+  RootExport = new ObjectTreeNode(packageName, rootExports, allowedClasses);
   if (rootImports.size())
   {
     RootImport = new ObjectTreeNode(rootImports);
@@ -263,6 +300,12 @@ void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, u
     value.SetIcon(IconList->GetIcon(ObjectClassToClassIco(node->GetClassName())));
   }
   variant << value;
+}
+
+bool ObjectTreeModel::IsEnabled(const wxDataViewItem& item, unsigned int col) const
+{
+  ObjectTreeNode* node = (ObjectTreeNode*)item.GetID();
+  return Filter.empty() || std::find_if(Filter.begin(), Filter.end(), [&](const FString& cls) { return cls.ToUpper() == node->GetClassName().Upper().ToStdWstring(); }) != Filter.end();
 }
 
 wxDataViewItem ObjectTreeModel::GetParent(const wxDataViewItem& item) const

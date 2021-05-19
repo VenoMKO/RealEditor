@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#include <Tera/FString.h>
+
 class FObjectResource;
 class FObjectExport;
 class FObjectImport;
@@ -17,10 +19,10 @@ WX_DEFINE_ARRAY_PTR(ObjectTreeNode*, ObjectTreeNodePtrArray);
 class ObjectTreeNode {
 public:
 
-  ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps);
+  ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const std::vector<FString>& allowedClasses = {});
   ObjectTreeNode(std::vector<FObjectImport*> imps);
 
-  ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp);
+  ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const std::vector<FString>& allowedClasses = {});
 
   ObjectTreeNode(ObjectTreeNode* parent, FObjectImport* imp);
 
@@ -70,7 +72,7 @@ private:
 
 class ObjectTreeModel : public wxDataViewModel {
 public:
-  ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports);
+  ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const std::vector<FString>& allowedClasses = {});
 
   ~ObjectTreeModel()
   {
@@ -101,10 +103,7 @@ public:
     return true;
   }
 
-  bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override
-  {
-    return true;
-  }
+  bool IsEnabled(const wxDataViewItem& item, unsigned int col) const override;
 
   wxDataViewItem GetParent(const wxDataViewItem& item) const override;
 
@@ -125,6 +124,7 @@ public:
   }
 
 private:
+  std::vector<FString> Filter;
   ObjectTreeNode* RootExport = nullptr;
   ObjectTreeNode* RootImport = nullptr;
   wxImageList* IconList = nullptr;
