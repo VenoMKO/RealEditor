@@ -647,6 +647,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       return;
     }
   }
+  FPackage::BuildClassInheritance();
   PERF_END(ClassPackagesLoad);
 
 #if 0

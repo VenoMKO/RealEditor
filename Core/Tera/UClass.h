@@ -302,6 +302,35 @@ public:
 
   void Serialize(FStream& s) override;
 
+  void AddInheretedClass(UClass* cls)
+  {
+    if (!cls)
+    {
+      return;
+    }
+    InheritedClasses.emplace_back(cls);
+  }
+
+  std::vector<UClass*> GetInheritedClasses(bool recursive = false) const
+  {
+    if (recursive)
+    {
+      std::vector<UClass*> result;
+      for (UClass* cls : InheritedClasses)
+      {
+        if (!cls)
+        {
+          continue;
+        }
+        result.emplace_back(cls);
+        std::vector<UClass*> inh = cls->GetInheritedClasses(true);
+        result.insert(result.end(), inh.begin(), inh.end());
+      }
+      return result;
+    }
+    return InheritedClasses;
+  }
+
 protected:
   uint32 ClassFlags = 0;
   int32 ClassUnique = 0;
@@ -319,6 +348,7 @@ protected:
   FName DLLBindName;
   DECL_UREF(UObject, ClassDefaultObject);
   bool BuiltIn = false;
+  std::vector<UClass*> InheritedClasses;
 
   uint32 ClassCastFlags = CASTCLASS_None;
 };

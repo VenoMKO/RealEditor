@@ -479,6 +479,18 @@ void FPackage::RegisterClass(UClass* classObject)
   ClassMap[classObject->GetObjectName()] = classObject;
 }
 
+void FPackage::BuildClassInheritance()
+{
+  std::vector<UClass*> classes = GetClasses();
+  for (UClass* cls : classes)
+  {
+    if (UClass* spr = cls->GetSuperClass())
+    {
+      spr->AddInheretedClass(cls);
+    }
+  }
+}
+
 void FPackage::CleanCacheDir()
 {
   std::error_code err;
@@ -2416,6 +2428,52 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
   return nullptr;
 }
 
+FObjectExport* FPackage::DuplicateExportRecursivly(FObjectExport* source, FObjectExport* dest, const FString& objectName)
+{
+  FObjectExport* exp = new FObjectExport(this, objectName);
+  exp->ExportFlags = EF_None;
+  exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
+  exp->ClassIndex = source->ClassIndex;
+  Exports.emplace_back(exp);
+  Depends.emplace_back();
+  exp->ObjectIndex = (PACKAGE_INDEX)Exports.size();
+
+  if (dest)
+  {
+    dest->Inner.emplace_back(exp);
+    exp->Outer = dest;
+    exp->OuterIndex = dest->ObjectIndex;
+  }
+  else
+  {
+    RootExports.emplace_back(exp);
+    exp->OuterIndex = 0;
+  }
+  exp->SerialOffset = source->SerialOffset;
+  exp->SerialSize = source->SerialSize;
+
+  UObject* obj = UObject::Object(exp);
+  SetCachedExportObject(exp->ObjectIndex, obj);
+  obj = GetObject(exp, true);
+  if (obj)
+  {
+    obj->MarkDirty();
+  }
+  else
+  {
+    DBreak();
+    RemoveExport(exp);
+    return nullptr;
+  }
+  exp->SerialOffset = 0;
+  exp->SerialSize = 0;
+  for (FObjectExport* sourceChild : source->Inner)
+  {
+    DuplicateExportRecursivly(sourceChild, exp, sourceChild->GetObjectName());
+  }
+  return exp;
+}
+
 PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
 {
   if (!object)
@@ -2821,6 +2879,15 @@ FObjectExport* FPackage::AddExport(const FString& objectName, const FString& obj
   std::scoped_lock<std::mutex> l(ExportObjectsMutex);
   ExportObjects[exp->ObjectIndex] = object;
   return exp;
+}
+
+FObjectExport* FPackage::DuplicateExport(FObjectExport* source, FObjectExport* dest, const FString& objectName)
+{
+  if (!source)
+  {
+    return nullptr;
+  }
+  return DuplicateExportRecursivly(source, dest, objectName);
 }
 
 void FPackage::RemoveExport(FObjectExport* exp)

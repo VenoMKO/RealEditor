@@ -27,7 +27,7 @@ struct PackageSaveContext {
 	std::function<bool(void)> IsCancelledCallback;
 };
 
-class FPackage {
+class FPackage : public std::enable_shared_from_this<FPackage> {
 public:
 	// Removes all files in a tmp dir. Should be called before any package is open.
 	static void CleanCacheDir();
@@ -78,6 +78,8 @@ public:
 	// Register a built-in class
 	static void RegisterClass(UClass* classObject);
 
+	static void BuildClassInheritance();
+
 private:
 	// Packages must be loaded/created from the static methods
 	FPackage(FPackageSummary& sum)
@@ -86,6 +88,11 @@ private:
 
 public:
 	~FPackage();
+
+	std::shared_ptr<FPackage> Ref()
+	{
+		return shared_from_this();
+	}
 
 	// Create a read stream using DataPath and serialize tables
 	void Load();
@@ -202,6 +209,8 @@ public:
 
 	// Add an export to the exports table and create a UObject
 	FObjectExport* AddExport(const FString& objectName, const FString& objectClass, FObjectExport* parent);
+
+	FObjectExport* DuplicateExport(FObjectExport* source, FObjectExport* dest, const FString& objectName);
 
 	// Remove an export added by AddExport. Invalidates exp pointer!!!
 	void RemoveExport(FObjectExport* exp);
@@ -352,6 +361,8 @@ private:
 	UObject* SetCachedImportObject(PACKAGE_INDEX index, UObject* obj);
 
 	UObject* GetForcedExport(FObjectExport* exp);
+
+	FObjectExport* DuplicateExportRecursivly(FObjectExport* source, FObjectExport* dest, const FString& objectName);
 
 private:
 	FPackageSummary Summary;
