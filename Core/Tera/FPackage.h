@@ -77,7 +77,7 @@ public:
 	static std::vector<UClass*> GetClasses();
 	// Register a built-in class
 	static void RegisterClass(UClass* classObject);
-
+	// Fill classes Inheritance vectors
 	static void BuildClassInheritance();
 
 private:
@@ -89,6 +89,9 @@ private:
 public:
 	~FPackage();
 
+	// Create a ref of the package.
+	// Warning! This method bypasses the FPackage retain/release mechanics.
+	// Shouldn't be used unless absolutely necessary.
 	std::shared_ptr<FPackage> Ref()
 	{
 		return shared_from_this();
@@ -111,6 +114,7 @@ public:
 	// Get package index of the object. Accepts imported objects
 	PACKAGE_INDEX GetObjectIndex(UObject* object) const;
 
+	// Get an index for FName instance. The insert flag adds the name if necessary.
 	PACKAGE_INDEX GetNameIndex(const FString& name, bool insert = false);
 
 	// Get a UClass with idx
@@ -137,6 +141,7 @@ public:
 		return Summary.PackageFlags & PKG_Dirty;
 	}
 
+	// Mark package as dirty/clean
 	void MarkDirty(bool dirty = true);
 
 	// Get all root exports
@@ -161,11 +166,13 @@ public:
 		return Imports;
 	}
 
+	// Check if the package has the provided flag
 	inline bool GetPackageFlag(EPackageFlags flag)
 	{
 		return Summary.PackageFlags & flag;
 	}
 
+	// Toggle the provided flag
 	inline void SetPackageFlag(EPackageFlags flag, bool state = true)
 	{
 		if (state)
@@ -195,6 +202,7 @@ public:
 		return Imports[i];
 	}
 
+	// Find an existing import object with the exact name and class
 	FObjectImport* GetImportObject(const FString& objectName, const FString& className) const;
 
 	// Get export object at index
@@ -210,6 +218,7 @@ public:
 	// Add an export to the exports table and create a UObject
 	FObjectExport* AddExport(const FString& objectName, const FString& objectClass, FObjectExport* parent);
 
+	// Duplicate the source object and move it to the dest's inner. If dest is null, ROOT_EXPORT will be used.
 	FObjectExport* DuplicateExport(FObjectExport* source, FObjectExport* dest, const FString& objectName);
 
 	// Remove an export added by AddExport. Invalidates exp pointer!!!
@@ -244,11 +253,13 @@ public:
 		return Names[index].GetString();
 	}
 
+	// Get Summary's FolderName
 	inline FString GetFolderName() const
 	{
 		return Summary.FolderName;
 	}
 
+	// Modify Summary's FolderName
 	inline void SetFolderName(const FString& name)
 	{
 		if (Summary.FolderName != name)
@@ -288,45 +299,52 @@ public:
 		return Ready.load();
 	}
 
-	// Cancell loading operation
+	// Cancel loading operation
 	void CancelOperation()
 	{
 		Cancelled.store(true);
 	}
 
+	// Check if the load operation was canceled
 	bool IsOperationCancelled() const
 	{
 		return Cancelled.load();
 	}
 
+	// Package file/archive version
 	inline uint16 GetFileVersion() const
 	{
 		return Summary.GetFileVersion();
 	}
 
+	// Package licensee version
 	inline uint16 GetLicenseeVersion() const
 	{
 		return Summary.GetLicenseeVersion();
 	}
 
+	// Package header
 	inline FPackageSummary GetSummary() const
 	{
 		return Summary;
 	}
 
+	// Table of texture allocations. Writable!
 	inline FTextureAllocations& GetTextureAllocations()
 	{
 		return Summary.TextureAllocations;
 	}
 
+	// Get package composite path aka object path(i.e. 1af4203b10/Skel/Test_dup) or an empty string
 	FString GetCompositePath();
 	
-	// Used to create builtin classes
+	// Used to create built-in classes
 	VObjectExport* CreateVirtualExport(const char* objName, const char* clsName);
 
 	// Get package name
 	FString GetPackageName(bool extension = false) const;
 
+	// Get all package name entries
 	inline std::vector<FString> GetNames() const
 	{
 		std::vector<FString> result;
@@ -347,6 +365,7 @@ public:
 		return Composite;
 	}
 
+	// Add a package to a temporary depends list so it won't get released while the current package still needs it.
 	void RetainPackage(std::shared_ptr<FPackage> package);
 
 private:
