@@ -7,7 +7,8 @@
 
 class ObjectPicker : public wxDialog {
 public:
-  ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection = 0);
+  ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection = 0, const std::vector<FString>& allowedClasses = {});
+  ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection = 0, const std::vector<FString>& allowedClasses = {});
   ~ObjectPicker();
 
   void SetCanChangePackage(bool flag);
@@ -22,6 +23,11 @@ public:
     return Selection;
   }
 
+  void SetAllowRootExport(bool flag)
+  {
+    AllowRootExport = flag;
+  }
+
 protected:
   void OnObjectSelected(wxDataViewEvent& event);
   void OnPackageClicked(wxCommandEvent& event);
@@ -33,7 +39,9 @@ protected:
 protected:
   UObject* Selection = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
+  std::vector<FString> Filter;
   bool AllowDifferentPackage = false;
+  bool AllowRootExport = false;
 
   wxString TableTitle;
   wxDataViewCtrl* ObjectTreeCtrl = nullptr;
