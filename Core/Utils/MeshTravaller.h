@@ -69,4 +69,5 @@ struct MeshTravallerData {
   bool MissingTangents = false;
 
   std::vector<std::pair<FString, UObject*>> MaterialMap;
+  std::vector<UObject*> ObjectMaterials;
 };

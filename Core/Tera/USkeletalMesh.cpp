@@ -641,6 +641,34 @@ int SortSkeletalMeshVertIndexAndZ(const void* a, const void* b)
 
 bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, FString& error)
 {
+  std::vector<int32> matmap(importData->Materials.size());
+  for (int32 idx = 0; idx < matmap.size(); ++idx)
+  {
+    auto name = importData->Materials[idx];
+    auto it = std::find_if(importData->MaterialMap.begin(), importData->MaterialMap.end(), [&](const auto& p) { return p.first == name; });
+    if (it != importData->MaterialMap.end())
+    {
+      matmap[idx] = std::find(importData->ObjectMaterials.begin(), importData->ObjectMaterials.end(), (*it).second) - importData->ObjectMaterials.begin();
+    }
+    else
+    {
+      matmap[idx] = 0;
+    }
+  }
+  if (matmap.empty())
+  {
+    matmap.emplace_back(0);
+  }
+
+  for (auto& wedge : importData->Wedges)
+  {
+    wedge.materialIndex = matmap[wedge.materialIndex];
+  }
+  for (auto& face : importData->Faces)
+  {
+    face.materialIndex = matmap[face.materialIndex];
+  }
+
   bool needs32bitIndexContainer = false;
   std::vector<FVector> faceTangentX(importData->Faces.size());
   std::vector<FVector> faceTangentY(importData->Faces.size());
@@ -1160,6 +1188,7 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
     }
   }
 
+  Materials = importData->ObjectMaterials;
 #if _DEBUG
   LodModels[lodIdx]._DebugVerify(this);
 #endif
