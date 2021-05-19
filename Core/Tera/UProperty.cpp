@@ -129,6 +129,7 @@ FPropertyTag* UByteProperty::CreatePropertyTag(UObject* object)
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ByteProperty);
   tag->ClassProperty = this;
+  tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
   tag->Value->Type = FPropertyValue::VID::Byte;
@@ -168,6 +169,7 @@ FPropertyTag* UIntProperty::CreatePropertyTag(UObject* object)
     return nullptr;
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_IntProperty);
+  tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
@@ -203,6 +205,7 @@ FPropertyTag* UBoolProperty::CreatePropertyTag(UObject* object)
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_BoolProperty);
   tag->ClassProperty = this;
+  tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
   tag->Value->Type = FPropertyValue::VID::Bool;
@@ -227,6 +230,7 @@ FPropertyTag* UFloatProperty::CreatePropertyTag(UObject* object)
     return nullptr;
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_FloatProperty);
+  tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
@@ -252,6 +256,7 @@ FPropertyTag* UNameProperty::CreatePropertyTag(UObject* object)
     return nullptr;
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_NameProperty);
+  tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
@@ -277,6 +282,7 @@ FPropertyTag* UStrProperty::CreatePropertyTag(UObject* object)
     return nullptr;
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StrProperty);
+  tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
@@ -314,6 +320,7 @@ FPropertyTag* UArrayProperty::CreatePropertyTag(UObject* object)
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ArrayProperty);
   tag->ClassProperty = this;
+  tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
   tag->Value->Type = FPropertyValue::VID::Array;
@@ -349,6 +356,7 @@ FPropertyTag* UStructProperty::CreatePropertyTag(UObject* object)
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StructProperty);
   tag->ClassProperty = this;
+  tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Struct = Struct;
   tag->Value->Field = this;
@@ -378,6 +386,7 @@ FPropertyTag* UObjectProperty::CreatePropertyTag(UObject* object)
     return nullptr;
   }
   FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ObjectProperty);
+  tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
   tag->Value->Field = this;
