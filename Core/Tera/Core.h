@@ -20,10 +20,6 @@ static const float APP_VER = 1.77f;
 #define CACHE_COMPOSITE_MAP 0
 #define CACHE_S1GAME_CONTENTS 0
 
-// Vertex buffer positions are not packed despite the flag.
-// Packed positions are allowed on consoles only.
-#define ENABLE_PACKED_VERTEX_POSITION 0
-
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,
 // so its better to use CPU buffer instead. (Tera uses GPU buffer to render models)

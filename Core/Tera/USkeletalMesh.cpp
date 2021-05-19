@@ -1,5 +1,6 @@
 #include "USkeletalMesh.h"
 #include "FObjectResource.h"
+#include <Tera/Cast.h>
 #include <Utils/MeshTravaller.h>
 
 #define SCALE_TOLERANCE .1f
@@ -295,7 +296,7 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
     FILE_OFFSET len = s.GetPosition();
     if (!b.bUseFullPrecisionUVs)
     {
-      if (b.bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+      if (b.bUsePackedPosition && b.bDisableCompression)
       {
         if (s.IsReading())
         {
@@ -320,7 +321,7 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
     }
     else
     {
-      if (b.bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+      if (b.bUsePackedPosition && b.bDisableCompression)
       {
         if (s.IsReading())
         {
@@ -346,7 +347,7 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
     len = s.GetPosition() - len;
     if (len != b.ElementCount * b.ElementSize)
     {
-      UThrow("Failed to serialize GPU vertex buffer. Size mismatch: %d != %d(P:%d,T:%d)", len, b.ElementCount * b.ElementSize, b.bUsePackedPosition, b.bUseFullPrecisionUVs);
+      UThrow("Failed to serialize GPU vertex buffer. Size mismatch: %d != %d(P:%d,T:%d,C:%d)", len, b.ElementCount * b.ElementSize, b.bUsePackedPosition, b.bUseFullPrecisionUVs, b.bDisableCompression);
     }
   }
   return s;
@@ -417,7 +418,7 @@ FStream& operator<<(FStream& s, FPerPolyBoneCollisionData& d)
   return s << d.KDOPTree << d.Vertices;
 }
 
-void FStaticLODModel::Serialize(FStream& s, UObject* owner)
+void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
 {
   s << Sections;
   s << IndexContainer;
@@ -437,6 +438,20 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner)
   s << Chunks;
   s << Size;
   s << NumVertices;
+
+  USkeletalMesh* mesh = Cast<USkeletalMesh>(owner);
+  if (s.IsReading() && mesh->LODInfo && mesh->LODInfo->size() < idx)
+  {
+    FPropertyTag* disableComp = mesh->LODInfo->at(idx)->FindSubProperty("bDisableCompression");
+    if (!disableComp)
+    {
+      disableComp = mesh->LODInfo->at(idx)->FindSubProperty("bDisableCompressions");
+    }
+    if (disableComp)
+    {
+      VertexBufferGPUSkin.bDisableCompression = disableComp->GetBool();
+    }
+  }
 
   if (s.GetFV() == VER_TERA_CLASSIC)
   {
@@ -581,6 +596,12 @@ bool USkeletalMesh::RegisterProperty(FPropertyTag* property)
     bHasVertexColorsProperty = property;
     return true;
   }
+  if (PROP_IS(property, LODInfo))
+  {
+    LODInfo = &property->GetArray();
+    LODInfoProperty = property;
+    return true;
+  }
   return false;
 }
 
@@ -601,7 +622,7 @@ void USkeletalMesh::Serialize(FStream& s)
   }
   for (int32 idx = 0; idx < modelsCount; ++idx)
   {
-    LodModels[idx].Serialize(s, this);
+    LodModels[idx].Serialize(s, this, idx);
   }
 
   s << NameIndexMap;
@@ -1352,7 +1373,7 @@ void FSkeletalMeshVertexBuffer::AllocateBuffer(uint32 count)
 
   if (!bUseFullPrecisionUVs)
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       ALLOCATE_BUFFER_TEMPLATE(FGPUSkinVertexFloatAB);
     }
@@ -1363,7 +1384,7 @@ void FSkeletalMeshVertexBuffer::AllocateBuffer(uint32 count)
   }
   else
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       ALLOCATE_BUFFER_TEMPLATE(FGPUSkinVertexFloatAAB);
     }
@@ -1385,7 +1406,7 @@ void FSkeletalMeshVertexBuffer::SetVertex(int32 vertexIndex, const FSoftSkinVert
   
   if (!bUseFullPrecisionUVs)
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       FGPUSkinVertexFloatAB<MAX_TEXCOORDS>* typedPtr = (FGPUSkinVertexFloatAB<MAX_TEXCOORDS>*)basePtr;
       typedPtr->Position = src.Position;
@@ -1406,7 +1427,7 @@ void FSkeletalMeshVertexBuffer::SetVertex(int32 vertexIndex, const FSoftSkinVert
   }
   else
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       FGPUSkinVertexFloatAAB<MAX_TEXCOORDS>* typedPtr = (FGPUSkinVertexFloatAAB<MAX_TEXCOORDS>*)basePtr;
       typedPtr->Position = src.Position;
@@ -1437,7 +1458,7 @@ void FSkeletalMeshVertexBuffer::GetVertex(int32 vertexIndex, FSoftSkinVertex& ds
 
   if (!bUseFullPrecisionUVs)
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       dst.Position = ((const FGPUSkinVertexFloatAB<MAX_TEXCOORDS>*)(basePtr))->Position;
       for (uint32 UVIndex = 0; UVIndex < NumTexCoords; ++UVIndex)
@@ -1456,7 +1477,7 @@ void FSkeletalMeshVertexBuffer::GetVertex(int32 vertexIndex, FSoftSkinVertex& ds
   }
   else
   {
-    if (bUsePackedPosition && ENABLE_PACKED_VERTEX_POSITION)
+    if (bUsePackedPosition && bDisableCompression)
     {
       dst.Position = ((FGPUSkinVertexFloatAAB<MAX_TEXCOORDS>*)(basePtr))->Position;
       for (uint32 UVIndex = 0; UVIndex < NumTexCoords; ++UVIndex)

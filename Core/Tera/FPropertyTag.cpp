@@ -109,6 +109,42 @@ void FPropertyValue::RegisterEnumNames()
   }
 }
 
+FPropertyTag* FPropertyValue::FindSubProperty(const FString& name)
+{
+  if (Type == FPropertyValue::VID::Property)
+  {
+    FPropertyTag* tag = GetPropertyTagPtr();
+    if (tag->Name == name)
+    {
+      return tag;
+    }
+    return nullptr;
+  }
+  if (Type == FPropertyValue::VID::Array)
+  {
+    std::vector<FPropertyValue*>& items = GetArray();
+    for (FPropertyValue* val : items)
+    {
+      if (FPropertyTag* test = val->FindSubProperty(name))
+      {
+        return test;
+      }
+    }
+  }
+  if (Type == FPropertyValue::VID::Struct)
+  {
+    std::vector<FPropertyValue*>& items = GetArray();
+    for (FPropertyValue* val : items)
+    {
+      if (FPropertyTag* test = val->FindSubProperty(name))
+      {
+        return test;
+      }
+    }
+  }
+  return nullptr;
+}
+
 FPropertyTag::FPropertyTag(UObject* owner, const FString& name, const FString& type)
 {
   Owner = owner;

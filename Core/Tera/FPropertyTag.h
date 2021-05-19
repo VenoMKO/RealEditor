@@ -156,6 +156,8 @@ struct FPropertyValue {
 
   void RegisterEnumNames();
 
+  FPropertyTag* FindSubProperty(const FString& name);
+
   VID Type = VID::None;
   void* Data = nullptr;
   UEnum* Enum = nullptr;

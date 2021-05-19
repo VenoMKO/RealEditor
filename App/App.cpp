@@ -607,6 +607,7 @@ void App::LoadCore(ProgressWindow* pWindow)
   }
 
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading stripped meta data...");
+#ifndef _DEBUG
   {
     std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>> meta;
     try
@@ -623,6 +624,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       LogE("Can't load metadata!");
     }
   }
+#endif
 
   const std::vector<FString> classPackageNames = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
   PERF_START(ClassPackagesLoad);

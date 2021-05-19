@@ -317,6 +317,7 @@ struct  FSkeletalMeshVertexBuffer {
     MeshExtension = a.MeshExtension;
     ElementSize = a.ElementSize;
     ElementCount = a.ElementCount;
+    bDisableCompression = a.bDisableCompression;
     if (ElementCount && ElementSize)
     {
       AllocateBuffer();
@@ -334,6 +335,7 @@ struct  FSkeletalMeshVertexBuffer {
     MeshExtension = a.MeshExtension;
     ElementSize = a.ElementSize;
     ElementCount = a.ElementCount;
+    bDisableCompression = a.bDisableCompression;
     if (ElementCount && ElementSize)
     {
       AllocateBuffer();
@@ -342,6 +344,7 @@ struct  FSkeletalMeshVertexBuffer {
     return *this;
   }
 
+  bool bDisableCompression = false;
   bool bUseFullPrecisionUVs = false;
   bool bUsePackedPosition = true;
 
@@ -441,7 +444,7 @@ struct FPerPolyBoneCollisionData {
 class FStaticLODModel {
 public:
 
-  void Serialize(FStream& s, UObject* owner);
+  void Serialize(FStream& s, UObject* owner, int32 idx);
 
   std::vector<FSoftSkinVertex> GetVertices() const;
   // Buffer: true - GPU, false - CPU.
@@ -496,6 +499,7 @@ class USkeletalMesh : public UObject {
 public:
   DECL_UOBJ(USkeletalMesh, UObject);
   UPROP(bool, bHasVertexColors, false);
+  UPROP(std::vector<FPropertyValue*>*, LODInfo, nullptr);
 
   bool RegisterProperty(FPropertyTag* property) override;
   void Serialize(FStream& s) override;
