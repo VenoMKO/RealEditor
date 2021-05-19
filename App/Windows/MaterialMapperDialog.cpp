@@ -155,6 +155,10 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
     const wxString fbxName = fbxMaterials[fbxIdx].ToUpper().WString();
     for (auto objectMaterial : objectMaterials)
     {
+      if (!objectMaterial)
+      {
+        continue;
+      }
       int32 cmp = fbxName.Cmp(objectMaterial->GetObjectName().ToUpper().UTF8().c_str());
       if (cmp >= 0 && dist > cmp)
       {
