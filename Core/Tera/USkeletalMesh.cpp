@@ -744,6 +744,7 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
     wedgeInfluenceIndices.push_back(vertexIndexToInfluenceIndexMap[wedge.pointIndex]);
   }
   FStaticLODModel lod;
+  lod.VertexBufferGPUSkin.bDisableCompression = LodModels[lodIdx].VertexBufferGPUSkin.bDisableCompression;
   std::multimap<int32, int32> vert2Duplicates;
   std::multimap<int32, int32> vert2Faces;
   {
