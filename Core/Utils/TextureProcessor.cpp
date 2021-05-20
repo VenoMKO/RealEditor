@@ -875,11 +875,7 @@ bool TextureProcessor::FileToBytes()
     FreeImage_Unload(holder.bmp);
     return false;
   }
-  if (SRGB)
-  {
-    surface.toSrgb();
-  }
-  else if (Normal)
+  if (Normal)
   {
     surface.setNormalMap(true);
   }
@@ -893,10 +889,6 @@ bool TextureProcessor::FileToBytes()
   if (Normal)
   {
     compressionOptions.setColorWeights(.4, .4, .2);
-  }
-  else
-  {
-    compressionOptions.setColorWeights(1, 1, 1);
   }
   if (outFmt == nvtt::Format_DXT3)
   {
