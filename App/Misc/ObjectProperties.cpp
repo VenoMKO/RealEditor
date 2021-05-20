@@ -92,7 +92,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const s
   int32 prevArrayIndex = 0;
   for (FPropertyTag* tag : properties)
   {
-    if (--remainingArrayDim <= 0 || prevArrayIndex > tag->ArrayIndex)
+    if (--remainingArrayDim <= 0 || prevArrayIndex > tag->ArrayIndex || !category)
     {
       category = cats.back();
       cats.pop_back();
