@@ -920,15 +920,14 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
   {
     wxRichMessageDialog dlg(this, wxT("You are about to overwrite the original package. This action can not be undone.\nPress \"Yes\" to save the package."), wxT("Are you sure?"), wxICON_INFORMATION | wxYES_NO);
     dlg.ShowCheckBox(wxT("Don't show again"));
-    if (dlg.ShowModal() != wxID_YES)
+
+    bool ok = dlg.ShowModal() == wxID_YES;
+    cfg.SavePackageDontShowAgain = dlg.IsCheckBoxChecked();
+    App::GetSharedApp()->SaveConfig();
+
+    if (!ok)
     {
       return;
-    }
-
-    if (dlg.IsCheckBoxChecked())
-    {
-      cfg.SavePackageDontShowAgain = true;
-      App::GetSharedApp()->SaveConfig();
     }
   }
   
@@ -1045,6 +1044,28 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
     wxString err = wxT("Failed to save the package! Error: ");
     err += A2W(context.Error);
     wxMessageBox(err,"Error!", wxICON_ERROR, this);
+  }
+  else
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+
+    if (!cfg.SavePackageOpenDontAskAgain)
+    {
+      wxRichMessageDialog dlg(this, wxT("Saved the package successfully.\nDo you want to open it?"), wxT("Success"), wxICON_INFORMATION | wxYES_NO);
+      dlg.ShowCheckBox(wxT("Don't show again"));
+      cfg.SavePackageOpen = dlg.ShowModal() == wxID_YES;
+      if (dlg.IsCheckBoxChecked())
+      {
+        cfg.SavePackageOpenDontAskAgain = true;
+      }
+      App::GetSharedApp()->SaveConfig();
+    }
+    if (!cfg.SavePackageOpen)
+    {
+      return;
+    }
+
+    App::GetSharedApp()->OpenPackage(path);
   }
 }
 

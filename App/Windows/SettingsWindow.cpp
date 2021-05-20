@@ -366,9 +366,12 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 
 void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 {
-	// TODO: reset hidden message boxes here
+	FAppConfig defaults;
+
 	NewConfig.CompositeDumpPath = FString();
-	NewConfig.SavePackageDontShowAgain = false;
+	NewConfig.SavePackageDontShowAgain = defaults.SavePackageDontShowAgain;
+	NewConfig.SavePackageOpen = defaults.SavePackageOpen;
+	NewConfig.SavePackageOpenDontAskAgain = defaults.SavePackageOpenDontAskAgain;
 	wxMessageBox(wxS("UI Warnings were cleared!\nPress Apply to save changes."), wxS("Done"), wxICON_INFORMATION);
 }
 
@@ -386,7 +389,7 @@ void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
 	}
 	else
 	{
-		wxMessageBox(wxS("Failed to associate!"), wxS("Error!"), wxICON_INFORMATION);
+		wxMessageBox(wxS("Failed to associate!\n Try to start RE as an administrator."), wxS("Error!"), wxICON_INFORMATION);
 	}
 }
 
@@ -422,6 +425,7 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
 	if (IsValidDir(PathField->GetValue()))
 	{
+		/* Don't show the annoying message
 		if (!WasRegistered && RegisterButton->IsEnabled())
 		{
 			wxMessageDialog dialog(nullptr, wxT("You haven't associated *.gpk filetype with the ") + wxTheApp->GetAppDisplayName() + wxT(". This allows you to open packages without starting the application. Would you like to associate now?"), wxT("Associate *.gpk files?"), wxYES_NO | wxICON_INFORMATION);
@@ -430,7 +434,7 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
 				wxCommandEvent tmp;
 				OnRegisterClicked(tmp);
 			}
-		}
+		}*/
 		EndModal(wxID_OK);
 	}
 }

@@ -194,6 +194,8 @@ struct FAppConfig
     CFG_LastFilePackages,
     CFG_LastTextureExtension,
     CFG_SavePackageDontAskAgain,
+    CFG_SavePackageOpenDontAskAgain,
+    CFG_SavePackageOpen,
 
     // Log
     CFG_LogBegin = 100,
@@ -245,6 +247,10 @@ struct FAppConfig
   uint8 LastTextureExtension = 0;
   // CFG_SavePackageDontAskAgain: Save package warning
   bool SavePackageDontShowAgain = false;
+  // CFG_SavePackageOpen: Open the just saved package
+  bool SavePackageOpen = false;
+  // CFG_SavePackageOpenDontAskAgain
+  bool SavePackageOpenDontAskAgain = false;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const
