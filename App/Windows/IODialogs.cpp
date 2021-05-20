@@ -87,15 +87,7 @@ namespace IODialog
     if (path.empty())
     {
       FAppConfig& cfg = App::GetSharedApp()->GetConfig();
-      for (const FString& item : cfg.LastFilePackages)
-      {
-        if (item.StartWith("composite"))
-        {
-          continue;
-        }
-        path = item.WString();
-        break;
-      }
+      path = cfg.LastPkgOpenPath.WString();
       if (path.Length())
       {
         wxFileName f(path);
@@ -105,7 +97,11 @@ namespace IODialog
     wxString result = wxFileSelector(caption, path, wxEmptyString, wxEmptyString, wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
     if (result.Length())
     {
-      App::GetSharedApp()->SavePackageOpenPath(result);
+      wxFileName f(result);
+      FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+      cfg.LastPkgOpenPath = f.GetPathWithSep().ToStdWstring();
+      cfg.AddLastFilePackagePath(result.ToStdWstring());
+      App::GetSharedApp()->SaveConfig();
     }
     return result;
   }

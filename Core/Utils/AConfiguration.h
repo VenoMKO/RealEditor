@@ -188,7 +188,7 @@ struct FAppConfig
     CFG_LastModAuthor,
     CFG_LastExport,
     CFG_LastImport,
-    CFG_LastPkgOpen/*legacy, replaced with CFG_LastFilePackages*/,
+    CFG_LastPkgOpen/*Not the same as CFG_LastFilePackages!*/,
     CFG_LastPkgSave,
     CFG_MaxLastFilePackages,
     CFG_LastFilePackages,
@@ -237,6 +237,8 @@ struct FAppConfig
   FString LastExportPath;
   // CFG_LastImport: last import dialog path
   FString LastImportPath;
+  // CFG_LastPkgOpen: last path used to open a GPK via file dialog. Not the same as LastFilePackages!
+  FString LastPkgOpenPath;
   // CFG_LastPkgSavePath: last path used to save a GPK
   FString LastPkgSavePath;
   // CFG_MaxLastFilePackages: number of maximum entries to store in LastFilePackages

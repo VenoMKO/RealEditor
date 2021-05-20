@@ -372,6 +372,7 @@ void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
 	NewConfig.SavePackageDontShowAgain = defaults.SavePackageDontShowAgain;
 	NewConfig.SavePackageOpen = defaults.SavePackageOpen;
 	NewConfig.SavePackageOpenDontAskAgain = defaults.SavePackageOpenDontAskAgain;
+	NewConfig.LastFilePackages.clear();
 	wxMessageBox(wxS("UI Warnings were cleared!\nPress Apply to save changes."), wxS("Done"), wxICON_INFORMATION);
 }
 

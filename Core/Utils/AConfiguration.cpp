@@ -245,12 +245,8 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.LastImportPath;
         break;
       case FAppConfig::CFG_LastPkgOpen:
-      {
-        // Discard legacy
-        FString tmp;
-        s << tmp;
+        s << c.LastPkgOpenPath;
         break;
-      }
       case FAppConfig::CFG_LastPkgSave:
         s << c.LastPkgSavePath;
         break;
@@ -313,6 +309,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastExportPath);
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastImportPath);
 
+    SerializeKeyValue(FAppConfig::CFG_LastPkgOpen, c.LastPkgOpenPath);
     SerializeKeyValue(FAppConfig::CFG_LastPkgSave, c.LastPkgSavePath);
 
     SerializeKeyValue(FAppConfig::CFG_MaxLastFilePackages, c.MaxLastFilePackages);
