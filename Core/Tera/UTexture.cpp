@@ -154,6 +154,12 @@ bool UTexture::RegisterProperty(FPropertyTag* property)
     UnpackMinProperty[property->ArrayIndex] = property;
     return true;
   }
+  else if (PROP_IS(property, LODGroup))
+  {
+    LODGroup = (TextureGroup)property->Value->GetByte();
+    LODGroupProperty = property;
+    return true;
+  }
   return false;
 }
 
@@ -202,12 +208,6 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   {
     AddressY = (TextureAddress)property->Value->GetByte();
     AddressYProperty = property;
-    return true;
-  }
-  else if (PROP_IS(property, LODGroup))
-  {
-    LODGroup = (TextureGroup)property->Value->GetByte();
-    LODGroupProperty = property;
     return true;
   }
   else if (PROP_IS(property, MipTailBaseIdx))

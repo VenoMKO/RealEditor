@@ -34,6 +34,11 @@ void TextureTravaller::SetIsNew(bool flag)
   ConfigureAsNew = flag;
 }
 
+void TextureTravaller::SetLODGroup(TextureGroup group)
+{
+  LODGroup = group;
+}
+
 void TextureTravaller::SetRawData(void* data, int32 size, bool transferOwnership)
 {
   Data = (uint8*)data;
@@ -106,6 +111,21 @@ bool TextureTravaller::Visit(UTexture2D* texture)
           texture->UnpackMin[idx] = -1.;
         }
       }
+    }
+  }
+
+  if (LODGroup != texture->LODGroup)
+  {
+    if (!texture->LODGroupProperty)
+    {
+      texture->CreatePropertyLODGroup(LODGroup);
+    }
+    else
+    {
+      texture->LODGroup = LODGroup;
+      texture->LODGroupProperty->GetByte() = (uint8)LODGroup;
+      FString enumName = texture->LODGroupProperty->Value->Enum->GetEnum(LODGroup).String();
+      texture->GetPackage()->GetNameIndex(enumName, true);
     }
   }
 

@@ -348,6 +348,11 @@ void BulkImportOperation::ImportTexture(FPackage* package, UTexture2D* texture, 
   travaller.SetAddressX(texture->AddressX);
   travaller.SetAddressY(texture->AddressY);
 
+  if (isNormal)
+  {
+    travaller.SetLODGroup(TEXTUREGROUP_WorldNormalMap);
+  }
+
   const auto& mips = processor.GetOutputMips();
   for (const auto mip : mips)
   {

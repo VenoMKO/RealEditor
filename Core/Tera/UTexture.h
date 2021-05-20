@@ -16,6 +16,7 @@ public:
   UPROP_CREATABLE(bool, SRGB, true);
   UPROP_CREATABLE_ENUM(TextureCompressionSettings, CompressionSettings, TC_Default);
   UPROP_CREATABLE_STATIC_ARR(float, 4, UnpackMin, 0,0,0,0);
+  UPROP_CREATABLE_ENUM(TextureGroup, LODGroup, TEXTUREGROUP_World);
 
   bool RegisterProperty(FPropertyTag* property) override;
 
@@ -41,7 +42,6 @@ public:
   UPROP_CREATABLE(int32, SizeY, 0);
   UPROP_CREATABLE_ENUM(TextureAddress, AddressX, TA_Wrap);
   UPROP_CREATABLE_ENUM(TextureAddress, AddressY, TA_Wrap);
-  UPROP_CREATABLE_ENUM(TextureGroup, LODGroup, TEXTUREGROUP_World);
   UPROP_CREATABLE(int32, MipTailBaseIdx, 0);
   UPROP_CREATABLE(int32, FirstResourceMemMip, 0);
   UPROP_CREATABLE(bool, bNoTiling, false);

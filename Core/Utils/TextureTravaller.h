@@ -11,6 +11,7 @@ public:
   void SetCompression(TextureCompressionSettings compression);
   void SetSRGB(bool srgb);
   void SetIsNew(bool flag);
+  void SetLODGroup(TextureGroup group);
 
   void SetRawData(void* data, int32 size, bool transferOwnership = false);
   void AddMipMap(int32 sizeX, int32 sizeY, int32 size, void* data);
@@ -33,6 +34,7 @@ private:
   EPixelFormat Format = PF_Unknown;
   TextureAddress AddressX = TA_Wrap;
   TextureAddress AddressY = TA_Wrap;
+  TextureGroup LODGroup = TEXTUREGROUP_World;
   TextureCompressionSettings Compression = TC_Default;
   bool SRGB = false;
   bool ConfigureAsNew = false;

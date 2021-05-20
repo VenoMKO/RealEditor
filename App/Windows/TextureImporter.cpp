@@ -584,14 +584,11 @@ bool TextureImporter::Run()
   travaller.SetAddressY(importer.GetAddressY());
   travaller.SetIsNew(CreateMode);
 
-  if (isNormal == importer.IsNormal())
+  if (importer.IsNormal())
   {
-    travaller.SetCompression(Texture->CompressionSettings);
+    travaller.SetLODGroup(TEXTUREGROUP_WorldNormalMap);
   }
-  else
-  {
-    travaller.SetCompression(importer.IsNormal() ? processor.GetAlpha() ? TC_NormalmapAlpha : TC_Normalmap : TC_Default);
-  }
+  travaller.SetCompression(importer.IsNormal() ? processor.GetAlpha() ? TC_NormalmapAlpha : TC_Normalmap : TC_Default);
 
   const auto& mips = processor.GetOutputMips();
   for (const auto mip : mips)
