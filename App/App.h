@@ -138,7 +138,7 @@ public:
 
   const wxArrayString& GetCompositePackageNames() const;
 
-  bool CheckMimeTypes() const;
+  bool CheckMimeTypes(bool strict) const;
 
   FAppConfig& GetConfig()
   {

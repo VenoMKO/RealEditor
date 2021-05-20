@@ -154,7 +154,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 	wxBoxSizer* bSizer9;
 	bSizer9 = new wxBoxSizer(wxVERTICAL);
 
-	WasRegistered = ((App*)wxTheApp)->CheckMimeTypes();
+	WasRegistered = ((App*)wxTheApp)->CheckMimeTypes(true);
 
 	RegisterButton = new wxButton(m_panel5, ControlElementId::Register, wxT("Associate"), wxDefaultPosition, wxDefaultSize, 0);
 	RegisterButton->SetToolTip(wxT("Allow to open packages in the Explorer by double clicking them."));
@@ -381,7 +381,7 @@ void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
 	App* app = (App*)wxTheApp;
 	wxCommandEvent tmp;
 	app->OnRegisterMime(tmp);
-	bool registered = app->CheckMimeTypes();
+	bool registered = app->CheckMimeTypes(true);
 	RegisterButton->Enable(!registered);
 	UnregisterButton->Enable(registered);
 	if (registered)
@@ -399,7 +399,7 @@ void SettingsWindow::OnUnregisterClicked(wxCommandEvent&)
 	App* app = (App*)wxTheApp;
 	wxCommandEvent tmp;
 	app->OnUnregisterMime(tmp);
-	bool registered = app->CheckMimeTypes();
+	bool registered = app->CheckMimeTypes(true);
 	RegisterButton->Enable(!registered);
 	UnregisterButton->Enable(registered);
 	if (!registered)

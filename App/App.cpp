@@ -44,7 +44,7 @@ void RegisterFileType(const wxString& extension, const wxString& description, co
   wxFileTypeInfo info = wxFileTypeInfo("application/octet-stream");
   info.AddExtension(extension);
   info.SetDescription(description);
-  info.SetOpenCommand(wxS("\"") + appPath + wxS("\" \"%1\""));
+  info.SetOpenCommand(wxS("\"") + appPath + wxS("\""));
   info.SetIcon(appPath, -115);
   if (wxFileType* type = man.Associate(info))
   {
@@ -61,13 +61,13 @@ void UnregisterFileType(const wxString& extension, wxMimeTypesManager& man)
   }
 }
 
-bool CheckFileType(const wxString& extension, wxMimeTypesManager& man)
+bool CheckFileType(const wxString& appPath, const wxString& extension, wxMimeTypesManager& man)
 {
   if (wxFileType* type = man.GetFileTypeFromExtension(extension))
   {
     wxString cmd = type->GetOpenCommand(wxT("test") + extension);
     delete type;
-    return cmd.size();
+    return cmd.size() ? appPath.size() ? cmd.Mid(1).StartsWith(appPath) : true : false;
   }
   return false;
 }
@@ -537,10 +537,15 @@ bool App::OnInit()
   SetAppDisplayName(APP_NAME);
 
   // Update executable path if MIME is registered
-  if (CheckMimeTypes())
+  if (CheckMimeTypes(false))
   {
-    wxCommandEvent tmp;
-    OnRegisterMime(tmp);
+    // Check weather the app path matches the on in the registry
+    if (!CheckMimeTypes(true))
+    {
+      // Update app path
+      wxCommandEvent tmp;
+      OnRegisterMime(tmp);
+    }
   }
 
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
@@ -562,6 +567,18 @@ bool App::OnInit()
     Config.WindowRect.Min = { WIN_POS_CENTER, 0 };
     ShowedStartupCfg = true;
   }
+  else if (Config.Version < 1.8 && CheckMimeTypes(false))
+  {
+    // Fix incorrect open path in the registry prior to 1.80
+    try
+    {
+      wxCommandEvent tmp;
+      OnRegisterMime(tmp);
+    }
+    catch (...)
+    {
+    }
+  }
   InstanceChecker = new wxSingleInstanceChecker;
   ALog::SharedLog();
   ALog::SetConfig(Config.LogConfig);
@@ -577,6 +594,11 @@ int App::OnRun()
 {
   if (IsReady)
   {
+    if (Config.Version < APP_VER)
+    {
+      Config.Version = APP_VER;
+      SaveConfig();
+    }
     wxInitAllImageHandlers();
     Server = new RpcServer;
     Server->RunWithDelegate(this);
@@ -899,13 +921,13 @@ const wxArrayString& App::GetCompositePackageNames() const
   return CompositePackageNames;
 }
 
-bool App::CheckMimeTypes() const
+bool App::CheckMimeTypes(bool strict) const
 {
   wxMimeTypesManager man;
   std::vector<wxString> extensions = { wxS(".gpk"), wxS(".gmp"), wxS(".u"), wxS(".upk"), wxS(".umap") };
   for (const wxString& extension : extensions)
   {
-    if (!CheckFileType(extension, man))
+    if (!CheckFileType(strict ? argv[0] : wxEmptyString, extension, man))
     {
       return false;
     }
