@@ -34,6 +34,7 @@ std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<FString> FPackage::DirCache;
+std::vector<FString> FPackage::FilePackageNames;
 std::unordered_map<FString, FString> FPackage::TfcCache;
 std::unordered_map<FString, FString> FPackage::PkgMap;
 std::unordered_map<FString, FString> FPackage::ObjectRedirectorMap;
@@ -57,6 +58,7 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
   dirCache.resize(0);
   std::vector<std::filesystem::path> tmpPaths;
   std::unordered_map<std::string, std::filesystem::path> tmpTfcPaths;
+  FPackage::FilePackageNames.clear();
   for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
   {
     if (!p.is_regular_file() || !p.file_size())
@@ -72,6 +74,7 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
       if (!err)
       {
         tmpPaths.push_back(rel);
+        FPackage::FilePackageNames.emplace_back(rel.filename().replace_extension());
       }
     }
     else if (!_stricmp(ext.c_str(), ".tfc"))

@@ -463,4 +463,6 @@ private:
 	static MTransStream TranscationStream;
 
 	static uint16 CoreVersion;
+public:
+	static std::vector<FString> FilePackageNames;
 };

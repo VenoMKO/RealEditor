@@ -180,6 +180,7 @@ private:
   std::vector<wxString> OpenList;
 
   wxArrayString CompositePackageNames;
+  wxArrayString FilePackageNames;
 
   bool NeedsRestart = false;
   bool ShuttingDown = false;
