@@ -371,12 +371,17 @@ FPropertyTag* UStructProperty::CreatePropertyTag(UObject* object)
 
 void UObjectProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
+  UObject* tmp = nullptr;
   if (s.IsReading())
   {
     valuePtr->Type = FPropertyValue::VID::Object;
     valuePtr->Data = new PACKAGE_INDEX;
   }
-  s << valuePtr->GetObjectIndex();
+  else
+  {
+    tmp = valuePtr->Property->Owner->GetPackage()->GetObject(valuePtr->GetObjectIndex());
+  }
+  s.SerializeObjectRef((void*&)tmp, valuePtr->GetObjectIndex());
 }
 
 FPropertyTag* UObjectProperty::CreatePropertyTag(UObject* object)

@@ -82,6 +82,8 @@ private:
   void OnAddTextureClicked(int parent);
   void OnAddMaterialClicked(int parent);
   void OnDuplicateClicked(PACKAGE_INDEX objIndex);
+  void OnCopyObjectClicked(PACKAGE_INDEX objIndex);
+  void OnPasteObjectClicked(PACKAGE_INDEX objIndex);
 
   void OnPackageReady(wxCommandEvent&);
   void OnPackageError(wxCommandEvent& e);
@@ -111,6 +113,7 @@ private:
   void DebugOnTestCookObject(wxCommandEvent&);
   void DebugOnSplitMod(wxCommandEvent&);
   void DebugOnDupSelection(wxCommandEvent&);
+  void DebugMarkDirty(wxCommandEvent&);
 
   wxDECLARE_EVENT_TABLE();
 

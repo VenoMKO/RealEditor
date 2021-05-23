@@ -18,14 +18,14 @@ struct FTextureLookup
 
 class FMaterial {
 public:
-  void Serialize(FStream& s);
+  void Serialize(FStream& s, UObject* owner);
 
   std::vector<FString> CompoilerErrors;
   std::map<PACKAGE_INDEX, int32> TextureDependencyLengthMap;
   int32 MaxTextureDependencyLength = 0;
   FGuid Id;
   uint32 NumUserTexCoords = 0;
-  std::vector<PACKAGE_INDEX> UniformExpressionTextures;
+  FObjectArray<UObject*> UniformExpressionTextures;
   bool bUsesSceneColor = false;
   bool bUsesSceneDepth = false;
   bool bUsesDynamicParameter = false;

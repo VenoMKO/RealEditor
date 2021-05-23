@@ -6,8 +6,7 @@
 
 class FNameEntry {
 public:
-  FNameEntry()
-  {}
+  FNameEntry() = default;
 
   FNameEntry(const FString& value)
     : String(value)
@@ -42,6 +41,7 @@ private:
 
 class FName {
 public:
+  friend class FStream;
   FName()
   {}
 
@@ -78,10 +78,8 @@ public:
   bool operator!=(const char* s) const;
   bool operator<(const FName& n) const;
 
-  friend FStream& operator<<(FStream& s, FName& n);
-
-  FString String() const;
-  void GetString(FString& output) const;
+  FString String(bool number = USE_FNAME_NUMBERS) const;
+  void GetString(FString& output, bool number = USE_FNAME_NUMBERS) const;
   void SetString(const FString& str);
 
   void SetIndex(NAME_INDEX index)
@@ -113,6 +111,13 @@ public:
   {
     Package = package;
   }
+
+#ifdef _DEBUG
+  void SetDebugValue(FString& s)
+  {
+    Value = s.String();
+  }
+#endif
 
 private:
   NAME_INDEX Index = INDEX_NONE;

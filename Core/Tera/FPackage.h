@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "FName.h"
 #include "FStructs.h"
+#include "FStream.h"
 
 #include <memory>
 #include <atomic>
@@ -79,6 +80,8 @@ public:
 	static void RegisterClass(UClass* classObject);
 	// Fill classes Inheritance vectors
 	static void BuildClassInheritance();
+	// Get the shared transaction stream
+	static MTransStream& GetTransactionStream();
 
 private:
 	// Packages must be loaded/created from the static methods
@@ -110,6 +113,9 @@ public:
 	
 	// Get an object
 	UObject* GetObject(FObjectExport* exp, bool load = true);
+
+	// Get an object by path
+	UObject* GetObject(const FString& path);
 
 	// Get package index of the object. Accepts imported objects
 	PACKAGE_INDEX GetObjectIndex(UObject* object) const;
@@ -192,7 +198,11 @@ public:
 		{
 			return (FObjectResource*)GetImportObject(index);
 		}
-		return (FObjectResource*)GetExportObject(index);
+		if (index > 0)
+		{
+			return (FObjectResource*)GetExportObject(index);
+		}
+		return nullptr;
 	}
 
 	// Get import object at index
@@ -386,6 +396,7 @@ private:
 private:
 	FPackageSummary Summary;
 	FStream* Stream = nullptr;
+	class UObjectReferencer* Referencer = nullptr;
 
 	// Prevent multiple Load() calls
 	std::atomic_bool Loading = { false };
@@ -423,7 +434,7 @@ private:
 	FString CompositeDataPath;
 	FString CompositeSourcePath;
 
-	// Cached netIndices for faster netIndex lookup. Containes only loaded objects!
+	// Cached netIndices for faster netIndex lookup. Contains only loaded objects!
 	std::map<NET_INDEX, UObject*> NetIndexMap;
 	// Name to Object map for faster import lookup
 	std::unordered_map<FString, std::vector<FObjectExport*>> ObjectNameToExportMap;
@@ -449,6 +460,7 @@ private:
 	static std::unordered_set<FString> MissingClasses;
 	static std::mutex MissingPackagesMutex;
 	static std::vector<FString> MissingPackages;
+	static MTransStream TranscationStream;
 
 	static uint16 CoreVersion;
 };

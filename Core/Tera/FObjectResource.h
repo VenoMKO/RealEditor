@@ -41,11 +41,10 @@ public:
   PACKAGE_INDEX OuterIndex = INDEX_NONE;
   PACKAGE_INDEX ObjectIndex = 0;
   FPackage* Package = nullptr;
+  FName ObjectName;
 #ifdef _DEBUG
   FString Path;
 #endif
-protected:
-  FName ObjectName;
 };
 
 class FObjectImport : public FObjectResource {

@@ -46,6 +46,7 @@ public:
   UPROP_CREATABLE(int32, FirstResourceMemMip, 0);
   UPROP_CREATABLE(bool, bNoTiling, false);
   UPROP_CREATABLE(bool, NeverStream, false);
+  UPROP_CREATABLE(bool, bIsStreamable, true);
   UPROP(FName*, TextureFileCacheName, nullptr);
 
   bool RenderTo(osg::Image* target, int32 maxWidth = 0, int32 maxHeight = 0);

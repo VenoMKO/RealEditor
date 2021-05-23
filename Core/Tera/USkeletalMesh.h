@@ -3,7 +3,10 @@
 #include "kDOP.h"
 #include <unordered_map>
 
+#include "FStream.h"
+#include "FObjectArray.h"
 #include "UActorComponent.h"
+#include "UMaterial.h"
 
 enum { MAX_INFLUENCES = 4 };
 
@@ -515,7 +518,7 @@ public:
 
   inline std::vector<UObject*> GetMaterials() const
   {
-    return Materials;
+    return Materials.GetUObjects();
   }
 
   std::vector<FMeshBone> GetReferenceSkeleton() const
@@ -534,8 +537,8 @@ private:
   std::vector<FMeshBone> RefSkeleton;
   int32 SkeletalDepth = 0;
 
-  std::vector<UObject*> Materials;
-  std::vector<UObject*> ClothingAssets;
+  FObjectArray<UMaterialInterface*> Materials;
+  FObjectArray<UObject*> ClothingAssets;
 
   std::vector<FStaticLODModel> LodModels;
   std::map<FName, int32> NameIndexMap;
@@ -544,7 +547,7 @@ private:
 
   std::vector<FString> BoneBreakNames;
   std::vector<uint8> BoneBreakOptions;
-  std::vector<PACKAGE_INDEX> ApexClothing;
+  FObjectArray<UObject*> ApexClothing;
   std::vector<float> CachedStreamingTextureFactors;
   uint32 Unk1 = 0;
 };

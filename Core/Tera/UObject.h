@@ -43,7 +43,7 @@ FPropertyTag* CreateProperty##TName(const TType& value)\
 {\
   if (FPropertyTag* tag = CreateProperty(P_##TName))\
   {\
-    tag->Value->GetTypedValue<TType>() = value;\
+    tag->GetTypedValue<TType>() = value;\
     AddProperty(tag);\
     RegisterProperty(tag);\
     return tag;\
@@ -305,8 +305,15 @@ public:
     return false;
   }
 
+  inline bool IsTransacting() const
+  {
+    return HasAnyFlags(RF_IsTransacting);
+  }
+
+  void SetTransacting(bool flag);
+
   // Check if UObject has any object flags
-  inline bool HasAnyFlags(uint64 flags) const;
+  bool HasAnyFlags(uint64 flags) const;
 
   UObject* GetOuter() const
   {

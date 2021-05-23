@@ -9,6 +9,7 @@
 #include "UPersistentCookerData.h"
 #include "UProperty.h"
 #include "UTexture.h"
+#include "UObjectReferencer.h"
 #include "Cast.h"
 
 #include <iostream>
@@ -46,6 +47,7 @@ std::unordered_map<FString, UObject*> FPackage::ClassMap;
 std::unordered_set<FString> FPackage::MissingClasses;
 std::mutex FPackage::MissingPackagesMutex;
 std::vector<FString> FPackage::MissingPackages;
+MTransStream FPackage::TranscationStream;
 
 uint16 FPackage::CoreVersion = 0;
 
@@ -489,6 +491,11 @@ void FPackage::BuildClassInheritance()
       spr->AddInheretedClass(cls);
     }
   }
+}
+
+MTransStream& FPackage::GetTransactionStream()
+{
+  return TranscationStream;
 }
 
 void FPackage::CleanCacheDir()
@@ -1470,6 +1477,10 @@ void FPackage::Load()
   for (FObjectExport* exp : Exports)
   {
     ExportObjects[exp->ObjectIndex] = UObject::Object(exp);
+    if (!Referencer && !ExportObjects[exp->ObjectIndex]->HasAnyFlags(RF_ClassDefaultObject) && exp->GetClassName() == UObjectReferencer::StaticClassName())
+    {
+      Referencer = Cast<UObjectReferencer>(ExportObjects[exp->ObjectIndex]);
+    }
   }
 
   if (Summary.DependsOffset != s.GetPosition())
@@ -1601,6 +1612,14 @@ void FPackage::Load()
 
   Ready.store(true);
   Loading.store(false);
+
+  if (Referencer)
+  {
+    bool tmp = s.GetLoadSerializedObjects();
+    s.SetLoadSerializedObjects(false);
+    Referencer->Load(s);
+    s.SetLoadSerializedObjects(tmp);
+  }
 }
 
 bool FPackage::Save(PackageSaveContext& context)
@@ -1998,7 +2017,7 @@ bool FPackage::Save(PackageSaveContext& context)
           holes.push_back({ writer.GetPosition(), exp->SerialOffset - writer.GetPosition() });
           appendZeroed(writer, exp->SerialOffset - writer.GetPosition());
         }
-        else
+        else if (exp->SerialOffset)
         {
           DBreak();
           LogE("Failed to preserve offset of %s", exp->GetObjectName().C_str());
@@ -2191,7 +2210,7 @@ UObject* FPackage::GetObject(PACKAGE_INDEX index, bool load)
   {
     return GetObject(GetExportObject(index), load);
   }
-  else if (index < 0)
+  if (index < 0)
   {
     return GetObject(GetImportObject(index), load);
   }
@@ -2309,6 +2328,104 @@ UObject* FPackage::GetObject(FObjectExport* exp, bool load)
     }
   }
   return obj;
+}
+
+UObject* FPackage::GetObject(const FString& path)
+{
+  if (path.Empty())
+  {
+    return nullptr;
+  }
+  std::vector<FString> components = path.Split('.');
+  std::vector<FObjectExport*> inner = GetRootExports();
+  if (components.size() > 1)
+  {
+    FString component = components.front();
+    if (component.ToUpper() == GetPackageName(false).ToUpper())
+    {
+      components = std::vector<FString>(components.begin() + 1, components.end());
+    }
+  }
+  FObjectExport* exp = nullptr;
+  for (const FString& component : components)
+  {
+    exp = nullptr;
+    for (FObjectExport* in : inner)
+    {
+      if (in->GetObjectName() == component)
+      {
+        exp = in;
+        break;
+      }
+    }
+
+    if (exp)
+    {
+      inner = exp->Inner;
+      continue;
+    }
+
+    size_t pos = component.FindLastOf('_');
+    if (pos != std::string::npos)
+    {
+      try
+      {
+        FString name = component.Substr(0, pos);
+        int32 number = std::stoi(component.Substr(pos + 1).String());
+        for (FObjectExport* in : inner)
+        {
+          if (in->ObjectName.String(false) == name && in->ObjectName.GetNumber() == number)
+          {
+            exp = in;
+            break;
+          }
+        }
+      }
+      catch (...)
+      {}
+    }
+
+    if (exp)
+    {
+      inner = exp->Inner;
+      continue;
+    }
+    // Failed to find the component
+    break;
+  }
+  if (!exp)
+  {
+    FString component = components.back();
+    for (FObjectExport* e : Exports)
+    {
+      if (e->ObjectName.String(true) == component || e->ObjectName.String(false) == component)
+      {
+        return GetObject(e, false);
+      }
+      size_t pos = component.FindLastOf('_');
+      if (pos != std::string::npos)
+      {
+        try
+        {
+          FString name = component.Substr(0, pos);
+          int32 number = std::stoi(component.Substr(pos + 1).String());
+          if (exp->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
+          {
+            return GetObject(exp, false);
+          }
+          number--;
+          if (exp->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
+          {
+            return GetObject(exp, false);
+          }
+        }
+        catch (...)
+        {
+        }
+      }
+    }
+  }
+  return GetObject(exp, false);
 }
 
 UObject* FPackage::GetForcedExport(FObjectExport* exp)
@@ -2457,6 +2574,10 @@ FObjectExport* FPackage::DuplicateExportRecursivly(FObjectExport* source, FObjec
   obj = GetObject(exp, true);
   if (obj)
   {
+    if (Referencer)
+    {
+      Referencer->AddObject(obj);
+    }
     obj->MarkDirty();
   }
   else
@@ -2623,7 +2744,7 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
   {
     if (imp->GetObjectName() == cls->GetObjectName())
     {
-      int x = 1;
+      DBreak();
     }
     if (imp->GetClassName() == UClass::StaticClassName() && imp->GetObjectName() == cls->GetObjectName())
     {
@@ -2740,6 +2861,7 @@ FObjectImport* FPackage::GetImportObject(const FString& objectName, const FStrin
 
 bool FPackage::AddImport(UObject* object, FObjectImport*& output)
 {
+  DBreakIf(object->GetObjectName() == "9dc1ecae_1d0bfb62_1958");
   if (!object || !object->GetPackage() || object->GetPackage() == this)
   {
     output = nullptr;
@@ -2786,6 +2908,8 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     RootImports.push_back(importObject);
     outerPackage = importObject;
     MarkDirty();
+
+    GetNameIndex(outerPackageName, true);
   }
 
   FObjectImport* outerImp = outerPackage;
@@ -2821,6 +2945,10 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   importObject->ClassPackage.SetPackage(this);
   importObject->ClassPackage.SetString(object->GetClass() ? object->GetClass()->GetPackage()->GetPackageName() : "Core");
 
+  GetNameIndex(object->GetObjectName(), true);
+  GetNameIndex(object->GetClassName(), true);
+  GetNameIndex(importObject->ClassPackage.String(), true);
+
   if (outerImp)
   {
     outerImp->Inner.push_back(importObject);
@@ -2850,7 +2978,7 @@ FObjectExport* FPackage::AddExport(const FString& objectName, const FString& obj
   }
   FObjectImport* clsImp = nullptr;
   AddImport(cls, clsImp);
-
+  GetNameIndex(objectName, true);
   FObjectExport* exp = new FObjectExport(this, objectName);
   exp->ExportFlags = EF_None;
   exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
@@ -2876,8 +3004,15 @@ FObjectExport* FPackage::AddExport(const FString& objectName, const FString& obj
   object->MarkDirty();
   object->SetLoaded(true);
 
-  std::scoped_lock<std::mutex> l(ExportObjectsMutex);
-  ExportObjects[exp->ObjectIndex] = object;
+  {
+    std::scoped_lock<std::mutex> l(ExportObjectsMutex);
+    ExportObjects[exp->ObjectIndex] = object;
+  }
+  
+  if (Referencer)
+  {
+    Referencer->AddObject(object);
+  }
   return exp;
 }
 

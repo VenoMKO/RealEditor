@@ -26,6 +26,7 @@
     <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
     <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
+    <ClCompile Include="App\Windows\DependsResolveDialog.cpp" />
     <ClCompile Include="App\Windows\IODialogs.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
@@ -46,6 +47,7 @@
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Tera\ULightMap.cpp" />
+    <ClCompile Include="Core\Tera\UObjectReferencer.cpp" />
     <ClCompile Include="Core\Tera\UPrefab.cpp" />
     <ClCompile Include="Core\Utils\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
@@ -109,6 +111,7 @@
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
+    <ClInclude Include="App\Windows\DependsResolveDialog.h" />
     <ClInclude Include="App\Windows\IODialogs.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
@@ -126,6 +129,7 @@
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
+    <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\UActor.h" />
     <ClInclude Include="Core\Tera\UActorComponent.h" />
@@ -135,6 +139,7 @@
     <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="Core\Tera\ULightMap.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
+    <ClInclude Include="Core\Tera\UObjectReferencer.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\UPrefab.h" />
     <ClInclude Include="Core\Tera\USkeletalMesh.h" />

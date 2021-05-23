@@ -7,7 +7,7 @@ void UObjectRedirector::Serialize(FStream& s)
 {
   Super::Serialize(s);
   SERIALIZE_UREF(s, Object);
-  if (!Object && ObjectRefIndex != INDEX_NONE && ObjectRefIndex < 0)
+  if (s.IsReading() && !Object && ObjectRefIndex != INDEX_NONE && ObjectRefIndex < 0)
   {
     if (FObjectImport* imp = GetPackage()->GetImportObject(ObjectRefIndex))
     {

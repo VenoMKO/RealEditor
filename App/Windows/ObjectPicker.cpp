@@ -4,6 +4,7 @@
 #include "CompositePackagePicker.h"
 
 #include <Tera/FPackage.h>
+#include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
 
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
@@ -96,6 +97,11 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
       UpdateTableTitle();
     }
   }
+  else
+  {
+    auto root = wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport());
+    ObjectTreeCtrl->Expand(root);
+  }
 }
 
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
@@ -174,6 +180,11 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
       OkButton->Enable(Selection);
       UpdateTableTitle();
     }
+  }
+  else
+  {
+    auto root = wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootExport());
+    ObjectTreeCtrl->Expand(root);
   }
 }
 
@@ -329,6 +340,42 @@ void ObjectPicker::UpdateTableTitle()
     }
     ObjectTreeCtrl->GetColumn(0)->SetTitle(title);
   }
+}
+
+ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(struct FObjectExport* parent, FPackage* package)
+{
+  return [&](const wxString& name) {
+    if (!package)
+    {
+      return false;
+    }
+    if (name.Find(" ") != wxString::npos)
+    {
+      return false;
+    }
+    FString tmpName = name.ToStdWstring();
+    if (!tmpName.IsAnsi())
+    {
+      return false;
+    }
+    std::vector<FObjectExport*> exps;
+    if (parent)
+    {
+      exps = parent->Inner;
+    }
+    else
+    {
+      exps = package->GetRootExports();
+    }
+    for (FObjectExport* exp : exps)
+    {
+      if (exp->GetObjectName() == tmpName)
+      {
+        return false;
+      }
+    }
+    return true;
+  };
 }
 
 ObjectNameDialog::ObjectNameDialog(wxWindow* parent, const wxString& objectName)

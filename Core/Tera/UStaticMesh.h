@@ -322,8 +322,8 @@ protected:
 };
 
 struct FStaticMeshComponentLODInfo {
-  std::vector<UObject*> ShadowMaps;
-  std::vector<UObject*> ShadowVertexBuffers;
+  FObjectArray<UObject*> ShadowMaps;
+  FObjectArray<UObject*> ShadowVertexBuffers;
   FLightMap* LightMap = nullptr;
   DECL_UREF(UObject*, Unk1);
   FStaticMeshVertexColorBuffer* OverrideVertexColors = nullptr;

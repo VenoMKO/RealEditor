@@ -41,7 +41,12 @@ FPackage* UObject::GetPackage() const
   return Export->Package;
 }
 
-inline bool UObject::HasAnyFlags(uint64 flags) const
+void UObject::SetTransacting(bool flag)
+{
+  flag ? Export->ObjectFlags |= RF_IsTransacting : Export->ObjectFlags &= ~RF_IsTransacting;
+}
+
+bool UObject::HasAnyFlags(uint64 flags) const
 {
   return (GetObjectFlags() & flags) != 0 || flags == RF_AllFlags;
 }
@@ -348,12 +353,16 @@ void UObject::Serialize(FStream& s)
     ((UComponent*)this)->PreSerialize(s);
   }
 
-  s << NetIndex;
-
-  if (s.IsReading() && NetIndex != INDEX_NONE)
+  if (!IsTransacting())
   {
-    GetPackage()->AddNetObject(this);
+    s << NetIndex;
+
+    if (s.IsReading() && NetIndex != INDEX_NONE)
+    {
+      GetPackage()->AddNetObject(this);
+    }
   }
+  
 
   if (GetStaticClassName() != UClass::StaticClassName())
   {
@@ -361,9 +370,13 @@ void UObject::Serialize(FStream& s)
   }
 
 #if _DEBUG
-  FILE_OFFSET curPos = s.GetPosition();
-  FILE_OFFSET fileEnd = Export->SerialOffset + Export->SerialSize;
-  DBreakIf(s.IsReading() && fileEnd < curPos);
+  if (!IsTransacting())
+  {
+    FILE_OFFSET curPos = s.GetPosition();
+    FILE_OFFSET fileEnd = Export->SerialOffset + Export->SerialSize;
+    DBreakIf(s.IsReading() && fileEnd < curPos);
+  }
+  
 #endif
 
   if (s.IsReading())
@@ -428,7 +441,7 @@ void UObject::Load(FStream& s)
     }
   }
 
-  if (s.IsReading())
+  if (s.IsReading() && !IsTransacting())
   {
     s.SetPosition(Export->SerialOffset);
 #if DUMP_OBJECTS

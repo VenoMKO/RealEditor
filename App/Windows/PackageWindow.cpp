@@ -6,6 +6,7 @@
 #include "CreateModWindow.h"
 #include "ObjectPicker.h"
 #include "TextureImporter.h"
+#include "DependsResolveDialog.h"
 #include "IODialogs.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
@@ -59,6 +60,7 @@ enum ControlElementId {
   DebugTestCookObj,
   DebugSplitMod,
   DebugDup,
+  DebugDirty,
   Back,
   Forward,
   ContentSplitter,
@@ -76,6 +78,8 @@ enum ObjTreeMenuId {
   AddTexture,
   AddMaterial,
   Duplicate,
+  CopyObject,
+  PasteObject,
 };
 
 #define MAX_SELECTION_HISTORY 50
@@ -117,6 +121,9 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   SetIcon(wxICON(#114));
   SetSizeHints(wxSize(1024, 700), wxDefaultSize);
   InitLayout();
+  wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
+  ObjectTreeCtrl->AppendColumn(col);
+  col->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
   
   ObjectTreeCtrl->SetFocus();
   SetPropertiesHidden(true);
@@ -186,59 +193,12 @@ wxString PackageWindow::GetPackagePath() const
 
 void PackageWindow::SelectObject(const wxString& objectPath)
 {
-  std::vector<std::string> components;
-  std::istringstream f(objectPath.ToStdString());
-  std::string tmp;
-  while (std::getline(f, tmp, '.'))
-  {
-    if (tmp.size())
-    {
-      components.push_back(tmp);
-    }
-  }
-  if (components.empty())
+  UObject* tmp = Package->GetObject(objectPath.ToStdWstring());
+  if (!tmp)
   {
     return;
   }
-  FObjectResource* found = nullptr;
-
-  std::vector<FObjectExport*> searchItems = Package->GetRootExports();
-  for (int32 idx = 1; idx < components.size(); ++idx)
-  {
-    std::string upper = components[idx];
-    std::transform(upper.begin(), upper.end(), upper.begin(),
-      [](unsigned char c) { return std::toupper(c); }
-    );
-    for (FObjectExport* exp : searchItems)
-    {
-      if (exp->GetObjectName().ToUpper() == upper)
-      {
-        found = exp;
-        searchItems = exp->Inner;
-        break;
-      }
-    }
-  }
-  if (!found)
-  {
-    std::vector<FObjectImport*> searchItems = Package->GetRootImports();
-    for (int32 idx = 1; idx < components.size(); ++idx)
-    {
-      std::string upper = components[idx];
-      std::transform(upper.begin(), upper.end(), upper.begin(),
-        [](unsigned char c) { return std::toupper(c); }
-      );
-      for (FObjectImport* imp : searchItems)
-      {
-        if (imp->GetObjectName().ToUpper() == upper)
-        {
-          found = imp;
-          searchItems = imp->Inner;
-          break;
-        }
-      }
-    }
-  }
+  FObjectResource* found = tmp->GetExportObject();
   if (found && found->ObjectIndex)
   {
     if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(found->ObjectIndex))
@@ -312,9 +272,6 @@ void PackageWindow::LoadObjectTree()
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   DataModel->GetRootImport()->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
   ObjectTreeCtrl->AssociateModel(DataModel.get());
-  wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
-  ObjectTreeCtrl->AppendColumn(col);
-  col->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
 }
 
 void PackageWindow::OnTick(wxTimerEvent& e)
@@ -389,7 +346,10 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
   bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript);
   if (node->GetObjectIndex() >= 0)
   {
-    if (node->GetClassName() == NAME_Package || node->GetObjectIndex() == FAKE_EXPORT_ROOT)
+    bool isRootExp = node->GetObjectIndex() == FAKE_EXPORT_ROOT;
+    bool isPackage = node->GetClassName() == NAME_Package;
+
+    if (isPackage || isRootExp)
     {
       if (allowEdit)
       {
@@ -399,20 +359,27 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
         // addMenu->Append(ObjTreeMenuId::AddMaterial, wxT("Material Instance..."));
         addMenu->Append(ObjTreeMenuId::AddTexture, wxT("Texture..."));
         menu.AppendSubMenu(addMenu, wxT("Add"));
+        menu.AppendSeparator();
+        menu.Append(ObjTreeMenuId::CopyObject, wxT("Copy"))->Enable(node->GetParent() && (node->GetParent()->GetObjectIndex() == FAKE_EXPORT_ROOT || node->GetParent()->GetClassName() == NAME_Package));
+        menu.Append(ObjTreeMenuId::PasteObject, wxT("Paste"))->Enable(!FPackage::GetTransactionStream().IsEmpty());
+        menu.AppendSeparator();
       }
       menu.Append(ObjTreeMenuId::BulkExport, wxT("Export package..."));
     }
-    else if (allowEdit)
+    else
     {
       menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
-      if (node->GetClassName() != NAME_Package && node->GetChildren().IsEmpty())
-      {
-        menu.Append(ObjTreeMenuId::Duplicate, wxT("Duplicate..."));
-      }
+      menu.AppendSeparator();
+      menu.Append(ObjTreeMenuId::CopyObject, wxT("Copy"))->Enable(!node->GetParent() || node->GetParent()->GetClassName() == NAME_Package);
+      menu.Append(ObjTreeMenuId::PasteObject, wxT("Paste"))->Enable(false);
     }
   }
   if (node->GetParent())
   {
+    if (menu.GetMenuItemCount())
+    {
+      menu.AppendSeparator();
+    }
     menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
     menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
   }
@@ -459,6 +426,12 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     break;
   case Duplicate:
     OnDuplicateClicked(node->GetObjectIndex());
+    break;
+  case CopyObject:
+    OnCopyObjectClicked(node->GetObjectIndex());
+    break;
+  case PasteObject:
+    OnPasteObjectClicked(node->GetObjectIndex());
     break;
   default:
     break;
@@ -762,6 +735,11 @@ void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
     ObjectTreeCtrl->AddExportObject(exp);
     OnExportObjectSelected(exp->ObjectIndex);
   }
+}
+
+void PackageWindow::DebugMarkDirty(wxCommandEvent&)
+{
+  Package->MarkDirty(true);
 }
 
 void PackageWindow::FixOSG()
@@ -1482,6 +1460,7 @@ void PackageWindow::OnAddPackageClicked(int parentIdx)
     return true;
   };
 
+
   ObjectNameDialog nameDialog = ObjectNameDialog(this, wxT("Untitled"));
   nameDialog.SetValidator(validatorFunc);
 
@@ -1689,6 +1668,58 @@ void PackageWindow::OnDuplicateClicked(PACKAGE_INDEX objIndex)
   }
 }
 
+void PackageWindow::OnCopyObjectClicked(PACKAGE_INDEX objIndex)
+{
+  MTransStream& s = FPackage::GetTransactionStream();
+  UObject* obj = Package->GetObject(objIndex, true);
+  if (!s.StartObjectTransaction(obj))
+  {
+    wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to copy the object!"));
+    s.Clear();
+  }
+}
+
+void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
+{
+  UObject* obj = Package->GetObject(objIndex, true);
+  MTransStream& s = FPackage::GetTransactionStream();
+  if (!obj || obj->GetClassName() != NAME_Package || s.IsEmpty())
+  {
+    return;
+  }
+  {
+    ObjectNameDialog dlg(this, s.GetTransactingObject()->GetObjectName().WString());
+    dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj->GetExportObject()->Outer, Package.get()));
+
+    if (dlg.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    s.SetNewObjectName(dlg.GetObjectName().ToStdWstring());
+  }
+  s.SetDestinationPackage(Package.get());
+  std::map<UObject*,UObject*> orphans = s.GetOrphanObjects();
+  if (orphans.size())
+  {
+    DependsResolveDialog dlg(this, orphans, Package.get());
+    if (dlg.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    orphans = dlg.GetResult();
+    s.ApplyOrphansMap(orphans);
+  }
+  if (!s.EndObjectTransaction(obj))
+  {
+    wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
+  }
+  else
+  {
+    LoadObjectTree();
+    SelectObject(s.GetTransactedObject());
+  }
+}
+
 void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
 {
   if (!ContentSplitter->IsSashInvisible())
@@ -1793,4 +1824,5 @@ EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObject)
 EVT_MENU(ControlElementId::DebugSplitMod, PackageWindow::DebugOnSplitMod)
 EVT_MENU(ControlElementId::DebugDup, PackageWindow::DebugOnDupSelection)
+EVT_MENU(ControlElementId::DebugDirty, PackageWindow::DebugMarkDirty)
 wxEND_EVENT_TABLE()

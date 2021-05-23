@@ -84,6 +84,11 @@ public:
     return Data.end();
   }
 
+  inline void Clear()
+  {
+    Data.clear();
+  }
+
   inline char& operator[](const size_t index)
   {
     return Data[index];
@@ -505,12 +510,12 @@ public:
     return Data.compare(off, count, str.Data.c_str());
   }
 
-  size_t FindFirstOf(char ch, size_t off)
+  size_t FindFirstOf(char ch, size_t off) const
   {
     return Data.find_first_of(ch, off);
   }
 
-  size_t FindLastOf(char ch, size_t off = std::string::npos)
+  size_t FindLastOf(char ch, size_t off = std::string::npos) const
   {
     return Data.find_last_of(ch, off);
   }

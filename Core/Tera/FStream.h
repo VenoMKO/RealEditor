@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.h"
 #include "FString.h"
+#include "FObjectArray.h"
 
 #include <fstream>
 #include <functional>
@@ -94,6 +95,11 @@ public:
     SerializeBytes(&v, 8);
     return *this;
   }
+
+  template <typename T>
+  FStream& operator<<(struct FObjectArray<T>& arr);
+
+  FStream& operator<<(class FName& n);
 
   FStream& operator<<(FString& s);
   FStream& operator<<(FStringRef& r);
@@ -208,7 +214,7 @@ public:
     return *this;
   }
 
-  void SerializeObjectRef(void*& obj, PACKAGE_INDEX& index);
+  virtual void SerializeObjectRef(void*& obj, PACKAGE_INDEX& index);
 
   void SerializeCompressed(void* v, int32 length, ECompressionFlags flags, bool concurrent = true);
   
@@ -250,6 +256,8 @@ public:
     return Reading;
   }
 
+  virtual FStream& SerializeObjectArray(std::vector<class UObject*>& objects, std::vector<PACKAGE_INDEX>& indices);
+
   virtual bool IsGood() const = 0;
 
   virtual void Close() = 0;
@@ -259,7 +267,7 @@ public:
     Package = p;
   }
 
-  inline FPackage* GetPackage() const
+  virtual FPackage* GetPackage() const
   {
     return Package;
   }
@@ -275,9 +283,11 @@ public:
     LoadSerializedObjects = flag;
   }
 
-  uint16 GetFV() const;
+  virtual FStream& SerializeNameIndex(class FName& n);
 
-  uint16 GetLV() const;
+  virtual uint16 GetFV() const;
+
+  virtual uint16 GetLV() const;
 
 protected:
   bool Reading = false;
@@ -664,4 +674,148 @@ protected:
   size_t Position = 0;
   size_t Offset = 0;
   size_t Size = 0;
+};
+
+// Memory stream for object transactions(i.e. Copy-Paste)
+class MTransStream : public FStream {
+public:
+  MTransStream()
+  {
+    LoadSerializedObjects = false;
+  }
+
+  ~MTransStream()
+  {
+    if (Data)
+    {
+      free(Data);
+    }
+  }
+
+  // FStream interface
+
+  void SerializeBytes(void* ptr, FILE_OFFSET size) override;
+
+  void SerializeBytesAt(void* ptr, FILE_OFFSET offset, FILE_OFFSET size) override
+  {}
+
+  void SerializeObjectRef(void*& obj, PACKAGE_INDEX& index) override;
+
+  FStream& SerializeNameIndex(class FName& n) override;
+
+  void SetPosition(FILE_OFFSET offset) override
+  {
+    Position = offset > DataSize ? DataSize : offset < 0 ? 0 : offset;
+  }
+
+  FILE_OFFSET GetPosition() override
+  {
+    return (FILE_OFFSET)(Position);
+  }
+
+  FILE_OFFSET GetSize() override
+  {
+    return (FILE_OFFSET)(DataSize);
+  }
+
+  bool IsGood() const override
+  {
+    return Good;
+  }
+
+  void Close() override
+  {}
+
+  uint16 GetFV() const override;
+
+  uint16 GetLV() const override;
+
+  FPackage* GetPackage() const override
+  {
+    return Reading ? DestPackage : SourcePackage.get();
+  }
+
+  // Transaction methods
+
+  // Set stream direction: true - copy to the stream, false - paste from the stream
+  void SetIsReading(bool flag)
+  {
+    DBreakIf(flag && !DestPackage);
+    Reading = flag;
+  }
+
+  void SetSourcePackage(std::shared_ptr<FPackage> package);
+
+  void SetDestinationPackage(FPackage* package);
+
+  bool IsEmpty() const
+  {
+    return Depends.empty();
+  }
+
+  void Clear();
+
+  void ClearData();
+
+  // Get objects with no outer
+  std::map<UObject*, UObject*> GetOrphanObjects();
+
+  // Update orphans map
+  void ApplyOrphansMap(const std::map<UObject*, UObject*>& map);
+
+  // Copy object to the stream
+  bool StartObjectTransaction(class UObject* obj);
+
+  // Paste stream contents to the object. If object is a UPackage the transacting object will placed inside of it
+  bool EndObjectTransaction(class UObject* obj);
+
+  // Get the source object
+  UObject* GetTransactingObject() const
+  {
+    return Root;
+  }
+
+  // Get the copied object
+  UObject* GetTransactedObject() const;
+
+  // Set custom root object name
+  void SetNewObjectName(const FString& name)
+  {
+    CustomRootName = name;
+  }
+
+protected:
+  // Save the obj to the stream. Has nothing to do with the SerializeObjectRef
+  bool SerializeObject(class UObject* obj, bool recursiv);
+  // Restore stream storage to the obj
+  bool DeserializeObject(class UObject* obj);
+
+  UObject* FindDestinationObject(class UObject* obj) const;
+
+protected:
+  bool Good = true;
+  
+  uint8_t* Data = nullptr;
+  size_t Position = 0;
+  size_t DataSize = 0;
+  size_t AllocationSize = 0;
+  size_t BufferSize = 1024 * 1024;
+
+  std::shared_ptr<FPackage> SourcePackage = nullptr;
+  FPackage* DestPackage = nullptr;
+
+  UObject* Root = nullptr;
+  FString CustomRootName;
+
+  std::vector<FString> Names;
+  std::vector<UObject*> Depends;
+
+  std::vector<FObjectImport*> Imports;
+  std::vector<FObjectExport*> Unresolved;
+
+  std::map<UObject*, UObject*> OrphansMap;
+  std::map<UObject*, UObject*> DependsMap;
+  std::map<FObjectImport*, FObjectImport*> ImportsMap;
+
+  std::map<PACKAGE_INDEX, FObjectResource*> UnresolvedRemap;
 };

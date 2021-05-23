@@ -54,6 +54,8 @@ FObjectImport* FObjectImport::CreateImport(FPackage* package, const FString& obj
     return nullptr;
   }
   FObjectImport* result = new FObjectImport(package, objectName);
+  package->GetNameIndex(objectName, true);
+  package->GetNameIndex(objectClass ? objectClass->GetObjectName() : "Class", true);
   result->ClassName = FName(package, objectClass ? objectClass->GetObjectName() : "Class");
   result->ClassPackage = FName(package, objectClass ? objectClass->GetPackage()->GetPackageName() : "Core");
   return result;

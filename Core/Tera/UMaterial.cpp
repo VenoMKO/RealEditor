@@ -75,11 +75,17 @@ FStream& operator<<(FStream& s, FStaticParameterSet& ps)
   return s;
 }
 
-void FMaterial::Serialize(FStream& s)
+void FMaterial::Serialize(FStream& s, UObject* owner)
 {
   s << Unk1;
   s << CompoilerErrors;
-  s << TextureDependencyLengthMap;
+  if (!owner || !owner->IsTransacting())
+  {
+    // Transacting the map causes a random access violation during game play.
+    // Probably caused by the fact that the map keys aren't serialized properly.
+    // Meaning that after transaction object indices are totally messed up.
+    s << TextureDependencyLengthMap;
+  }
   s << MaxTextureDependencyLength;
   s << Id;
   s << NumUserTexCoords;
@@ -509,7 +515,7 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
 void UMaterial::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  MaterialResource.Serialize(s);
+  MaterialResource.Serialize(s, this);
 }
 
 bool UMaterial::RegisterProperty(FPropertyTag* property)
@@ -545,8 +551,7 @@ void UMaterialInstance::Serialize(FStream& s)
   {
     return;
   }
-
-  StaticPermutationResource.Serialize(s);
+  StaticPermutationResource.Serialize(s, this);
   s << StaticParameters;
 
   SerializeTrailingData(s);

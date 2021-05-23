@@ -812,6 +812,7 @@ void App::DelayLoad(wxCommandEvent&)
 
 int App::OnExit()
 {
+  FPackage::GetTransactionStream().Clear();
   FPackage::UnloadDefaultClassPackages();
   ALog::GetConfig(Config.LogConfig);
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));

@@ -277,6 +277,16 @@ struct FPropertyTag {
     return Value ? Value->Data : nullptr;
   }
 
+  template <typename T>
+  T& GetTypedValue()
+  {
+    if (Type.String() == NAME_BoolProperty)
+    {
+      return *(T*)&BoolVal;
+    }
+    return *(T*)(Value->Data);
+  }
+
   bool GetVector(FVector& output) const;
   bool GetRotator(FRotator& output) const;
   bool GetLinearColor(FLinearColor& output) const;

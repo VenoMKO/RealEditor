@@ -224,7 +224,7 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   }
   else if (PROP_IS(property, bNoTiling))
   {
-    bNoTiling = property->Value->GetBool();
+    bNoTiling = property->GetBool();
     bNoTilingProperty = property;
     return true;
   }
@@ -236,8 +236,14 @@ bool UTexture2D::RegisterProperty(FPropertyTag* property)
   }
   else if (PROP_IS(property, NeverStream))
   {
-    NeverStream = property->Value->GetBool();
+    NeverStream = property->GetBool();
     NeverStreamProperty = property;
+    return true;
+  }
+  else if (PROP_IS(property, bIsStreamable))
+  {
+    bIsStreamable = property->GetBool();
+    bIsStreamableProperty = property;
     return true;
   }
   return false;
@@ -330,6 +336,26 @@ void UTexture2D::DisableCaching()
   {
     MipTailBaseIdx = 0;
     MipTailBaseIdxProperty->Value->GetInt() = 0;
+  }
+
+  if (NeverStreamProperty)
+  {
+    NeverStreamProperty->GetBool() = true;
+    NeverStream = true;
+  }
+  else
+  {
+    CreatePropertyNeverStream(true);
+  }
+
+  if (bIsStreamableProperty)
+  {
+    bIsStreamableProperty->GetBool() = false;
+    bIsStreamable = false;
+  }
+  else
+  {
+    CreatePropertybIsStreamable(false);
   }
 
   for (int32 idx = 0; idx < Mips.size(); ++idx)

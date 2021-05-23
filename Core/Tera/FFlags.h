@@ -52,6 +52,7 @@ enum EObjectFlags : uint64
   RF_InitializedProps = 0x0000000000100000,		// whether InitProperties has been called on this object
   RF_PendingFieldPatches = 0x0000000000200000,		//@script patcher: indicates that this struct will receive additional member properties from the script patcher
   RF_IsCrossLevelReferenced = 0x0000000000400000,		// This object has been pointed to by a cross-level reference, and therefore requires additional cleanup upon deletion
+  RF_IsTransacting = 0x0000000000800000, // The object is being moved
 
   RF_Saved = 0x0000000080000000,		// Object has been saved via SavePackage. Temporary.
   RF_Transactional = 0x0000000100000000,		// Object is transactional.

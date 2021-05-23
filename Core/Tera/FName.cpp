@@ -44,14 +44,14 @@ bool FName::operator<(const FName& n) const
   return String() < n.String();
 }
 
-FString FName::String() const
+FString FName::String(bool number) const
 {
   FString value;
-  GetString(value);
+  GetString(value, number);
   return value;
 }
 
-void FName::GetString(FString& str) const
+void FName::GetString(FString& str, bool number) const
 {
   if (Index == INDEX_NONE)
   {
@@ -60,9 +60,9 @@ void FName::GetString(FString& str) const
   else
   {
     Package->GetIndexedName(Index, str);
-    if (Number)
+    if (Number && number)
     {
-      str += "_" + std::to_string(Number);
+      str += "_" + std::to_string(Number - 1);
     }
   }
 }
@@ -74,20 +74,4 @@ void FName::SetString(const FString& str)
 #ifdef _DEBUG
   Value = String();
 #endif
-}
-
-FStream& operator<<(FStream& s, FName& n)
-{
-  if (s.IsReading() && s.GetPackage())
-  {
-    n.Package = s.GetPackage();
-  }
-  // Check if name's package does not match stream's one. Thus the Index is invalid.
-  DBreakIf(!s.IsReading() && s.GetPackage() != n.Package);
-  s << n.Index;
-  s << n.Number;
-#ifdef _DEBUG
-  n.Value = n.String();
-#endif
-  return s;
 }

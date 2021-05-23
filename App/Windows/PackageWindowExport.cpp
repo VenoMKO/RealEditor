@@ -329,7 +329,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 
 	if (failedExports.empty())
 	{
-		wxMessageBox(wxString::Format("Exported %d objects.", exports.size()), "Done!", wxICON_INFORMATION, this);
+		wxMessageBox(wxString::Format("Exported %d objects.", (int)exports.size()), "Done!", wxICON_INFORMATION, this);
 	}
 	else
 	{

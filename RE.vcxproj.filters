@@ -257,6 +257,12 @@
     <ClCompile Include="App\Windows\MaterialMapperDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\DependsResolveDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UObjectReferencer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -357,6 +363,9 @@
     <ClInclude Include="Core\Utils\MeshTravaller.h" />
     <ClInclude Include="App\Windows\IODialogs.h" />
     <ClInclude Include="App\Windows\MaterialMapperDialog.h" />
+    <ClInclude Include="Core\Tera\FObjectArray.h" />
+    <ClInclude Include="App\Windows\DependsResolveDialog.h" />
+    <ClInclude Include="Core\Tera\UObjectReferencer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

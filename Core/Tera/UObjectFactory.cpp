@@ -23,6 +23,7 @@
 #include "ULevelStreaming.h"
 #include "USpeedTree.h"
 #include "UPrefab.h"
+#include "UObjectReferencer.h"
 
 #include "UActor.h"
 #include "ULevel.h"
@@ -328,6 +329,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UObjectRedirector::StaticClassName())
   {
     result = new UObjectRedirector(exp);
+  }
+  else if (c == UObjectReferencer::StaticClassName())
+  {
+    result = new UObjectReferencer(exp);
   }
   else if (c == UPersistentCookerData::StaticClassName())
   {

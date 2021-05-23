@@ -123,7 +123,13 @@ void PackageWindow::InitLayout()
 
   wxMenuItem* debugDup = new wxMenuItem(m_menu3, ControlElementId::DebugDup, wxT("Dup selection..."), wxEmptyString, wxITEM_NORMAL);
   m_menu3->Append(debugDup);
+
+  wxMenuItem* debugDirty = new wxMenuItem(m_menu3, ControlElementId::DebugDirty, wxT("Mark Dirty"), wxEmptyString, wxITEM_NORMAL);
+  m_menu3->Append(debugDirty);
+
   menuBar->Append(m_menu3, wxT("Debug"));
+
+  
 #endif
 
   this->SetMenuBar(menuBar);

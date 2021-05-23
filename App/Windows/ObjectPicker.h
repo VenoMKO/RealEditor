@@ -52,10 +52,13 @@ protected:
 
 class ObjectNameDialog : public wxDialog {
 public:
+  typedef std::function<bool(const wxString&)> Validator;
+
+  static Validator GetDefaultValidator(struct FObjectExport* parent, FPackage* package);
   ObjectNameDialog(wxWindow* parent, const wxString& objectName = wxEmptyString);
   ~ObjectNameDialog();
 
-  typedef std::function<bool(const wxString&)> Validator;
+  
   void SetValidator(Validator& validator);
   wxString GetObjectName() const;
 
