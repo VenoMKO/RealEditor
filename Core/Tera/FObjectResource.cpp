@@ -79,7 +79,7 @@ FString FObjectImport::GetPackageName() const
       outerIndex = 0;
     }
   }
-  return outer ? outer->GetObjectName() : FString();
+  return outer ? outer->ObjectName.String(true) : FString();
 }
 
 FString FObjectImport::GetObjectPath() const

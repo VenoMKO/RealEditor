@@ -53,10 +53,6 @@ void ObjectRedirectorEditor::OnObjectLoaded()
       {
         Source = Redirector->GetObject();
       }
-      else if (Redirector->GetAltObject())
-      {
-        Source = Redirector->GetAltObject();
-      }
     }
   }
 
