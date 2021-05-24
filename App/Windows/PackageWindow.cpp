@@ -1672,7 +1672,17 @@ void PackageWindow::OnCopyObjectClicked(PACKAGE_INDEX objIndex)
 {
   MTransStream& s = FPackage::GetTransactionStream();
   UObject* obj = Package->GetObject(objIndex, true);
-  if (!s.StartObjectTransaction(obj))
+
+  ProgressWindow progress(this, "Preparing to copy");
+  progress.SetCurrentProgress(-1);
+  progress.SetActionText(wxT("Collecting objects..."));
+
+  std::thread([&progress, &s, obj] {
+    bool result = s.StartObjectTransaction(obj);
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+
+  if (!progress.ShowModal())
   {
     wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to copy the object!"));
     s.Clear();
@@ -1689,7 +1699,7 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
   }
   {
     ObjectNameDialog dlg(this, s.GetTransactingObject()->GetObjectName().WString());
-    dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj->GetExportObject()->Outer, Package.get()));
+    dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj->GetExportObject(), Package.get()));
 
     if (dlg.ShowModal() != wxID_OK)
     {
@@ -1709,7 +1719,16 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
     orphans = dlg.GetResult();
     s.ApplyOrphansMap(orphans);
   }
-  if (!s.EndObjectTransaction(obj))
+  
+  ProgressWindow progress(this, "Pasting");
+  progress.SetCurrentProgress(-1);
+  progress.SetActionText(wxT("Building new objects..."));
+  std::thread([&progress, &s, obj] {
+    bool result = s.EndObjectTransaction(obj);
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+
+  if (!progress.ShowModal())
   {
     wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
   }
