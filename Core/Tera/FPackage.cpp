@@ -2614,7 +2614,8 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
         return p.first;
       }
     }
-    UThrow("%s does not have import object for %s", GetPackageName().C_str(), object->GetObjectName().String().c_str());
+    LogW("%s does not have import object for %s", GetPackageName().C_str(), object->GetObjectName().String().c_str());
+    return 0;
   }
   return object->GetExportObject()->ObjectIndex;
 }

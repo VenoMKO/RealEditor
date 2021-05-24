@@ -70,7 +70,6 @@ void URB_BodySetup::LoadAggGeom(const std::vector<FPropertyValue*>& root)
     else if (!GetPackage()->GetPackageFlag(PKG_ContainsScript) && (name == "BoxElems" || name == "SphylElems" || name == "SphereElems"))
     {
       // TODO: implement if necessary
-      DBreak();
     }
   }
 }
