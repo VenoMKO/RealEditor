@@ -1153,6 +1153,11 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
     FSkelMeshSection& section = lod.Sections[sectionIndex];
     FRawIndexBuffer& sectionIndexBuffer = *sectionIndexBufferArray[sectionIndex];
 
+    if (importData->OptimizeIndexBuffer)
+    {
+      sectionIndexBuffer.SortIndices();
+    }
+
     section.NumTriangles = sectionIndexBuffer.GetElementCount() / 3;
     section.BaseIndex = lod.IndexContainer.GetElementCount();
 

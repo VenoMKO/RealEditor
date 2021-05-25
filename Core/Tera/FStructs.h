@@ -1575,6 +1575,8 @@ public:
 
   friend FStream& operator<<(FStream& s, FRawIndexBuffer& b);
 
+  void SortIndices();
+
   uint32 GetElementSize() const
   {
     return ElementSize;
