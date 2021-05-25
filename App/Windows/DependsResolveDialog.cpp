@@ -278,6 +278,7 @@ void DependsResolveDialog::OnAllClicked(wxCommandEvent& event)
 {
   ObjectPicker dlg(this, wxT("Select a folder..."), false, DestinationPackage->Ref(), 0, { NAME_Package });
   dlg.SetAllowRootExport(true);
+  dlg.SetAllowNewPackage(true);
   if (dlg.ShowModal() != wxID_OK)
   {
     return;
@@ -290,8 +291,8 @@ void DependsResolveDialog::OnAllClicked(wxCommandEvent& event)
     item.Action = 0;
     item.Destination = dest;
   }
-
-  EndModal(wxID_OK);
+  DataView->OnColumnChange(1);
+  DataView->OnColumnChange(2);
 }
 
 void DependsResolveDialog::OnEditClicked(wxCommandEvent& event)
@@ -305,10 +306,12 @@ void DependsResolveDialog::OnEditClicked(wxCommandEvent& event)
   {
     std::vector<FString> filter;
     wxString title;
+    bool allowNewFolders = false;
     if (item->Action == 0)
     {
       filter.emplace_back(NAME_Package);
       title = wxT("Select a folder...");
+      allowNewFolders = true;
     }
     else
     {
@@ -316,6 +319,7 @@ void DependsResolveDialog::OnEditClicked(wxCommandEvent& event)
       title = wxT("Select a ") + item->Source->GetClassName().WString() + wxT(" object...");
     }
     ObjectPicker dlg(this, title, false, DestinationPackage->Ref(), DestinationPackage->GetObjectIndex(item->Destination), filter);
+    dlg.SetAllowNewPackage(allowNewFolders);
     if (dlg.ShowModal() != wxID_OK)
     {
       return;

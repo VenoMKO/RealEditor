@@ -28,9 +28,15 @@ public:
     AllowRootExport = flag;
   }
 
+  void SetAllowNewPackage(bool flag)
+  {
+    AllowNewPackage = flag;
+  }
+
 protected:
   void OnObjectSelected(wxDataViewEvent& event);
   void OnPackageClicked(wxCommandEvent& event);
+  void OnShowContextMenu(wxDataViewEvent& event);
   void OnOkClicked(wxCommandEvent& event);
   void OnCancelClicked(wxCommandEvent& event);
   void LoadObjectTree();
@@ -42,9 +48,10 @@ protected:
   std::vector<FString> Filter;
   bool AllowDifferentPackage = false;
   bool AllowRootExport = false;
+  bool AllowNewPackage = false;
 
   wxString TableTitle;
-  wxDataViewCtrl* ObjectTreeCtrl = nullptr;
+  class ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
   wxButton* PackageButton = nullptr;
   wxButton* OkButton = nullptr;
   wxButton* CancelButton = nullptr;
@@ -54,7 +61,7 @@ class ObjectNameDialog : public wxDialog {
 public:
   typedef std::function<bool(const wxString&)> Validator;
 
-  static Validator GetDefaultValidator(struct FObjectExport* parent, FPackage* package);
+  static Validator GetDefaultValidator(class FObjectExport* parent, FPackage* package);
   ObjectNameDialog(wxWindow* parent, const wxString& objectName = wxEmptyString);
   ~ObjectNameDialog();
 

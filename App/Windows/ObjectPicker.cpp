@@ -18,7 +18,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectTreeCtrl = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
   bSizer2->Add(ObjectTreeCtrl, 1, wxRIGHT | wxEXPAND, 1);
 
   wxBoxSizer* bSizer4;
@@ -114,7 +114,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectTreeCtrl = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
   bSizer2->Add(ObjectTreeCtrl, 1, wxRIGHT | wxEXPAND, 1);
 
   wxBoxSizer* bSizer4;
@@ -157,10 +157,11 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   Centre(wxBOTH);
 
   // Connect Events
-  ObjectTreeCtrl->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(ObjectPicker::OnObjectSelected), NULL, this);
-  PackageButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnPackageClicked), NULL, this);
-  OkButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnOkClicked), NULL, this);
-  CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnCancelClicked), NULL, this);
+  ObjectTreeCtrl->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler(ObjectPicker::OnShowContextMenu), nullptr, this);
+  ObjectTreeCtrl->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(ObjectPicker::OnObjectSelected), nullptr, this);
+  PackageButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnPackageClicked), nullptr, this);
+  OkButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnOkClicked), nullptr, this);
+  CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectPicker::OnCancelClicked), nullptr, this);
 
   Package = package;
 
@@ -342,7 +343,48 @@ void ObjectPicker::UpdateTableTitle()
   }
 }
 
-ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(struct FObjectExport* parent, FPackage* package)
+void ObjectPicker::OnShowContextMenu(wxDataViewEvent& event)
+{
+  if (!event.GetItem().IsOk() || !AllowNewPackage)
+  {
+    return;
+  }
+  ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
+  if (!node)
+  {
+    return;
+  }
+
+  wxMenu menu;
+  menu.Append(1, wxT("Create a package..."));
+
+  if (!GetPopupMenuSelectionFromUser(menu))
+  {
+    return;
+  }
+
+  FObjectExport* exp = node->GetObjectIndex() == FAKE_EXPORT_ROOT ? nullptr : Package->GetObject(node->GetObjectIndex())->GetExportObject();
+  ObjectNameDialog dlg(this, wxT("Untitled"));
+  dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(exp, Package.get()));
+  if (dlg.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  wxString name = dlg.GetObjectName();
+  if (name.empty())
+  {
+    return;
+  }
+
+  if (FObjectExport* newExp = Package->AddExport(FString(name.ToStdWstring()), NAME_Package, exp))
+  {
+    ObjectTreeCtrl->AddExportObject(newExp);
+    wxDataViewEvent tmp;
+    OnObjectSelected(tmp);
+  }
+}
+
+ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(FObjectExport* parent, FPackage* package)
 {
   return [&](const wxString& name) {
     if (!package)
