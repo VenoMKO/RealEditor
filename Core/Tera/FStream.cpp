@@ -572,10 +572,10 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
   }
 
   UObject* newRoot = nullptr;
-  if (obj->GetClassName() == NAME_Package)
+  if (!obj || obj->GetClassName() == NAME_Package)
   {
     FString name = CustomRootName.Empty() ? Root->GetObjectName() : FString(CustomRootName.WString());
-    FObjectExport* exp = DestPackage->AddExport(name, Root->GetClassName(), obj->GetExportObject());
+    FObjectExport* exp = DestPackage->AddExport(name, Root->GetClassName(), obj ? obj->GetExportObject() : nullptr);
     newRoot = DestPackage->GetObject(exp, false);
   }
   else
@@ -597,6 +597,27 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     {
       // Already mapped
       continue;
+    }
+    if (DestPackage->GetObjectIndex(dep) > 0)
+    {
+      // The object exists in the dest package
+      bool isChildOfRoot = false;
+      UObject* outer = dep->GetOuter();
+      while (outer)
+      {
+        if (outer == Root)
+        {
+          isChildOfRoot = true;
+          break;
+        }
+        outer = outer->GetOuter();
+      }
+      // Skip inner of the root in the dest package
+      if (!isChildOfRoot)
+      {
+        map[dep] = dep;
+        continue;
+      }
     }
     if (SourcePackage->GetObjectIndex(dep) < 0)
     {
@@ -705,6 +726,10 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
 
   for (UObject* dep : Depends)
   {
+    if (DependsMap[dep]->GetExportObject()->SerialOffset)
+    {
+      continue;
+    }
     if (DependsMap[dep]->GetPackage() == DestPackage)
     {
       DependsMap[dep]->GetExportObject()->ObjectFlags = dep->GetObjectFlags();

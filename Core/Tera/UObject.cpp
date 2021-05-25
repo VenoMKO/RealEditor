@@ -314,6 +314,7 @@ FString UObject::GetObjectName() const
 
 FString UObject::GetClassName() const
 {
+
   return Export->GetClassName();
 }
 

@@ -1691,15 +1691,15 @@ void PackageWindow::OnCopyObjectClicked(PACKAGE_INDEX objIndex)
 
 void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
 {
-  UObject* obj = Package->GetObject(objIndex, true);
+  UObject* obj = FAKE_EXPORT_ROOT == objIndex ? nullptr : Package->GetObject(objIndex, true);
   MTransStream& s = FPackage::GetTransactionStream();
-  if (!obj || obj->GetClassName() != NAME_Package || s.IsEmpty())
+  if (obj && (obj->GetClassName() != NAME_Package || s.IsEmpty()))
   {
     return;
   }
   {
     ObjectNameDialog dlg(this, s.GetTransactingObject()->GetObjectName().WString());
-    dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj->GetExportObject(), Package.get()));
+    dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj ? obj->GetExportObject() : nullptr, Package.get()));
 
     if (dlg.ShowModal() != wxID_OK)
     {
