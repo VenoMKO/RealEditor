@@ -672,7 +672,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
       missing.insert(missing.begin(), tmp);
       tmp = tmp->GetOuter();
     }
-    DBreakIf(!tmp); // We must hit the root object or a child of root
+    DBreakIf(!tmp); // We must hit the root object or its child
     for (UObject* parent : missing)
     {
       DBreakIf(!map[parent->GetOuter()]);
@@ -687,12 +687,16 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
   DependsMap = map;
 
   // At this point all Depends must exist in the DestPackage
-#ifdef _DEBUG
   for (UObject* dep : Depends)
   {
-    DBreakIf(!map[dep]);
+    if (!map[dep])
+    {
+      DBreak();
+      LogE("Error! Failed to map %s object.", dep->GetFullObjectName().UTF8().c_str());
+      Clear();
+      return false;
+    }
   }
-#endif
 
   for (UObject* dep : Depends)
   {
@@ -748,6 +752,7 @@ void MTransStream::Clear()
 {
   ClearData();
   Root = nullptr;
+  CustomRootName.Clear();
   Good = true;
   SourcePackage = nullptr;
   DestPackage = nullptr;
@@ -755,9 +760,10 @@ void MTransStream::Clear()
   Depends.clear();
   Imports.clear();
   Unresolved.clear();
-  UnresolvedRemap.clear();
   OrphansMap.clear();
-  CustomRootName.Clear();
+  DependsMap.clear();
+  ImportsMap.clear();
+  UnresolvedRemap.clear();
 }
 
 void MTransStream::ClearData()

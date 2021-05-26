@@ -987,6 +987,14 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
   
 }
 
+void App::OnExitClicked()
+{
+  // Does not work when a modal runloop is running
+  // Application->ExitMainLoop();
+  SaveConfig();
+  exit(0);
+}
+
 void App::OnFatalException()
 {
   wxMessageBox("An unknown error occurred. The program will close!", "Error!", wxICON_ERROR);

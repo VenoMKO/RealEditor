@@ -154,6 +154,8 @@ public:
 
   void SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString& tmp, const FString dest);
 
+  void OnExitClicked();
+
 private:
   bool OnInit() override;
   int OnRun() override;

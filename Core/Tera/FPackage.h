@@ -117,7 +117,7 @@ public:
 	// Get an object by path
 	UObject* GetObject(const FString& path);
 
-	// Get package index of the object. Accepts imported objects
+	// Get package index of the object. Accepts imported objects. Returns 0 if the object was not founds.
 	PACKAGE_INDEX GetObjectIndex(UObject* object) const;
 
 	// Get an index for FName instance. The insert flag adds the name if necessary.

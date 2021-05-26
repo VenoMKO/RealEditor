@@ -472,7 +472,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
   }
   FObjectImport* obj = Package->GetImportObject(index);
   ObjectTitleLabel->SetLabelText(wxString::Format(wxT("Import: %ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
-  ObjectTitleLabel->SetToolTip(wxEmptyString);
+  ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d\nClass Package: %ls\nClass Name: %ls"), (int32)obj->ObjectIndex, obj->ClassPackage.String().WString().c_str(), obj->ClassName.String().WString().c_str()));
   SetPropertiesHidden(true);
   SetContentHidden(true);
 }
@@ -1054,7 +1054,7 @@ void PackageWindow::OnCloseClicked(wxCommandEvent& e)
 
 void PackageWindow::OnExitClicked(wxCommandEvent&)
 {
-  Application->ExitMainLoop();
+  Application->OnExitClicked();
 }
 
 void PackageWindow::OnSettingsClicked(wxCommandEvent&  e)

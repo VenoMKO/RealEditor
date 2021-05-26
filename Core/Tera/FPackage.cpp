@@ -2614,7 +2614,6 @@ PACKAGE_INDEX FPackage::GetObjectIndex(UObject* object) const
         return p.first;
       }
     }
-    LogW("%s does not have import object for %s", GetPackageName().C_str(), object->GetObjectName().String().c_str());
     return 0;
   }
   return object->GetExportObject()->ObjectIndex;
@@ -2777,6 +2776,7 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
   {
     classImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
     Imports.push_back(classImport);
+    LogI("Added class: %s", classImport->GetFullObjectName().UTF8().c_str());
     MarkDirty();
     return classImport->ObjectIndex;
   }
@@ -2865,7 +2865,6 @@ FObjectImport* FPackage::GetImportObject(const FString& objectName, const FStrin
 
 bool FPackage::AddImport(UObject* object, FObjectImport*& output)
 {
-  DBreakIf(object->GetObjectName() == "9dc1ecae_1d0bfb62_1958");
   if (!object || !object->GetPackage() || object->GetPackage() == this)
   {
     output = nullptr;
@@ -2912,6 +2911,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     RootImports.push_back(importObject);
     outerPackage = importObject;
     MarkDirty();
+    LogI("Added import: %s", importObject->GetFullObjectName().UTF8().c_str());
 
     GetNameIndex(outerPackageName, true);
   }
@@ -2964,6 +2964,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   output = importObject;
   ImportObjects[importObject->ObjectIndex] = object;
   MarkDirty();
+  LogI("Added import: %s", importObject->GetFullObjectName().UTF8().c_str());
   return true;
 }
 
@@ -3012,7 +3013,7 @@ FObjectExport* FPackage::AddExport(const FString& objectName, const FString& obj
     std::scoped_lock<std::mutex> l(ExportObjectsMutex);
     ExportObjects[exp->ObjectIndex] = object;
   }
-  
+  LogI("Added export: %s", object->GetFullObjectName().UTF8().c_str());
   if (Referencer)
   {
     Referencer->AddObject(object);

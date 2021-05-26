@@ -7,6 +7,9 @@
 
 wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
 
+#define MAX_LINES 100000
+#define CLEAN_LINES 70000
+
 LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
   : wxFrame(parent, id, wxTheApp->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - Log"), pos, size, style)
 {
@@ -46,9 +49,9 @@ void LogWindow::PumpMessages(wxCommandEvent&)
   Logger->GetEntries(entries, LastMessageIndex);
   LogCtrl->Freeze();
   LogCtrl->SetInsertionPointEnd();
-  if (LogCtrl->GetValue().size() >= 5000)
+  if (LogCtrl->GetValue().size() >= MAX_LINES)
   {
-    LogCtrl->SetValue(LogCtrl->GetValue().substr(2000));
+    LogCtrl->SetValue(LogCtrl->GetValue().substr(CLEAN_LINES));
   }
   for (ALogEntry& e : entries)
   {

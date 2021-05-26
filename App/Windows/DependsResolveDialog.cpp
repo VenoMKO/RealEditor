@@ -293,6 +293,7 @@ void DependsResolveDialog::OnAllClicked(wxCommandEvent& event)
   }
   DataView->OnColumnChange(1);
   DataView->OnColumnChange(2);
+  UpdateOkButton();
 }
 
 void DependsResolveDialog::OnEditClicked(wxCommandEvent& event)
