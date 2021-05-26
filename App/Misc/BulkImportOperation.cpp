@@ -184,7 +184,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
     }
   }
 
-  bool disableTextureCaching = true;
+  bool disableTextureCaching = !KeepAsIs;
   if (TfcName.size())
   {
     SendEvent(&progress, UPDATE_PROGRESS, -1);

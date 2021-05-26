@@ -41,7 +41,7 @@ protected:
 	wxButton* EditOperationButton = nullptr;
 	wxButton* RemoveOperationButton = nullptr;
 	wxButton* ClearOperationsButton = nullptr;
-	wxCheckBox* EnableTfc = nullptr;
+	wxRadioBox* TfcModeRadio = nullptr;
 	wxButton* ContinueButton = nullptr;
 	wxButton* CancelButton = nullptr;
 

@@ -288,6 +288,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_SavePackageOpen:
         s << c.SavePackageOpen;
         break;
+      case FAppConfig::CFG_BulkImportTfcMode:
+        s << c.BulkImportTfcMode;
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -320,6 +323,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     SerializeKeyValue(FAppConfig::CFG_SavePackageOpen, c.SavePackageOpen);
     SerializeKeyValue(FAppConfig::CFG_SavePackageOpenDontAskAgain, c.SavePackageOpenDontAskAgain);
+    SerializeKeyValue(FAppConfig::CFG_BulkImportTfcMode, c.BulkImportTfcMode);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

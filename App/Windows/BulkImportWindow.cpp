@@ -784,7 +784,7 @@ protected:
 };
 
 BulkImportWindow::BulkImportWindow(wxWindow* parent)
-  : wxFrame(parent, wxID_ANY, wxT("Bulk Import"), wxDefaultPosition, wxSize(667, 631))
+  : wxFrame(parent, wxID_ANY, wxT("Bulk Import"), wxDefaultPosition, wxSize(667, 657), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
 {
   SetIcon(wxICON(#114));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -798,7 +798,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   m_staticText10->Wrap(-1);
   m_staticText10->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText10, 0, wxALL, 5);
+  bSizer10->Add(m_staticText10, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
   wxPanel* m_panel6;
   m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -806,7 +806,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer12 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText11;
-  m_staticText11 = new wxStaticText(m_panel6, wxID_ANY, wxT("Select the ObjectDump.txt file. This file is used to search for objects in the composite storage."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText11 = new wxStaticText(m_panel6, wxID_ANY, wxT("Select the ObjectDump.txt file. This file is used to search for objects in the composite storage. If you don't have one, you can create it in Window -> Dump all composite objects"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText11->Wrap(650);
   bSizer12->Add(m_staticText11, 0, wxALL, 5);
 
@@ -819,7 +819,6 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer11->Add(m_staticText9, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   PathPicker = new wxFilePickerCtrl(m_panel6, wxID_ANY, wxEmptyString, wxT("Select the object dump file"), wxT("*.txt"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE | wxFLP_FILE_MUST_EXIST);
-  PathPicker->GetTextCtrl()->Enable(false);
   bSizer11->Add(PathPicker, 1, wxALL, 5);
 
 
@@ -832,11 +831,11 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer10->Add(m_panel6, 0, wxEXPAND | wxALL, 5);
 
   wxStaticText* m_staticText101;
-  m_staticText101 = new wxStaticText(this, wxID_ANY, wxT("Actions"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText101 = new wxStaticText(this, wxID_ANY, wxT("Imports"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText101->Wrap(-1);
   m_staticText101->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText101, 0, wxALL, 5);
+  bSizer10->Add(m_staticText101, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
   wxPanel* m_panel7;
   m_panel7 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -844,14 +843,14 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer15 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText15;
-  m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import actions. Each entry represents a single action. Press Add to create an import action."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import operations. Each entry represents a single operation. Press Add to create an import operation."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText15->Wrap(650);
   bSizer15->Add(m_staticText15, 0, wxALL, 5);
 
   wxBoxSizer* bSizer16;
   bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
-  OperationsList = new wxDataViewCtrl(m_panel7, wxID_ANY, wxDefaultPosition, wxSize(-1, 250), 0);
+  OperationsList = new wxDataViewCtrl(m_panel7, wxID_ANY, wxDefaultPosition, wxSize(-1, 250), wxDV_MULTIPLE);
   bSizer16->Add(OperationsList, 1, wxALL | wxEXPAND, 5);
 
   wxBoxSizer* bSizer17;
@@ -896,24 +895,11 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 
   bSizer10->Add(m_staticText1011, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
-  wxPanel* m_panel8;
-  m_panel8 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
-  wxBoxSizer* bSizer19;
-  bSizer19 = new wxBoxSizer(wxVERTICAL);
-
-  EnableTfc = new wxCheckBox(m_panel8, wxID_ANY, wxT("Generate Texture File Cache (TFC)"), wxDefaultPosition, wxDefaultSize, 0);
-  EnableTfc->SetValue(false);
-  bSizer19->Add(EnableTfc, 0, wxTOP | wxRIGHT | wxLEFT, 5);
-
-  wxStaticText* m_staticText22;
-  m_staticText22 = new wxStaticText(m_panel8, wxID_ANY, wxT("This option helps to reduce mod size by combining textures to a single TFC file. If disabled, all cached textures will be resaved to their packages. Check this option if you have at least two GPK files across all actions."), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText22->Wrap(650);
-  bSizer19->Add(m_staticText22, 1, wxALL, 5);
-
-  m_panel8->SetSizer(bSizer19);
-  m_panel8->Layout();
-  bSizer19->Fit(m_panel8);
-  bSizer10->Add(m_panel8, 1, wxEXPAND | wxALL, 5);
+  wxString TfcModeRadioChoices[] = { wxT("Generate TFC (Texture File Cache)"), wxT("Disable TFC"), wxT("Keep as is") };
+  int TfcModeRadioNChoices = sizeof(TfcModeRadioChoices) / sizeof(wxString);
+  TfcModeRadio = new wxRadioBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, TfcModeRadioNChoices, TfcModeRadioChoices, 1, wxRA_SPECIFY_COLS);
+  TfcModeRadio->SetSelection(App::GetSharedApp()->GetConfig().BulkImportTfcMode);
+  bSizer10->Add(TfcModeRadio, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   wxBoxSizer* bSizer18;
   bSizer18 = new wxBoxSizer(wxHORIZONTAL);
@@ -930,7 +916,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer18->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
 
-  bSizer10->Add(bSizer18, 1, wxEXPAND, 5);
+  bSizer10->Add(bSizer18, 1, wxEXPAND | wxTOP | wxBOTTOM, 15);
 
 
   SetSizer(bSizer10);
@@ -1154,10 +1140,16 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
     return;
   }
   BulkImportOperation operation(Actions, dlg.GetPath());
-
-  if (EnableTfc->GetValue())
+  App::GetSharedApp()->GetConfig().BulkImportTfcMode = TfcModeRadio->GetSelection();
+  App::GetSharedApp()->SaveConfig();
+  switch (TfcModeRadio->GetSelection())
   {
+  case 0:
     operation.SetTfcName(wxT("WorldTextures999"));
+    break;
+  case 2:
+    operation.SetKeepAsIs(true);
+    break;
   }
 
   ProgressWindow progress(this, wxT("Please wait..."));
