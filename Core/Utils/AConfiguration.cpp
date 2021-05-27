@@ -309,8 +309,8 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_CompositeDumpPath, c.CompositeDumpPath);
     SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastModAuthor);
 
-    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastExportPath);
-    SerializeKeyValue(FAppConfig::CFG_LastModAuthor, c.LastImportPath);
+    SerializeKeyValue(FAppConfig::CFG_LastExport, c.LastExportPath);
+    SerializeKeyValue(FAppConfig::CFG_LastImport, c.LastImportPath);
 
     SerializeKeyValue(FAppConfig::CFG_LastPkgOpen, c.LastPkgOpenPath);
     SerializeKeyValue(FAppConfig::CFG_LastPkgSave, c.LastPkgSavePath);

@@ -38,7 +38,7 @@ public:
   virtual FString GetObjectPath() const;
 
   
-  PACKAGE_INDEX OuterIndex = INDEX_NONE;
+  PACKAGE_INDEX OuterIndex = 0;
   PACKAGE_INDEX ObjectIndex = 0;
   FPackage* Package = nullptr;
   FName ObjectName;

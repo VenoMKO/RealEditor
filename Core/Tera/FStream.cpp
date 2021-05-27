@@ -534,6 +534,7 @@ uint16 MTransStream::GetLV() const
 bool MTransStream::StartObjectTransaction(class UObject* obj)
 {
   Clear();
+  ErrorText.Clear();
   if (!obj)
   {
     return false;
@@ -560,6 +561,16 @@ bool MTransStream::StartObjectTransaction(class UObject* obj)
   {
     // Find orphans
     SetDestinationPackage(DestPackage);
+  }
+  if (Unresolved.size())
+  {
+    Clear();
+    ErrorText = "Failed to resolve some of the objects.";
+    return false;
+  }
+  if (!result)
+  {
+    Clear();
   }
   return result;
 }
@@ -628,11 +639,15 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
         map[dep] = dep;
         continue;
       }
+      // TODO: composite packages don't work well with imports. Need to pull imports to the DestPackages' exports
+      ErrorText = FString::Sprintf("Can't copy the import object: %s", dep->GetObjectName().UTF8().c_str());
+      return false;
+      /*
       FObjectImport* imp = nullptr;
       DestPackage->AddImport(dep, imp);
       DBreakIf(!imp);
       map[dep] = DestPackage->GetObject(imp);
-      continue;
+      continue;*/
     }
     if (OrphansMap.count(dep))
     {
@@ -692,7 +707,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     if (!map[dep])
     {
       DBreak();
-      LogE("Error! Failed to map %s object.", dep->GetFullObjectName().UTF8().c_str());
+      ErrorText = FString::Sprintf("Error! Failed to map %s object.", dep->GetFullObjectName().UTF8().c_str());
       Clear();
       return false;
     }
@@ -844,7 +859,7 @@ bool MTransStream::SerializeObject(UObject* obj, bool recursiv)
   }
   catch (const std::exception& e)
   {
-    LogE("Failed to load the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
+    ErrorText = FString::Sprintf("Failed to load the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
     return false;
   }
   try
@@ -882,7 +897,7 @@ bool MTransStream::SerializeObject(UObject* obj, bool recursiv)
   {
     obj->SetTransacting(false);
     Good = false;
-    LogE("Failed to copy the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
+    ErrorText = FString::Sprintf("Failed to copy the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
     return false;
   }
   {

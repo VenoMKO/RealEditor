@@ -784,6 +784,11 @@ public:
     CustomRootName = name;
   }
 
+  FString GetError() const
+  {
+    return ErrorText;
+  }
+
 protected:
   // Save the obj to the stream. Has nothing to do with the SerializeObjectRef
   bool SerializeObject(class UObject* obj, bool recursiv);
@@ -794,6 +799,7 @@ protected:
 
 protected:
   bool Good = true;
+  FString ErrorText;
   
   uint8_t* Data = nullptr;
   size_t Position = 0;

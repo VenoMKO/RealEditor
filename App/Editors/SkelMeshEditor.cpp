@@ -1,6 +1,7 @@
 #include "SkelMeshEditor.h"
 #include "../Windows/IODialogs.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/ProgressWindow.h"
 #include "../Windows/MaterialMapperDialog.h"
 #include "../App.h"
 #include <wx/valnum.h>
@@ -723,6 +724,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
     return;
   }
+
   {
     FString error;
     bool askUser = false;
@@ -762,10 +764,26 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   }
   ctx.ImportData.ObjectMaterials = objectMaterials;
   ctx.ImportData.MaterialMap = matMap;
+
   FString err;
-  if (Mesh->AcceptVisitor(&ctx.ImportData, 0, err))
+  ProgressWindow progress(this, "Importing...");
+  progress.SetCurrentProgress(-1);
+  progress.SetActionText(wxT("Building new LOD..."));
+  std::thread([&] {
+    bool result = Mesh->AcceptVisitor(&ctx.ImportData, 0, err);
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+  if (progress.ShowModal())
   {
     OnRefreshClicked();
+  }
+  else
+  {
+    if (err.Empty())
+    {
+      err = "Failed to create a LOD. Unknown error.";
+    }
+    wxMessageBox(err.WString(), wxT("Error!"), wxICON_ERROR);
   }
 }
 

@@ -1684,6 +1684,12 @@ void PackageWindow::OnCopyObjectClicked(PACKAGE_INDEX objIndex)
 
   if (!progress.ShowModal())
   {
+    FString err = s.GetError();
+    if (err.Size())
+    {
+      wxMessageBox(err.WString(), wxT("Failed to copy the object!"));
+      return;
+    }
     wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to copy the object!"));
     s.Clear();
   }
@@ -1730,13 +1736,17 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
 
   if (!progress.ShowModal())
   {
+    FString err = s.GetError();
+    if (err.Size())
+    {
+      wxMessageBox(err.WString(), wxT("Failed to paste the object!"));
+      return;
+    }
     wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
+    return;
   }
-  else
-  {
-    LoadObjectTree();
-    SelectObject(s.GetTransactedObject());
-  }
+  LoadObjectTree();
+  SelectObject(s.GetTransactedObject());
 }
 
 void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
