@@ -8,14 +8,22 @@ Currently under development. Some features are not implemented yet or may not wo
 ### Wiki
 
 * [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
-* [64 bit modding. How does it work?](https://github.com/VenoMKO/RealEditor/wiki/64-bit-modding.-How-does-it-work%3F)
-* [Create a mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-mod)
-* [Create a composite mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
+
+***
+
+* [Create a mod(textures)](https://github.com/VenoMKO/RealEditor/wiki/Create-a-mod)
+* [Create a composite mod(textures)](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
+* [Create a 3D model mod](https://github.com/VenoMKO/RealEditor/wiki/Edit-3D-models)
+
+***
+
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
-* [Edit a 3D model(Skeletal Meshes)](https://github.com/VenoMKO/RealEditor/wiki/Edit-3D-models)
 * [Export Levels, Maps, Dungeons to Unreal Engine 4](https://github.com/VenoMKO/RealEditor/wiki/Export-Levels,-Maps,-Dungeons-to-Unreal-Engine-4)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
 * [Export SpeedTrees](https://github.com/VenoMKO/RealEditor/wiki/Export-trees-foliage(SpeedTree)-3D-models)
+
+***
+
 * [Troubleshooting](https://github.com/VenoMKO/RealEditor/wiki/Troubleshooting)
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
 * [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
