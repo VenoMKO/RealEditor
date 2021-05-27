@@ -12,6 +12,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Create a mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-mod)
 * [Create a composite mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
+* [Edit a 3D model(Skeletal Meshes)](https://github.com/VenoMKO/RealEditor/wiki/Edit-3D-models)
 * [Export Levels, Maps, Dungeons to Unreal Engine 4](https://github.com/VenoMKO/RealEditor/wiki/Export-Levels,-Maps,-Dungeons-to-Unreal-Engine-4)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
 * [Export SpeedTrees](https://github.com/VenoMKO/RealEditor/wiki/Export-trees-foliage(SpeedTree)-3D-models)
@@ -30,7 +31,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * GMP export to Unreal Engine 4
 * Textures export/import
 * Sounds export/import
-* 3D model export
+* 3D model export/import
 * SpeedTree export
 * GMP Map viewer
 * Properties viewer
@@ -46,9 +47,8 @@ Currently under development. Some features are not implemented yet or may not wo
 
 ### Plans
 
-* Mesh import from *.fbx
 * Animation renderer / exporter to *.fbx
-* HiDPI screen support
+* 32-bit Tera support (maybe)
 
 ### System requirements
 
