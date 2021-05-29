@@ -14,6 +14,7 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Create a mod(textures)](https://github.com/VenoMKO/RealEditor/wiki/Create-a-mod)
 * [Create a composite mod(textures)](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
 * [Create a 3D model mod](https://github.com/VenoMKO/RealEditor/wiki/Edit-3D-models)
+* [Create a sound mod](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
 
 ***
 
