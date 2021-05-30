@@ -18,6 +18,11 @@ Currently under development. Some features are not implemented yet or may not wo
 
 ***
 
+* [Costume GPK files[EN]](https://github.com/VenoMKO/RealEditor/wiki/Costumes-and-their-GPK-files-%5BEN%5D)
+* [Accessory GPK files [EN]](https://github.com/VenoMKO/RealEditor/wiki/Accessories-and-their-GPK-files-%5BEN%5D)
+
+***
+
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
 * [Export Levels, Maps, Dungeons to Unreal Engine 4](https://github.com/VenoMKO/RealEditor/wiki/Export-Levels,-Maps,-Dungeons-to-Unreal-Engine-4)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
