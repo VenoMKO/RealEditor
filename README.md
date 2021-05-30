@@ -19,7 +19,7 @@ Currently under development. Some features are not implemented yet or may not wo
 ***
 
 * [Costume GPK files[EN]](https://github.com/VenoMKO/RealEditor/wiki/Costumes-and-their-GPK-files-%5BEN%5D)
-* [Accessory GPK files [EN]](https://github.com/VenoMKO/RealEditor/wiki/Accessories-and-their-GPK-files-%5BEN%5D)
+* [Accessory GPK files[EN]](https://github.com/VenoMKO/RealEditor/wiki/Accessories-and-their-GPK-files-%5BEN%5D)
 
 ***
 
