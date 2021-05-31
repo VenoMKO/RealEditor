@@ -55,6 +55,14 @@ void ObjectRedirectorEditor::OnObjectLoaded()
       }
     }
   }
+  else if (!Redirector && Object)
+  {
+    Redirector = (UObjectRedirector*)Object;
+    if (Redirector && Redirector->GetObject())
+    {
+      Source = Redirector->GetObject();
+    }
+  }
 
   std::string opath;
   if (Source)

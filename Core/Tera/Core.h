@@ -16,7 +16,7 @@ static const float APP_VER = 1.8f;
 
 #define ENABLE_PERF_SAMPLE 1
 #define ALLOW_UI_PKG_SAVE 1
-#define USE_FNAME_NUMBERS 0
+#define USE_FNAME_NUMBERS 1
 
 #define CACHE_COMPOSITE_MAP 0
 #define CACHE_S1GAME_CONTENTS 0

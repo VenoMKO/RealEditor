@@ -16,14 +16,11 @@ public:
     , ObjectName(package, name)
   {}
 
-  virtual ~FObjectResource()
-  {}
+  virtual ~FObjectResource() = default;
 
   virtual FString GetObjectName() const
   {
-    FString name;
-    ObjectName.GetString(name);
-    return name;
+    return ObjectName.String();
   }
 
   inline FString GetFullObjectName() const
@@ -131,7 +128,7 @@ public:
     VObject = obj;
   }
 
-  ~VObjectExport() override;
+  ~VObjectExport();
 
 private:
   FString VObjectName;
