@@ -7,8 +7,8 @@
 
 wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
 
-#define MAX_LINES 100000
-#define CLEAN_LINES 70000
+#define MAX_LINES 50000
+#define CLEAN_LINES 25000
 
 LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
   : wxFrame(parent, id, wxTheApp->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - Log"), pos, size, style)

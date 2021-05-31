@@ -1,6 +1,8 @@
 #pragma once
 namespace IODialog
 {
+  wxString GetLastTextureExtension();
+
   wxString OpenMapperForEncryption(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
   wxString OpenMapperForDecryption(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
   wxString SaveEncryptedMapperFile(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);

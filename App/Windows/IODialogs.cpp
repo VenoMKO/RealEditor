@@ -49,6 +49,13 @@ namespace
 namespace IODialog
 {
 
+  wxString GetLastTextureExtension()
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    std::vector<std::pair<std::string, std::string>> extensions = { {".tga", "TGA Image (*.tga)"}, {".png", "PNG Image  (*.png)"}, {".dds", "DDS Texture (*.dds)"} };
+    return extensions[cfg.LastTextureExtension].first.substr(1);
+  }
+
   wxString OpenMapperForEncryption(wxWindow* parent, const wxString& filename)
   {
     wxString path;
