@@ -594,6 +594,12 @@ int App::OnRun()
 {
   if (IsReady)
   {
+    // Unexpected issue: Some GPKs have way too many imports.
+    // Bulk exporting these GPKs leads to thousands of opened streams.
+    // Proper fix would be to close FPackage::Stream after load
+    // or to use MStreams instead.
+    _setmaxstdio(8192);
+
     if (Config.Version < APP_VER)
     {
       Config.Version = APP_VER;

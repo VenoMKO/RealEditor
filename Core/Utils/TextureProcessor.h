@@ -1,5 +1,6 @@
 #pragma once
 #include <Tera/Core.h>
+#include <Tera/FString.h>
 #include <array>
 
 class TextureProcessor {
@@ -17,6 +18,23 @@ public:
     TGA,
     DDS
   };
+
+  static TCFormat GetTcFormatByExtension(const FString& ext)
+  {
+    if (ext == "dds" || ext == ".dds")
+    {
+      return TCFormat::DDS;
+    }
+    if (ext == "tga" || ext == ".tga")
+    {
+      return TCFormat::TGA;
+    }
+    if (ext == "png" || ext == ".png")
+    {
+      return TCFormat::PNG;
+    }
+    return HasAVX2() ? TCFormat::TGA : TCFormat::DDS;
+  }
 
   TextureProcessor(TCFormat from, TCFormat to)
     : InputFormat(from)

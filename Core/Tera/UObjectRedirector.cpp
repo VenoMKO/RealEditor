@@ -7,4 +7,5 @@ void UObjectRedirector::Serialize(FStream& s)
 {
   Super::Serialize(s);
   SERIALIZE_UREF(s, Object);
+  DBreakIf(ObjectRefIndex && !Object);
 }

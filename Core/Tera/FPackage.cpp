@@ -1093,6 +1093,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     std::filesystem::path decompressedPath = GetTempFilePath().WString();
     sum.DataPath = W2A(decompressedPath.wstring());
     FStream* tempStream = new FWriteStream(sum.DataPath.WString());
+    DBreakIf(!tempStream->IsGood());
 
     sum.OriginalCompressionFlags = sum.CompressionFlags;
     sum.PackageFlags &= ~PKG_StoreCompressed;
@@ -1236,7 +1237,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
         ws.SerializeBytes(rawData, entry.Size);
         if (!ws.IsGood())
         {
-          UThrow("Failed to save composit package %s to %s", name.C_str(), tmpPath.string().c_str());
+          UThrow("Failed to save composite package %s to %s", name.C_str(), tmpPath.string().c_str());
         }
       }
       free(rawData);
@@ -2828,6 +2829,13 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
   if (ObjectNameToExportMap.count(name))
   {
     return ObjectNameToExportMap[name];
+  }
+  for (FObjectExport* exp : Exports)
+  {
+    if (exp->GetObjectName() == name)
+    {
+      return { exp };
+    }
   }
   for (VObjectExport* vexp : VExports)
   {

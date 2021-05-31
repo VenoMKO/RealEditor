@@ -6,8 +6,18 @@ class UObjectRedirector : public UObject {
 public:
   DECL_UOBJ(UObjectRedirector, UObject);
 
-  UObject* GetObject() const
+  UObject* GetObject(bool recursive = false) const
   {
+    if (Object && recursive && Object->GetClassName() == UObjectRedirector::StaticClassName())
+    {
+      // This shouldn't happen ever.
+      // Redirectors must not point to other redirectors.
+      DBreak();
+      if (UObject* tmp = ((UObjectRedirector*)Object)->GetObject(true))
+      {
+        return tmp;
+      }
+    }
     return Object;
   }
 
