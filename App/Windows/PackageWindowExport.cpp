@@ -337,6 +337,18 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
   }
   else
   {
+    wxString logMsg = wxT("Failed exports: ");
+    for (FObjectExport* failed : failedExports)
+    {
+      if (failed)
+      {
+        logMsg += failed->GetObjectName().UTF8();
+        logMsg += wxT("(");
+        logMsg += failed->GetClassName().UTF8();
+        logMsg += wxT("),");
+      }
+    }
+    LogE("%s", logMsg.ToStdString().c_str());
     wxString desc = failedExports.size() == exports.size() ? "Failed to export objects!" : "Failed to export some objects!";
     desc += "See the log for details.";
     wxMessageBox(desc, "Warning!", wxICON_WARNING, this);

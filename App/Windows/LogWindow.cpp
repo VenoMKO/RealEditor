@@ -53,8 +53,14 @@ void LogWindow::PumpMessages(wxCommandEvent&)
   {
     LogCtrl->SetValue(LogCtrl->GetValue().substr(CLEAN_LINES));
   }
-  for (ALogEntry& e : entries)
+  int32 eIdx = 0;
+  if (entries.size() > 5000)
   {
+    eIdx = entries.size() - 5000;
+  }
+  for (; eIdx < entries.size(); ++eIdx)
+  {
+    ALogEntry& e = entries[eIdx];
     std::string msg = e.Text;
     if (msg.back() != '\n')
     {

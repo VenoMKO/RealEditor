@@ -538,7 +538,7 @@ bool TextureProcessor::BytesToFile()
   }
 
   LogI("Saving data...");
-  FWriteStream s(OutputPath);
+  FWriteStream s(A2W(OutputPath));
   if (!s.IsGood())
   {
     Error = "Texture Processor: Failed to create a write stream to \"" + OutputPath + "\"";
@@ -667,7 +667,7 @@ bool TextureProcessor::BytesToDDS()
       header.D3D10.miscFlag = DDS::D3D10_MISC_FLAG::DDS_MISC_TEXTURECUBE;
       header.D3D9.dwPitchOrLinearSize = (header.D3D9.dwWidth * 32 + 7) / 8;
 
-      FWriteStream s(OutputPath);
+      FWriteStream s(A2W(OutputPath));
       s << header;
       for (int32 faceIdx = 0; faceIdx < ohandler.MipsCount; ++faceIdx)
       {
@@ -717,7 +717,7 @@ bool TextureProcessor::BytesToDDS()
       return false;
     }
 
-    FWriteStream s(OutputPath);
+    FWriteStream s(A2W(OutputPath));
     s << header;
     for (int32 faceIdx = 0; faceIdx < InputCube.size(); ++faceIdx)
     {
@@ -773,7 +773,7 @@ bool TextureProcessor::BytesToDDS()
     return false;
   }
   header.D3D9.dwPitchOrLinearSize = header.CalculateMipmapSize();
-  FWriteStream s(OutputPath);
+  FWriteStream s(A2W(OutputPath));
   s << header;
   s.SerializeBytes(InputData, InputDataSize);
   if (!s.IsGood())
@@ -981,7 +981,7 @@ bool TextureProcessor::FileToBytes()
 
 bool TextureProcessor::DDSToBytes()
 {
-  FReadStream s = FReadStream(InputPath);
+  FReadStream s = FReadStream(A2W(InputPath));
   if (!s.IsGood())
   {
     Error = "Texture Processor: Failed to open the texture file!";

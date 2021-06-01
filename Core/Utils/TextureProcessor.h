@@ -2,6 +2,7 @@
 #include <Tera/Core.h>
 #include <Tera/FString.h>
 #include <array>
+#include <filesystem>
 
 class TextureProcessor {
 public:
@@ -97,7 +98,18 @@ public:
 
   inline void SetOutputPath(const std::string& outputPath)
   {
-    OutputPath = outputPath;
+    static const std::vector<wchar> forbiddenChars = { L'\\', L'/', L':', L'*', L'?', L'\"', L'<', L'>', L'|'};
+    std::filesystem::path tmp(A2W(outputPath));
+    std::wstring name = tmp.filename();
+    for (size_t pos = 0; pos < name.size(); ++pos)
+    {
+      if (std::find(forbiddenChars.begin(), forbiddenChars.end(), name[pos]) != forbiddenChars.end())
+      {
+        name[pos] = L'_';
+      }
+    }
+    tmp.replace_filename(name);
+    OutputPath = W2A(tmp.wstring());
   }
 
   inline std::string GetError() const

@@ -57,6 +57,7 @@ void ObjectRedirectorEditor::OnObjectLoaded()
   }
   else if (!Redirector && Object)
   {
+    // Setup editor if the redirector was loaded externally
     Redirector = (UObjectRedirector*)Object;
     if (Redirector && Redirector->GetObject())
     {
