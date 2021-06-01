@@ -526,19 +526,30 @@ bool UMaterial::RegisterProperty(FPropertyTag* property)
   {
     MaterialInputs.push_back(property);
   }
+  if (PROP_IS(property, Expressions))
+  {
+    Expressions = property->Value->GetArrayPtr();
+    ExpressionsProperty = property;
+    return true;
+  }
   return false;
 }
 
 std::vector<class UMaterialExpression*> UMaterial::GetExpressions() const
 {
   std::vector<UMaterialExpression*> result;
-  auto inner = GetInner();
-  for (UObject* i : inner)
+  if (Expressions)
   {
-    if (UMaterialExpression* exp = Cast<UMaterialExpression>(i))
+    for (FPropertyValue* v : *Expressions)
     {
-      exp->Load();
-      result.push_back(exp);
+      UObject* obj = v->GetObjectValuePtr();
+      if (obj)
+      {
+        if (UMaterialExpression* exp = Cast<UMaterialExpression>(v->GetObjectValuePtr()))
+        {
+          result.push_back(exp);
+        }
+      }
     }
   }
   return result;

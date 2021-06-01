@@ -124,6 +124,7 @@ class UMaterial : public UMaterialInterface {
 public:
   DECL_UOBJ(UMaterial, UMaterialInterface);
   UPROP(bool, TwoSided, false);
+  UPROP_CREATABLE_ARR_PTR(Expressions);
   std::vector<FPropertyTag*> MaterialInputs;
 
   void Serialize(FStream& s) override;
