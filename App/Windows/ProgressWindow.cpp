@@ -6,19 +6,29 @@ wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
-  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 105), wxCAPTION | wxTAB_TRAVERSAL)
+  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 115), wxCAPTION | wxTAB_TRAVERSAL)
 {
   SetIcon(wxICON(#114));
-  this->SetSizeHints(wxDefaultSize, wxDefaultSize);
-  this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  SetSizeHints(wxDefaultSize, wxDefaultSize);
+  SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
-  wxBoxSizer* bSizer1 = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer* bSizer1;
+  bSizer1 = new wxBoxSizer(wxVERTICAL);
 
-  ActionLabel = new wxStaticText(this, wxID_ANY, wxT("Prepearing..."), wxDefaultPosition, wxDefaultSize, 0);
-  ActionLabel->Wrap(-1);
-  bSizer1->Add(ActionLabel, 1, wxALL | wxEXPAND, 5);
+  wxBoxSizer* bSizer3;
+  bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
-  wxBoxSizer* bSizer2 = new wxBoxSizer(wxHORIZONTAL);
+  ActionLabel = new wxTextCtrl(this, wxID_ANY, wxT("Preparing..."), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxBORDER_NONE);
+  ActionLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
+  ActionLabel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+
+  bSizer3->Add(ActionLabel, 1, wxALL | wxALIGN_BOTTOM, 5);
+
+
+  bSizer1->Add(bSizer3, 1, wxEXPAND, 5);
+
+  wxBoxSizer* bSizer2;
+  bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
   ProgressBar = new wxGauge(this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
   ProgressBar->SetValue(0);
@@ -28,13 +38,15 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
   bSizer2->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
-  bSizer1->Add(bSizer2, 0, wxEXPAND, 5);
+  bSizer1->Add(bSizer2, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
 
 
-  this->SetSizer(bSizer1);
-  this->Layout();
+  SetSizer(bSizer1);
+  Layout();
 
-  this->Centre(wxBOTH);
+  Centre(wxBOTH);
+
+  ActionLabel->SetDoubleBuffered(true);
 
   // Connect Events
   CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancellClicked), NULL, this);
