@@ -99,7 +99,8 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 
   ProgressWindow progress(this, wxT("Exporting..."));
   progress.SetMaxProgress(exports.size());
-
+  int32 count = 0;
+  PERF_START(BulkExport);
   std::thread([&] {
     for (int idx = 0; idx < exports.size(); ++idx)
     {
@@ -234,6 +235,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
             LogE("Failed to export %s: %s", exp->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
             continue;
           }
+          count++;
         }
         catch (...)
         {
@@ -252,6 +254,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           const int32 soundDataSize = wave->GetResourceSize();
           std::ofstream s(dest, std::ios::out | std::ios::trunc | std::ios::binary);
           s.write((const char*)soundData, soundDataSize);
+          count++;
         }
         else
         {
@@ -276,6 +279,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           std::ofstream s(dest, std::ios::out | std::ios::trunc | std::ios::binary);
           s.write((const char*)sptData, sptDataSize);
           free(sptData);
+          count++;
         }
         else
         {
@@ -287,18 +291,22 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       if (obj->GetClassName() == UStaticMesh::StaticClassName() || obj->GetClassName() == USkeletalMesh::StaticClassName())
       {
         FbxExportContext ctx;
+        FAppConfig& appConfig = App::GetSharedApp()->GetConfig();
         ctx.Path = dest.replace_extension("fbx").wstring();
 
         FbxUtils utils;
         if (exp->GetClassName() == UStaticMesh::StaticClassName())
         {
+          ctx.Scale3D *= appConfig.StaticMeshExportConfig.ScaleFactor;
           if (UStaticMesh* mesh = Cast<UStaticMesh>(obj))
           {
             if (!utils.ExportStaticMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
               LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+              continue;
             }
+            count++;
           }
           else
           {
@@ -308,14 +316,17 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         }
         else
         {
-          ctx.ExportSkeleton = true;
+          ctx.ExportSkeleton = appConfig.SkelMeshExportConfig.Mode;
+          ctx.Scale3D *= appConfig.SkelMeshExportConfig.ScaleFactor;
           if (USkeletalMesh* mesh = Cast<USkeletalMesh>(obj))
           {
             if (!utils.ExportSkeletalMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
               LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+              continue;
             }
+            count++;
           }
           else
           {
@@ -328,12 +339,16 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
   }).detach();
-
   progress.ShowModal();
-
+  PERF_END(BulkExport);
   if (failedExports.empty())
   {
-    wxMessageBox(wxString::Format("Exported %d objects.", (int)exports.size()), "Done!", wxICON_INFORMATION, this);
+    if (!count)
+    {
+      wxMessageBox(wxT("No supported objects to export."), wxT("Done!"), wxICON_INFORMATION, this);
+      return;
+    }
+    wxMessageBox(wxString::Format("Exported %d objects.", count), wxT("Done!"), wxICON_INFORMATION, this);
   }
   else
   {
@@ -349,7 +364,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       }
     }
     LogE("%s", logMsg.ToStdString().c_str());
-    wxString desc = failedExports.size() == exports.size() ? "Failed to export objects!" : "Failed to export some objects!";
+    wxString desc = !count ? "Failed to export objects!" : "Failed to export some objects!";
     desc += "See the log for details.";
     wxMessageBox(desc, "Warning!", wxICON_WARNING, this);
   }
