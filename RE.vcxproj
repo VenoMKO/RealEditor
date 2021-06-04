@@ -290,7 +290,8 @@
     </Link>
     <PreBuildEvent>
       <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
-msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)</Command>
+msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+"$(ProjectDir)build_inc.bat" "$(Configuration)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -319,7 +320,8 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
     </Link>
     <PreBuildEvent>
       <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
-msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)</Command>
+msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+"$(ProjectDir)build_inc.bat" "$(Configuration)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

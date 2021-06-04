@@ -912,7 +912,7 @@ int32 Trunc(float v)
 std::string GetAppVersion()
 {
   std::stringstream stream;
-  stream << "v." << std::fixed << std::setprecision(2) << APP_VER << BUILD_SUFFIX;
+  stream << "v." << APP_VER_MAJOR << '.' << APP_VER_MINOR << BUILD_SUFFIX;
   return stream.str();
 }
 

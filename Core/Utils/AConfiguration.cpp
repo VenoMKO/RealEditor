@@ -206,6 +206,47 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
   return s;
 }
 
+void SerializeVersion(FStream& s, FAppConfig& c)
+{
+  float oldVersion = 0;
+  // Placeholder for backwards compatibility. Older RE will read the placeholder as
+  // config size. Zero size won't crash or corrupt older RE, but will reset the config to its defaults.
+  uint32 placeholder = 0;
+  if (s.IsReading())
+  {
+    s << oldVersion;
+    if (oldVersion < 0.)
+    {
+      s << placeholder;
+      s << c.VerMajor;
+      s << c.VerMinor;
+      s << c.BuildNum;
+    }
+    else
+    {
+      // Old config stored version as float
+      c.VerMajor = floor(oldVersion);
+      float intp = 0;
+      float fracp = modf(oldVersion, &intp);
+      c.VerMajor = (uint16)intp;
+      c.VerMinor = (uint16)(fracp * 100.);
+      c.BuildNum = 0;
+    }
+  }
+  else
+  {
+    c.VerMajor = APP_VER_MAJOR;
+    c.VerMinor = APP_VER_MINOR;
+    c.BuildNum = BUILD_NUMBER;
+    oldVersion = -1.;
+    s << oldVersion;
+    s << placeholder;
+    s << c.VerMajor;
+    s << c.VerMinor;
+    s << c.BuildNum;
+  }
+}
+
 FStream& operator<<(FStream& s, FAppConfig& c)
 {
   s << c.Magic;
@@ -213,7 +254,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
   {
     s.Close();
   }
-  s << c.Version;
+  SerializeVersion(s, c);
   s << c.Size;
   if (s.IsReading())
   {
@@ -301,6 +342,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
   }
   else
   {
+    FILE_OFFSET sizeOffset = s.GetPosition() - (FILE_OFFSET)sizeof(c.Size);
     // Writing
     // General
     SerializeKeyValue(FAppConfig::CFG_RootDir, c.RootDir);
@@ -355,7 +397,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     // Fixup storage size
     c.Size = s.GetSize();
-    s.SetPosition(8);
+    s.SetPosition(sizeOffset);
     s << c.Size;
   }
   return s;

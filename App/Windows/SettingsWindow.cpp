@@ -205,6 +205,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
 	VersionLabel = new wxStaticText(m_panel9, wxID_ANY, GetAppVersion(), wxDefaultPosition, wxDefaultSize, 0);
 	VersionLabel->Wrap(-1);
+	VersionLabel->SetToolTip(wxString::Format("Build: %u", BUILD_NUMBER));
 	bSizer14->Add(VersionLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 	wxPanel* m_panel10;

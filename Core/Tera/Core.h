@@ -8,8 +8,12 @@
 // Build configuration
 // --------------------------------------------------------------------
 
-static const float APP_VER = 1.8f;
 //#define CUSTOM_BUILD " RC"
+static const unsigned short APP_VER_MAJOR = 1;
+static const unsigned short APP_VER_MINOR = 81;
+static const unsigned int BUILD_NUMBER = (
+#include "../../build_num.txt"
+);
 
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1

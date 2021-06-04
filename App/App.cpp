@@ -527,6 +527,25 @@ void App::PackageWindowWillClose(const PackageWindow* frame)
 
 bool App::OnInit()
 {
+  for (int32 idx = 0; idx < argc; ++idx)
+  {
+    if (_strcmpi(argv[idx], "-version") == 0)
+    {
+      {
+        std::ofstream s("app_ver.txt");
+        s << APP_VER_MAJOR << '.' << APP_VER_MINOR << std::endl;
+      }
+      exit(0);
+    }
+    if (_strcmpi(argv[idx], "-build") == 0)
+    {
+      {
+        std::ofstream s("app_build.txt");
+        s << BUILD_NUMBER << std::endl;
+      }
+      exit(0);
+    }
+  }
 #ifdef _DEBUG
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
@@ -567,7 +586,7 @@ bool App::OnInit()
     Config.WindowRect.Min = { WIN_POS_CENTER, 0 };
     ShowedStartupCfg = true;
   }
-  else if (Config.Version < 1.8 && CheckMimeTypes(false))
+  else if (!Config.IsVersionGreaterOrEqual(1, 80) && CheckMimeTypes(false))
   {
     // Fix incorrect open path in the registry prior to 1.80
     try
@@ -600,11 +619,6 @@ int App::OnRun()
     // or to use MStreams instead.
     _setmaxstdio(8192);
 
-    if (Config.Version < APP_VER)
-    {
-      Config.Version = APP_VER;
-      SaveConfig();
-    }
     wxInitAllImageHandlers();
     Server = new RpcServer;
     Server->RunWithDelegate(this);
@@ -627,7 +641,6 @@ void App::LoadCore(ProgressWindow* pWindow)
   FPackage::CleanCacheDir();
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating S1Game folder contents...");
   FPackage::SetRootPath(Config.RootDir);
-
   if (pWindow->IsCanceled())
   {
     ExitMainLoop();

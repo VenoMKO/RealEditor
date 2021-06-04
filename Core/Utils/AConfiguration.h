@@ -221,8 +221,20 @@ struct FAppConfig
     CFG_End = 0xFFFF
   };
   uint32 Magic = PACKAGE_MAGIC;
-  float Version = APP_VER;
+  uint16 VerMajor = APP_VER_MAJOR;
+  uint16 VerMinor = APP_VER_MINOR;
+  uint32 BuildNum = BUILD_NUMBER;
   uint32 Size = 0;
+
+  inline bool IsVersionGreaterThen(uint16 major, uint16 minor)
+  {
+    return VerMajor > major || (VerMajor == major && VerMinor > minor);
+  }
+
+  inline bool IsVersionGreaterOrEqual(uint16 major, uint16 minor)
+  {
+    return VerMajor > major || (VerMajor == major && VerMinor >= minor);
+  }
   
   // CFG_RootDir: CookedPC path(UTF8)
   FString RootDir;

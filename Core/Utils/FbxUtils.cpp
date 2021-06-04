@@ -346,10 +346,10 @@ FbxUtils::FbxUtils()
   sceneInfo->mSubject = "Export FBX meshes from Tera";
   sceneInfo->Original_ApplicationVendor.Set("Yupi");
   sceneInfo->Original_ApplicationName.Set("Real Editor");
-  sceneInfo->Original_ApplicationVersion.Set(FString::Sprintf("%.2f %s", APP_VER, BUILD_SUFFIX).UTF8().c_str());
+  sceneInfo->Original_ApplicationVersion.Set(GetAppVersion().c_str());
   sceneInfo->LastSaved_ApplicationVendor.Set("Yupi");
   sceneInfo->LastSaved_ApplicationName.Set("Real Editor");
-  sceneInfo->LastSaved_ApplicationVersion.Set(FString::Sprintf("%.2f %s", APP_VER, BUILD_SUFFIX).UTF8().c_str());
+  sceneInfo->LastSaved_ApplicationVersion.Set(GetAppVersion().c_str());
   GetScene()->SetSceneInfo(sceneInfo);
 }
 
