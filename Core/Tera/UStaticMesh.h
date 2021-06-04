@@ -247,6 +247,11 @@ public:
     return Elements;
   }
 
+  FStaticMeshTriangle* GetRawTriangles() const
+  {
+    return (FStaticMeshTriangle*)RawTriangles.BulkData;
+  }
+
   UStaticMesh* Owner = nullptr;
 
   FStaticMeshVertexBuffer VertexBuffer;

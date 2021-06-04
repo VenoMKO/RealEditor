@@ -1495,9 +1495,27 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
     }
   }
 
-  FbxGeometryConverter lGeometryConverter(GetManager());
-  lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
-  lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
+  if (int32 triCount = lod->RawTriangles.GetElementCount())
+  {
+    DBreak();
+    FbxLayerElementSmoothing* layerInfoSmoothing = FbxLayerElementSmoothing::Create(mesh, "");
+    layerInfoSmoothing->SetMappingMode(FbxLayerElement::eByPolygonVertex);
+    layerInfoSmoothing->SetReferenceMode(FbxLayerElement::eDirect);
+    FbxLayerElementArrayTemplate<int>& smoothingGroups = layerInfoSmoothing->GetDirectArray();
+    layer->SetSmoothing(layerInfoSmoothing);
+    FStaticMeshTriangle* rawTriangles = lod->GetRawTriangles();
+    for (int32 idx = 0; idx < triCount && rawTriangles; idx++)
+    {
+      FStaticMeshTriangle* tri = (rawTriangles++);
+      smoothingGroups.Add(tri->SmoothingMask);
+    }
+  }
+  else
+  {
+    FbxGeometryConverter lGeometryConverter(GetManager());
+    lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
+    lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
+  }
 
   FString objectName = sourceMesh->GetObjectName();
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
