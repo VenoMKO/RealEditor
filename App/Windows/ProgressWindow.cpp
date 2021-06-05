@@ -49,12 +49,12 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
   ActionLabel->SetDoubleBuffered(true);
 
   // Connect Events
-  CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancellClicked), NULL, this);
+  CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancelClicked), NULL, this);
 }
 
 void ProgressWindow::SetActionText(const wxString& text)
 {
-  if (!Cancelled.load())
+  if (!Canceled.load())
   {
     ActionLabel->SetLabelText(text);
   }
@@ -62,7 +62,7 @@ void ProgressWindow::SetActionText(const wxString& text)
 
 void ProgressWindow::SetCurrentProgress(int progress)
 {
-  if (Cancelled.load())
+  if (Canceled.load())
   {
     return;
   }
@@ -87,10 +87,10 @@ void ProgressWindow::SetCanCancel(bool flag)
   CancelButton->Enable(flag);
 }
 
-void ProgressWindow::OnCancellClicked(wxCommandEvent&)
+void ProgressWindow::OnCancelClicked(wxCommandEvent&)
 {
   CancelButton->Enable(false);
-  Cancelled.store(true);
+  Canceled.store(true);
   ActionLabel->SetLabelText("Stopping...");
   ProgressBar->Pulse();
 }

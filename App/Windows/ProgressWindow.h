@@ -21,11 +21,16 @@ public:
 
   bool IsCanceled()
   {
-    return Cancelled.load();
+    return Canceled.load();
+  }
+
+  void SetCanceled()
+  {
+    Canceled.store(true);
   }
 
 private:
-  void OnCancellClicked(wxCommandEvent&);
+  void OnCancelClicked(wxCommandEvent&);
 
   void OnUpdateMaxProgress(wxCommandEvent& e);
 
@@ -40,5 +45,5 @@ private:
   wxTextCtrl* ActionLabel = nullptr;
   wxGauge* ProgressBar = nullptr;
   wxButton* CancelButton = nullptr;
-  std::atomic_bool Cancelled = { false };
+  std::atomic_bool Canceled = { false };
 };

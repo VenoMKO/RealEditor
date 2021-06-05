@@ -1425,7 +1425,6 @@ FPackage::~FPackage()
 
 void FPackage::Load()
 {
-#define CheckCancel() if (Cancelled.load()) { Loading.store(false); return; } //
   if (Ready.load() || Loading.load())
   {
     return;
@@ -1434,6 +1433,22 @@ void FPackage::Load()
   Stream = new FReadStream(Summary.DataPath);
   Stream->SetPackage(this);
   FStream& s = GetStream();
+  Load(s);
+  Ready.store(true);
+  Loading.store(false);
+
+  if (Referencer)
+  {
+    bool tmp = s.GetLoadSerializedObjects();
+    s.SetLoadSerializedObjects(false);
+    Referencer->Load(s);
+    s.SetLoadSerializedObjects(tmp);
+  }
+}
+
+void FPackage::Load(FStream& s)
+{
+#define CheckCancel() if (Cancelled.load()) { Loading.store(false); return; } //
   if (Summary.NamesOffset != s.GetPosition())
   {
     s.SetPosition(Summary.NamesOffset);
@@ -1477,7 +1492,7 @@ void FPackage::Load()
     exp->ClassNameValue = exp->GetClassName();
 #endif
   }
-  
+
   for (FObjectExport* exp : Exports)
   {
     ExportObjects[exp->ObjectIndex] = UObject::Object(exp);
@@ -1612,17 +1627,6 @@ void FPackage::Load()
   if (CompositPackageList.count(GetPackageName().ToUpper()))
   {
     Composite = true;
-  }
-
-  Ready.store(true);
-  Loading.store(false);
-
-  if (Referencer)
-  {
-    bool tmp = s.GetLoadSerializedObjects();
-    s.SetLoadSerializedObjects(false);
-    Referencer->Load(s);
-    s.SetLoadSerializedObjects(tmp);
   }
 }
 
@@ -3262,4 +3266,134 @@ UObject* FPackage::SetCachedImportObject(PACKAGE_INDEX index, UObject* obj)
   std::scoped_lock<std::mutex> l(ImportObjectsMutex);
   ImportObjects[index] = obj;
   return obj;
+}
+
+std::vector<FString> FPackageDumpHelper::GetGpkPools()
+{
+  std::vector<FString> result;
+  result.reserve(FPackage::CompositPackageList.size());
+  for (const auto& p : FPackage::CompositPackageList)
+  {
+    if (p.first == "tmm_marker")
+    {
+      continue;
+    }
+    result.emplace_back(p.first);
+  }
+  return result;
+}
+
+FString FPackageDumpHelper::GetPoolPath(const FString& item)
+{
+  FString result = FPackage::RootDir.FStringByAppendingPath("CookedPC");
+  return result.FStringByAppendingPath(item) + ".gpk";
+}
+
+std::vector<FString> FPackageDumpHelper::GetPoolItems(const FString& pool)
+{
+  return FPackage::CompositPackageList.at(pool);
+}
+
+void FPackageDumpHelper::GetPoolItemInfo(const FString& item, FStream& s, CompositeDumpEntry& output)
+{
+  const FCompositePackageMapEntry& streamInfo = FPackage::CompositPackageMap.at(item);
+  output.ObjectPath = streamInfo.ObjectPath;
+  
+  FStream* stream = nullptr;
+  {
+    void* tmpData = malloc(streamInfo.Size);
+    s.SetPosition(streamInfo.Offset);
+    s.SerializeBytes(tmpData, streamInfo.Size);
+    stream = new MReadStream(tmpData, true, streamInfo.Size);
+  }
+
+  FPackageSummary sum;
+  *stream << sum;
+  sum.PackageName = item;
+  FPackage pkg(sum);
+
+  FStream* tempStream = nullptr;
+  if (sum.CompressedChunks.size())
+  {
+    FILE_OFFSET startOffset = INT_MAX;
+    FILE_OFFSET totalDecompressedSize = 0;
+    void** compressedChunksData = new void* [sum.CompressedChunks.size()];
+    {
+      uint32 idx = 0;
+      for (FCompressedChunk& chunk : sum.CompressedChunks)
+      {
+        compressedChunksData[idx] = malloc(chunk.CompressedSize);
+        stream->SetPosition(chunk.CompressedOffset);
+        stream->SerializeBytes(compressedChunksData[idx], chunk.CompressedSize);
+        totalDecompressedSize += chunk.DecompressedSize;
+        if (chunk.DecompressedOffset < startOffset)
+        {
+          startOffset = chunk.DecompressedOffset;
+        }
+        idx++;
+      }
+    }
+
+    tempStream = new MWriteStream(nullptr, 0);
+
+    sum.OriginalCompressionFlags = sum.CompressionFlags;
+    sum.PackageFlags &= ~PKG_StoreCompressed;
+    sum.CompressionFlags = COMPRESS_None;
+
+    std::vector<FCompressedChunk> chunks;
+    std::swap(sum.CompressedChunks, chunks);
+    auto tmpSize = sum.SourceSize;
+    (*tempStream) << sum;
+    sum.SourceSize = tmpSize;
+
+    uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
+    try
+    {
+      concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedData, startOffset](size_t idx) {
+        const FCompressedChunk& chunk = chunks[idx];
+        uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
+        LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+      });
+    }
+    catch (const std::exception& e)
+    {
+      for (size_t idx = 0; idx < chunks.size(); ++idx)
+      {
+        free(compressedChunksData[idx]);
+      }
+      delete[] compressedChunksData;
+      free(decompressedData);
+      delete tempStream;
+      UThrow("Failed to decompress GPK!");
+    }
+    for (size_t idx = 0; idx < chunks.size(); ++idx)
+    {
+      free(compressedChunksData[idx]);
+    }
+    delete[] compressedChunksData;
+    tempStream->SerializeBytes(decompressedData, totalDecompressedSize);
+    free(decompressedData);
+
+    delete stream;
+    {
+      void* tmpData = malloc(((MWriteStream*)tempStream)->GetSize());
+      std::memcpy(tmpData, ((MWriteStream*)tempStream)->GetAllocation(), ((MWriteStream*)tempStream)->GetSize());
+      stream = new MReadStream(tmpData, true, ((MWriteStream*)tempStream)->GetSize());
+      delete tempStream;
+    }
+  }
+
+  stream->SetPackage(&pkg);
+  pkg.Load(*stream);
+
+  for (FObjectExport* exp : pkg.Exports)
+  {
+    CompositeDumpEntry::CompositeDumpExport& e = output.Exports.emplace_back();
+    e.Index = exp->ObjectIndex;
+    e.ObjectName = exp->GetObjectName();
+    e.ClassName = exp->GetClassName();
+    e.Path = exp->GetObjectPath();
+  }
+
+  delete stream;
 }
