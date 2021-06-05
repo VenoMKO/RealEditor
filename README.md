@@ -34,10 +34,6 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
 * [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
 
-### Wiki на русском
-
-* [Wiki](https://github.com/VenoMKO/RealEditor/wiki/Wiki-%D0%BD%D0%B0-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC)
-
 ### Features
 
 * Opening/Saving 64-bit packages
