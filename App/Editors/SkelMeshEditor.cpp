@@ -752,16 +752,14 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   std::vector<FString> fbxMaterials = ctx.ImportData.Materials;
   std::vector<UObject*> objectMaterials = Mesh->GetMaterials();
   std::vector<std::pair<FString, UObject*>> matMap;
-  if (!MaterialMapperDialog::AutomaticallyMapMaterials(fbxMaterials, objectMaterials, matMap))
+  MaterialMapperDialog::AutomaticallyMapMaterials(fbxMaterials, objectMaterials, matMap);
+  MaterialMapperDialog mapper(this, Object, matMap, objectMaterials);
+  if (mapper.ShowModal() != wxID_OK)
   {
-    MaterialMapperDialog mapper(this, Object, matMap, objectMaterials);
-    if (mapper.ShowModal() != wxID_OK)
-    {
-      return;
-    }
-    matMap = mapper.GetMaterialMap();
-    objectMaterials = mapper.GetObjectMaterials();
+    return;
   }
+  matMap = mapper.GetMaterialMap();
+  objectMaterials = mapper.GetObjectMaterials();
   ctx.ImportData.ObjectMaterials = objectMaterials;
   ctx.ImportData.MaterialMap = matMap;
 
