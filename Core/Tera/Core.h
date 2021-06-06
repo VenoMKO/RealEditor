@@ -220,6 +220,8 @@ void memswap(void* a, void* b, size_t size);
 FString GetTempDir();
 FString GetTempFilePath();
 
+FString GetClientVersionString();
+
 #ifndef DBreak()
 #if _DEBUG
 #include <intrin.h>

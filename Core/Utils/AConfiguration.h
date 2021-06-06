@@ -199,6 +199,9 @@ struct FAppConfig
     CFG_BulkImportTfcMode,
     CFG_LastDcKey,
     CFG_LastDcVec,
+    CFG_LastDcMode,
+    CFG_LastDcPath,
+    CFG_LastDcSavePath,
 
     // Log
     CFG_LogBegin = 100,
@@ -274,6 +277,12 @@ struct FAppConfig
   FString LastDcKey;
   // CFG_LastDcVec
   FString LastDcVec;
+  // CFG_LastDcMode
+  int32 LastDcMode = 0;
+  // CFG_LastDcPath
+  FString LastDcPath;
+  // CFG_LastDcSavePath
+  FString LastDcSavePath;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const

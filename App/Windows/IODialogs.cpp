@@ -56,6 +56,32 @@ namespace IODialog
     return extensions[cfg.LastTextureExtension].first.substr(1);
   }
 
+  wxString SaveDatacenter(int mode, wxWindow* parent, const wxString& path, const wxString& filename)
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    if (!mode)
+    {
+      wxString fname = filename;
+      if (!fname.EndsWith(wxT(".unpacked")))
+      {
+        fname += wxT(".unpacked");
+      }
+      wxString dir = path;
+      if (dir.IsEmpty())
+      {
+        dir = cfg.LastDcSavePath.WString();
+      }
+      wxString result = wxFileSelector(wxT("Save unpacked datacenter..."), dir, fname, wxT(".unpacked"), wxT("Unpacked DataCenter files (*.unpacked)|*.unpacked"), wxFD_OPEN, parent);
+      if (result.size())
+      {
+        cfg.LastDcSavePath = result.ToStdWstring();
+        App::GetSharedApp()->SaveConfig();
+      }
+      return result;
+    }
+    return wxEmptyString;
+  }
+
   wxString OpenMapperForEncryption(wxWindow* parent, const wxString& filename)
   {
     wxString path;

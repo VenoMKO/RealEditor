@@ -266,6 +266,9 @@
     <ClCompile Include="Core\Utils\DCKeyTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\DcToolDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -370,6 +373,7 @@
     <ClInclude Include="App\Windows\DependsResolveDialog.h" />
     <ClInclude Include="Core\Tera\UObjectReferencer.h" />
     <ClInclude Include="Core\Utils\DCKeyTool.h" />
+    <ClInclude Include="App\Windows\DcToolDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

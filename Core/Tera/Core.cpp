@@ -40,6 +40,7 @@
 #include <ppl.h>
 #include <minilzo/minilzo.h>
 
+#include <Tera/FPackage.h>
 #include <Utils/ALog.h>
 
 #define HEAP_ALLOC(var,size) lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
@@ -368,6 +369,31 @@ FString GetTempFilePath()
     result = root / std::filesystem::path(std::tmpnam(nullptr)).filename().wstring();
   }
   return result.wstring();
+}
+
+FString GetClientVersionString()
+{
+  FString result;
+  std::filesystem::path path(FPackage::GetRootPath().WString());
+  path = path.parent_path() /= L"Binaries";
+  path /= "ReleaseRevision.txt";
+
+  if (!std::filesystem::exists(path))
+  {
+    LogE("Failed to find ReleaseRevision.txt");
+    return result;
+  }
+  std::ifstream s(path);
+  std::string line;
+  while (std::getline(s, line))
+  {
+    if (line._Starts_with("Version:"))
+    {
+      result = line.substr(9);
+      break;
+    }
+  }
+  return result;
 }
 
 void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)

@@ -4,6 +4,7 @@
 #include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
+#include "DcToolDialog.h"
 #include "ObjectPicker.h"
 #include "TextureImporter.h"
 #include "DependsResolveDialog.h"
@@ -52,6 +53,7 @@ enum ControlElementId {
   SettingsWin,
   LogWin,
   Help,
+  DcTool,
   CompositePatch,
   DecryptMapper,
   EncryptMapper,
@@ -1124,6 +1126,13 @@ void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
   patcher.ShowModal();
 }
 
+void PackageWindow::OnDcToolClicked(wxCommandEvent&)
+{
+  DcToolDialog dlg(this);
+  dlg.ShowModal();
+}
+
+
 void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 {
   wxMessageBox(_("Select a source file you want to decrypt(e.g. CompositePackageMapper.dat). You can find these files in your S1Game\\CookedPC folder."), _("Select source..."), wxICON_INFORMATION);
@@ -1901,6 +1910,7 @@ EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
+EVT_MENU(ControlElementId::DcTool, PackageWindow::OnDcToolClicked)
 EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
 EVT_MENU(ControlElementId::DecryptMapper, PackageWindow::OnDecryptClicked)
 EVT_MENU(ControlElementId::EncryptMapper, PackageWindow::OnEncryptClicked)

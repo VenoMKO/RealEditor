@@ -77,6 +77,11 @@ void PackageWindow::InitLayout()
 
   m_menu4->AppendSeparator();*/
 
+  wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DC tool...")), wxS("Decrypt and unpack datacenter files"), wxITEM_NORMAL);
+  m_menu4->Append(dcMenu);
+
+  m_menu4->AppendSeparator();
+
   wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
   m_menu4->Append(m_menuItem65);
 

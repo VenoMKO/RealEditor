@@ -36,3 +36,23 @@ void FString::BytesToString(const char* src, size_t len, char* dst)
     *dst++ = HexLookupTable[ch & 0x0f];
   }
 }
+
+int32 Ch2Int(char input)
+{
+  if (input >= '0' && input <= '9')
+    return input - '0';
+  if (input >= 'A' && input <= 'F')
+    return input - 'A' + 10;
+  if (input >= 'a' && input <= 'f')
+    return input - 'a' + 10;
+  return 0;
+}
+
+void FString::StringToBytes(const char* src, size_t len, unsigned char* dst)
+{
+  const char* srcPtr = src;
+  for (int idx = 0; idx < len; idx+=2)
+  {
+    *(dst++) = Ch2Int(srcPtr[idx]) * 16 + Ch2Int(srcPtr[idx + 1]);
+  }
+}

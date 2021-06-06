@@ -792,7 +792,6 @@ void App::LoadCore(ProgressWindow* pWindow)
       return;
     }
   }
-  
 
   SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
   SendEvent(this, DELAY_LOAD);

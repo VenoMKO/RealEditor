@@ -46,7 +46,10 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
 
   Centre(wxBOTH);
 
+  ActionLabel->SetFocus();
   ActionLabel->SetDoubleBuffered(true);
+  ActionLabel->ShowNativeCaret(false);
+  ActionLabel->HideNativeCaret();
 
   // Connect Events
   CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ProgressWindow::OnCancelClicked), NULL, this);
@@ -56,7 +59,10 @@ void ProgressWindow::SetActionText(const wxString& text)
 {
   if (!Canceled.load())
   {
+    ActionLabel->SetFocus();
     ActionLabel->SetLabelText(text);
+    ActionLabel->ShowNativeCaret(false);
+    ActionLabel->HideNativeCaret();
   }
 }
 

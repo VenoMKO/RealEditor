@@ -85,6 +85,10 @@ public:
   static bool NamedPackageExists(const FString& name, bool updateDirCache = false);
   // Find and cache all packages
   static void SetRootPath(const FString& path);
+  // Get root path(e.g., S1Game)
+  static FString GetRootPath();
+  // Get DC dat file path
+  static FString GetDcPath();
   // Set global meta data
   static void SetMetaData(const std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>>& meta);
   // Get bulk data info

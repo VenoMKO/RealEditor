@@ -71,6 +71,7 @@ private:
   void OnSize(wxSizeEvent& e);
   void OnMaximized(wxMaximizeEvent& e);
   void OnPatchCompositeMapClicked(wxCommandEvent&);
+  void OnDcToolClicked(wxCommandEvent&);
   void OnDecryptClicked(wxCommandEvent&);
   void OnEncryptClicked(wxCommandEvent&);
   void OnDumpCompositeObjectsClicked(wxCommandEvent&);

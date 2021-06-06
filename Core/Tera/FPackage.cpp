@@ -218,6 +218,38 @@ void FPackage::SetRootPath(const FString& path)
   LogI("Done. Found %ld packages", DirCache.size());
 }
 
+FString FPackage::GetRootPath()
+{
+  return FPackage::RootDir;
+}
+
+FString FPackage::GetDcPath()
+{
+  FString data = FPackage::RootDir;
+  data = data.FStringByAppendingPath("S1Data");
+  FString tmp = data.FStringByAppendingPath("DataCenter_Final.dat");
+  if (std::filesystem::exists(tmp.WString()))
+  {
+    return tmp;
+  }
+  tmp = data.FStringByAppendingPath("DataCenter_Final_EUR.dat");
+  if (std::filesystem::exists(tmp.WString()))
+  {
+    return tmp;
+  }
+  tmp = data.FStringByAppendingPath("DataCenter_Final_TW.dat");
+  if (std::filesystem::exists(tmp.WString()))
+  {
+    return tmp;
+  }
+  tmp = data.FStringByAppendingPath("DataCenter_Final_JP.dat");
+  if (std::filesystem::exists(tmp.WString()))
+  {
+    return tmp;
+  }
+  return FString();
+}
+
 void FPackage::SetMetaData(const std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>>& meta)
 {
   MetaData = meta;

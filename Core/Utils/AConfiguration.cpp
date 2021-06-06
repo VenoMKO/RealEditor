@@ -338,6 +338,15 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_LastDcVec:
         s << c.LastDcVec;
         break;
+      case FAppConfig::CFG_LastDcMode:
+        s << c.LastDcMode;
+        break;
+      case FAppConfig::CFG_LastDcPath:
+        s << c.LastDcPath;
+        break;
+      case FAppConfig::CFG_LastDcSavePath:
+        s << c.LastDcSavePath;
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -375,6 +384,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     SerializeKeyValue(FAppConfig::CFG_LastDcKey, c.LastDcKey);
     SerializeKeyValue(FAppConfig::CFG_LastDcVec, c.LastDcVec);
+    SerializeKeyValue(FAppConfig::CFG_LastDcMode, c.LastDcMode);
+    SerializeKeyValue(FAppConfig::CFG_LastDcPath, c.LastDcPath);
+    SerializeKeyValue(FAppConfig::CFG_LastDcSavePath, c.LastDcSavePath);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

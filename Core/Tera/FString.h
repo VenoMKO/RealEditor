@@ -8,6 +8,7 @@
 class FString {
 public:
   static void BytesToString(const char* src, size_t len, char* dst);
+  static void StringToBytes(const char* src, size_t len, unsigned char* dst);
   FString() = default;
 
   FString(const FString& str)
