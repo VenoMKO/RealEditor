@@ -190,6 +190,8 @@ uint32 CalculateDataCRC(const void* data, int32 size, uint32 crc = 0);
 
 // Check if the CPU has AVX2 instructions set. Mandatory for TGA and PNG export/import
 bool HasAVX2();
+// Check if RE has administrator privileges
+bool IsElevatedProcess();
 
 // Generic runtime error
 void UThrow(const char* fmt, ...);

@@ -108,6 +108,36 @@ bool _HasAVX2()
   return f_7_EBX_[5];
 }
 
+bool IsElevatedProcess()
+{
+  struct Context {
+    ~Context()
+    {
+      if (Token)
+      {
+        CloseHandle(Token);
+      }
+    }
+    HANDLE Token = nullptr;
+  } Ctx;
+
+  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &Ctx.Token))
+  {
+    LogE("Failed to get Process Token: %d.", GetLastError());
+    return false;
+  }
+
+  DWORD dwSize;
+  TOKEN_ELEVATION elevation;
+  if (!GetTokenInformation(Ctx.Token, TokenElevation, &elevation, sizeof(elevation), &dwSize))
+  {
+    LogE("Failed to get Token Information: %d.", GetLastError());
+    return false;
+  }
+
+  return elevation.TokenIsElevated;
+}
+
 std::string W2A(const wchar_t* str, int32 len)
 {
   if (len == -1)
