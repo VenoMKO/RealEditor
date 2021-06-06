@@ -7,8 +7,8 @@
 // Wrapper to keep track of '\0'
 class FString {
 public:
-  FString()
-  {}
+  static void BytesToString(const char* src, size_t len, char* dst);
+  FString() = default;
 
   FString(const FString& str)
     : Data(str.Data)

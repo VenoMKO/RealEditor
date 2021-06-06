@@ -23,3 +23,16 @@ FString FStringRef::GetString(FStream& s)
   }
   return *Cached;
 }
+
+static const char HexLookupTable[] = "0123456789ABCDEF";
+
+void FString::BytesToString(const char* src, size_t len, char* dst)
+{
+  const char* srcPtr = src;
+  for (auto count = len; count > 0; --count)
+  {
+    unsigned char ch = *srcPtr++;
+    *dst++ = HexLookupTable[ch >> 4];
+    *dst++ = HexLookupTable[ch & 0x0f];
+  }
+}
