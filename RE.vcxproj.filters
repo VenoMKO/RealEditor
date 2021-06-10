@@ -269,6 +269,9 @@
     <ClCompile Include="App\Windows\DcToolDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Extern\pugixml\pugixml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -374,6 +377,46 @@
     <ClInclude Include="Core\Tera\UObjectReferencer.h" />
     <ClInclude Include="Core\Utils\DCKeyTool.h" />
     <ClInclude Include="App\Windows\DcToolDialog.h" />
+    <ClInclude Include="Core\Tera\DC.h" />
+    <ClInclude Include="Extern\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="Extern\pugixml\pugixml.hpp" />
+    <ClInclude Include="Extern\rapidjson\allocators.h" />
+    <ClInclude Include="Extern\rapidjson\cursorstreamwrapper.h" />
+    <ClInclude Include="Extern\rapidjson\document.h" />
+    <ClInclude Include="Extern\rapidjson\encodedstream.h" />
+    <ClInclude Include="Extern\rapidjson\encodings.h" />
+    <ClInclude Include="Extern\rapidjson\error\en.h" />
+    <ClInclude Include="Extern\rapidjson\error\error.h" />
+    <ClInclude Include="Extern\rapidjson\filereadstream.h" />
+    <ClInclude Include="Extern\rapidjson\filewritestream.h" />
+    <ClInclude Include="Extern\rapidjson\fwd.h" />
+    <ClInclude Include="Extern\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="Extern\rapidjson\internal\clzll.h" />
+    <ClInclude Include="Extern\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="Extern\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="Extern\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="Extern\rapidjson\internal\itoa.h" />
+    <ClInclude Include="Extern\rapidjson\internal\meta.h" />
+    <ClInclude Include="Extern\rapidjson\internal\pow10.h" />
+    <ClInclude Include="Extern\rapidjson\internal\regex.h" />
+    <ClInclude Include="Extern\rapidjson\internal\stack.h" />
+    <ClInclude Include="Extern\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="Extern\rapidjson\internal\strtod.h" />
+    <ClInclude Include="Extern\rapidjson\internal\swap.h" />
+    <ClInclude Include="Extern\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="Extern\rapidjson\memorybuffer.h" />
+    <ClInclude Include="Extern\rapidjson\memorystream.h" />
+    <ClInclude Include="Extern\rapidjson\msinttypes\inttypes.h" />
+    <ClInclude Include="Extern\rapidjson\msinttypes\stdint.h" />
+    <ClInclude Include="Extern\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="Extern\rapidjson\pointer.h" />
+    <ClInclude Include="Extern\rapidjson\prettywriter.h" />
+    <ClInclude Include="Extern\rapidjson\rapidjson.h" />
+    <ClInclude Include="Extern\rapidjson\reader.h" />
+    <ClInclude Include="Extern\rapidjson\schema.h" />
+    <ClInclude Include="Extern\rapidjson\stream.h" />
+    <ClInclude Include="Extern\rapidjson\stringbuffer.h" />
+    <ClInclude Include="Extern\rapidjson\writer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
