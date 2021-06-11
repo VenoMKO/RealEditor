@@ -39,6 +39,8 @@
 #include <windows.h>
 #include <ppl.h>
 #include <minilzo/minilzo.h>
+#include <tchar.h>
+#include <shlwapi.h>
 
 #include <Tera/FPackage.h>
 #include <Utils/ALog.h>
@@ -111,32 +113,44 @@ bool _HasAVX2()
 
 bool IsElevatedProcess()
 {
-  struct Context {
-    ~Context()
+  PSID adminGroup;
+  SID_IDENTIFIER_AUTHORITY authority = SECURITY_NT_AUTHORITY;
+  BOOL result = AllocateAndInitializeSid(&authority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup);
+  if (result)
+  {
+    if (!CheckTokenMembership(0, adminGroup, &result))
     {
-      if (Token)
-      {
-        CloseHandle(Token);
-      }
+      result = false;
     }
-    HANDLE Token = nullptr;
-  } Ctx;
+    FreeSid(adminGroup);
+  }
+  return result;
+}
 
-  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &Ctx.Token))
+bool IsUacEnabled()
+{
+  LPCTSTR pszSubKey = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System");
+  LPCTSTR pszValueOn = _T("EnableLUA");
+  LPCTSTR pszValueConsent = _T("ConsentPromptBehaviorAdmin");
+  DWORD dwType = 0;
+  DWORD dwOnValue = 0;
+  DWORD dwConsentValue = 0;
+  DWORD dwValueSize = sizeof(DWORD);
+
+  auto err = SHGetValue(HKEY_LOCAL_MACHINE, pszSubKey, pszValueConsent, &dwType, &dwConsentValue, &dwValueSize);
+  if (ERROR_SUCCESS != err)
   {
-    LogE("Failed to get Process Token: %d.", GetLastError());
-    return false;
+    return err == ERROR_ACCESS_DENIED;
   }
 
-  DWORD dwSize;
-  TOKEN_ELEVATION elevation;
-  if (!GetTokenInformation(Ctx.Token, TokenElevation, &elevation, sizeof(elevation), &dwSize))
-  {
-    LogE("Failed to get Token Information: %d.", GetLastError());
-    return false;
-  }
+  err = SHGetValue(HKEY_LOCAL_MACHINE, pszSubKey, pszValueOn, &dwType, &dwOnValue, &dwValueSize);
 
-  return elevation.TokenIsElevated;
+  return dwOnValue && dwConsentValue;
+}
+
+bool NeedsElevation()
+{
+  return !IsElevatedProcess() && IsUacEnabled();
 }
 
 std::string W2A(const wchar_t* str, int32 len)

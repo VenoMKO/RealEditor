@@ -4,6 +4,7 @@
 
 wxDECLARE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS, wxCommandEvent);
+wxDECLARE_EVENT(UPDATE_PROGRESS_ADV, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
@@ -14,6 +15,8 @@ public:
   void SetActionText(const wxString& text);
   
   void SetCurrentProgress(int progress);
+
+  void AdvanceProgress();
 
   void SetMaxProgress(int max);
 
@@ -36,9 +39,13 @@ private:
 
   void OnUpdateProgress(wxCommandEvent& e);
 
+  void OnAdvanceProgress(wxCommandEvent& e);
+
   void OnUpdateProgressDescription(wxCommandEvent& e);
 
   void OnUpdateProgressFinish(wxCommandEvent& e);
+
+  void OnSetFocus(wxFocusEvent& event);
 
   wxDECLARE_EVENT_TABLE();
 private:

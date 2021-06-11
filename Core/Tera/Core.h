@@ -15,14 +15,19 @@ static const unsigned int BUILD_NUMBER = (
 #include "../../build_num.txt"
 );
 
-#define WIN_POS_FULLSCREEN INT_MIN
-#define WIN_POS_CENTER INT_MIN + 1
-
+// Enables performance samples in Release builds
 #define ENABLE_PERF_SAMPLE 1
+// Obsolete
 #define ALLOW_UI_PKG_SAVE 1
+// If disabled names won't show FName numbers
+// and may cause bugs related to objects search
 #define USE_FNAME_NUMBERS 1
-
+// Static DC allows almost instant serialization
+// and avoids any unnecessary memory allocations
+#define USE_STATIC_DC_4_EXPORT 1
+// Cache composite mapper into *.re files
 #define CACHE_COMPOSITE_MAP 0
+// Cache contents of the S1Game folder
 #define CACHE_S1GAME_CONTENTS 0
 
 // For testing only.
@@ -38,7 +43,7 @@ static const unsigned int BUILD_NUMBER = (
 #define DUMP_MAPPERS 0
 void DumpData(void* data, int size, const char* path);
 #endif
-#define MULTITHREADED_CLASS_SERIALIZATION 0
+#define MULTITHREADED_CLASS_SERIALIZATION 1
 #define SERIALIZE_PROPERTIES 1
 #define BUILD_SUFFIX "d"
 #else
@@ -192,6 +197,10 @@ uint32 CalculateDataCRC(const void* data, int32 size, uint32 crc = 0);
 bool HasAVX2();
 // Check if RE has administrator privileges
 bool IsElevatedProcess();
+// Check if UAC is enabled and admin consent is on
+bool IsUacEnabled();
+// bool check if RE needs elevation
+bool NeedsElevation();
 
 // Generic runtime error
 void UThrow(const char* fmt, ...);

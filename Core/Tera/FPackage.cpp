@@ -549,7 +549,14 @@ uint16 FPackage::GetCoreVersion()
 
 void FPackage::LoadPersistentData()
 {
-  if (std::shared_ptr<FPackage> package = GetPackageNamed(PersistentDataName))
+  std::shared_ptr<FPackage> package = nullptr;
+  try
+  {
+    package = GetPackageNamed(PersistentDataName);
+  }
+  catch (...)
+  {}
+  if (package)
   {
     package->Load();
     for (FObjectExport* exp : package->Exports)
@@ -2287,7 +2294,14 @@ UObject* FPackage::GetObject(FObjectImport* imp, bool load)
         }
       }
       // Load external package
-      if (auto package = GetPackageNamed(impPkgName))
+      std::shared_ptr<FPackage> package = nullptr;
+      try
+      {
+        package = GetPackageNamed(impPkgName);
+      }
+      catch (...)
+      {}
+      if (package)
       {
         package->Load();
         if (UObject* obj = package->GetObject(imp, load))
@@ -2740,19 +2754,29 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
       }
     }
   }
-  if (auto pkg = GetPackageNamed(pkgName))
   {
-    UObject* obj = pkg->GetObject(imp);
-    if (obj)
+    std::shared_ptr<FPackage> pkg = nullptr;
+    try
     {
-      std::scoped_lock<std::mutex> l(ClassMapMutex);
-      ClassMap[name] = obj;
-      std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
-      ExternalPackages.push_back(pkg);
-      return (UClass*)obj;
+      pkg = GetPackageNamed(pkgName);
     }
-    FPackage::UnloadPackage(pkg);
+    catch (...)
+    {}
+    if (pkg)
+    {
+      UObject* obj = pkg->GetObject(imp);
+      if (obj)
+      {
+        std::scoped_lock<std::mutex> l(ClassMapMutex);
+        ClassMap[name] = obj;
+        std::scoped_lock<std::mutex> lock(ExternalPackagesMutex);
+        ExternalPackages.push_back(pkg);
+        return (UClass*)obj;
+      }
+      FPackage::UnloadPackage(pkg);
+    }
   }
+  
   
   if (!MissingClasses.count(name))
   {

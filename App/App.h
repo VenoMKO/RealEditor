@@ -133,8 +133,14 @@ public:
 
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
+  void RestartElevated(bool keepWindows = true);
 
   void OnFatalException() override;
+
+  void SetDcToolIsOpen(bool flag)
+  {
+    DcToolIsOpen = flag;
+  }
 
   const wxArrayString& GetCompositePackageNames() const;
 
@@ -186,5 +192,6 @@ private:
 
   bool NeedsRestart = false;
   bool ShuttingDown = false;
+  bool DcToolIsOpen = false;
 };
 

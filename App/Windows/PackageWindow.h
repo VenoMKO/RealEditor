@@ -37,6 +37,7 @@ public:
 
   void SelectObject(const wxString& objectPath);
   void SelectObject(UObject* object);
+  wxString GetSelectedObjectPath();
 
   bool OnObjectLoaded(const std::string& id);
   void OnUpdateProperties(wxCommandEvent&);

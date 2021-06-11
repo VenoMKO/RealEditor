@@ -79,7 +79,12 @@ namespace IODialog
       }
       return result;
     }
-    return wxEmptyString;
+    wxString dir = path;
+    if (dir.IsEmpty())
+    {
+      dir = cfg.LastDcSavePath.WString();
+    }
+    return wxDirSelector(wxT("Directory to save datacenter..."), dir, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
   }
 
   wxString OpenMapperForEncryption(wxWindow* parent, const wxString& filename)

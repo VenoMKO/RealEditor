@@ -6,6 +6,7 @@
 class DcToolDialog : public wxDialog {
 public:
   DcToolDialog(wxWindow* parent);
+  ~DcToolDialog();
 
 protected:
   void OnKeyChanged(wxCommandEvent& event);
@@ -14,16 +15,18 @@ protected:
   void OnDcFileChanged(wxFileDirPickerEvent& event);
   void OnUnpackClicked(wxCommandEvent& event);
   void OnCloseClicked(wxCommandEvent& event);
+  void OnEditClicked(wxCommandEvent& event);
 
   void UpdateButtons();
 
 protected:
-  wxStaticText* ClientVersion;
-  wxTextCtrl* KeyField;
-  wxTextCtrl* VecField;
-  wxButton* FindButton;
-  wxFilePickerCtrl* DcFilePicker;
-  wxRadioBox* Mode;
-  wxButton* UnpackButton;
-  wxButton* CloseButton;
+  wxStaticText* ClientVersion = nullptr;
+  wxTextCtrl* KeyField = nullptr;
+  wxTextCtrl* VecField = nullptr;
+  wxButton* FindButton = nullptr;
+  wxFilePickerCtrl* DcFilePicker = nullptr;
+  wxRadioBox* Mode = nullptr;
+  wxButton* UnpackButton = nullptr;
+  wxButton* CloseButton = nullptr;
+  wxButton* EditButton = nullptr;
 };

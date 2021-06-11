@@ -5,6 +5,9 @@
 #include <fstream>
 #include <algorithm>
 
+#define WIN_POS_FULLSCREEN INT_MIN
+#define WIN_POS_CENTER INT_MIN + 1
+
 // Logger config
 struct FLogConfig
 {
@@ -277,8 +280,8 @@ struct FAppConfig
   FString LastDcKey;
   // CFG_LastDcVec
   FString LastDcVec;
-  // CFG_LastDcMode
-  int32 LastDcMode = 0;
+  // CFG_LastDcMode: 0 - Unpack, 1 - XML, 2 - JSON
+  int32 LastDcMode = 1;
   // CFG_LastDcPath
   FString LastDcPath;
   // CFG_LastDcSavePath

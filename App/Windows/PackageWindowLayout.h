@@ -77,7 +77,7 @@ void PackageWindow::InitLayout()
 
   m_menu4->AppendSeparator();*/
 
-  wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DC tool...")), wxS("Decrypt and unpack datacenter files"), wxITEM_NORMAL);
+  wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DataCenter Tool...")), wxS("Unpack and export datacenter files"), wxITEM_NORMAL);
   m_menu4->Append(dcMenu);
 
   m_menu4->AppendSeparator();

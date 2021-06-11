@@ -4,6 +4,7 @@
 #include "Windows/CompositePackagePicker.h"
 #include "Windows/BulkImportWindow.h"
 #include "Windows/IODialogs.h"
+#include "Windows/DcToolDialog.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -37,6 +38,74 @@ wxString GetConfigPath()
   }
   path += wxS("RE.cfg");
   return path;
+}
+
+inline wxString wxFrameToString(const wxPoint& pos, const wxSize& size)
+{
+  wxString result = wxT("$FRAME$");
+  result << pos.x << L':' << pos.y << L':' << size.x << L':' << size.y << L'$';
+  return result;
+}
+
+inline void wxStringToFrame(const wxString& str, wxPoint& position, wxSize& size)
+{
+  auto pos = str.find('$', 7);
+  if (pos == wxString::npos)
+  {
+    return;
+  }
+  position.x = wxAtoi(str.Mid(7, pos - 7));
+  auto epos = str.find(':', pos + 1);
+  if (epos == wxString::npos)
+  {
+    return;
+  }
+  position.y = wxAtoi(str.Mid(pos + 1, epos - pos - 1));
+  pos = str.find(':', epos + 1);
+  if (pos == wxString::npos)
+  {
+    return;
+  }
+  size.x = wxAtoi(str.Mid(epos + 1, pos - epos - 1));
+  epos = str.find('$', pos + 1);
+  if (epos == wxString::npos)
+  {
+    return;
+  }
+  size.y = wxAtoi(str.Mid(pos + 1, epos - pos - 1));
+}
+
+wxString UnpackGpkPath(const wxString& path, wxString& frameInfo, wxString& selection)
+{
+  auto pos = path.find("$FRAME$");
+  wxString fixedPath = path;
+  if (pos != wxString::npos)
+  {
+    auto pos2 = path.find('$', pos + 7);
+    frameInfo = path.Mid(pos, pos2 - pos + 1);
+    fixedPath.Replace(frameInfo, wxEmptyString);
+  }
+  pos = fixedPath.find("$SEL$");
+  if (pos != wxString::npos)
+  {
+    auto pos2 = fixedPath.find('$', pos + 5);
+    wxString tmpSelection = fixedPath.Mid(pos, pos2 - pos + 1);
+    fixedPath.Replace(tmpSelection, wxEmptyString);
+    tmpSelection = tmpSelection.Mid(5, tmpSelection.size() - 6);
+    if (tmpSelection.size())
+    {
+      selection = tmpSelection;
+    }
+  }
+  return fixedPath;
+}
+
+wxString PackGpkPath(const wxString& path, const wxPoint& pos, const wxSize& size, const wxString& selection)
+{
+  wxString packed = path;
+  packed += wxFrameToString(pos, size);
+  packed += wxT("$SEL$") + selection + wxT("$");
+  return packed;
 }
 
 void RegisterFileType(const wxString& extension, const wxString& description, const wxString& appPath, wxMimeTypesManager& man)
@@ -320,12 +389,23 @@ void App::ShowBulkImport(wxWindow* parent, const wxString& className, const wxSt
   }
 }
 
-bool App::OpenPackage(const wxString& path, const wxString selection)
+bool App::OpenPackage(const wxString& path, const wxString selectionIn)
 {
+  wxString frameInfo;
+  wxString selection = selectionIn;
+  wxString fixedName = UnpackGpkPath(path, frameInfo, selection);
   for (const auto window : PackageWindows)
   {
-    if (window->GetPackagePath() == path)
+    if (window->GetPackagePath() == fixedName)
     {
+      if (frameInfo.size())
+      {
+        wxPoint pos = window->GetPosition();
+        wxSize size = window->GetSize();
+        wxStringToFrame(frameInfo, pos, size);
+        window->SetPosition(pos);
+        window->SetSize(size);
+      }
       window->Raise();
       if (selection.size())
       {
@@ -338,7 +418,7 @@ bool App::OpenPackage(const wxString& path, const wxString selection)
   std::shared_ptr<FPackage> package = nullptr;
   try
   {
-    package = FPackage::GetPackage(W2A(path.ToStdWstring()));
+    package = FPackage::GetPackage(W2A(fixedName.ToStdWstring()));
   }
   catch (const std::exception& e)
   {
@@ -361,6 +441,14 @@ bool App::OpenPackage(const wxString& path, const wxString selection)
   }
 
   PackageWindow* window = new PackageWindow(package, this);
+  if (frameInfo.size())
+  {
+    wxPoint pos = window->GetPosition();
+    wxSize size = window->GetSize();
+    wxStringToFrame(frameInfo, pos, size);
+    window->SetPosition(pos);
+    window->SetSize(size);
+  }
   PackageWindows.push_back(window);
   window->Show();
 
@@ -406,11 +494,20 @@ bool App::OpenPackage(const wxString& path, const wxString selection)
   return true;
 }
 
-bool App::OpenNamedPackage(const wxString& name, const wxString selection)
+bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
 {
+  bool composite = name.StartsWith("composite\\");
+  wxString fixedName = name;
+  if (composite)
+  {
+    fixedName = name.Mid(10);
+  }
+  wxString frameInfo;
+  wxString selection = selectionIn;
+  fixedName = UnpackGpkPath(fixedName, frameInfo, selection);
   for (const auto window : PackageWindows)
   {
-    if (window->GetPackage()->GetPackageName().String() == name)
+    if (window->GetPackage()->GetPackageName().String() == fixedName)
     {
       if (!window->GetPackage()->IsComposite())
       {
@@ -419,6 +516,14 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
       else
       {
         App::SavePackageOpenPath(L"composite\\" + window->GetPackage()->GetCompositePath().WString());
+      }
+      if (frameInfo.size())
+      {
+        wxPoint pos = window->GetPosition();
+        wxSize size = window->GetSize();
+        wxStringToFrame(frameInfo, pos, size);
+        window->SetPosition(pos);
+        window->SetSize(size);
       }
       window->Raise();
       window->SelectObject(selection);
@@ -429,7 +534,7 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
   std::shared_ptr<FPackage> package = nullptr;
   try
   {
-    package = FPackage::GetPackageNamed(name.ToStdString());
+    package = FPackage::GetPackageNamed(fixedName.ToStdString());
   }
   catch (const std::exception& e)
   {
@@ -453,7 +558,10 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
   if (package == nullptr)
   {
     LogE("Failed to open the package: Unknow error");
-    wxMessageBox("Unknown error!", "Failed to open the package!", wxICON_ERROR);
+    wxString msg = wxString::Format("Package %s does not exist!\n\nPossible solutions:\n", fixedName.ToStdString().c_str());
+    msg += " * Press Window -> Settings and Rebuild Cache\n";
+    msg += " * Rebuild ObjectDump.txt\n";
+    wxMessageBox(msg, "Error!", wxICON_ERROR);
     return false;
   }
   if (!package->IsComposite())
@@ -465,6 +573,14 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selection)
     App::SavePackageOpenPath(L"composite\\" + package->GetCompositePath().WString());
   }
   PackageWindow* window = new PackageWindow(package, this);
+  if (frameInfo.size())
+  {
+    wxPoint pos = window->GetPosition();
+    wxSize size = window->GetSize();
+    wxStringToFrame(frameInfo, pos, size);
+    window->SetPosition(pos);
+    window->SetSize(size);
+  }
   PackageWindows.push_back(window);
   window->Show();
 
@@ -814,14 +930,31 @@ void App::DelayLoad(wxCommandEvent&)
       return;
     }
   }
+  bool needsDcTool = false;
   for (const wxString& path : OpenList)
   {
-    if (OpenPackage(path))
+    if (path.StartsWith("composite\\"))
+    {
+      if (OpenNamedPackage(path))
+      {
+        anyLoaded = true;
+      }
+    }
+    else if (path == "DCTOOL")
+    {
+      needsDcTool = true;
+    }
+    else if (OpenPackage(path))
     {
       anyLoaded = true;
     }
   }
   OpenList.clear();
+  if (needsDcTool)
+  {
+    DcToolDialog dlg(nullptr);
+    dlg.ShowModal();
+  }
   if (!anyLoaded)
   {
     ExitMainLoop();
@@ -935,6 +1068,49 @@ void App::OnUnregisterMime(wxCommandEvent&)
   UnregisterFileType(".umap", man);
 }
 
+void App::RestartElevated(bool keepWindows)
+{
+  std::wstring appPath = argv[0].ToStdWstring();
+  std::wstring params;
+  if (keepWindows)
+  {
+    for (auto window : PackageWindows)
+    {
+      wxString sel = window->GetSelectedObjectPath();
+      if (window->GetPackage()->IsComposite())
+      {
+        wxString path = L"composite\\" + window->GetPackage()->GetPackageName().WString();
+        params += L'\"' + PackGpkPath(path, window->GetPosition(), window->GetSize(), sel) + L"\" ";
+      }
+      else
+      {
+        params += L"\"" + PackGpkPath(window->GetPackagePath(), window->GetPosition(), window->GetSize(), sel) + L"\" ";
+      }
+    }
+    if (DcToolIsOpen)
+    {
+      params += L"DCTOOL";
+    }
+  }
+  SHELLEXECUTEINFO shExInfo = { 0 };
+  shExInfo.cbSize = sizeof(shExInfo);
+  shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+  shExInfo.hwnd = 0;
+  shExInfo.lpVerb = _T("runas");
+  shExInfo.lpFile = appPath.c_str();
+  shExInfo.lpParameters = params.c_str();
+  shExInfo.lpDirectory = 0;
+  shExInfo.nShow = SW_SHOW;
+  shExInfo.hInstApp = 0;
+  SaveConfig();
+  delete InstanceChecker;
+  InstanceChecker = nullptr;
+  if (ShellExecuteEx(&shExInfo))
+  {
+    exit(0);
+  }
+}
+
 const wxArrayString& App::GetCompositePackageNames() const
 {
   return CompositePackageNames;
@@ -1002,7 +1178,6 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
       wxMessageBox(text + e.what(), wxT("Error!"), wxICON_ERROR);
     }
   }
-  
 }
 
 void App::OnExitClicked()

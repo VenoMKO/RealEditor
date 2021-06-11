@@ -14,6 +14,7 @@
 #include "IODialogs.h"
 
 #include <Tera/Core.h>
+#include <Tera/FStream.h>
 #include <Tera/FString.h>
 #include <Tera/FPackage.h>
 
@@ -21,10 +22,14 @@
 #include <Utils/ALog.h>
 #include <Utils/DCKeyTool.h>
 
+#include <execution>
 #include <filesystem>
+#include <map>
+
+#include <Tera/DC.h>
 
 DcToolDialog::DcToolDialog(wxWindow* parent)
-  : wxDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 453))
+  : wxDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 465))
 {
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -130,11 +135,10 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   wxBoxSizer* bSizer10;
   bSizer10 = new wxBoxSizer(wxHORIZONTAL);
 
-  wxString ModeChoices[] = { wxT("Unpack"), wxT("Unpack and extract XML") };
+  wxString ModeChoices[] = { wxT("Unpack"), wxT("Export as XML"), wxT("Export as JSON") };
   int ModeNChoices = sizeof(ModeChoices) / sizeof(wxString);
   Mode = new wxRadioBox(this, wxID_ANY, wxT("Mode"), wxDefaultPosition, wxDefaultSize, ModeNChoices, ModeChoices, 1, wxRA_SPECIFY_COLS);
   Mode->SetSelection(0);
-  Mode->Enable(false);
   bSizer10->Add(Mode, 1, wxTOP | wxBOTTOM | wxLEFT, 5);
 
   UnpackButton = new wxButton(this, wxID_ANY, wxT("Unpack"), wxDefaultPosition, wxDefaultSize, 0);
@@ -150,11 +154,14 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   wxBoxSizer* bSizer11;
   bSizer11 = new wxBoxSizer(wxHORIZONTAL);
 
+  CloseButton = new wxButton(this, wxID_ANY, wxT("Close"), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer11->Add(CloseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   bSizer11->Add(0, 0, 1, wxEXPAND, 5);
 
-  CloseButton = new wxButton(this, wxID_ANY, wxT("Close"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer11->Add(CloseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  EditButton = new wxButton(this, wxID_ANY, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer11->Add(EditButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  EditButton->Enable(false);
 
 
   bSizer1->Add(bSizer11, 1, wxEXPAND, 5);
@@ -194,6 +201,21 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   DcFilePicker->Connect(wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler(DcToolDialog::OnDcFileChanged), NULL, this);
   UnpackButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnUnpackClicked), NULL, this);
   CloseButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnCloseClicked), NULL, this);
+  EditButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnEditClicked), NULL, this);
+
+  App::GetSharedApp()->SetDcToolIsOpen(true);
+}
+
+DcToolDialog::~DcToolDialog()
+{
+  App::GetSharedApp()->SetDcToolIsOpen(false);
+  KeyField->Disconnect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnKeyChanged), NULL, this);
+  VecField->Disconnect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnVecChanged), NULL, this);
+  FindButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnFindClicked), NULL, this);
+  DcFilePicker->Disconnect(wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler(DcToolDialog::OnDcFileChanged), NULL, this);
+  UnpackButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnUnpackClicked), NULL, this);
+  CloseButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnCloseClicked), NULL, this);
+  EditButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(DcToolDialog::OnEditClicked), NULL, this);
 }
 
 void DcToolDialog::OnKeyChanged(wxCommandEvent& event)
@@ -208,9 +230,14 @@ void DcToolDialog::OnVecChanged(wxCommandEvent& event)
 
 void DcToolDialog::OnFindClicked(wxCommandEvent& event)
 {
-  if (!IsElevatedProcess())
+  if (NeedsElevation())
   {
-    wxMessageBox("To access Tera process RE must have Administrator privileges.\nRestart RE as Administrator.", "Error!", wxICON_ERROR, this);
+    wxMessageDialog dlg(this, "RE requires Administrator privileges to access TERA process.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
+    dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
+    if (dlg.ShowModal() == wxID_YES)
+    {
+      App::GetSharedApp()->RestartElevated();
+    }
     return;
   }
   HANDLE proc = DCKeyTool::GetTeraProcess();
@@ -228,6 +255,9 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
   auto results = tool.GetResults();
   KeyField->SetValue(results.front().first);
   VecField->SetValue(results.front().second);
+  App::GetSharedApp()->GetConfig().LastDcKey = results.front().first;
+  App::GetSharedApp()->GetConfig().LastDcVec = results.front().second;
+  App::GetSharedApp()->SaveConfig();
   UpdateButtons();
 
   wxString msg = wxString::Format("Key: %s\nVector: %s", results.front().first.c_str(), results.front().second.c_str());
@@ -259,7 +289,7 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
   App::GetSharedApp()->GetConfig().LastDcMode = Mode->GetSelection();
   App::GetSharedApp()->SaveConfig();
 
-  wxString dst;
+  std::filesystem::path dst;
   if (!Mode->GetSelection())
   {
     wxString dir = std::filesystem::path(FPackage::GetDcPath().WString()).parent_path().wstring();
@@ -271,7 +301,12 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
         dir = std::filesystem::path(dir.ToStdWstring()).parent_path().wstring();
       }
     }
-    dst = IODialog::SaveDatacenter(0, this, dir, std::filesystem::path(wstr).filename().replace_extension().wstring());
+    dir = IODialog::SaveDatacenter(0, this, dir, std::filesystem::path(wstr).filename().replace_extension().wstring());
+    if (dir.IsEmpty())
+    {
+      return;
+    }
+    dst = dir.ToStdWstring();
   }
   else
   {
@@ -284,18 +319,23 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
         dir = std::filesystem::path(dir.ToStdWstring()).parent_path().wstring();
       }
     }
-    dst = IODialog::SaveDatacenter(1, this, dir, std::filesystem::path(wstr).parent_path().filename().wstring());
+    dir = IODialog::SaveDatacenter(1, this, dir, std::filesystem::path(wstr).parent_path().filename().wstring());
+    if (dir.IsEmpty())
+    {
+      return;
+    }
+    dst = dir.ToStdWstring();
   }
-  if (!dst.size())
-  {
-    return;
-  }
+
+  App::GetSharedApp()->GetConfig().LastDcSavePath = dst.wstring();
+  App::GetSharedApp()->SaveConfig();
   
   ProgressWindow progress(this, wxEmptyString);
   progress.SetActionText(wxT("Unpacking..."));
   progress.SetCanCancel(false);
   progress.SetCurrentProgress(-1);
 
+  wxString err;
   std::thread([&]() {
     std::ifstream in(wstr, std::ios::in | std::ios::binary | std::ios::ate);
     size_t inputLen = (size_t)in.tellg();
@@ -345,7 +385,7 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
       LogE("Failed to decrypt: %s", e.what());
       inputData.clear();
       outData.clear();
-      wxMessageBox("Failed to decrypt the DC. The Key or IV might be incorrect!", "Error!", wxICON_ERROR, this);
+      err = "Failed to decrypt the DC. The Key or IV might be incorrect!\nTry to start your Tera and press Find button above.";
       SendEvent(&progress, UPDATE_PROGRESS_FINISH, false);
       return;
     }
@@ -354,56 +394,153 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
       LogE("Failed to decrypt: %s", se.what());
       inputData.clear();
       outData.clear();
-      wxMessageBox("Failed to decrypt the DC. The Key or IV might be incorrect!", "Error!", wxICON_ERROR, this);
+      err = "Failed to decrypt the DC. The Key or IV might be incorrect!\nTry to start your Tera and press Find button above.";
       SendEvent(&progress, UPDATE_PROGRESS_FINISH, false);
       return;
     }
 
     uint32 uncompressedSize = *(uint32*)outData.data();
-    wxMemoryInputStream wxis(outData.data() + sizeof(int), outData.size());
-
     std::vector<unsigned char> inflatedDc(uncompressedSize);
-    try
     {
-      wxZlibInputStream zis(wxis);
-      PERF_START(UncompressDC);
-      zis.ReadAll(inflatedDc.data(), uncompressedSize);
-      PERF_END(UncompressDC);
-      outData.clear();
+      wxMemoryInputStream wxis(outData.data() + sizeof(int), outData.size());
+      try
+      {
+        wxZlibInputStream zis(wxis);
+        PERF_START(UncompressDC);
+        zis.ReadAll(inflatedDc.data(), uncompressedSize);
+        PERF_END(UncompressDC);
+        outData.clear();
+      }
+      catch (...)
+      {
+        inflatedDc.clear();
+        err = "Failed to uncompress the DC. The Key or IV might be incorrect!";
+        SendEvent(&progress, UPDATE_PROGRESS_FINISH, false);
+        return;
+      }
     }
-    catch (...)
-    {
-      inflatedDc.clear();
-      wxMessageBox("Failed to uncompress the DC. The Key or IV might be incorrect!\nRE is going to save the compressed DC file.", "Error!", wxICON_ERROR, this);
-    }
-    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
+    
     if (inflatedDc.empty())
     {
-      std::ofstream out(dst.ToStdWstring(), std::ios::out | std::ios::binary);
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
+      std::ofstream out(dst, std::ios::out | std::ios::binary);
       out.write((const char*)outData.data(), outData.size());
       SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
       return;
     }
-    std::ofstream out(dst.ToStdWstring(), std::ios::out | std::ios::binary);
-    out.write((const char*)inflatedDc.data(), uncompressedSize);
     if (!Mode->GetSelection())
     {
-      // Mode set to Unpack. Nothing to do.
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
+      std::ofstream out(dst, std::ios::out | std::ios::binary);
+      out.write((const char*)inflatedDc.data(), uncompressedSize);
       SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
       return;
     }
-    // TODO: serialize XML
+
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Serializing..."));
+
+    MReadStream s(inflatedDc.data(), false, inflatedDc.size());
+    PERF_START(SerializeDC);
+#ifdef USE_STATIC_DC_4_EXPORT
+    S1Data::StaticDataCenter dc;
+    dc.Serialize(s);
+#else
+    S1Data::DataCenter dc;
+    dc.Serialize(s);
+    inflatedDc.clear();
+#endif
+    PERF_END(SerializeDC);
+
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
+
+    dst /= (std::filesystem::path(wstr).filename().replace_extension().wstring() + L'_' + std::to_wstring(dc.GetHeader()->Version));
+
+    std::unordered_map<S1Data::DCName, std::vector<S1Data::DCElement*>> items;
+    S1Data::DCElement* rootElement = dc.GetRootElement();
+    int32 total = 0;
+    std::vector<S1Data::DCElement*> folders;
+    for (int32 rootIndex = 0; rootIndex < rootElement->ChildrenCount; ++rootIndex)
+    {
+      if (S1Data::DCElement* element = dc.GetElement(rootElement->ChildrenIndices, rootIndex))
+      {
+        if (items[element->Name].size())
+        {
+          if (items[element->Name].size() == 1)
+          {
+            folders.emplace_back(element);
+          }
+          items[element->Name].emplace_back(element);
+        }
+        else
+        {
+          items[element->Name].emplace_back(element);
+        }
+        total++;
+      }
+    }
+    std::for_each(std::execution::par_unseq, folders.begin(), folders.end(), [&](const S1Data::DCElement* element) {
+      std::filesystem::create_directories(dst / std::wstring(dc.GetName(element->Name)));
+    });
+    SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
+    SendEvent(&progress, UPDATE_PROGRESS, 0);
+    
+    PERF_START(ExportDC);
+    S1Data::DCExporter* exporter = nullptr;
+    if (Mode->GetSelection() == 1)
+    {
+      exporter = new S1Data::DCXmlExporter(&dc);
+    }
+    else
+    {
+      exporter = new S1Data::DCJsonExporter(&dc);
+    }
+
+    std::for_each(std::execution::par_unseq, items.begin(), items.end(), [&](const auto& p) {
+      const std::vector<S1Data::DCElement*>& elements = p.second;
+      if (elements.size() == 1)
+      {
+        S1Data::DCElement* element = elements.front();
+        exporter->ExportElement(element, dst / std::wstring(dc.GetName(element->Name)));
+        SendEvent(&progress, UPDATE_PROGRESS_ADV);
+      }
+      else
+      {
+        std::for_each(std::execution::par_unseq, elements.begin(), elements.end(), [&](auto* element) {
+          std::wstring name(dc.GetName(element->Name));
+          size_t idx = distance(elements.begin(), find(elements.begin(), elements.end(), element));
+          if (idx < elements.size() && element->Name.Index)
+          {
+            exporter->ExportElement(element, dst / name / (name + L"-" + std::to_wstring(idx + 1)));
+            SendEvent(&progress, UPDATE_PROGRESS_ADV);
+          }
+        });
+      }
+    });
+    PERF_END(ExportDC);
+    delete exporter;
+    items.clear();
+    folders.clear();
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
   }).detach();
   if (progress.ShowModal())
   {
     wxMessageBox("Unpacked the DataCenter file successfully.", "Done!", wxICON_INFORMATION, this);
   }
+  else if (err.size())
+  {
+    wxMessageBox(err, "Error!", wxICON_ERROR, this);
+    FindButton->SetFocus();
+  }
 }
 
 void DcToolDialog::OnCloseClicked(wxCommandEvent& event)
 {
   EndModal(wxID_CLOSE);
+}
+
+void DcToolDialog::OnEditClicked(wxCommandEvent& event)
+{
+  // TODO
 }
 
 void DcToolDialog::UpdateButtons()

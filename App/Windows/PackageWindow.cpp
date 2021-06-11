@@ -235,6 +235,25 @@ void PackageWindow::SelectObject(UObject* object)
   }
 }
 
+wxString PackageWindow::GetSelectedObjectPath()
+{
+  ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
+  if (!node)
+  {
+    return wxEmptyString;
+  }
+  PACKAGE_INDEX index = node->GetObjectIndex();
+  if (index == FAKE_EXPORT_ROOT || index == FAKE_IMPORT_ROOT || index <= 0)
+  {
+    return wxEmptyString;
+  }
+  if (UObject* selection = Package->GetObject(index))
+  {
+    return selection->GetObjectPath().WString();
+  }
+  return wxEmptyString;
+}
+
 bool PackageWindow::OnObjectLoaded(const std::string& id)
 {
   auto editors = Editors;

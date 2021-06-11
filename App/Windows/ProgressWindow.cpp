@@ -2,6 +2,7 @@
 
 wxDEFINE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS, wxCommandEvent);
+wxDEFINE_EVENT(UPDATE_PROGRESS_ADV, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
@@ -66,6 +67,11 @@ void ProgressWindow::SetActionText(const wxString& text)
   }
 }
 
+void ProgressWindow::AdvanceProgress()
+{
+  ProgressBar->SetValue(ProgressBar->GetValue() + 1);
+}
+
 void ProgressWindow::SetCurrentProgress(int progress)
 {
   if (Canceled.load())
@@ -111,6 +117,11 @@ void ProgressWindow::OnUpdateProgress(wxCommandEvent& e)
   SetCurrentProgress(e.GetInt());
 }
 
+void ProgressWindow::OnAdvanceProgress(wxCommandEvent& e)
+{
+  AdvanceProgress();
+}
+
 void ProgressWindow::OnUpdateProgressDescription(wxCommandEvent& e)
 {
   SetActionText(e.GetString());
@@ -132,7 +143,15 @@ void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
 
 wxBEGIN_EVENT_TABLE(ProgressWindow, wxDialog)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS, OnUpdateProgress)
+EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_ADV, OnAdvanceProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_MAX_PROGRESS, OnUpdateMaxProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_DESC, OnUpdateProgressDescription)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_FINISH, OnUpdateProgressFinish)
 wxEND_EVENT_TABLE()
+
+void ProgressWindow::OnSetFocus(wxFocusEvent& event)
+{
+  event.Skip();
+  ActionLabel->ShowNativeCaret(false);
+  ActionLabel->HideNativeCaret();
+}

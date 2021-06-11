@@ -105,8 +105,8 @@ bool DCKeyTool::FindKey()
         }
         else if (raw.size() == 8)
         {
-          std::string key(35, ' ');
-          std::string vec(35, ' ');
+          std::string key(35, '-');
+          std::string vec(35, '-');
           int intIdx = 0;
           for (; intIdx < 4; ++intIdx)
           {

@@ -46,6 +46,7 @@
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
+    <ClCompile Include="Core\Tera\DC.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Tera\ULightMap.cpp" />
     <ClCompile Include="Core\Tera\UObjectReferencer.cpp" />
