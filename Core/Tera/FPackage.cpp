@@ -223,9 +223,9 @@ FString FPackage::GetRootPath()
   return FPackage::RootDir;
 }
 
-FString FPackage::GetDcPath()
+FString FPackage::GetDcPath(const FString& s1data)
 {
-  FString data = FPackage::RootDir;
+  FString data = s1data.Empty() ? FPackage::RootDir : s1data;
   data = data.FStringByAppendingPath("S1Data");
   FString tmp = data.FStringByAppendingPath("DataCenter_Final.dat");
   if (std::filesystem::exists(tmp.WString()))

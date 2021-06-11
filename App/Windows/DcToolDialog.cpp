@@ -31,6 +31,7 @@
 DcToolDialog::DcToolDialog(wxWindow* parent)
   : wxDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 465))
 {
+  FAppConfig cfg = App::GetSharedApp()->GetConfig();
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer1;
@@ -44,7 +45,7 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   m_staticText8->Wrap(-1);
   bSizer12->Add(m_staticText8, 0, wxALL, 5);
 
-  FString ver = GetClientVersionString();
+  FString ver = GetClientVersionString(cfg.RootDir);
   ClientVersion = new wxStaticText(this, wxID_ANY, ver.Empty() ? wxT("None") : ver.WString(), wxDefaultPosition, wxDefaultSize, 0);
   ClientVersion->Wrap(-1);
   bSizer12->Add(ClientVersion, 1, wxTOP | wxBOTTOM | wxRIGHT, 5);
@@ -172,7 +173,6 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
 
   this->Centre(wxBOTH);
 
-  FAppConfig cfg = App::GetSharedApp()->GetConfig();
   if (cfg.LastDcKey.Size())
   {
     KeyField->SetValue(cfg.LastDcKey.WString());
@@ -187,8 +187,8 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   }
   else
   {
-    DcFilePicker->SetPath(FPackage::GetDcPath().WString());
-    DcFilePicker->SetInitialDirectory(std::filesystem::path(FPackage::GetDcPath().WString()).parent_path().wstring());
+    DcFilePicker->SetPath(FPackage::GetDcPath(cfg.RootDir).WString());
+    DcFilePicker->SetInitialDirectory(std::filesystem::path(FPackage::GetDcPath(cfg.RootDir).WString()).parent_path().wstring());
   }
   Mode->SetSelection(cfg.LastDcMode);
 

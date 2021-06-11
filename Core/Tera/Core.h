@@ -199,7 +199,7 @@ bool HasAVX2();
 bool IsElevatedProcess();
 // Check if UAC is enabled and admin consent is on
 bool IsUacEnabled();
-// bool check if RE needs elevation
+// Check if RE needs elevation
 bool NeedsElevation();
 
 // Generic runtime error
@@ -229,7 +229,7 @@ void memswap(void* a, void* b, size_t size);
 FString GetTempDir();
 FString GetTempFilePath();
 
-FString GetClientVersionString();
+FString GetClientVersionString(const FString& s1data);
 
 #ifndef DBreak()
 #if _DEBUG

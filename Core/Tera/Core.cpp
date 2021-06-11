@@ -385,10 +385,10 @@ FString GetTempFilePath()
   return result.wstring();
 }
 
-FString GetClientVersionString()
+FString GetClientVersionString(const FString& s1data)
 {
   FString result;
-  std::filesystem::path path(FPackage::GetRootPath().WString());
+  std::filesystem::path path(s1data.Empty() ? FPackage::GetRootPath().WString() : s1data.WString());
   path = path.parent_path() /= L"Binaries";
   path /= "ReleaseRevision.txt";
 
