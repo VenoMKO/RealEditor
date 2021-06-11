@@ -24,6 +24,7 @@ Currently under development. Some features are not implemented yet or may not wo
 ***
 
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
+* [Export DataCenter.dat](https://github.com/VenoMKO/RealEditor/wiki/Export-DataCenter.dat-as-XML-or-JSON)
 * [Export Levels, Maps, Dungeons to Unreal Engine 4](https://github.com/VenoMKO/RealEditor/wiki/Export-Levels,-Maps,-Dungeons-to-Unreal-Engine-4)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
 * [Export SpeedTrees](https://github.com/VenoMKO/RealEditor/wiki/Export-trees-foliage(SpeedTree)-3D-models)
