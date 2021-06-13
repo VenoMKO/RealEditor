@@ -6,6 +6,20 @@ wxDEFINE_EVENT(UPDATE_PROGRESS_ADV, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
+class ActionTextCtrl : public wxTextCtrl {
+public:
+  using wxTextCtrl::wxTextCtrl;
+
+  bool AcceptsFocus() const wxOVERRIDE
+  {
+    return false;
+  }
+  bool AcceptsFocusFromKeyboard() const wxOVERRIDE
+  {
+    return false;
+  }
+};
+
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
   : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 115), wxCAPTION | wxTAB_TRAVERSAL)
 {
@@ -19,7 +33,7 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
   wxBoxSizer* bSizer3;
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
-  ActionLabel = new wxTextCtrl(this, wxID_ANY, wxT("Preparing..."), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxBORDER_NONE);
+  ActionLabel = new ActionTextCtrl(this, wxID_ANY, wxT("Preparing..."), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxBORDER_NONE);
   ActionLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
   ActionLabel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 

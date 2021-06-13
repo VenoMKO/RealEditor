@@ -45,6 +45,7 @@ wxDECLARE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
 wxDECLARE_EVENT(OBJECT_LOADED, wxCommandEvent);
 wxDECLARE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDECLARE_EVENT(UNREGISTER_MIME, wxCommandEvent);
+wxDECLARE_EVENT(SHOW_FINAL_INIT, wxCommandEvent);
 
 class ProgressWindow;
 class BulkImportWindow;
@@ -87,15 +88,7 @@ public:
     GetSharedApp()->SaveConfig();
   }
 
-  static void SavePackageOpenPath(const wxString& path)
-  {
-    GetSharedApp()->GetConfig().AddLastFilePackagePath(path.ToStdWstring());
-    GetSharedApp()->SaveConfig();
-    for (PackageWindow* window : GetSharedApp()->PackageWindows)
-    {
-      window->UpdateRecent(path);
-    }
-  }
+  static void AddRecentFile(const wxString& path);
 
   static void SavePackageSavePath(const wxString& path)
   {
@@ -162,6 +155,8 @@ public:
 
   void OnExitClicked();
 
+  void DumpCompositeObjects();
+
 private:
   bool OnInit() override;
   int OnRun() override;
@@ -170,6 +165,7 @@ private:
   void OnLoadError(wxCommandEvent& e);
   bool OnCmdLineParsed(wxCmdLineParser& parser) override;
   void OnObjectLoaded(wxCommandEvent& e);
+  void ShowWelcomeBeforeExit(wxCommandEvent&);
 
   // Build DirCache and load class packages
   void LoadCore(ProgressWindow*);
@@ -179,6 +175,7 @@ private:
   wxDECLARE_EVENT_TABLE();
 private:
   FAppConfig Config;
+  class WelcomeDialog* InitScreen = nullptr;
   BulkImportWindow* BulkImporter = nullptr;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
   RpcServer* Server = nullptr;

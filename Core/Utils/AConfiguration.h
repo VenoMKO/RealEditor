@@ -263,7 +263,7 @@ struct FAppConfig
   // CFG_LastPkgSavePath: last path used to save a GPK
   FString LastPkgSavePath;
   // CFG_MaxLastFilePackages: number of maximum entries to store in LastFilePackages
-  int32 MaxLastFilePackages = 10;
+  int32 MaxLastFilePackages = 14;
   // CFG_LastFilePackages: list of opened GPK files. New entries add to the beginning of the vector.
   std::vector<FString> LastFilePackages;
   // CFG_LastTextureExtension: last file extension used to save a texture

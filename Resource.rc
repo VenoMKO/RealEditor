@@ -90,6 +90,8 @@ IDB_ICO_LEVEL           RCDATA                  "Resources\\Classes\\icon_level.
 
 IDB_ICO_SLEVEL          RCDATA                  "Resources\\Classes\\icon_slevel.png"
 
+IDB_ICO_GPK_FILE_PNG    RCDATA                  "Resources\\FileIcon.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -104,7 +104,9 @@ public:
   // Get composite package name for an object path
   static FString GetObjectCompositePath(const FString& path);
   // Update DirCache
-  static void UpdateDirCache();
+  static void UpdateDirCache(const FString& s1game = {});
+  // Get cached dir contents
+  static std::vector<FString> GetCachedDirCache(const FString& s1game = {});
   // Create a composite mod package
   static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author);
   // Get all classes
@@ -115,6 +117,8 @@ public:
   static void BuildClassInheritance();
   // Get the shared transaction stream
   static MTransStream& GetTransactionStream();
+  // Validate the root dir
+  static bool IsValidRootDir(const FString& s1game = {});
 
 private:
   // Packages must be loaded/created from the static methods

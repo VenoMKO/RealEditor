@@ -24,6 +24,7 @@
 #define IDB_LEVEL_PREVIEW               127
 #define IDB_ICO_LEVEL                   128
 #define IDB_ICO_SLEVEL                  129
+#define IDB_ICO_GPK_FILE_PNG            130
 
 // Next default values for new objects
 // 

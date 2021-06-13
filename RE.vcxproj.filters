@@ -275,6 +275,9 @@
     <ClCompile Include="Core\Tera\DC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\WelcomeDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -420,6 +423,7 @@
     <ClInclude Include="Extern\rapidjson\stream.h" />
     <ClInclude Include="Extern\rapidjson\stringbuffer.h" />
     <ClInclude Include="Extern\rapidjson\writer.h" />
+    <ClInclude Include="App\Windows\WelcomeDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

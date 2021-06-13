@@ -5,6 +5,7 @@
 #include "Windows/BulkImportWindow.h"
 #include "Windows/IODialogs.h"
 #include "Windows/DcToolDialog.h"
+#include "Windows/WelcomeDialog.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -13,6 +14,7 @@
 #include <wx/mstream.h>
 
 #include <filesystem>
+#include <execution>
 
 #include <Utils/ALog.h>
 #include <Tera/FPackage.h>
@@ -28,6 +30,7 @@ wxDEFINE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
 wxDEFINE_EVENT(OBJECT_LOADED, wxCommandEvent);
 wxDEFINE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDEFINE_EVENT(UNREGISTER_MIME, wxCommandEvent);
+wxDEFINE_EVENT(SHOW_FINAL_INIT, wxCommandEvent);
 
 wxString GetConfigPath()
 {
@@ -197,7 +200,11 @@ void LoadMeta(const wxString& source, std::unordered_map<FString, std::unordered
 
 void App::OnRpcOpenFile(const wxString& path)
 {
-  if (IsReady && !path.empty())
+  if (path.size() && InitScreen)
+  {
+    InitScreen->OnExternalOpen(path);
+  }
+  else if (IsReady && !path.empty())
   {
     wxCommandEvent* event = new wxCommandEvent(OPEN_PACKAGE);
     event->SetString(path);
@@ -205,6 +212,7 @@ void App::OnRpcOpenFile(const wxString& path)
   }
   else
   {
+    
     GetTopWindow()->Raise();
   }
 }
@@ -260,7 +268,7 @@ void App::OnOpenPackage(wxCommandEvent& e)
   wxString path = e.GetString();
   if (OpenPackage(path) && path.length())
   {
-    App::SavePackageOpenPath(path.ToStdWstring());
+    App::AddRecentFile(path.ToStdWstring());
   }
 }
 
@@ -312,6 +320,19 @@ PackageWindow* App::GetPackageWindow(FPackage* package) const
     }
   }
   return nullptr;
+}
+
+void App::AddRecentFile(const wxString& path)
+{
+  wxString frameInfo;
+  wxString selection;
+  wxString cleanPath = UnpackGpkPath(path, frameInfo, selection);
+  GetSharedApp()->GetConfig().AddLastFilePackagePath(cleanPath.ToStdWstring());
+  GetSharedApp()->SaveConfig();
+  for (PackageWindow* window : GetSharedApp()->PackageWindows)
+  {
+    window->UpdateRecent(cleanPath);
+  }
 }
 
 App::~App()
@@ -502,6 +523,10 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
   {
     fixedName = name.Mid(10);
   }
+  else if (name.StartsWith("named\\"))
+  {
+    fixedName = name.Mid(6);
+  }
   wxString frameInfo;
   wxString selection = selectionIn;
   fixedName = UnpackGpkPath(fixedName, frameInfo, selection);
@@ -511,11 +536,11 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
     {
       if (!window->GetPackage()->IsComposite())
       {
-        App::SavePackageOpenPath(window->GetPackage()->GetSourcePath().WString());
+        App::AddRecentFile(window->GetPackage()->GetSourcePath().WString());
       }
       else
       {
-        App::SavePackageOpenPath(L"composite\\" + window->GetPackage()->GetCompositePath().WString());
+        App::AddRecentFile(L"composite\\" + window->GetPackage()->GetCompositePath().WString());
       }
       if (frameInfo.size())
       {
@@ -566,11 +591,11 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
   }
   if (!package->IsComposite())
   {
-    App::SavePackageOpenPath(package->GetSourcePath().WString());
+    App::AddRecentFile(package->GetSourcePath().WString());
   }
   else
   {
-    App::SavePackageOpenPath(L"composite\\" + package->GetCompositePath().WString());
+    App::AddRecentFile(L"composite\\" + package->GetPackageName().WString());
   }
   PackageWindow* window = new PackageWindow(package, this);
   if (frameInfo.size())
@@ -636,8 +661,7 @@ void App::PackageWindowWillClose(const PackageWindow* frame)
   }
   if (PackageWindows.empty())
   {
-    ShuttingDown = true;
-    ALog::Show(false);
+    SendEvent(this, SHOW_FINAL_INIT);
   }
 }
 
@@ -688,9 +712,10 @@ bool App::OnInit()
   {
     Config = cfg.GetConfig();
   }
-  if (Config.RootDir.Empty())
+  if (!FPackage::IsValidRootDir(Config.RootDir))
   {
-    FAppConfig newConfig;
+    FAppConfig newConfig = Config;
+    newConfig.RootDir.Clear();
     SettingsWindow win(Config, newConfig, false);
     if (win.ShowModal() != wxID_OK)
     {
@@ -729,6 +754,7 @@ int App::OnRun()
 {
   if (IsReady)
   {
+    IsReady = false;
     // Unexpected issue: Some GPKs have way too many imports.
     // Bulk exporting these GPKs leads to thousands of opened streams.
     // Proper fix would be to close FPackage::Stream after load
@@ -742,11 +768,26 @@ int App::OnRun()
     {
       ALog::SharedLog()->Show();
     }
+
+    if (OpenList.empty())
+    {
+      InitScreen = new WelcomeDialog(nullptr, true);
+      InitScreen->Center();
+      InitScreen->ShowModal();
+      OpenList = InitScreen->GetOpenList();
+      InitScreen->Destroy();
+      InitScreen = nullptr;
+      if (OpenList.empty())
+      {
+        return 0;
+      }
+    }
+    
     ProgressWindow* progressWindow = new ProgressWindow(nullptr);
     progressWindow->SetActionText(wxS("Loading..."));
     progressWindow->SetCurrentProgress(-1);
     progressWindow->Show();
-    std::thread([this, progressWindow] { LoadCore(progressWindow); }).detach();
+    std::thread([this, progressWindow] { LoadCore(progressWindow); IsReady = true; }).detach();
     return wxApp::OnRun();
   }
   return 0;
@@ -914,26 +955,14 @@ void App::LoadCore(ProgressWindow* pWindow)
   pWindow->Destroy();
 }
 
-void App::DelayLoad(wxCommandEvent&)
+void App::DelayLoad(wxCommandEvent& e)
 {
   bool anyLoaded = false;
-  if (OpenList.empty())
-  {
-    wxString path = ShowOpenDialog();
-    if (path.size())
-    {
-      OpenList.push_back(path);
-    }
-    else
-    {
-      ExitMainLoop();
-      return;
-    }
-  }
   bool needsDcTool = false;
+  bool needsObjDump = false;
   for (const wxString& path : OpenList)
   {
-    if (path.StartsWith("composite\\"))
+    if (path.StartsWith("composite\\") || path.StartsWith("named\\"))
     {
       if (OpenNamedPackage(path))
       {
@@ -944,9 +973,14 @@ void App::DelayLoad(wxCommandEvent&)
     {
       needsDcTool = true;
     }
+    else if (path == "OBJDUMP")
+    {
+      needsObjDump = true;
+    }
     else if (OpenPackage(path))
     {
       anyLoaded = true;
+      App::AddRecentFile(path);
     }
   }
   OpenList.clear();
@@ -954,6 +988,29 @@ void App::DelayLoad(wxCommandEvent&)
   {
     DcToolDialog dlg(nullptr);
     dlg.ShowModal();
+  }
+  else if (needsObjDump)
+  {
+    DumpCompositeObjects();
+    if (!anyLoaded)
+    {
+      InitScreen = new WelcomeDialog(nullptr, true);
+      if (InitScreen->ShowModal() != wxID_OK)
+      {
+        InitScreen->Destroy();
+        InitScreen = nullptr;
+        ExitMainLoop();
+        return;
+      }
+      OpenList = InitScreen->GetOpenList();
+      InitScreen->Destroy();
+      InitScreen = nullptr;
+      if (OpenList.size())
+      {
+        SendEvent(this, DELAY_LOAD);
+        return;
+      }
+    }
   }
   if (!anyLoaded)
   {
@@ -1013,26 +1070,8 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     {
       OpenList.push_back(parser.GetParam(idx));
     }
-    return true;
   }
-
-  // If we have no input args, we want to show a Root selector window
-  if (ShowedStartupCfg)
-  {
-    return true;
-  }
-  FAppConfig newConfig;
-  SettingsWindow win(Config, newConfig, false);
-  if (win.ShowModal() == wxID_OK)
-  {
-    Config = newConfig;
-    AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
-    cfg.SetConfig(Config);
-    cfg.Save();
-
-    return true;
-  }
-  return false;
+  return true;
 }
 
 void App::OnObjectLoaded(wxCommandEvent& e)
@@ -1045,6 +1084,26 @@ void App::OnObjectLoaded(wxCommandEvent& e)
       return;
     }
   }
+}
+
+void App::ShowWelcomeBeforeExit(wxCommandEvent&)
+{
+  InitScreen = new WelcomeDialog(nullptr);
+  if (InitScreen->ShowModal() == wxID_OK)
+  {
+    OpenList = InitScreen->GetOpenList();
+    if (OpenList.size())
+    {
+      SendEvent(this, DELAY_LOAD);
+      InitScreen->Destroy();
+      InitScreen = nullptr;
+      return;
+    }
+  }
+  InitScreen->Destroy();
+  InitScreen = nullptr;
+  ShuttingDown = true;
+  ALog::Show(false);
 }
 
 void App::OnRegisterMime(wxCommandEvent&)
@@ -1188,6 +1247,209 @@ void App::OnExitClicked()
   exit(0);
 }
 
+void App::DumpCompositeObjects()
+{
+  wxString dest = wxSaveFileSelector("composite objects map", "txt", "ObjectDump", nullptr);
+  if (dest.empty())
+  {
+    return;
+  }
+
+  ProgressWindow progress(nullptr, "Dumping all objects");
+  progress.SetCurrentProgress(-1);
+  std::mutex failedMutex;
+  bool fatal = false;
+
+  size_t totalSavedGPKs = 0;
+  size_t totalSavedGpkObjects = 0;
+  std::vector<std::pair<std::string, std::string>> failed;
+  std::thread([&] {
+
+    // Update the mappers
+
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating package mapper..."));
+    Sleep(200);
+    try
+    {
+      FPackage::LoadPkgMapper(true);
+    }
+    catch (const std::exception& e)
+    {
+      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+      return;
+    }
+    if (progress.IsCanceled())
+    {
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+      return;
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating composite mapper..."));
+
+    try
+    {
+      FPackage::LoadCompositePackageMapper(true);
+    }
+    catch (const std::exception& e)
+    {
+      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+      return;
+    }
+    if (progress.IsCanceled())
+    {
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+      return;
+    }
+
+    // Run dumping
+
+    std::mutex outMutex;
+    std::ofstream s(dest.ToStdWstring(), std::ios::out | std::ios::binary);
+
+    auto compositeMap = FPackage::GetCompositePackageMap();
+    const int total = (int)compositeMap.size();
+
+    std::mutex idxMut;
+    volatile int idx = 0;
+
+    SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
+
+    PERF_START(CompositeDump);
+    std::vector<FString> pools = FPackageDumpHelper::GetGpkPools();
+    std::for_each(std::execution::par_unseq, pools.begin(), pools.end(), [&](const auto& pool) {
+      std::vector<FString> items = FPackageDumpHelper::GetPoolItems(pool);
+      if (items.empty() || progress.IsCanceled())
+      {
+        return;
+      }
+      FString path = FPackageDumpHelper::GetPoolPath(pool);
+      FReadStream poolStream(path);
+      if (!poolStream.IsGood())
+      {
+        // Add error
+        std::scoped_lock<std::mutex> l(failedMutex);
+        failed.emplace_back(std::make_pair(pool.UTF8(), "Failed to open the package!"));
+        return;
+      }
+      int32 localCount = 0;
+      size_t dumpApproxReserve = 0;
+      std::vector<FPackageDumpHelper::CompositeDumpEntry> localDump;
+      for (const FString& item : items)
+      {
+        FPackageDumpHelper::CompositeDumpEntry& output = localDump.emplace_back();
+        try
+        {
+          FPackageDumpHelper::GetPoolItemInfo(item, poolStream, output);
+        }
+        catch (const std::exception& exc)
+        {
+          std::string errpkg = pool.UTF8() + '.' + item.UTF8();
+          failed.emplace_back(std::make_pair(errpkg, std::string("Failed to dump: ") + exc.what()));
+        }
+        dumpApproxReserve += output.Exports.size() * 60; // Reserve approx. 60 chars per export entry
+        dumpApproxReserve += output.ObjectPath.Size() + 15; // Reserve for objectPath
+        localCount++;
+        if (localCount % 31 == 0)
+        {
+          std::scoped_lock<std::mutex> l(idxMut);
+          idx += localCount;
+          localCount = 0;
+          SendEvent(&progress, UPDATE_PROGRESS, idx);
+          SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format("Saving %d/%d gpks...", idx, total));
+        }
+        if (progress.IsCanceled())
+        {
+          return;
+        }
+      }
+      if (localCount)
+      {
+        std::scoped_lock<std::mutex> l(idxMut);
+        idx += localCount;
+        localCount = 0;
+        SendEvent(&progress, UPDATE_PROGRESS, idx);
+        SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format("Saving %d/%d gpks...", idx, total));
+      }
+      std::string dumpStr;
+      dumpStr.reserve(dumpApproxReserve);
+      for (const FPackageDumpHelper::CompositeDumpEntry& entry : localDump)
+      {
+        dumpStr += "// ObjectPath: " + entry.ObjectPath.UTF8() + '\n';
+        for (const auto& exp : entry.Exports)
+        {
+          dumpStr += exp.ClassName.UTF8();
+          dumpStr += '\t';
+          dumpStr += std::to_string(exp.Index);
+          dumpStr += '\t';
+          dumpStr += exp.Path.UTF8();
+          dumpStr += '\n';
+        }
+      }
+
+      if (dumpStr.size())
+      {
+        std::scoped_lock<std::mutex> l(outMutex);
+        if (s.good())
+        {
+          totalSavedGPKs += localDump.size();
+          totalSavedGpkObjects += std::accumulate(localDump.begin(), localDump.end(), 0, [](size_t sum, const auto& i) { return sum + i.Exports.size(); });
+          try
+          {
+            s.write(dumpStr.data(), dumpStr.size());
+            s.flush();
+          }
+          catch (...)
+          {
+          }
+        }
+        if (!s.good())
+        {
+          fatal = true;
+          if (!progress.IsCanceled())
+          {
+            progress.SetCanceled();
+            wxMessageBox(wxT("Failed to write data to your disk!\nCheck if your drive has free space."), wxS("Error!"), wxICON_ERROR);
+            SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+          }
+          return;
+        }
+      }
+    });
+    PERF_END(CompositeDump);
+    if (fatal)
+    {
+      return;
+    }
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
+  }).detach();
+
+  progress.ShowModal();
+
+  if (fatal)
+  {
+    return;
+  }
+
+  if (failed.size())
+  {
+    std::filesystem::path errDst = dest.ToStdWstring();
+    errDst.replace_extension("errors.txt");
+    std::ofstream s(errDst, std::ios::out | std::ios::binary);
+
+    for (const auto& pair : failed)
+    {
+      s << pair.first << ": " << pair.second << '\n';
+    }
+
+    wxMessageBox(_("Failed to iterate some of the packages!\nSee ") + errDst.filename().wstring() + _(" file for details"), _(""), wxICON_WARNING);
+  }
+  else
+  {
+    wxMessageBox(wxString::Format("Saved %Iu objects from %Iu gpks.", totalSavedGpkObjects, totalSavedGPKs), _("Done!"), wxICON_INFORMATION);
+  }
+}
+
 void App::OnFatalException()
 {
   wxMessageBox("An unknown error occurred. The program will close!", "Error!", wxICON_ERROR);
@@ -1200,4 +1462,5 @@ EVT_COMMAND(wxID_ANY, LOAD_CORE_ERROR, App::OnLoadError)
 EVT_COMMAND(wxID_ANY, OBJECT_LOADED, App::OnObjectLoaded)
 EVT_COMMAND(wxID_ANY, REGISTER_MIME, App::OnRegisterMime)
 EVT_COMMAND(wxID_ANY, UNREGISTER_MIME, App::OnUnregisterMime)
+EVT_COMMAND(wxID_ANY, SHOW_FINAL_INIT, App::ShowWelcomeBeforeExit)
 wxEND_EVENT_TABLE()

@@ -201,19 +201,6 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   wxBoxSizer* bSizer14;
   bSizer14 = new wxBoxSizer(wxHORIZONTAL);
 
-  wxButton* dcTool = new wxButton(m_panel9, ControlElementId::DcTool, wxT("DC Tool"), wxDefaultPosition, wxDefaultSize, 0);
-  dcTool->SetHelpText(wxT("Unpack and export DataCenter.dat files"));
-  bSizer14->Add(dcTool, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-  UpdatesButton = new wxButton(m_panel9, ControlElementId::Update, wxT("Updates"), wxDefaultPosition, wxDefaultSize, 0);
-  UpdatesButton->SetHelpText(wxT("Open GitHub release page to check if a new version is available"));
-  bSizer14->Add(UpdatesButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-  VersionLabel = new wxStaticText(m_panel9, wxID_ANY, GetAppVersion(), wxDefaultPosition, wxDefaultSize, 0);
-  VersionLabel->Wrap(-1);
-  VersionLabel->SetToolTip(wxString::Format("Build: %u", BUILD_NUMBER));
-  bSizer14->Add(VersionLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
   wxPanel* m_panel10;
   m_panel10 = new wxPanel(m_panel9, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   bSizer14->Add(m_panel10, 1, wxEXPAND | wxALL, 5);
@@ -246,6 +233,11 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
     RebuildCacheButton->Enable(false);
     UpdateMappingButton->Enable(false);
   }
+}
+
+void SettingsWindow::OpenUpdateLink()
+{
+  wxLaunchDefaultBrowser(UpdatesUrl);
 }
 
 void SettingsWindow::OnBrowseClicked(wxCommandEvent&)
@@ -432,7 +424,7 @@ void SettingsWindow::OnDcToolClicked(wxCommandEvent&)
 
 void SettingsWindow::OnUpdateClicked(wxCommandEvent&)
 {
-  wxLaunchDefaultBrowser(UpdatesUrl);
+  SettingsWindow::OpenUpdateLink();
 }
 
 void SettingsWindow::OnCancelClicked(wxCommandEvent&)
@@ -442,7 +434,7 @@ void SettingsWindow::OnCancelClicked(wxCommandEvent&)
 
 void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
-  if (IsValidDir(PathField->GetValue()))
+  if (FPackage::IsValidRootDir(PathField->GetValue().ToStdWstring()))
   {
     /* Don't show the annoying message
     if (!WasRegistered && RegisterButton->IsEnabled())
@@ -455,6 +447,10 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
       }
     }*/
     EndModal(wxID_OK);
+  }
+  else
+  {
+    wxMessageBox(wxT("The provided S1Game folder does not exists, or does not have all neccessery *.U files!\nCheck the folder or provide a different path."), wxT("Error!"), wxICON_ERROR);
   }
 }
 

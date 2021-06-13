@@ -249,6 +249,7 @@ void SerializeVersion(FStream& s, FAppConfig& c)
 
 FStream& operator<<(FStream& s, FAppConfig& c)
 {
+  FAppConfig d;
   s << c.Magic;
   if (c.Magic != PACKAGE_MAGIC)
   {
@@ -292,8 +293,14 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.LastPkgSavePath;
         break;
       case FAppConfig::CFG_MaxLastFilePackages:
+      {
         s << c.MaxLastFilePackages;
+        if (c.MaxLastFilePackages != d.MaxLastFilePackages)
+        {
+          c.MaxLastFilePackages = d.MaxLastFilePackages;
+        }
         break;
+      }
       case FAppConfig::CFG_LastFilePackages:
         s << c.LastFilePackages;
         break;

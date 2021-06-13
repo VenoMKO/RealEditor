@@ -6,6 +6,8 @@ class SettingsWindow : public wxDialog {
 public:
   SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos = wxDefaultPosition);
 
+  static void OpenUpdateLink();
+
 private:
   void OnBrowseClicked(wxCommandEvent&);
   void OnPathChanged(wxCommandEvent&);

@@ -18,6 +18,8 @@
 #include <Tera/UMaterial.h>
 #include <Tera/UPrefab.h>
 
+#include <execution>
+
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
@@ -182,20 +184,26 @@ void LevelEditor::LoadPersistentLevel()
     UObject* world = Level->GetOuter();
     auto worldInner = world->GetInner();
 
+    std::vector<ULevelStreaming*> streamedLevels;
     for (UObject* inner : worldInner)
     {
       if (ULevelStreaming* level = Cast<ULevelStreaming>(inner))
       {
-        level->Load();
-        if (level->Level)
-        {
-          osg::Geode* geode = new osg::Geode;
-          geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
-          CreateLevel(level->Level, geode);
-          Root->addChild(geode);
-        }
+        streamedLevels.emplace_back(level);
       }
     }
+    std::mutex osgMutex;
+    std::for_each(std::execution::par_unseq, streamedLevels.begin(), streamedLevels.end(), [&](auto* level) {
+      level->Load();
+      if (level->Level)
+      {
+        osg::Geode* geode = new osg::Geode;
+        geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
+        CreateLevel(level->Level, geode);
+        std::scoped_lock<std::mutex> l(osgMutex);
+        Root->addChild(geode);
+      }
+    });
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
   }).detach();
 

@@ -46,6 +46,7 @@
     <ClCompile Include="App\Windows\ProgressWindow.cpp" />
     <ClCompile Include="App\Windows\SettingsWindow.cpp" />
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
+    <ClCompile Include="App\Windows\WelcomeDialog.cpp" />
     <ClCompile Include="Core\Tera\DC.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Tera\ULightMap.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="App\Windows\ProgressWindow.h" />
     <ClInclude Include="App\Windows\SettingsWindow.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
+    <ClInclude Include="App\Windows\WelcomeDialog.h" />
     <ClInclude Include="Core\Tera\DC.h" />
     <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />

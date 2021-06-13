@@ -103,12 +103,12 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
   {
     tfcCache[item.first] = W2A(item.second.wstring());
   }
-#if CACHE_S1GAME_CONTENTS
-  std::filesystem::path listPath = fspath / PackageListName;
-  FWriteStream s(listPath.wstring());
-  s << dirCache;
-  s << tfcCache;
-#endif
+  // Must copy the dirCache coz it might be freed
+  std::thread([=]() mutable {
+    std::filesystem::path listPath = fspath / PackageListName;
+    FWriteStream s(listPath.wstring());
+    s << dirCache;
+  }).detach();
 }
 
 void EncryptMapper(const FString& decrypted, std::vector<char>& encrypted)
@@ -299,15 +299,42 @@ FString FPackage::GetObjectCompositePath(const FString& path)
   return FString();
 }
 
-void FPackage::UpdateDirCache()
+void FPackage::UpdateDirCache(const FString& s1game)
 {
-  LogI("Building directory cache: \"%s\"", RootDir.C_str());
+  FString dir = RootDir;
+  if (s1game.Size())
+  {
+    dir = s1game;
+  }
+  LogI("Building directory cache: \"%s\"", dir.C_str());
+  if (dir.Empty())
+  {
+    LogE("Can't build directory cache. The path is empty!");
+    return;
+  }
   {
     std::scoped_lock<std::mutex> l(MissingPackagesMutex);
     MissingPackages.clear();
   }
-  BuildPackageList(RootDir, DirCache, TfcCache);
+  BuildPackageList(dir, DirCache, TfcCache);
   LogI("Done. Found %ld packages", DirCache.size());
+}
+
+std::vector<FString> FPackage::GetCachedDirCache(const FString& s1game)
+{
+  FString dir = RootDir;
+  if (s1game.Size())
+  {
+    dir = s1game;
+  }
+  std::filesystem::path listPath = std::filesystem::path(dir.WString()) / PackageListName;
+  FReadStream s(listPath.wstring());
+  std::vector<FString> dirCache;
+  if (s.IsGood())
+  {
+    s << dirCache;
+  }
+  return dirCache;
 }
 
 void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author)
@@ -531,6 +558,30 @@ void FPackage::BuildClassInheritance()
 MTransStream& FPackage::GetTransactionStream()
 {
   return TranscationStream;
+}
+
+bool FPackage::IsValidRootDir(const FString& s1game)
+{
+  if (s1game.Empty() || !std::filesystem::exists(s1game.WString()))
+  {
+    return false;
+  }
+  if (s1game.Filename(false) != "S1Game")
+  {
+    LogE("Error! Folder name \"%s\" does not match the \"S1Game\"", s1game.Filename(false).UTF8());
+    return false;
+  }
+  const char* classPackages[] = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
+  std::filesystem::path root = s1game.WString();
+  for (const char* name : classPackages)
+  {
+    if (!std::filesystem::exists(root / "CookedPC" / name))
+    {
+      LogE("Error! %s was not found in the S1Game folder.", name);
+      return false;
+    }
+  }
+  return true;
 }
 
 void FPackage::CleanCacheDir()

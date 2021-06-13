@@ -185,7 +185,11 @@ void PackageWindow::OnCloseWindow(wxCloseEvent& event)
 
 PackageWindow::~PackageWindow()
 {
-  FPackage::UnloadPackage(Package);
+  std::thread([=] {
+    // a fully loaded GMP's dtor can take quite some time. Run it in a separate thread.
+    // FIXME: might potentially crash if the main thread dies before this one
+    FPackage::UnloadPackage(Package);
+  }).detach();
   delete FileHistory;
   delete ImageList;
 }
@@ -312,13 +316,13 @@ void PackageWindow::OnRecentClicked(wxCommandEvent& e)
   {
     if (App::GetSharedApp()->OpenNamedPackage(path.Mid(10, path.Find('.') - 10)))
     {
-      App::SavePackageOpenPath(path);
+      App::AddRecentFile(path);
     }
     return;
   }
   if (App::GetSharedApp()->OpenPackage(path))
   {
-    App::SavePackageOpenPath(path);
+    App::AddRecentFile(path);
   }
 }
 
@@ -1259,204 +1263,7 @@ void PackageWindow::OnEncryptClicked(wxCommandEvent&)
 
 void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 {
-  wxString dest = wxSaveFileSelector("composite objects map", "txt", "ObjectDump", this);
-  if (dest.empty())
-  {
-    return;
-  }
-
-  ProgressWindow progress(this, "Dumping all objects");
-  progress.SetCurrentProgress(-1);
-  std::mutex failedMutex;
-  bool fatal = false;
-
-  size_t totalSavedGPKs = 0;
-  size_t totalSavedGpkObjects = 0;
-  std::vector<std::pair<std::string, std::string>> failed;
-  std::thread([&] {
-
-    // Update the mappers
-    
-    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating package mapper..."));
-    Sleep(200);
-    try
-    {
-      FPackage::LoadPkgMapper(true);
-    }
-    catch (const std::exception& e)
-    {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
-      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-      return;
-    }
-    if (progress.IsCanceled())
-    {
-      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-      return;
-    }
-    SendEvent(&progress, UPDATE_PROGRESS_DESC, wxT("Updating composite mapper..."));
-
-    try
-    {
-      FPackage::LoadCompositePackageMapper(true);
-    }
-    catch (const std::exception& e)
-    {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
-      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-      return;
-    }
-    if (progress.IsCanceled())
-    {
-      SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-      return;
-    }
-
-    // Run dumping
-
-    std::mutex outMutex;
-    std::ofstream s(dest.ToStdWstring(), std::ios::out | std::ios::binary);
-    
-    auto compositeMap = FPackage::GetCompositePackageMap();
-    const int total = (int)compositeMap.size();
-
-    std::mutex idxMut;
-    volatile int idx = 0;
-    
-    SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
-    
-    PERF_START(CompositeDump);
-    std::vector<FString> pools = FPackageDumpHelper::GetGpkPools();
-    std::for_each(std::execution::par_unseq, pools.begin(), pools.end(),[&](const auto& pool) {
-      std::vector<FString> items = FPackageDumpHelper::GetPoolItems(pool);
-      if (items.empty() || progress.IsCanceled())
-      {
-        return;
-      }
-      FString path = FPackageDumpHelper::GetPoolPath(pool);
-      FReadStream poolStream(path);
-      if (!poolStream.IsGood())
-      {
-        // Add error
-        std::scoped_lock<std::mutex> l(failedMutex);
-        failed.emplace_back(std::make_pair(pool.UTF8(), "Failed to open the package!"));
-        return;
-      }
-      int32 localCount = 0;
-      size_t dumpApproxReserve = 0;
-      std::vector<FPackageDumpHelper::CompositeDumpEntry> localDump;
-      for (const FString& item : items)
-      {
-        FPackageDumpHelper::CompositeDumpEntry& output = localDump.emplace_back();
-        try
-        {
-          FPackageDumpHelper::GetPoolItemInfo(item, poolStream, output);
-        }
-        catch (const std::exception& exc)
-        {
-          std::string errpkg = pool.UTF8() + '.' + item.UTF8();
-          failed.emplace_back(std::make_pair(errpkg, std::string("Failed to dump: ") + exc.what()));
-        }
-        dumpApproxReserve += output.Exports.size() * 60; // Reserve approx. 60 chars per export entry
-        dumpApproxReserve += output.ObjectPath.Size() + 15; // Reserve for objectPath
-        localCount++;
-        if (localCount % 31 == 0)
-        {
-          std::scoped_lock<std::mutex> l(idxMut);
-          idx += localCount;
-          localCount = 0;
-          SendEvent(&progress, UPDATE_PROGRESS, idx);
-          SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format("Saving %d/%d gpks...", idx, total));
-        }
-        if (progress.IsCanceled())
-        {
-          return;
-        }
-      }
-      if (localCount)
-      {
-        std::scoped_lock<std::mutex> l(idxMut);
-        idx += localCount;
-        localCount = 0;
-        SendEvent(&progress, UPDATE_PROGRESS, idx);
-        SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString::Format("Saving %d/%d gpks...", idx, total));
-      }
-      std::string dumpStr;
-      dumpStr.reserve(dumpApproxReserve);
-      for (const FPackageDumpHelper::CompositeDumpEntry& entry : localDump)
-      {
-        dumpStr += "// ObjectPath: " + entry.ObjectPath.UTF8() + '\n';
-        for (const auto& exp : entry.Exports)
-        {
-          dumpStr += exp.ClassName.UTF8();
-          dumpStr += '\t';
-          dumpStr += std::to_string(exp.Index);
-          dumpStr += '\t';
-          dumpStr += exp.Path.UTF8();
-          dumpStr += '\n';
-        }
-      }
-
-      if (dumpStr.size())
-      {
-        std::scoped_lock<std::mutex> l(outMutex);
-        if (s.good())
-        {
-          totalSavedGPKs += localDump.size();
-          totalSavedGpkObjects += std::accumulate(localDump.begin(), localDump.end(), 0, [](size_t sum, const auto& i) { return sum + i.Exports.size(); });
-          try
-          {
-            s.write(dumpStr.data(), dumpStr.size());
-            s.flush();
-          }
-          catch (...)
-          {}
-        }
-        if (!s.good())
-        {
-          fatal = true;
-          if (!progress.IsCanceled())
-          {
-            progress.SetCanceled();
-            wxMessageBox(wxT("Failed to write data to your disk!\nCheck if your drive has free space."), wxS("Error!"), wxICON_ERROR);
-            SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-          }
-          return;
-        }
-      }
-    });
-    PERF_END(CompositeDump);
-    if (fatal)
-    {
-      return;
-    }
-    SendEvent(&progress, UPDATE_PROGRESS_FINISH);
-  }).detach();
-
-  progress.ShowModal();
-
-  if (fatal)
-  {
-    return;
-  }
-
-  if (failed.size())
-  {
-    std::filesystem::path errDst = dest.ToStdWstring();
-    errDst.replace_extension("errors.txt");
-    std::ofstream s(errDst, std::ios::out | std::ios::binary);
-
-    for (const auto& pair : failed)
-    {
-      s << pair.first << ": " << pair.second << '\n';
-    }
-
-    wxMessageBox(_("Failed to iterate some of the packages!\nSee ") + errDst.filename().wstring() + _(" file for details"), _(""), wxICON_WARNING);
-  }
-  else
-  {
-    wxMessageBox(wxString::Format("Saved %Iu objects from %Iu gpks.", totalSavedGpkObjects, totalSavedGPKs), _("Done!"), wxICON_INFORMATION);
-  }
+  App::GetSharedApp()->DumpCompositeObjects();
 }
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)
