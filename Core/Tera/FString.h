@@ -153,51 +153,49 @@ public:
 
   inline std::wstring FilenameWString(bool extension = true) const
   {
-    if (extension)
-    {
-      size_t idx = 0;
-      if ((idx = Data.find_last_of('\\')) != std::string::npos)
-      {
-        return A2W(Data.substr(idx + 1));
-      }
-    }
-    else
-    {
-      size_t idx = Data.find_last_of('\\');
-      if (idx != std::string::npos)
-      {
-        idx++;
-        size_t end = Data.find_last_of('.');
-        if (end != std::string::npos)
-        {
-          return A2W(Data.substr(idx, end - idx));
-        }
-      }
-    }
-    return A2W(Data);
+    return A2W(FilenameString(extension));
   }
 
   inline std::string FilenameString(bool extension = true) const
   {
     if (extension)
     {
-      size_t idx = 0;
-      if ((idx = Data.find_last_of('\\')) != std::string::npos)
+      size_t end = Data.size() - 1;
+      if (Data[end] == '\0' || Data[end] == '\\')
       {
-        return Data.substr(idx + 1);
+        end--;
+      }
+      if (Data[end] == '\\' || Data[end] == '\0')
+      {
+        end--;
+      }
+      size_t idx = Data.rfind('\\', end);
+      if (idx != std::string::npos)
+      {
+        return Data.substr(idx + 1, end - idx + 1);
       }
     }
     else
     {
-      size_t idx = Data.find_last_of('\\');
+      size_t end = Data.size() - 1;
+      if (Data[end] == '\0' || Data[end] == '\\')
+      {
+        end--;
+      }
+      if (Data[end] == '\\' || Data[end] == '\0')
+      {
+        end--;
+      }
+      size_t idx = Data.rfind('\\', end);
       if (idx != std::string::npos)
       {
         idx++;
-        size_t end = Data.find_last_of('.');
-        if (end != std::string::npos)
+        size_t dend = Data.find_last_of('.', end);
+        if (dend != std::string::npos && dend > idx)
         {
-          return Data.substr(idx, end - idx);
+          return Data.substr(idx, dend - idx);
         }
+        return Data.substr(idx, end - idx + 1);
       }
     }
     return Data;
