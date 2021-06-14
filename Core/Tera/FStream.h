@@ -7,6 +7,8 @@
 #include <functional>
 #include <algorithm>
 
+#define IF_BUFFER_SIZE 1024 * 1024
+
 // Abstract stream to read and write data
 class FStream {
 public:
@@ -300,46 +302,47 @@ public:
   FReadStream(const std::string& path)
     : FStream()
     , Path(path)
-    , Stream(A2W(path), std::ios::binary)
   {
+    InitStream(Path.WString());
     Reading = true;
   }
 
   FReadStream(const std::wstring& path)
     : FStream()
     , Path(W2A(path))
-    , Stream(path, std::ios::binary)
   {
+    InitStream(Path.WString());
     Reading = true;
   }
 
   FReadStream(const FString& path)
     : FStream()
     , Path(path)
-    , Stream(path.WString(), std::ios::binary)
   {
+    InitStream(Path.WString());
     Reading = true;
   }
 
   FReadStream(const FReadStream& s)
     : FStream()
     , Path(s.Path)
-    , Stream(s.Path.WString(), std::ios::in | std::ios::binary)
   {
+    InitStream(Path.WString());
     Reading = true;
   }
 
   FReadStream(FReadStream* s)
     : FStream()
     , Path(s->Path)
-    , Stream(A2W(s->Path), std::ios::in | std::ios::binary)
   {
+    InitStream(Path.WString());
     Reading = true;
     Stream.seekg(s->Stream.tellg());
   }
 
   ~FReadStream()
   {
+    free(IfBuffer);
     Stream.close();
   }
 
@@ -391,10 +394,27 @@ public:
   {
     Stream.close();
   }
+protected:
+  void InitStream(const std::wstring& path)
+  {
+    InitBuffer(IF_BUFFER_SIZE);
+    Stream.rdbuf()->pubsetbuf(IfBuffer, IF_BUFFER_SIZE);
+    Stream.open(path, std::ios::in | std::ios::binary);
+  }
+
+  void InitBuffer(size_t size)
+  {
+    if (IfBuffer)
+    {
+      free(IfBuffer);
+    }
+    IfBuffer = (char*)malloc(size);
+  }
 
 protected:
   FString Path;
   std::ifstream Stream;
+  char* IfBuffer = nullptr;
 };
 
 class FWriteStream : public FStream {
