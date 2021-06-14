@@ -18,17 +18,27 @@ public:
 
   virtual ~FObjectResource() = default;
 
-  virtual FString GetObjectName() const
+  virtual FName GetObjectName() const
+  {
+    return ObjectName;
+  }
+
+  virtual FString GetClassNameString() const
+  {
+    return GetClassName().String();
+  }
+
+  virtual FString GetObjectNameString() const
   {
     return ObjectName.String();
   }
 
   inline FString GetFullObjectName() const
   {
-    return GetClassName() + " " + GetObjectPath();
+    return GetClassNameString() + " " + GetObjectPath();
   }
 
-  virtual FString GetClassName() const = 0;
+  virtual FName GetClassName() const = 0;
 
   FObjectResource* GetOuter() const;
 
@@ -55,11 +65,14 @@ public:
     , ClassName(p)
   {}
 
-  FString GetClassName() const override
+  FName GetClassName() const override
   {
-    FString name;
-    ClassName.GetString(name);
-    return name;
+    return ClassName;
+  }
+
+  FString GetClassNameString() const override
+  {
+    return ClassName.String();
   }
 
   FString GetPackageName() const;
@@ -80,7 +93,7 @@ public:
 
   friend FStream& operator<<(FStream& s, FObjectExport& e);
 
-  FString GetClassName() const override;
+  FName GetClassName() const override;
 
   PACKAGE_INDEX ClassIndex = 0;
   PACKAGE_INDEX SuperIndex = 0;
@@ -105,14 +118,14 @@ class VObjectExport : public FObjectExport {
 public:
   VObjectExport(FPackage* package, const char* objName, const char* className);
 
-  inline FString GetObjectName() const override
-  {
-    return VObjectName;
-  }
-
-  inline FString GetClassName() const override
+  inline FName GetClassName() const override
   {
     return VObjectClassName;
+  }
+
+  inline FString GetClassNameString() const override
+  {
+    return VObjectClassName.String();
   }
 
   FString GetObjectPath() const override;
@@ -132,6 +145,6 @@ public:
 
 private:
   FString VObjectName;
-  FString VObjectClassName;
+  VName   VObjectClassName;
   UObject* VObject = nullptr;
 };

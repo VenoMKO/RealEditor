@@ -2,6 +2,18 @@
 #include "FPackage.h"
 #include "FStream.h"
 
+std::vector<FNameEntry> GVirtualNames;
+
+bool FNameEntry::operator==(const FString& name) const
+{
+  return String == name;
+}
+
+bool FNameEntry::operator==(const char* name) const
+{
+  return String == name;
+}
+
 FStream& operator<<(FStream& s, FNameEntry& e)
 {
   s << e.String;
@@ -11,32 +23,40 @@ FStream& operator<<(FStream& s, FNameEntry& e)
 
 bool FName::operator==(const FName& n) const
 {
-  return String().ToUpper() == n.String().ToUpper();
+  if (Number != n.Number)
+  {
+    return false;
+  }
+  if (Package == n.Package)
+  {
+    return n.Index == Index;
+  }
+  return GetString() == n.GetString();
 }
 
 bool FName::operator==(const FString& s) const
 {
-  return String().ToUpper() == s.ToUpper();
+  return String(true) == s;
 }
 
 bool FName::operator==(const char* s) const
 {
-  return String() == s;
+  return String(true) == s;
 }
 
 bool FName::operator!=(const FName& n) const
 {
-  return String().ToUpper() != n.String().ToUpper();
+  return !operator==(n);
 }
 
 bool FName::operator!=(const FString& s) const
 {
-  return String().ToUpper() != s.ToUpper();
+  return !operator==(s);
 }
 
 bool FName::operator!=(const char* s) const
 {
-  return String() != s;
+  return !operator==(s);
 }
 
 bool FName::operator<(const FName& n) const
@@ -53,18 +73,27 @@ FString FName::String(bool number) const
 
 void FName::GetString(FString& str, bool number) const
 {
-  if (Index == INDEX_NONE)
+  if (Index < 0)
   {
-    str = NAME_None;
+    GVirtualNames[-Index - 1].GetString(str);
   }
   else
   {
-    Package->GetIndexedName(Index, str);
-    if (Number && number)
-    {
-      str += "_" + std::to_string(Number - 1);
-    }
+    Package->GetIndexedNameString(Index, str);
   }
+  if (Number && number)
+  {
+    str += "_" + std::to_string(Number - 1);
+  }
+}
+
+const FString& FName::GetString() const
+{
+  if (Index < 0)
+  {
+    return GVirtualNames[-Index - 1].GetString();
+  }
+  return Package->GetIndexedNameEntry(Index).GetString();
 }
 
 void FName::SetString(const FString& str)
@@ -74,4 +103,66 @@ void FName::SetString(const FString& str)
 #ifdef _DEBUG
   Value = String();
 #endif
+}
+
+VName::VName(const FString& name, int32 number)
+{
+  NAME_INDEX found = INDEX_NONE;
+  for (NAME_INDEX idx = 0; idx < GVirtualNames.size(); ++idx)
+  {
+    if (GVirtualNames[idx] == name)
+    {
+      found = idx;
+      break;
+    }
+  }
+  if (found == INDEX_NONE)
+  {
+    found = (NAME_INDEX)GVirtualNames.size();
+    GVirtualNames.emplace_back(name);
+  }
+  Index = found;
+  Number = number;
+}
+
+VName::VName(const char* name, int32 number)
+{
+  NAME_INDEX found = INDEX_NONE;
+  for (NAME_INDEX idx = 0; idx < GVirtualNames.size(); ++idx)
+  {
+    if (GVirtualNames[idx].GetString() == name)
+    {
+      found = -idx - 1;
+      break;
+    }
+  }
+  if (found == INDEX_NONE)
+  {
+    GVirtualNames.emplace_back(name);
+    found = -(NAME_INDEX)GVirtualNames.size();
+  }
+  Index = found;
+  Number = number;
+}
+
+VName::VName(const VName& name)
+{
+  Index = name.Index;
+  Number = name.Number;
+}
+
+FString VName::String(bool number) const
+{
+  FString result;
+  GetString(result, number);
+  return result;
+}
+
+void VName::GetString(FString& output, bool number) const
+{
+  output = GVirtualNames[-Index - 1].GetString();
+  if (number && Number)
+  {
+    output += "_" + std::to_string(Number);
+  }
 }

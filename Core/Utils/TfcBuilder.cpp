@@ -43,7 +43,7 @@ bool TfcBuilder::Compile()
     }
     else
     {
-      LogW("Failed to calculate texture hash: %s", tex->GetObjectName().UTF8().c_str());
+      LogW("Failed to calculate texture hash: %s", tex->GetObjectNameString().UTF8().c_str());
     }
   }
 

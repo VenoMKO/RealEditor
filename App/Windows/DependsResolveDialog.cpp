@@ -101,7 +101,7 @@ public:
   {
     if (!col)
     {
-      wxString name = Objects[row].Source->GetObjectName().WString();
+      wxString name = Objects[row].Source->GetObjectNameString().WString();
       variant = name;
     }
     else if (col == 1)
@@ -119,7 +119,7 @@ public:
         }
         else
         {
-          name = Objects[row].Destination->GetObjectName().WString();
+          name = Objects[row].Destination->GetObjectNameString().WString();
         }
       }
       variant = name;
@@ -131,7 +131,7 @@ public:
     DependsItem* dep = (DependsItem*)item.GetID();
     if (!col)
     {
-      wxString name = dep->Source->GetObjectName().WString();
+      wxString name = dep->Source->GetObjectNameString().WString();
       variant = name;
     }
     else if (col == 1)
@@ -149,7 +149,7 @@ public:
         }
         else
         {
-          name = dep->Destination->GetObjectName().WString();
+          name = dep->Destination->GetObjectNameString().WString();
         }
       }
       variant = name;
@@ -316,8 +316,8 @@ void DependsResolveDialog::OnEditClicked(wxCommandEvent& event)
     }
     else
     {
-      filter.emplace_back(item->Source->GetClassName());
-      title = wxT("Select a ") + item->Source->GetClassName().WString() + wxT(" object...");
+      filter.emplace_back(item->Source->GetClassNameString());
+      title = wxT("Select a ") + item->Source->GetClassNameString().WString() + wxT(" object...");
     }
     ObjectPicker dlg(this, title, false, DestinationPackage->Ref(), DestinationPackage->GetObjectIndex(item->Destination), filter);
     dlg.SetAllowNewPackage(allowNewFolders);

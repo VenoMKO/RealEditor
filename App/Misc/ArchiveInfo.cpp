@@ -477,7 +477,7 @@ void ArchiveInfoView::OnNameContextMenu(wxDataViewEvent& e)
   FString name;
   try
   {
-    Package->GetIndexedName(idx, name);
+    Package->GetIndexedNameString(idx, name);
   }
   catch (...)
   {

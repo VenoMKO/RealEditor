@@ -27,7 +27,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 
   std::function<void(FObjectExport*, std::vector<FObjectExport*>&)> rCollectExports;
   rCollectExports = [&](FObjectExport* exp, std::vector<FObjectExport*>& output) {
-    FString className = exp->GetClassName();
+    FString className = exp->GetClassNameString();
     if (!exp)
     {
       return;
@@ -94,7 +94,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
     return;
   }
 
-  const std::filesystem::path root = std::filesystem::path(dlg.GetPath().ToStdWstring()) / (rootExport ? rootExport->GetObjectName().WString() : Package->GetPackageName().WString());
+  const std::filesystem::path root = std::filesystem::path(dlg.GetPath().ToStdWstring()) / (rootExport ? rootExport->GetObjectNameString().WString() : Package->GetPackageName().WString());
   std::vector<FObjectExport*> failedExports;
 
   ProgressWindow progress(this, wxT("Exporting..."));
@@ -111,13 +111,13 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       }
       FObjectExport* exp = exports[idx];
       SendEvent(&progress, UPDATE_PROGRESS, idx);
-      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Exporting: ") + exp->GetObjectName().WString());
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Exporting: ") + exp->GetObjectNameString().WString());
       std::filesystem::path dest(root);
       std::vector<std::wstring> pathComponents;
       FObjectExport* outer = exp->Outer;
       while (outer && outer != rootExport)
       {
-        pathComponents.insert(pathComponents.begin(), outer->GetObjectName().WString());
+        pathComponents.insert(pathComponents.begin(), outer->GetObjectNameString().WString());
         outer = outer->Outer;
       }
       for (const auto& component : pathComponents)
@@ -131,12 +131,12 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         if (!std::filesystem::create_directories(dest, err) && err)
         {
           failedExports.push_back(exp);
-          LogE("Failed to create a directory to export %s", exp->GetObjectName().UTF8().c_str());
+          LogE("Failed to create a directory to export %s", exp->GetObjectNameString().UTF8().c_str());
           continue;
         }
       }
 
-      dest /= exp->GetObjectName().WString();
+      dest /= exp->GetObjectNameString().WString();
 
       UObject* obj = nullptr;
       try
@@ -154,14 +154,14 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       catch (...)
       {
         failedExports.push_back(exp);
-        LogE("Failed to load %s", exp->GetObjectName().UTF8().c_str());
+        LogE("Failed to load %s", exp->GetObjectNameString().UTF8().c_str());
         continue;
       }
 
       if (!obj)
       {
         failedExports.push_back(exp);
-        LogE("Failed to load %s", exp->GetObjectName().UTF8().c_str());
+        LogE("Failed to load %s", exp->GetObjectNameString().UTF8().c_str());
         continue;
       }
 
@@ -171,7 +171,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         if (!texture)
         {
           failedExports.push_back(exp);
-          LogE("%s is not a texture", exp->GetObjectName().UTF8().c_str());
+          LogE("%s is not a texture", exp->GetObjectNameString().UTF8().c_str());
           continue;
         }
         FTexture2DMipMap* mip = nullptr;
@@ -217,7 +217,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         else
         {
           failedExports.push_back(exp);
-          LogE("%s has unsupported pixel format!", exp->GetObjectName().UTF8().c_str());
+          LogE("%s has unsupported pixel format!", exp->GetObjectNameString().UTF8().c_str());
           continue;
         }
 
@@ -232,7 +232,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           if (!processor.Process())
           {
             failedExports.push_back(exp);
-            LogE("Failed to export %s: %s", exp->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
+            LogE("Failed to export %s: %s", exp->GetObjectNameString().UTF8().c_str(), processor.GetError().c_str());
             continue;
           }
           count++;
@@ -240,7 +240,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         catch (...)
         {
           failedExports.push_back(exp);
-          LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+          LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
           continue;
         }
         continue;
@@ -259,7 +259,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         else
         {
           failedExports.push_back(exp);
-          LogE("%s is not a SoundNodeWave!", exp->GetObjectName().UTF8().c_str());
+          LogE("%s is not a SoundNodeWave!", exp->GetObjectNameString().UTF8().c_str());
         }
         continue;
       }
@@ -273,7 +273,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           if (!tree->GetSptData(&sptData, &sptDataSize, false) || !sptDataSize || !sptData)
           {
             failedExports.push_back(exp);
-            LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+            LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
             continue;
           }
           std::ofstream s(dest, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -283,7 +283,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         }
         else
         {
-          LogE("F%s is not a SpeedTree!", exp->GetObjectName().UTF8().c_str());
+          LogE("F%s is not a SpeedTree!", exp->GetObjectNameString().UTF8().c_str());
           failedExports.push_back(exp);
         }
         continue;
@@ -303,7 +303,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
             if (!utils.ExportStaticMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
-              LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+              LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
               continue;
             }
             count++;
@@ -311,7 +311,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           else
           {
             failedExports.push_back(exp);
-            LogE("%s is not a StaticMesh!", exp->GetObjectName().UTF8().c_str());
+            LogE("%s is not a StaticMesh!", exp->GetObjectNameString().UTF8().c_str());
           }
         }
         else
@@ -323,7 +323,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
             if (!utils.ExportSkeletalMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
-              LogE("Failed to export %s!", exp->GetObjectName().UTF8().c_str());
+              LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
               continue;
             }
             count++;
@@ -331,7 +331,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           else
           {
             failedExports.push_back(exp);
-            LogE("%s is not a SkeletalMesh!", exp->GetObjectName().UTF8().c_str());
+            LogE("%s is not a SkeletalMesh!", exp->GetObjectNameString().UTF8().c_str());
           }
         }
         continue;
@@ -357,9 +357,9 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
     {
       if (failed)
       {
-        logMsg += failed->GetObjectName().UTF8();
+        logMsg += failed->GetObjectNameString().UTF8();
         logMsg += wxT("(");
-        logMsg += failed->GetClassName().UTF8();
+        logMsg += failed->GetClassNameString().UTF8();
         logMsg += wxT("),");
       }
     }

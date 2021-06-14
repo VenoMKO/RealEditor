@@ -112,7 +112,7 @@ FStream& FStream::SerializeNameIndex(FName& n)
   else
   {
     idx = Package->GetNameIndex(n.String(false), false);
-    DBreakIf(idx == INDEX_NONE);
+    DBreakIf(idx < 0);
     (*this) << idx;
   }
   return *this;
@@ -585,8 +585,8 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
   UObject* newRoot = nullptr;
   if (!obj || obj->GetClassName() == NAME_Package)
   {
-    FString name = CustomRootName.Empty() ? Root->GetObjectName() : FString(CustomRootName.WString());
-    FObjectExport* exp = DestPackage->AddExport(name, Root->GetClassName(), obj ? obj->GetExportObject() : nullptr);
+    FString name = CustomRootName.Empty() ? Root->GetObjectNameString() : FString(CustomRootName.WString());
+    FObjectExport* exp = DestPackage->AddExport(name, Root->GetClassNameString(), obj ? obj->GetExportObject() : nullptr);
     newRoot = DestPackage->GetObject(exp, false);
   }
   else
@@ -640,7 +640,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
         continue;
       }
       // TODO: composite packages don't work well with imports. Need to pull imports to the DestPackages' exports
-      ErrorText = FString::Sprintf("Can't copy the import object: %s", dep->GetObjectName().UTF8().c_str());
+      ErrorText = FString::Sprintf("Can't copy the import object: %s", dep->GetObjectNameString().UTF8().c_str());
       return false;
       /*
       FObjectImport* imp = nullptr;
@@ -658,7 +658,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
         map[dep] = mapped;
         continue;
       }
-      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectName(), dep->GetClassName(), mapped->GetExportObject());
+      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), mapped->GetExportObject());
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
       continue;
@@ -666,7 +666,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     if (!dep->GetOuter())
     {
       // Attach to the root export
-      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectName(), dep->GetClassName(), nullptr);
+      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), nullptr);
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
       continue;
@@ -674,7 +674,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     if (dep->GetOuter() == Root)
     {
       // Root object hosts the dep object
-      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectName(), dep->GetClassName(), map[Root]->GetExportObject());
+      FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), map[Root]->GetExportObject());
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
       continue;
@@ -691,11 +691,11 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     for (UObject* parent : missing)
     {
       DBreakIf(!map[parent->GetOuter()]);
-      FObjectExport* exp = DestPackage->AddExport(parent->GetObjectName(), parent->GetClassName(), map[parent->GetOuter()]->GetExportObject());
+      FObjectExport* exp = DestPackage->AddExport(parent->GetObjectNameString(), parent->GetClassNameString(), map[parent->GetOuter()]->GetExportObject());
       DBreakIf(!exp);
       map[parent] = DestPackage->GetObject(exp, false);
     }
-    FObjectExport* exp = DestPackage->AddExport(dep->GetObjectName(), dep->GetClassName(), map[dep->GetOuter()]->GetExportObject());
+    FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), map[dep->GetOuter()]->GetExportObject());
     DBreakIf(!exp);
     map[dep] = DestPackage->GetObject(exp, false);
   }
@@ -819,11 +819,11 @@ UObject* MTransStream::FindDestinationObject(UObject* obj) const
     return nullptr;
   }
   std::vector<FObjectExport*> exports = DestPackage->GetAllExports();
-  const FString testName = obj->GetObjectName().ToUpper();
-  const FString testClass = obj->GetClassName();
+  const FString testName = obj->GetObjectNameString().ToUpper();
+  const FString testClass = obj->GetClassNameString();
   for (FObjectExport* exp : exports)
   {
-    if ((exp->GetObjectName().ToUpper().StartWith(testName) || testName.StartWith(exp->GetObjectName().ToUpper())) && exp->GetClassName() == testClass)
+    if ((exp->GetObjectNameString().ToUpper().StartWith(testName) || testName.StartWith(exp->GetObjectNameString().ToUpper())) && exp->GetClassName() == testClass)
     {
       if (UObject* result = DestPackage->GetObject(exp))
       {
@@ -835,7 +835,7 @@ UObject* MTransStream::FindDestinationObject(UObject* obj) const
   std::vector<FObjectImport*> imports = DestPackage->GetAllImports();
   for (FObjectImport* imp : imports)
   {
-    if ((imp->GetObjectName().ToUpper().StartWith(testName) || testName.StartWith(imp->GetObjectName().ToUpper())) && imp->GetClassName() == testClass)
+    if ((imp->GetObjectNameString().ToUpper().StartWith(testName) || testName.StartWith(imp->GetObjectNameString().ToUpper())) && imp->GetClassNameString() == testClass)
     {
       if (UObject* result = DestPackage->GetObject(imp))
       {
@@ -859,7 +859,7 @@ bool MTransStream::SerializeObject(UObject* obj, bool recursiv)
   }
   catch (const std::exception& e)
   {
-    ErrorText = FString::Sprintf("Failed to load the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
+    ErrorText = FString::Sprintf("Failed to load the object \"%s\": %s", obj->GetObjectNameString().UTF8().c_str(), e.what());
     return false;
   }
   try
@@ -881,13 +881,13 @@ bool MTransStream::SerializeObject(UObject* obj, bool recursiv)
       }
     }
     
-    if (std::find(Names.begin(), Names.end(), obj->GetObjectName()) == Names.end())
+    if (std::find(Names.begin(), Names.end(), obj->GetObjectNameString()) == Names.end())
     {
-      Names.emplace_back(obj->GetObjectName());
+      Names.emplace_back(obj->GetObjectNameString());
     }
-    if (std::find(Names.begin(), Names.end(), obj->GetClassName()) == Names.end())
+    if (std::find(Names.begin(), Names.end(), obj->GetClassNameString()) == Names.end())
     {
-      Names.emplace_back(obj->GetClassName());
+      Names.emplace_back(obj->GetClassNameString());
     }
     obj->SetTransacting(true);
     obj->Serialize(*this);
@@ -897,16 +897,16 @@ bool MTransStream::SerializeObject(UObject* obj, bool recursiv)
   {
     obj->SetTransacting(false);
     Good = false;
-    ErrorText = FString::Sprintf("Failed to copy the object \"%s\": %s", obj->GetObjectName().UTF8().c_str(), e.what());
+    ErrorText = FString::Sprintf("Failed to copy the object \"%s\": %s", obj->GetObjectNameString().UTF8().c_str(), e.what());
     return false;
   }
   {
-    FString name = obj->GetObjectName();
+    FString name = obj->GetObjectNameString();
     if (std::find(Names.begin(), Names.end(), name) == Names.end())
     {
       Names.emplace_back(name);
     }
-    name = obj->GetClassName();
+    name = obj->GetClassNameString();
     if (std::find(Names.begin(), Names.end(), name) == Names.end())
     {
       Names.emplace_back(name);

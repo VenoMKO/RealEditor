@@ -203,7 +203,7 @@ bool BulkImportOperation::Execute(ProgressWindow& progress)
           }
           catch (...)
           {
-            AddError("TFC", wxString::Format("Failed to add texture %s", exp->GetObjectName().UTF8().c_str()));
+            AddError("TFC", wxString::Format("Failed to add texture %s", exp->GetObjectNameString().UTF8().c_str()));
           }
         }
       }

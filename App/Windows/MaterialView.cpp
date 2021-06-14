@@ -421,7 +421,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	dc.SetPen(defaultPen);
 	dc.SetBrush(panelBrush);
 
-	int matWidth = std::max<int>(dc.GetTextExtent(Material->GetObjectName().WString()).x, 150);
+	int matWidth = std::max<int>(dc.GetTextExtent(Material->GetObjectNameString().WString()).x, 150);
 	for (FExpressionInput& input : MaterialInputs)
 	{
 		wxSize extent = dc.GetTextExtent(input.Title.WString());
@@ -432,11 +432,11 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 	}
 	
 	int posX = CanvasOffsetX;
-	int posY = CanvasOffsetY + dc.GetTextExtent(Material->GetObjectName().WString()).y + 4;
+	int posY = CanvasOffsetY + dc.GetTextExtent(Material->GetObjectNameString().WString()).y + 4;
 	dc.SetPen(wxPen(wxColor(0, 0, 0), 2));
 	dc.SetBrush(wxBrush(wxColor(120, 120, 120)));
 	dc.DrawRectangle(wxPoint(posX, CanvasOffsetY), wxSize(matWidth + 4, posY - CanvasOffsetY));
-	drawLabelFunc(Material->GetObjectName().WString(), wxPoint(CanvasOffsetX + 2, CanvasOffsetY + 2), matWidth);
+	drawLabelFunc(Material->GetObjectNameString().WString(), wxPoint(CanvasOffsetX + 2, CanvasOffsetY + 2), matWidth);
 
 	posY += 2;
 	dc.DrawRectangle(wxPoint(posX, posY), wxSize(matWidth + 4, std::min<int>(MaterialInputs.size() * outputNodeHeight * 3, 300)));

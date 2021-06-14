@@ -127,7 +127,7 @@ FPropertyTag* UByteProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ByteProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_ByteProperty);
   tag->ClassProperty = this;
   tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
@@ -137,7 +137,7 @@ FPropertyTag* UByteProperty::CreatePropertyTag(UObject* object)
   tag->Value->Enum = Enum;
   if (Enum)
   {
-    tag->EnumName = FName(object->GetPackage(), Enum->GetObjectName());
+    tag->EnumName = FName(object->GetPackage(), Enum->GetObjectNameString());
   }
   return tag;
 }
@@ -168,7 +168,7 @@ FPropertyTag* UIntProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_IntProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_IntProperty);
   tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
@@ -203,7 +203,7 @@ FPropertyTag* UBoolProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_BoolProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_BoolProperty);
   tag->ClassProperty = this;
   tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
@@ -229,7 +229,7 @@ FPropertyTag* UFloatProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_FloatProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_FloatProperty);
   tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
@@ -255,7 +255,7 @@ FPropertyTag* UNameProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_NameProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_NameProperty);
   tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
@@ -281,7 +281,7 @@ FPropertyTag* UStrProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StrProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_StrProperty);
   tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);
@@ -318,7 +318,7 @@ FPropertyTag* UArrayProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ArrayProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_ArrayProperty);
   tag->ClassProperty = this;
   tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
@@ -354,7 +354,7 @@ FPropertyTag* UStructProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_StructProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_StructProperty);
   tag->ClassProperty = this;
   tag->ArrayDim = ArrayDim;
   tag->Value = new FPropertyValue(tag);
@@ -364,7 +364,7 @@ FPropertyTag* UStructProperty::CreatePropertyTag(UObject* object)
   tag->Value->Data = new std::vector<FPropertyValue*>;
   if (Struct)
   {
-    tag->StructName = FName(object->GetPackage(), Struct->GetObjectName());
+    tag->StructName = FName(object->GetPackage(), Struct->GetObjectNameString());
   }
   return tag;
 }
@@ -390,7 +390,7 @@ FPropertyTag* UObjectProperty::CreatePropertyTag(UObject* object)
   {
     return nullptr;
   }
-  FPropertyTag* tag = new FPropertyTag(object, GetObjectName(), NAME_ObjectProperty);
+  FPropertyTag* tag = new FPropertyTag(object, GetObjectNameString(), NAME_ObjectProperty);
   tag->ArrayDim = ArrayDim;
   tag->ClassProperty = this;
   tag->Value = new FPropertyValue(tag);

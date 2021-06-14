@@ -43,7 +43,7 @@ inline wxString GetPropertyName(FPropertyValue* v, int32 idx = -1)
         return prop->DisplayName.WString();
       }
     }
-    return v->Field->GetObjectName().WString();
+    return v->Field->GetObjectNameString().WString();
   }
   return _GetPropertyName(v);
 }
@@ -79,7 +79,7 @@ inline wxString GetObjectNameForIndex(FPropertyValue* value)
 {
   if (PACKAGE_INDEX idx = value->GetObjectIndex())
   {
-    return value->Property->Owner->GetPackage()->GetResourceObject(idx)->GetObjectName().WString();
+    return value->Property->Owner->GetPackage()->GetResourceObject(idx)->GetObjectNameString().WString();
   }
   return wxT("NULL");
 }
@@ -286,7 +286,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
     bool hasDesc = false;
     if (value->Struct)
     {
-      ncat->SetValue(value->Struct->GetObjectName().String());
+      ncat->SetValue(value->Struct->GetObjectNameString().String());
       if (value->Struct->GetToolTip().Size())
       {
         hasDesc = true;
@@ -718,7 +718,7 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
       std::vector<UClass*> inherited = cls->GetInheritedClasses(true);
       for (UClass* cls : inherited)
       {
-        filter.emplace_back(cls->GetObjectName());
+        filter.emplace_back(cls->GetObjectNameString());
       }
     }
   }
@@ -765,7 +765,7 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
   {
     Value->GetObjectIndex() = newIdx;
     Value->Property->Owner->MarkDirty();
-    SetValueFromString(selection->GetObjectName().WString());
+    SetValueFromString(selection->GetObjectNameString().WString());
   }
   AllowChanges = false;
 }
@@ -817,7 +817,7 @@ bool AByteArrayProperty::DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& valu
 
 void AByteArrayProperty::OnExportClicked(wxPropertyGrid* pg)
 {
-  wxString path = wxSaveFileSelector("property data", wxT(".* any file|*.*"), Value->Property->Owner->GetObjectName().WString() + L"." + GetLabel() + L".bin", pg->GetPanel());
+  wxString path = wxSaveFileSelector("property data", wxT(".* any file|*.*"), Value->Property->Owner->GetObjectNameString().WString() + L"." + GetLabel() + L".bin", pg->GetPanel());
   if (path.IsEmpty())
   {
     return;
@@ -848,7 +848,7 @@ void AByteArrayProperty::OnExportClicked(wxPropertyGrid* pg)
 void AByteArrayProperty::OnImportClicked(wxPropertyGrid* pg)
 {
   wxString ext = wxT("Any files (*.*)|*.*");
-  wxString path = wxFileSelector("Import property data", wxEmptyString, Value->Property->Owner->GetObjectName().WString() + L"." + GetLabel() + L".bin", ext, ext, wxFD_OPEN, pg->GetPanel());
+  wxString path = wxFileSelector("Import property data", wxEmptyString, Value->Property->Owner->GetObjectNameString().WString() + L"." + GetLabel() + L".bin", ext, ext, wxFD_OPEN, pg->GetPanel());
   if (path.IsEmpty())
   {
     return;

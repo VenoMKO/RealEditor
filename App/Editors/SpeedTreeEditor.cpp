@@ -42,7 +42,7 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
     return;
   }
 
-  wxString path = wxSaveFileSelector("SpeedTree", ".spt", Object->GetObjectName().WString(), this);
+  wxString path = wxSaveFileSelector("SpeedTree", ".spt", Object->GetObjectNameString().WString(), this);
   if (path.empty())
   {
     free(sptData);

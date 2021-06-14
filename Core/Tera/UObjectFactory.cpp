@@ -33,7 +33,7 @@
 UObject* UObject::Object(FObjectExport* exp)
 {
   UObject* result = nullptr;
-  const FString c = exp->GetClassName();
+  const FString c = exp->GetClassNameString();
   if (c == UClass::StaticClassName())
   {
     result = new UClass(exp, false);

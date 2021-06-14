@@ -414,7 +414,7 @@ public:
     std::vector<UClass*> classes = FPackage::GetClasses();
     for (UClass* cls : classes)
     {
-      classList.push_back(cls->GetObjectName().WString());
+      classList.push_back(cls->GetObjectNameString().WString());
     }
     ObjectClassTextField->AutoComplete(classList);
 

@@ -405,8 +405,8 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
       return false;
     }
 
-    FbxNode* lodGroup = FbxNode::Create(GetScene(), sourceMesh->GetObjectName().UTF8().c_str());
-    lodGroup->AddNodeAttribute(FbxLODGroup::Create(GetScene(), (sourceMesh->GetObjectName() + "_LodGroup").UTF8().c_str()));
+    FbxNode* lodGroup = FbxNode::Create(GetScene(), sourceMesh->GetObjectNameString().UTF8().c_str());
+    lodGroup->AddNodeAttribute(FbxLODGroup::Create(GetScene(), (sourceMesh->GetObjectNameString() + "_LodGroup").UTF8().c_str()));
     for (FbxNode* node : lods)
     {
       lodGroup->AddChild(node);
@@ -1280,7 +1280,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
   lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
 
-  char* meshName = FbxWideToUtf8(sourceMesh->GetObjectName().WString().c_str());
+  char* meshName = FbxWideToUtf8(sourceMesh->GetObjectNameString().WString().c_str());
   FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
   FbxFree(meshName);
   meshNode->SetNodeAttribute(mesh);
@@ -1517,7 +1517,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
     lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
   }
 
-  FString objectName = sourceMesh->GetObjectName();
+  FString objectName = sourceMesh->GetObjectNameString();
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
   {
     objectName += FString::Sprintf("_LOD%d", lodIdx);

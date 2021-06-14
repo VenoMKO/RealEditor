@@ -278,6 +278,9 @@
     <ClCompile Include="App\Windows\WelcomeDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Misc\wxModalWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -424,6 +427,7 @@
     <ClInclude Include="Extern\rapidjson\stringbuffer.h" />
     <ClInclude Include="Extern\rapidjson\writer.h" />
     <ClInclude Include="App\Windows\WelcomeDialog.h" />
+    <ClInclude Include="App\Misc\wxModalWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -593,7 +593,7 @@ bool UTextureCube::RenderTo(osg::Image* target)
     }
     if (!mip)
     {
-      LogE("Failed to export texture cube face %s.%s. No mipmaps!", GetObjectPath().UTF8().c_str(), faces[idx]->GetObjectName().UTF8().c_str());
+      LogE("Failed to export texture cube face %s.%s. No mipmaps!", GetObjectPath().UTF8().c_str(), faces[idx]->GetObjectNameString().UTF8().c_str());
       return false;
     }
     processor.SetInputCubeFace(idx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);

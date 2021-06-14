@@ -288,7 +288,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
     return;
   }
 
-  wxString path = TextureImporterOptions::SaveImageDialog(Window, Object->GetObjectName().WString());
+  wxString path = TextureImporterOptions::SaveImageDialog(Window, Object->GetObjectNameString().WString());
   if (path.empty())
   {
     LogI("Export canceled by user!");
@@ -528,18 +528,18 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
       f = TextureProcessor::TCFormat::G8;
       break;
     default:
-      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Invalid face format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Invalid face format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
       return;
     }
     if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
     {
-      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Faces have different format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Faces have different format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
       return;
     }
     inputFormat = f;
   }
 
-  wxString path = TextureImporterOptions::SaveImageDialog(Window, Object->GetObjectName().WString());
+  wxString path = TextureImporterOptions::SaveImageDialog(Window, Object->GetObjectNameString().WString());
   if (path.empty())
   {
     LogI("Export canceled by user!");
@@ -586,7 +586,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
     }
     if (!mip)
     {
-      wxMessageBox(wxString::Format("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      wxMessageBox(wxString::Format("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
       return;
     }
 

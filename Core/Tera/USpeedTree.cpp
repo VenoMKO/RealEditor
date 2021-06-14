@@ -67,9 +67,9 @@ bool USpeedTree::GetSptData(void** output, FILE_OFFSET* outputSize, bool embedMa
   {
     return false;
   }
-  FString branch = BranchMaterial ? BranchMaterial->GetObjectName() : FString();
-  FString frond = FrondMaterial ? FrondMaterial->GetObjectName() : FString();
-  FString leaf = LeafMaterial ? LeafMaterial->GetObjectName() : FString();
+  FString branch = BranchMaterial ? BranchMaterial->GetObjectNameString() : FString();
+  FString frond = FrondMaterial ? FrondMaterial->GetObjectNameString() : FString();
+  FString leaf = LeafMaterial ? LeafMaterial->GetObjectNameString() : FString();
 
   if (embedMaterialInfo && (branch.Size() || frond.Size() || leaf.Size()))
   {

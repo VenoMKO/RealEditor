@@ -32,6 +32,8 @@ public:
     Canceled.store(true);
   }
 
+  int ShowModal() wxOVERRIDE;
+
 private:
   void OnCancelClicked(wxCommandEvent&);
 

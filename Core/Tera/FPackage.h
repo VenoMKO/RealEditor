@@ -178,6 +178,8 @@ public:
   // Get all exports that match the name
   std::vector<FObjectExport*> GetExportObject(const FString& name);
 
+  std::vector<FObjectExport*> GetExportObject(const FName& name);
+
   // Package has changes
   inline bool IsDirty() const
   {
@@ -295,9 +297,14 @@ public:
   }
 
   // Get name at index
-  inline FString GetIndexedName(NAME_INDEX index) const
+  inline FString GetIndexedNameString(NAME_INDEX index) const
   {
     return Names[index].GetString();
+  }
+
+  inline const FNameEntry& GetIndexedNameEntry(NAME_INDEX index) const
+  {
+    return Names[index];
   }
 
   // Get Summary's FolderName
@@ -317,7 +324,7 @@ public:
   }
 
   // Get name at index
-  inline void GetIndexedName(NAME_INDEX index, FString& output) const
+  inline void GetIndexedNameString(NAME_INDEX index, FString& output) const
   {
     Names[index].GetString(output);
   }

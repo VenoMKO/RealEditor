@@ -425,7 +425,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
 
   FbxExportContext ctx;
   ctx.ExportSkeleton = opts.GetExportMode() == ExportMode::ExportFull;
-  wxString fbxpath = IODialog::SaveMeshDialog(Window, Object->GetObjectName().WString());
+  wxString fbxpath = IODialog::SaveMeshDialog(Window, Object->GetObjectNameString().WString());
   if (fbxpath.empty())
   {
     return;
@@ -460,7 +460,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
       if (UMaterialInterface* mat = Cast<UMaterialInterface>(obj))
       {
         std::filesystem::path dir = fbxpath.ToStdWstring();
-        dir /= mat->GetObjectName().WString();
+        dir /= mat->GetObjectNameString().WString();
         std::filesystem::create_directories(dir);
         auto textureParams = mat->GetTextureParameters();
         if (UMaterial* parent = Cast<UMaterial>(mat->GetParent()))
@@ -480,7 +480,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
           {
             continue;
           }
-          std::filesystem::path tpath = dir / p.second.Texture->GetObjectName().WString();
+          std::filesystem::path tpath = dir / p.second.Texture->GetObjectNameString().WString();
           if (!textures.count(tpath))
           {
             textures[tpath] = p.second.Texture;
@@ -493,7 +493,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
           {
             continue;
           }
-          std::filesystem::path tpath = dir / tex->GetObjectName().WString();
+          std::filesystem::path tpath = dir / tex->GetObjectNameString().WString();
           if (!textures.count(tpath))
           {
             textures[tpath] = tex;
@@ -554,7 +554,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
             inputFormat = TextureProcessor::TCFormat::G8;
             break;
           default:
-            LogE("Failed to export texture %s. Invalid format!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export texture %s. Invalid format!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
 
@@ -569,7 +569,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
           }
           if (!mip)
           {
-            LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
 
@@ -582,13 +582,13 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
           {
             if (!processor.Process())
             {
-              LogE("Failed to export %s: %s", texture->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
+              LogE("Failed to export %s: %s", texture->GetObjectNameString().UTF8().c_str(), processor.GetError().c_str());
               continue;
             }
           }
           catch (...)
           {
-            LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
         }
@@ -624,13 +624,13 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
               f = TextureProcessor::TCFormat::G8;
               break;
             default:
-              LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
             if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
             {
-              LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
@@ -658,7 +658,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
             }
             if (!mip)
             {
-              LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
@@ -689,7 +689,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
         }
         else
         {
-          LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
+          LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassNameString().UTF8().c_str());
         }
       }
     }
@@ -908,7 +908,7 @@ void SkelMeshEditor::OnMaterialsClicked()
     wxMenu* addMenu = new wxMenu;
     for (int32 idx = 0; idx < mats.size(); ++idx)
     {
-      addMenu->Append(MaterialsMenuID::ShowMaterials + idx, mats[idx] ? mats[idx]->GetObjectName().WString() : wxT("NULL"));
+      addMenu->Append(MaterialsMenuID::ShowMaterials + idx, mats[idx] ? mats[idx]->GetObjectNameString().WString() : wxT("NULL"));
     }
     menu.AppendSubMenu(addMenu, wxT("Show material"));
   }

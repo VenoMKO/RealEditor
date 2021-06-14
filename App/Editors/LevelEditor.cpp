@@ -292,7 +292,7 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
     }
 
     osg::MatrixTransform* mt = new osg::MatrixTransform;
-    mt->setName(actor->GetObjectName().UTF8().c_str());
+    mt->setName(actor->GetObjectNameString().UTF8().c_str());
     osg::Matrix m;
     m.makeIdentity();
 
@@ -351,7 +351,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
     uvs->push_back(osg::Vec2(uvertex.UVs[0].X, uvertex.UVs[0].Y));
   }
 
-  osg::Geode* geode = new osg::Geode;
+  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
   std::vector<FStaticMeshElement> elements = model->GetElements();
   const FRawIndexBuffer& indexContainer = model->IndexBuffer;
   int32 drawableCount = 0;
@@ -361,7 +361,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
     {
       continue;
     }
-    osg::Geometry* geo = new osg::Geometry;
+    osg::ref_ptr <osg::Geometry> geo = new osg::Geometry;
     osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES);
     for (uint32 faceIndex = 0; faceIndex < section.NumTriangles; ++faceIndex)
     {
@@ -409,7 +409,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   FVector scale3d = component->Scale3D * component->Scale;
 
   osg::MatrixTransform* mt = new osg::MatrixTransform;
-  mt->setName(component->GetObjectName().UTF8().c_str());
+  mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
 
@@ -506,7 +506,7 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
   FVector scale3d = component->Scale3D * component->Scale;
 
   osg::MatrixTransform* mt = new osg::MatrixTransform;
-  mt->setName(component->GetObjectName().UTF8().c_str());
+  mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
 
@@ -591,7 +591,7 @@ osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instanc
     }
 
     osg::MatrixTransform* mt = new osg::MatrixTransform;
-    mt->setName(actor->GetObjectName().UTF8().c_str());
+    mt->setName(actor->GetObjectNameString().UTF8().c_str());
     osg::Matrix m;
     m.makeIdentity();
 

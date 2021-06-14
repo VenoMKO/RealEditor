@@ -45,7 +45,9 @@ public:
 
   static int GetOpenRecentId();
 
-  bool Show(bool show = true) override;
+  bool Show(bool show = true) wxOVERRIDE;
+
+  bool Destroy() wxOVERRIDE;
 
 private:
 

@@ -17,7 +17,7 @@ UObject::UObject(FObjectExport* exp)
   : Export(exp)
 {
 #ifdef _DEBUG
-  Description = Export->GetObjectName();
+  Description = Export->GetObjectNameString();
 #endif
 }
 
@@ -88,7 +88,7 @@ FPropertyTag* UObject::CreateProperty(const FString& name)
 {
   if (!Class)
   {
-    LogE("Failed to create a property %s. Object %s(%s) has no class.", name.UTF8().c_str(), GetObjectName().UTF8().c_str(), GetClassName().UTF8().c_str());
+    LogE("Failed to create a property %s. Object %s(%s) has no class.", name.UTF8().c_str(), GetObjectNameString().UTF8().c_str(), GetClassNameString().UTF8().c_str());
     return nullptr;
   }
   if (UProperty* classProperty = Class->GetProperty(name))
@@ -124,7 +124,7 @@ void UObject::AddProperty(FPropertyTag* property)
           field = field->GetNext();
           continue;
         }
-        FString fieldName = field->GetObjectName().ToUpper();
+        FString fieldName = field->GetObjectNameString();
         if (fieldName == propName)
         {
           lastIndex = classPropNames.size();
@@ -201,7 +201,7 @@ void* UObject::GetRawData()
     }
     catch (const std::exception& e)
     {
-      LogE("Failed to load the object %s", GetObjectName().C_str());
+      LogE("Failed to load the object %s", GetObjectNameString().C_str());
       LogE(e.what());
     }
     return nullptr;
@@ -245,7 +245,7 @@ void UObject::SerializeScriptProperties(FStream& s)
       FPropertyTag* none = new FPropertyTag(this, NAME_None, NAME_None);
       Properties.push_back(none);
       s << *none;
-      LogW("Object %s doesn't have a terminating property! RE has terminated the property list manually.", GetObjectName().UTF8().c_str());
+      LogW("Object %s doesn't have a terminating property! RE has terminated the property list manually.", GetObjectNameString().UTF8().c_str());
     }
   }
   else
@@ -307,15 +307,24 @@ FString UObject::GetObjectPath() const
   return FString();
 }
 
-FString UObject::GetObjectName() const
+FName UObject::GetObjectName() const
 {
-  return Export->GetObjectName();
+  return Export->ObjectName;
 }
 
-FString UObject::GetClassName() const
+FString UObject::GetObjectNameString() const
 {
+  return Export->GetObjectName().String();
+}
 
+FName UObject::GetClassName() const
+{
   return Export->GetClassName();
+}
+
+FString UObject::GetClassNameString() const
+{
+  return Export->GetClassNameString();
 }
 
 UObject::~UObject()
@@ -333,6 +342,10 @@ UObject::~UObject()
     delete tag;
   }
   Properties.clear();
+  if (TrailingData)
+  {
+    free(TrailingData);
+  }
 }
 
 void UObject::Serialize(FStream& s)
@@ -401,7 +414,7 @@ void UObject::Serialize(FStream& s)
 
 void UObject::Load()
 {
-  if (!GetPackage()->GetStream().GetLoadSerializedObjects())
+  if (!GetPackage()->GetStream().GetLoadSerializedObjects() || Loaded || Loading)
   {
     return;
   }

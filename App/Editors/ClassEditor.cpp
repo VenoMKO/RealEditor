@@ -264,7 +264,7 @@ void ClassEditor::OnObjectLoaded()
 void ClassEditor::LoadClassProperties()
 {
   PropertiesList->Freeze();
-  wxPropertyCategory* root = new wxPropertyCategory(Object->GetObjectName().WString(), wxT("Root"));
+  wxPropertyCategory* root = new wxPropertyCategory(Object->GetObjectNameString().WString(), wxT("Root"));
   root->SetValue(wxT("Properties"));
   PropertiesList->Append(root);
   std::function<void(UProperty*, wxPropertyGridManager* ,wxPropertyCategory*, int32& idx)> iterator;
@@ -277,7 +277,7 @@ void ClassEditor::LoadClassProperties()
         UStructProperty* p = (UStructProperty*)property;
         if (p->Struct)
         {
-          wxPropertyCategory* nroot = new wxPropertyCategory(p->GetObjectName().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx));
+          wxPropertyCategory* nroot = new wxPropertyCategory(p->GetObjectNameString().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx));
           nroot->SetValue(property->GetID().WString());
           nroot->SetExpanded(false);
           mgr->AppendIn(root, nroot);
@@ -289,7 +289,7 @@ void ClassEditor::LoadClassProperties()
         UArrayProperty* p = (UArrayProperty*)property;
         if (p->Inner)
         {
-          wxPropertyCategory* nroot = new wxPropertyCategory(p->GetObjectName().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx));
+          wxPropertyCategory* nroot = new wxPropertyCategory(p->GetObjectNameString().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx));
           nroot->SetValue(property->GetID().WString());
           nroot->SetExpanded(false);
           mgr->AppendIn(root, nroot);
@@ -298,7 +298,7 @@ void ClassEditor::LoadClassProperties()
       }
       else
       {
-        auto pgp = new wxStringProperty(property->GetObjectName().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx), property->GetID().WString());
+        auto pgp = new wxStringProperty(property->GetObjectNameString().WString(), wxString::Format("%016llx%i", (uint64)std::addressof(*property), idx), property->GetID().WString());
         pgp->Enable(false);
         
         mgr->AppendIn(root, pgp);

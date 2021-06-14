@@ -85,7 +85,7 @@ public:
 
   bool isRealizedImplementation() const override
   {
-    return Canvas->IsShownOnScreen();
+    return Canvas ? Canvas->IsShownOnScreen() : false;
   }
 
   void closeImplementation() override

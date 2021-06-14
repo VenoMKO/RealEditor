@@ -12,12 +12,16 @@ public:
     : String(value)
   {}
 
+  FNameEntry(const char* value)
+    : String(value)
+  {}
+
   uint64 GetFlags() const
   {
     return Flags;
   }
 
-  FString GetString() const
+  const FString& GetString() const
   {
     return String;
   }
@@ -32,6 +36,9 @@ public:
     String = string;
   }
 
+  bool operator==(const FString& name) const;
+  bool operator==(const char* name) const;
+
   friend FStream& operator<<(FStream& s, FNameEntry& e);
 
 private:
@@ -42,8 +49,7 @@ private:
 class FName {
 public:
   friend class FStream;
-  FName()
-  {}
+  FName() = default;
 
   FName(FPackage* package)
     : Package(package)
@@ -51,14 +57,15 @@ public:
 
   // TODO: fixme
   FName(const char* string)
-  {}
+  {
+    DBreakIf(strcmp(string, NAME_None));
+  }
 
   FName(FPackage* package, const FString& value)
     : Package(package)
   {
     SetString(value);
   }
-  
 
   FName(const FName& n)
     : Index(n.Index)
@@ -71,15 +78,26 @@ public:
   }
 
   bool operator==(const FName& n) const;
+
   bool operator==(const FString& s) const;
+  
   bool operator==(const char* s) const;
+  
   bool operator!=(const FName& n) const;
+  
   bool operator!=(const FString& s) const;
+  
   bool operator!=(const char* s) const;
+  
   bool operator<(const FName& n) const;
 
-  FString String(bool number = USE_FNAME_NUMBERS) const;
-  void GetString(FString& output, bool number = USE_FNAME_NUMBERS) const;
+  // Get FString value
+  virtual FString String(bool number = USE_FNAME_NUMBERS) const;
+  // Get FString value
+  virtual void GetString(FString& output, bool number = USE_FNAME_NUMBERS) const;
+  // Does NOT include numbers regardless of the USE_FNAME_NUMBERS!!!
+  virtual const FString& GetString() const;
+  
   void SetString(const FString& str);
 
   void SetIndex(NAME_INDEX index)
@@ -119,12 +137,23 @@ public:
   }
 #endif
 
-private:
+protected:
   NAME_INDEX Index = INDEX_NONE;
   int32 Number = 0;
-  
   FPackage* Package = nullptr;
 #ifdef _DEBUG
   std::string Value;
 #endif
+};
+
+class VName : public FName {
+public:
+  VName() = default;
+  VName(const VName& name);
+  VName(const FString& name, int32 number = 0);
+  VName(const char* name, int32 number = 0);
+
+
+  FString String(bool number = USE_FNAME_NUMBERS) const override;
+  void GetString(FString& output, bool number = USE_FNAME_NUMBERS) const override;
 };

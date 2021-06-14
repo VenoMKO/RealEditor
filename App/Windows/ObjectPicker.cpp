@@ -325,7 +325,7 @@ void ObjectPicker::UpdateTableTitle()
   if (Selection)
   {
     wxString title = TableTitle.empty() ? wxT("Selected object") : TableTitle;
-    ObjectTreeCtrl->GetColumn(0)->SetTitle(title + wxT(": ") + Selection->GetObjectName().WString());
+    ObjectTreeCtrl->GetColumn(0)->SetTitle(title + wxT(": ") + Selection->GetObjectNameString().WString());
   }
   else
   {

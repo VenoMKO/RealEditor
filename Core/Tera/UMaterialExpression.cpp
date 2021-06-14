@@ -68,7 +68,7 @@ FString FExpressionInput::GetDescription() const
 UMaterialExpression* UMaterialExpression::StaticFactory(FObjectExport* exp)
 {
   UMaterialExpression* result = nullptr;
-  const FString c = exp->GetClassName();
+  const FString c = exp->GetClassNameString();
 
   if (c == UMaterialExpressionAbs::StaticClassName())
   {
@@ -508,13 +508,13 @@ bool UMaterialExpression::RegisterProperty(FPropertyTag* property)
 
 FString UMaterialExpression::GetTitle() const
 {
-  FString title = GetClassName();
+  FString title = GetClassNameString();
   if (title.StartWith(UMaterialExpression::StaticClassName()))
   {
     title = title.Substr(strlen(UMaterialExpression::StaticClassName()));
     if (title.Empty())
     {
-      title = GetClassName();
+      title = GetClassNameString();
     }
   }
   return title;
@@ -699,7 +699,7 @@ void UMaterialExpressionCompound::AcceptVisitor(UMaterialExpressionViewVisitor* 
   FString expressions;
   for (const auto exp : MaterialExpressions)
   {
-    expressions.Empty() ? expressions += exp->GetObjectName() : expressions += FString(":") + exp->GetObjectName();
+    expressions.Empty() ? expressions += exp->GetObjectNameString() : expressions += FString(":") + exp->GetObjectNameString();
   }
   visitor->SetValue(expressions);
   visitor->SetTitle(GetTitle() + ": " + Caption);
@@ -834,7 +834,7 @@ bool UMaterialExpressionCustomTexture::RegisterProperty(FPropertyTag* property)
 void UMaterialExpressionCustomTexture::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(Texture ? Texture->GetObjectName() : "NULL");
+  visitor->SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
 }
 
 bool UMaterialExpressionDepthBiasedAlpha::RegisterProperty(FPropertyTag* property)
@@ -1048,7 +1048,7 @@ bool UMaterialExpressionFontSample::RegisterProperty(FPropertyTag* property)
 void UMaterialExpressionFontSample::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Font: %s\nFontTexturePage: %d", (Font ? Font->GetObjectName().UTF8().c_str() : "NULL"), FontTexturePage));
+  visitor->SetValue(FString::Sprintf("Font: %s\nFontTexturePage: %d", (Font ? Font->GetObjectNameString().UTF8().c_str() : "NULL"), FontTexturePage));
 }
 
 bool UMaterialExpressionFontSampleParameter::RegisterProperty(FPropertyTag* property)
@@ -1523,7 +1523,7 @@ void UMaterialExpressionTextureSample::AcceptVisitor(UMaterialExpressionViewVisi
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinates);
-  visitor->SetValue(Texture ? Texture->GetObjectName() : "NULL");
+  visitor->SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
 }
 
 bool UMaterialExpressionDepthBiasBlend::RegisterProperty(FPropertyTag* property)

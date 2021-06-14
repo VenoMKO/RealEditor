@@ -98,7 +98,7 @@ void FPropertyValue::RegisterEnumNames()
   {
     if (Property && Property->Owner)
     {
-      Property->Owner->GetPackage()->GetNameIndex(Enum->GetObjectName(), true);
+      Property->Owner->GetPackage()->GetNameIndex(Enum->GetObjectNameString(), true);
       Property->Owner->GetPackage()->GetNameIndex(Enum->GetEnum(GetByte()).String(), true);
     }
     else

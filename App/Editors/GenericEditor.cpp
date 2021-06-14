@@ -29,7 +29,7 @@ enum ExportMode {
 GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* window, UObject* object)
 {
   GenericEditor* editor = nullptr;
-  const FString c = object->GetClassName();
+  const FString c = object->GetClassNameString();
   if (c == UObjectRedirector::StaticClassName())
   {
     editor = new ObjectRedirectorEditor(parent, window);
@@ -222,7 +222,7 @@ void GenericEditor::OnExportClicked(wxCommandEvent& e)
   default:
     return;
   }
-  wxString path = wxSaveFileSelector("raw object data", ".*", Object->GetObjectName().WString(), Window);
+  wxString path = wxSaveFileSelector("raw object data", ".*", Object->GetObjectNameString().WString(), Window);
   if (path.empty())
   {
     return;

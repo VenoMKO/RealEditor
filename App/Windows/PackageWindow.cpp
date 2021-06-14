@@ -179,17 +179,21 @@ void PackageWindow::OnCloseWindow(wxCloseEvent& event)
   {
     Package->CancelOperation();
   }
-  Application->PackageWindowWillClose(this);
+  if (Editors.size())
+  {
+    for (auto p : Editors)
+    {
+      p.second->Destroy();
+    }
+    Editors.clear();
+  }
   wxFrame::OnCloseWindow(event);
+  Application->PackageWindowWillClose(this);
 }
 
 PackageWindow::~PackageWindow()
 {
-  std::thread([=] {
-    // a fully loaded GMP's dtor can take quite some time. Run it in a separate thread.
-    // FIXME: might potentially crash if the main thread dies before this one
-    FPackage::UnloadPackage(Package);
-  }).detach();
+  FPackage::UnloadPackage(Package);
   delete FileHistory;
   delete ImageList;
 }
@@ -498,7 +502,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
     return;
   }
   FObjectImport* obj = Package->GetImportObject(index);
-  ObjectTitleLabel->SetLabelText(wxString::Format(wxT("Import: %ls (%ls)"), obj->GetObjectName().WString().c_str(), obj->GetClassName().WString().c_str()));
+  ObjectTitleLabel->SetLabelText(wxString::Format(wxT("Import: %ls (%ls)"), obj->GetObjectNameString().WString().c_str(), obj->GetObjectNameString().WString().c_str()));
   ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d\nClass Package: %ls\nClass Name: %ls"), (int32)obj->ObjectIndex, obj->ClassPackage.String().WString().c_str(), obj->ClassName.String().WString().c_str()));
   SetPropertiesHidden(true);
   SetContentHidden(true);
@@ -544,7 +548,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
   }
   
   FObjectExport* fobj = Package->GetExportObject(index);
-  ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), fobj->GetObjectName().WString().c_str(), fobj->GetClassName().WString().c_str()));
+  ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), fobj->GetObjectNameString().WString().c_str(), fobj->GetClassNameString().WString().c_str()));
   ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d"), index));
   ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
   ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", -1));
@@ -584,16 +588,16 @@ void PackageWindow::UpdateProperties(UObject* object, std::vector<FPropertyTag*>
   PropertiesCtrl->Freeze();
   if (!PropertyRootCategory)
   {
-    PropertyRootCategory = new wxPropertyCategory(object->GetObjectName().WString());
-    PropertyRootCategory->SetValue(object->GetClassName().String());
-    PropertyRootCategory->SetHelpString(L"Object: " + object->GetObjectPath().WString()  + L"\nClass: " + object->GetClassName().WString());
+    PropertyRootCategory = new wxPropertyCategory(object->GetObjectNameString().WString());
+    PropertyRootCategory->SetValue(object->GetClassNameString().String());
+    PropertyRootCategory->SetHelpString(L"Object: " + object->GetObjectPath().WString()  + L"\nClass: " + object->GetClassNameString().WString());
     PropertiesCtrl->Append(PropertyRootCategory);
   }
   else
   {
     PropertyRootCategory->DeleteChildren();
-    PropertyRootCategory->SetLabel(object->GetObjectName().WString());
-    PropertyRootCategory->SetValue(object->GetClassName().String());
+    PropertyRootCategory->SetLabel(object->GetObjectNameString().WString());
+    PropertyRootCategory->SetValue(object->GetClassNameString().String());
   }
 
   // TODO: enable if the object is fexp && !Package->IsReadOnly()
@@ -611,7 +615,7 @@ void PackageWindow::DebugOnTestCookObject(wxCommandEvent&)
   {
     return;
   }
-  wxString path = wxSaveFileSelector("object", wxT("BIN file|*.bin"), ActiveEditor->GetObject()->GetObjectName().WString(), this);
+  wxString path = wxSaveFileSelector("object", wxT("BIN file|*.bin"), ActiveEditor->GetObject()->GetObjectNameString().WString(), this);
   if (path.empty())
   {
     return;
@@ -742,7 +746,7 @@ void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
     }
     return true;
   };
-  wxString name = mi->GetObjectName().WString();
+  wxString name = mi->GetObjectNameString().WString();
   ObjectNameDialog nameDialog = ObjectNameDialog(this, name);
   nameDialog.SetValidator(validatorFunc);
 
@@ -810,6 +814,17 @@ bool PackageWindow::Show(bool show /*= true*/)
     Center();
   }
   return result;
+}
+
+bool PackageWindow::Destroy()
+{
+  Show(false);
+  bool r= wxFrame::Destroy();
+  if (!r)
+  {
+    Show(true);
+  }
+  return r;
 }
 
 void PackageWindow::OnNoneObjectSelected()
@@ -1508,7 +1523,7 @@ void PackageWindow::OnDuplicateClicked(PACKAGE_INDEX objIndex)
 
   FObjectExport* source = Package->GetExportObject(objIndex);
   FObjectExport* parent = dest ? dest->GetExportObject() : nullptr;
-  wxString name = source->GetObjectName().WString();
+  wxString name = source->GetObjectNameString().WString();
   std::weak_ptr packageWeak = Package;
   ObjectNameDialog::Validator validatorFunc = [&](const wxString& name) {
     std::shared_ptr<FPackage> package = packageWeak.lock();
@@ -1615,7 +1630,7 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
     return;
   }
   {
-    ObjectNameDialog dlg(this, s.GetTransactingObject()->GetObjectName().WString());
+    ObjectNameDialog dlg(this, s.GetTransactingObject()->GetObjectNameString().WString());
     dlg.SetValidator(ObjectNameDialog::GetDefaultValidator(obj ? obj->GetExportObject() : nullptr, Package.get()));
 
     if (dlg.ShowModal() != wxID_OK)

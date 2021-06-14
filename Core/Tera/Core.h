@@ -1,5 +1,8 @@
 #pragma once
 #ifdef _DEBUG
+#ifndef _CRTDBG_MAP_ALLOC
+#define _CRTDBG_MAP_ALLOC
+#endif
 #define DEBUG_CLIENTBLOCK new( _CLIENT_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_CLIENTBLOCK
 #endif

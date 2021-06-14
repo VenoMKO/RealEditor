@@ -14,7 +14,7 @@ void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
     wxMessageBox(wxT("PC wave data is empty! Nothing to export!"), wxT("Error!"), wxICON_ERROR);
     return;
   }
-  wxString path = wxSaveFileSelector("sound", wxT("OGG file|*.ogg"), Object->GetObjectName().WString(), this);
+  wxString path = wxSaveFileSelector("sound", wxT("OGG file|*.ogg"), Object->GetObjectNameString().WString(), this);
   if (path.empty())
   {
     return;

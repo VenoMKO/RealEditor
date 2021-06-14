@@ -42,9 +42,13 @@ FStream& operator<<(FStream& s, FObjectExport& e)
   return s;
 }
 
-FString FObjectExport::GetClassName() const
+FName FObjectExport::GetClassName() const
 {
-  return ClassIndex ? Package->GetResourceObject(ClassIndex)->GetObjectName() : "Class";
+  if (ClassIndex)
+  {
+    return Package->GetResourceObject(ClassIndex)->GetObjectName();
+  }
+  return VName("Class");
 }
 
 FObjectImport* FObjectImport::CreateImport(FPackage* package, const FString& objectName, UClass* objectClass)
@@ -55,8 +59,8 @@ FObjectImport* FObjectImport::CreateImport(FPackage* package, const FString& obj
   }
   FObjectImport* result = new FObjectImport(package, objectName);
   package->GetNameIndex(objectName, true);
-  package->GetNameIndex(objectClass ? objectClass->GetObjectName() : "Class", true);
-  result->ClassName = FName(package, objectClass ? objectClass->GetObjectName() : "Class");
+  package->GetNameIndex(objectClass ? objectClass->GetObjectNameString() : "Class", true);
+  result->ClassName = FName(package, objectClass ? objectClass->GetObjectNameString() : "Class");
   result->ClassPackage = FName(package, objectClass ? objectClass->GetPackage()->GetPackageName() : "Core");
   return result;
 }
@@ -88,10 +92,10 @@ FString FObjectImport::GetObjectPath() const
   FString path;
   while (outer)
   {
-    path = outer->GetObjectName() + "." + path;
+    path = outer->GetObjectName().String() + "." + path;
     outer = outer->GetOuter();
   }
-  path += GetObjectName();
+  path += GetObjectNameString();
   return path;
 }
 
@@ -108,22 +112,22 @@ FString FObjectResource::GetObjectPath() const
 {
   if (FObjectResource* outer = GetOuter())
   {
-    return outer->GetObjectPath() + "." + GetObjectName();
+    return outer->GetObjectPath() + "." + GetObjectNameString();
   }
-  return Package->GetPackageName() + "." + GetObjectName();
+  return Package->GetPackageName() + "." + GetObjectNameString();
 }
 
 VObjectExport::VObjectExport(FPackage* pkg, const char* objName, const char* className)
   : FObjectExport(pkg)
 {
-  VObjectName = objName;
-  VObjectClassName = className;
+  ObjectName = VName(objName);
+  VObjectClassName = VName(className);
   ObjectIndex = VEXP_INDEX;
 }
 
 FString VObjectExport::GetObjectPath() const
 {
-  return Package->GetPackageName() + "." + GetObjectName();
+  return Package->GetPackageName() + "." + GetObjectNameString();
 }
 
 VObjectExport::~VObjectExport()

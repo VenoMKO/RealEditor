@@ -159,7 +159,7 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
       {
         continue;
       }
-      int32 cmp = fbxName.Cmp(objectMaterial->GetObjectName().ToUpper().UTF8().c_str());
+      int32 cmp = fbxName.Cmp(objectMaterial->GetObjectNameString().ToUpper().UTF8().c_str());
       if (cmp >= 0 && dist > cmp)
       {
         exact[fbxIdx] = !cmp;
@@ -246,7 +246,7 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, co
     {
       continue;
     }
-    choices.Add(mat->GetObjectName().WString());
+    choices.Add(mat->GetObjectNameString().WString());
   }
   wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
   MaterialsList->AppendColumn(m_dataViewListColumn1);
@@ -305,7 +305,7 @@ void MaterialMapperDialog::OnAddClicked(wxCommandEvent&)
     {
       continue;
     }
-    choices.Add(mat->GetObjectName().WString());
+    choices.Add(mat->GetObjectNameString().WString());
   }
   wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
   MaterialsList->AppendColumn(m_dataViewListColumn1);

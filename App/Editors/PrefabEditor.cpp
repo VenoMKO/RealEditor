@@ -140,7 +140,7 @@ void PrefabEditor::CreateRenderModel()
     }
 
     osg::MatrixTransform* mt = new osg::MatrixTransform;
-    mt->setName(actor->GetObjectName().UTF8().c_str());
+    mt->setName(actor->GetObjectNameString().UTF8().c_str());
     osg::Matrix m;
     m.makeIdentity();
 
@@ -243,7 +243,7 @@ osg::MatrixTransform* CreateStaticMesh(UStaticMeshComponent* component)
   FVector scale3d = component->Scale3D * component->Scale;
 
   osg::MatrixTransform* mt = new osg::MatrixTransform;
-  mt->setName(component->GetObjectName().UTF8().c_str());
+  mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
 
@@ -340,7 +340,7 @@ osg::MatrixTransform* CreateSkelMesh(USkeletalMeshComponent* component)
   FVector scale3d = component->Scale3D * component->Scale;
 
   osg::MatrixTransform* mt = new osg::MatrixTransform;
-  mt->setName(component->GetObjectName().UTF8().c_str());
+  mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
 

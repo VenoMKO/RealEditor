@@ -540,7 +540,7 @@ std::vector<UClass*> FPackage::GetClasses()
 
 void FPackage::RegisterClass(UClass* classObject)
 {
-  ClassMap[classObject->GetObjectName()] = classObject;
+  ClassMap[classObject->GetObjectNameString()] = classObject;
 }
 
 void FPackage::BuildClassInheritance()
@@ -691,7 +691,7 @@ void FPackage::LoadClassPackage(const FString& name)
       {
         classes.push_back(obj);
         std::scoped_lock<std::mutex> l(ClassMapMutex);
-        ClassMap[obj->GetObjectName()] = obj;
+        ClassMap[obj->GetObjectNameString()] = obj;
       }
       else if (obj->IsA(UMetaData::StaticClassName()))
       {
@@ -811,7 +811,7 @@ void FPackage::LoadClassPackage(const FString& name)
     for (size_t idx = 0; idx < properties.size(); ++idx)
     {
       UProperty* p = properties.at(idx);
-      const FString propertyName = p->GetObjectName();
+      const FString propertyName = p->GetObjectNameString();
       UObject* outer = p->GetOuter();
       std::vector<UObject*> parents;
 
@@ -820,7 +820,7 @@ void FPackage::LoadClassPackage(const FString& name)
         parents.push_back(outer);
         outer = outer->GetOuter();
       }
-      const FString className = outer->GetObjectName();
+      const FString className = outer->GetObjectNameString();
       if (parents.size() && parents.front()->IsA(UFunction::StaticClassName()))
       {
         continue;
@@ -828,7 +828,7 @@ void FPackage::LoadClassPackage(const FString& name)
 
       if (parents.size())
       {
-        FString key = className + ":" + parents.back()->GetObjectName();
+        FString key = className + ":" + parents.back()->GetObjectNameString();
         if (MetaData.count(key))
         {
           if (MetaData.at(key).count(propertyName))
@@ -1539,6 +1539,8 @@ void FPackage::Load()
 void FPackage::Load(FStream& s)
 {
 #define CheckCancel() if (Cancelled.load()) { Loading.store(false); return; } //
+
+  PERF_START(LoadPackage);
   if (Summary.NamesOffset != s.GetPosition())
   {
     s.SetPosition(Summary.NamesOffset);
@@ -1579,7 +1581,7 @@ void FPackage::Load(FStream& s)
     s << *exp;
     CheckCancel();
 #ifdef _DEBUG
-    exp->ClassNameValue = exp->GetClassName();
+    exp->ClassNameValue = exp->GetClassNameString();
 #endif
   }
 
@@ -1674,7 +1676,7 @@ void FPackage::Load(FStream& s)
       RootExports.push_back(exp);
     }
     CheckCancel();
-    ObjectNameToExportMap[exp->GetObjectName()].push_back(exp);
+    ObjectNameToExportMap[exp->GetObjectNameString()].push_back(exp);
   }
 
   for (uint32 idx = 0; idx < Summary.ImportsCount; ++idx)
@@ -1697,6 +1699,8 @@ void FPackage::Load(FStream& s)
       RootImports.push_back(imp);
     }
   }
+
+  PERF_END(LoadPackage);
 
 #if _DEBUG
   for (FObjectExport* exp : Exports)
@@ -2118,7 +2122,7 @@ bool FPackage::Save(PackageSaveContext& context)
         else if (exp->SerialOffset)
         {
           DBreak();
-          LogE("Failed to preserve offset of %s", exp->GetObjectName().C_str());
+          LogE("Failed to preserve offset of %s", exp->GetObjectNameString().C_str());
         }
       }
       if (!context.FullRecook)
@@ -2364,7 +2368,7 @@ UObject* FPackage::GetObject(FObjectImport* imp, bool load)
         }
         UnloadPackage(package);
       }
-      LogW("%s: Couldn't find import %s(%s)", GetPackageName().C_str(), imp->GetObjectName().C_str(), imp->GetClassName().C_str());
+      LogW("%s: Couldn't find import %s(%s)", GetPackageName().C_str(), imp->GetObjectNameString().C_str(), imp->GetClassNameString().C_str());
       return nullptr;
     }
   }
@@ -2376,7 +2380,7 @@ UObject* FPackage::GetObject(FObjectImport* imp, bool load)
     }
   }
   std::vector<FObjectExport*> exps = GetExportObject(imp->GetObjectName());
-  FString className = imp->GetClassName();
+  FName className = imp->GetClassName();
   for (FObjectExport* exp : exps)
   {
     if (exp->GetClassName() == className)
@@ -2545,7 +2549,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
   {
     return nullptr;
   }
-  FString outerName = outer->GetObjectName();
+  FString outerName = outer->GetObjectNameString();
   {
     std::scoped_lock<std::mutex> l(MissingPackagesMutex);
     if (std::find(MissingPackages.begin(), MissingPackages.end(), outerName) != MissingPackages.end())
@@ -2566,7 +2570,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
       {
         if (outer->PackageGuid == p->GetGuid())
         {
-          result = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName());
+          result = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString());
           break;
         }
       }
@@ -2575,7 +2579,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
         FString fname = p->GetPackageName().Filename(false);
         if (fname.StartWith(outerName))
         {
-          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
           {
             result = object;
             break;
@@ -2604,7 +2608,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
         if (!outer->PackageGuid.IsValid() || outer->PackageGuid == p->GetGuid())
         {
           p->Load();
-          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
           {
             {
               std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
@@ -2629,7 +2633,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
     if ((p = FPackage::GetPackage(completePath)))
     {
       p->Load();
-      if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectName(), incomplete->GetClassName()))
+      if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
       {
         {
           std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
@@ -2644,7 +2648,7 @@ UObject* FPackage::GetForcedExport(FObjectExport* exp)
   if (packageNotFound)
   {
     std::scoped_lock<std::mutex> l(MissingPackagesMutex);
-    MissingPackages.push_back(outer->GetObjectName());
+    MissingPackages.push_back(outer->GetObjectNameString());
   }
 
   return nullptr;
@@ -2695,7 +2699,7 @@ FObjectExport* FPackage::DuplicateExportRecursivly(FObjectExport* source, FObjec
   exp->SerialSize = 0;
   for (FObjectExport* sourceChild : source->Inner)
   {
-    DuplicateExportRecursivly(sourceChild, exp, sourceChild->GetObjectName());
+    DuplicateExportRecursivly(sourceChild, exp, sourceChild->GetObjectNameString());
   }
   return exp;
 }
@@ -2749,7 +2753,7 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
   if (index > 0)
   {
     UObject* obj = GetObject(index);
-    FString objName = obj->GetObjectName();
+    FString objName = obj->GetObjectNameString();
     {
       std::scoped_lock<std::mutex> l(ClassMapMutex);
       if (!ClassMap.count(objName))
@@ -2766,7 +2770,7 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
   }
 
   FObjectImport* imp = GetImportObject(index);
-  FString name = imp->GetObjectName();
+  FString name = imp->GetObjectNameString();
   {
     std::scoped_lock<std::mutex> l(ClassMapMutex);
     if (ClassMap.count(name))
@@ -2775,6 +2779,10 @@ UClass* FPackage::LoadClass(PACKAGE_INDEX index)
       SetCachedImportObject(index, obj);
       return (UClass*)obj;
     }
+  }
+  if (MissingClasses.count(name))
+  {
+    return nullptr;
   }
   FString pkgName = imp->GetPackageName();
   if (pkgName == GetPackageName())
@@ -2883,7 +2891,7 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
     MarkDirty();
   }
 
-  FObjectImport* classImport = FObjectImport::CreateImport(this, cls->GetObjectName(), nullptr);
+  FObjectImport* classImport = FObjectImport::CreateImport(this, cls->GetObjectNameString(), nullptr);
   if (classImport)
   {
     classImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
@@ -2956,6 +2964,26 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
     }
   }
   return std::vector<FObjectExport*>();
+}
+
+std::vector<FObjectExport*> FPackage::GetExportObject(const FName& name)
+{
+  std::vector<FObjectExport*> result;
+  for (FObjectExport* exp : Exports)
+  {
+    if (exp->GetObjectName() == name)
+    {
+      result.emplace_back(exp);
+    }
+  }
+  for (VObjectExport* vexp : VExports)
+  {
+    if (vexp->GetObjectName() == name)
+    {
+      result.emplace_back(vexp);
+    }
+  }
+  return result;
 }
 
 void FPackage::MarkDirty(bool dirty)
@@ -3041,7 +3069,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     obj->Load();
     if (!obj->GetClass())
     {
-      LogE("Can't import %s! Outer object %s has no UClass!", object->GetObjectName().UTF8().c_str(), obj->GetObjectName().UTF8().c_str());
+      LogE("Can't import %s! Outer object %s has no UClass!", object->GetObjectNameString().UTF8().c_str(), obj->GetObjectNameString().UTF8().c_str());
       output = nullptr;
       return false;
     }
@@ -3062,14 +3090,14 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     outerImp = imp;
   }
 
-  FObjectImport* importObject = new FObjectImport(this, object->GetObjectName());
+  FObjectImport* importObject = new FObjectImport(this, object->GetObjectNameString());
   importObject->ClassName.SetPackage(this);
-  importObject->ClassName.SetString(object->GetClassName());
+  importObject->ClassName.SetString(object->GetClassNameString());
   importObject->ClassPackage.SetPackage(this);
   importObject->ClassPackage.SetString(object->GetClass() ? object->GetClass()->GetPackage()->GetPackageName() : "Core");
 
-  GetNameIndex(object->GetObjectName(), true);
-  GetNameIndex(object->GetClassName(), true);
+  GetNameIndex(object->GetObjectNameString(), true);
+  GetNameIndex(object->GetClassNameString(), true);
   GetNameIndex(importObject->ClassPackage.String(), true);
 
   if (outerImp)
@@ -3497,8 +3525,8 @@ void FPackageDumpHelper::GetPoolItemInfo(const FString& item, FStream& s, Compos
   {
     CompositeDumpEntry::CompositeDumpExport& e = output.Exports.emplace_back();
     e.Index = exp->ObjectIndex;
-    e.ObjectName = exp->GetObjectName();
-    e.ClassName = exp->GetClassName();
+    e.ObjectName = exp->GetObjectNameString();
+    e.ClassName = exp->GetClassNameString();
     e.Path = exp->GetObjectPath();
   }
 

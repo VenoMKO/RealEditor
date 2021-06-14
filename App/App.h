@@ -1,5 +1,8 @@
 #pragma once
 #define WXDEBUG 1
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#endif
 #include <wx/msw/msvcrt.h>
 #include <wx/wx.h>
 #include <wx/event.h>

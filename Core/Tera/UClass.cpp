@@ -175,14 +175,11 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
 
       FPropertyTag& tag = *tagPtr;
       s << tag;
-      std::string tagName = tag.Name.String().UTF8();
 
-      if (tagName == NAME_None)
+      if (tag.Name == NAME_None)
       {
         break;
       }
-
-      std::string tagType = tag.Type.String().UTF8();
 
       if (advance && --remainingDim <= 0)
       {
@@ -200,13 +197,13 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         newValue->Field = property;
       }
 
-      if (!property || tag.Name.String() != property->GetObjectName())
+      if (!property || tag.Name != property->GetObjectName())
       {
         UProperty* currentProperty = property;
 
         for (; property; property = property->PropertyLinkNext)
         {
-          if (property->GetObjectName() == tagName)
+          if (property->GetObjectName() == tag.Name)
           {
             break;
           }
@@ -216,7 +213,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
         {
           for (property = PropertyLink; property && property != currentProperty; property = property->PropertyLinkNext)
           {
-            if (property->GetObjectName() == tagName)
+            if (tag.Name == property->GetObjectName())
             {
               break;
             }
@@ -233,31 +230,31 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
 
       if (!property)
       {
-        LogE("Property %s of %s not found in %s", tagName.c_str(), object->GetObjectName().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
+        LogE("Property %s of %s not found in %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
       }
       else if (tag.ArrayIndex >= property->ArrayDim || tag.ArrayIndex < 0)
       {
-        LogE("Array bounds in %s of %s: %i/%i for package:  %s", tagName.c_str(), object->GetObjectName().String().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
+        LogE("Array bounds in %s of %s: %i/%i for package:  %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().String().c_str(), tag.ArrayIndex, property->ArrayDim, object->GetPackage()->GetPackageName().UTF8().c_str());
         DBreak();
       }
-      else if (tagType == NAME_StrProperty && Cast<UNameProperty>(property) != nullptr)
+      else if (tag.Type == NAME_StrProperty && Cast<UNameProperty>(property) != nullptr)
       {
-        LogE("Property type mismatch in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        LogE("Property type mismatch in %s of %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8().c_str());
         DBreak();
       }
-      else if (property->GetID() != tagType)
+      else if (tag.Type != property->GetID())
       {
-        LogE("Property type mismatch in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        LogE("Property type mismatch in %s of %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8().c_str());
         DBreak();
       }
-      else if (tagType == NAME_StructProperty && tag.StructName.String() != CastChecked<UStructProperty>(property)->Struct->GetObjectName())
+      else if (tag.Type == NAME_StructProperty && tag.StructName.String() != CastChecked<UStructProperty>(property)->Struct->GetObjectNameString())
       {
-        LogE("Property %s of %s struct type mismatch %s/%s", tagName.c_str(), object->GetObjectName().UTF8(), tag.StructName.String().UTF8().c_str(), CastChecked<UStructProperty>(property)->Struct->GetObjectName().UTF8().c_str());
+        LogE("Property %s of %s struct type mismatch %s/%s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8(), tag.StructName.String().UTF8().c_str(), CastChecked<UStructProperty>(property)->Struct->GetObjectNameString().UTF8().c_str());
         DBreak();
       }
-      else if (tagType == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
+      else if (tag.Type == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
       {
-        LogE("Property coversion required in %s of %s", tagName.c_str(), object->GetObjectName().UTF8().c_str());
+        LogE("Property coversion required in %s of %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8().c_str());
         DBreak();
       }
       else
@@ -286,7 +283,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       tag.Value->Type = FPropertyValue::VID::Unk;
       prevTagPtr = tagPtr;
       s.SerializeBytes(tag.GetValueData(), tag.Size);
-      LogW("Skipping property %s of %s in %s package", tagName.c_str(), object->GetObjectName().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
+      LogW("Skipping property %s of %s in %s package", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
     }
   }
   else

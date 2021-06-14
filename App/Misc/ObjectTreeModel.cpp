@@ -8,7 +8,7 @@
 inline int GetSuitableExportsCount(FObjectExport* exp, const std::vector<FString>& filter, bool recursivly)
 {
   int result = 0;
-  if (std::find_if(filter.begin(), filter.end(), [&](const FString& cls) { return cls.ToUpper() == exp->GetClassName().ToUpper(); }) != filter.end())
+  if (std::find_if(filter.begin(), filter.end(), [&](const FString& cls) { return cls.ToUpper() == exp->GetClassNameString().ToUpper(); }) != filter.end())
   {
     result++;
   }
@@ -179,16 +179,16 @@ wxString ObjectTreeNode::GetObjectName() const
     {
       // TODO: Need to notify PackageWindow about new changes
       bool isDirty = (((FObjectExport*)Resource)->ObjectFlags & RF_Marked);
-      return isDirty ? L"*" + Resource->GetObjectName().WString() : Resource->GetObjectName().WString();
+      return isDirty ? L"*" + Resource->GetObjectNameString().WString() : Resource->GetObjectNameString().WString();
     }
-    return Resource->GetObjectName().WString();
+    return Resource->GetObjectNameString().WString();
   }
   return Name;
 }
 
 wxString ObjectTreeNode::GetClassName() const
 {
-  return Resource ? Resource->GetClassName().WString() : Name;
+  return Resource ? Resource->GetClassNameString().WString() : Name;
 }
 
 PACKAGE_INDEX ObjectTreeNode::GetObjectIndex() const

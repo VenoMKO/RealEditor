@@ -113,6 +113,14 @@ void ProgressWindow::SetCanCancel(bool flag)
   CancelButton->Enable(flag);
 }
 
+int ProgressWindow::ShowModal()
+{
+  SetFocus();
+  Raise();
+  ActionLabel->SetFocus();
+  return wxDialog::ShowModal();
+}
+
 void ProgressWindow::OnCancelClicked(wxCommandEvent&)
 {
   CancelButton->Enable(false);

@@ -18,7 +18,7 @@ T* CastChecked(U* obj)
 #if _DEBUG
   if (!obj || !obj->IsA(T::StaticClassName()))
   {
-    LogE("Cast of %s to %s failed", obj ? obj->GetObjectName().UTF8().c_str() : "NULL", T::StaticClassName());
+    LogE("Cast of %s to %s failed", obj ? obj->GetObjectNameString().UTF8().c_str() : "NULL", T::StaticClassName());
   }
 #endif
   return (T*)obj;

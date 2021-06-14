@@ -277,9 +277,13 @@ public:
 
   FString GetObjectPath() const;
 
-  FString GetObjectName() const;
+  FName GetObjectName() const;
 
-  FString GetClassName() const;
+  FString GetObjectNameString() const;
+
+  FName GetClassName() const;
+
+  FString GetClassNameString() const;
 
   uint32 GetExportFlags() const;
 

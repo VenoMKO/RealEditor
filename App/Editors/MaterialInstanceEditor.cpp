@@ -55,7 +55,7 @@ void MaterialInstanceEditor::OnObjectLoaded()
       }
 
       StaticParameterOverrides->Freeze();
-      wxPropertyCategory* root = new wxPropertyCategory(Object->GetObjectName().WString(), wxT("Root"));
+      wxPropertyCategory* root = new wxPropertyCategory(Object->GetObjectNameString().WString(), wxT("Root"));
       StaticParameterOverrides->Append(root);
 
       wxPropertyCategory* cat = new wxPropertyCategory("Switches", wxT("SSwitches"));

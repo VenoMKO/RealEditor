@@ -41,7 +41,7 @@ std::string GetActorName(UObject* actor)
   {
     return {};
   }
-  return actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectName().UTF8();
+  return actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectNameString().UTF8();
 }
 
 ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
@@ -84,7 +84,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     FString item = "None";
     if (materials[idx])
     {
-      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
     }
     f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
   }
@@ -94,7 +94,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     std::filesystem::create_directories(path, err);
   }
-  std::string fbxName = component->StaticMesh->GetObjectName().UTF8();
+  std::string fbxName = component->StaticMesh->GetObjectNameString().UTF8();
   if (std::filesystem::exists(path, err))
   {
     path /= fbxName;
@@ -114,14 +114,14 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
       }
       if (!utils.ExportStaticMesh(component->StaticMesh, fbxCtx))
       {
-        ctx.Errors.emplace_back("Error: Failed to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+        ctx.Errors.emplace_back("Error: Failed to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
       }
     }
     f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 
@@ -139,8 +139,8 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
 
   if (component->ReplacementPrimitive && ctx.Config.ExportMLods)
   {
-    const std::string itemPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->GetOuter()->GetObjectName().UTF8();
-    const std::string mlodPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->ReplacementPrimitive->GetOuter()->GetObjectName().UTF8();
+    const std::string itemPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->GetOuter()->GetObjectNameString().UTF8();
+    const std::string mlodPath = component->GetPackage()->GetPackageName().UTF8() + '_' + component->ReplacementPrimitive->GetOuter()->GetObjectNameString().UTF8();
     auto& vec = ctx.MLODs[mlodPath];
     if (vec.empty() || std::find(vec.begin(), vec.end(), itemPath) == vec.end())
     {
@@ -188,7 +188,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     FString item = "None";
     if (materials[idx])
     {
-      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassName().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectName().UTF8().c_str());
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
     }
     f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
   }
@@ -200,7 +200,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
   }
   if (std::filesystem::exists(path, err))
   {
-    std::string fbxName = component->SkeletalMesh->GetObjectName().UTF8();
+    std::string fbxName = component->SkeletalMesh->GetObjectNameString().UTF8();
     path /= fbxName;
     path.replace_extension("fbx");
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
@@ -217,14 +217,14 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
       }
       if (!utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
       {
-        ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+        ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
       }
     }
     f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
@@ -385,7 +385,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
     }
     if (std::filesystem::exists(path, err))
     {
-      path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
+      path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectNameString().UTF8();
       path.replace_extension("txt");
 
       if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
@@ -419,7 +419,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   }
   if (std::filesystem::exists(path, err))
   {
-    path /= component->SpeedTree->GetObjectName().UTF8();
+    path /= component->SpeedTree->GetObjectNameString().UTF8();
     path.replace_extension("spt");
     if (!std::filesystem::exists(path, err))
     {
@@ -430,11 +430,11 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
       s.write((const char*)sptData, sptDataSize);
       free(sptData);
     }
-    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectName().UTF8()).c_str());
+    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectNameString().UTF8()).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save SpeedTree " + GetLocalDir(component->SpeedTree) + component->SpeedTree->GetObjectName().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save SpeedTree " + GetLocalDir(component->SpeedTree) + component->SpeedTree->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
@@ -600,8 +600,8 @@ struct T3DComponent {
   T3DComponent() = default;
 
   T3DComponent(UActorComponent* comp)
-    : Name(comp->GetObjectName())
-    , Class(comp->GetClassName())
+    : Name(comp->GetObjectNameString())
+    , Class(comp->GetClassNameString())
     , Location(comp->Translation)
     , Rotation(comp->Rotation)
     , Scale3D(comp->Scale3D)
@@ -610,8 +610,8 @@ struct T3DComponent {
   {}
 
   T3DComponent(UActorComponent* comp, ComponentDataFunc& func)
-    : Name(comp->GetObjectName())
-    , Class(comp->GetClassName())
+    : Name(comp->GetObjectNameString())
+    , Class(comp->GetClassNameString())
     , Location(comp->Translation)
     , Rotation(comp->Rotation)
     , Scale3D(comp->Scale3D)
@@ -773,7 +773,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->StaticMeshComponent, ExportStaticMeshComponentData);
     if (component.NeedsParent())
     {
@@ -800,7 +800,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->StaticMeshComponent, ExportStaticMeshComponentData);
     if (component.NeedsParent())
     {
@@ -829,7 +829,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->SpeedTreeComponent, ExportSpeedTreeComponentData);
     component.Class = "StaticMeshComponent";
     component.Mobility = T3DComponent::ComponentMobility::Movable;
@@ -859,7 +859,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->SkeletalMeshComponent, ExportSkeletalMeshComponentData);
     if (component.NeedsParent())
     {
@@ -888,7 +888,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportPointLightComponentData);
     component.Name = "LightComponent0";
     if (component.NeedsParent())
@@ -926,7 +926,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportSpotLightComponentData);
     component.Name = "LightComponent0";
     if (component.NeedsParent())
@@ -964,7 +964,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportDirectionalLightComponentData);
     component.Name = "LightComponent0";
     if (component.NeedsParent())
@@ -992,7 +992,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->LightComponent, ExportSkyLightComponentData);
     component.Name = "LightComponent0";
     if (component.NeedsParent())
@@ -1020,7 +1020,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     T3DComponent& component = Components.emplace_back(actor->Component, ExportHeightFogComponentData);
     component.Name = "ExponentialHeightFogComponent0";
     if (component.NeedsParent())
@@ -1047,7 +1047,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     Class = "Actor";
     T3DComponent& component = Components.emplace_back();
     component.Name = "EmitterComponent0";
@@ -1063,7 +1063,7 @@ struct T3DActor {
     {
       return false;
     }
-    Name = actor->GetObjectName();
+    Name = actor->GetObjectNameString();
     Class = "Actor";
 
     UPrefab* prefab = Cast<UPrefab>(actor->TemplatePrefab);
@@ -1101,7 +1101,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1124,7 +1124,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1147,7 +1147,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1170,7 +1170,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1193,7 +1193,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1216,7 +1216,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1239,7 +1239,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1262,7 +1262,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1285,7 +1285,7 @@ struct T3DActor {
         }
         else
         {
-          component.Name = typed->GetObjectName();
+          component.Name = typed->GetObjectNameString();
           component.TakeActorTransform(typed);
           component.Parent = RootComponent;
         }
@@ -1294,14 +1294,14 @@ struct T3DActor {
       else if (UEmitter* typed = Cast<UEmitter>(archertype))
       {
         T3DComponent& component = Components.emplace_back(typed);
-        component.Name = typed->GetObjectName();
+        component.Name = typed->GetObjectNameString();
         component.Class = "SceneComponent";
         component.IsInstance = true;
         component.Parent = RootComponent;
       }
       else
       {
-        LogW("Prefab archertype %s is not supported!", actor->GetClassName().UTF8().c_str());
+        LogW("Prefab archertype %s is not supported!", actor->GetClassNameString().UTF8().c_str());
         continue;
       }
     }
@@ -1332,7 +1332,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   progress.SetActionText("Preparing...");
   progress.SetCurrentProgress(-1);
   std::thread([&] {
-
+    PERF_START(LevelExport);
     for (UObject* inner : worldInner)
     {
       if (ULevelStreaming* streamedLevel = Cast<ULevelStreaming>(inner))
@@ -1410,6 +1410,8 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
         return;
       }
     }
+
+    PERF_END(LevelExport);
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
   }).detach();
 
@@ -1491,7 +1493,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       SendEvent(progress, UPDATE_PROGRESS, ctx.CurrentProgress);
       if (actor)
       {
-        FString name = level->GetPackage()->GetPackageName() + "\\" + actor->GetObjectName();
+        FString name = level->GetPackage()->GetPackageName() + "\\" + actor->GetObjectNameString();
         SendEvent(progress, UPDATE_PROGRESS_DESC, wxString(L"Exporting: " + name.WString()));
       }
     }
@@ -1610,7 +1612,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       {
         if (UObject* mat = mi->GetParent())
         {
-          std::string e = obj->GetClassName().UTF8() + ' ';
+          std::string e = obj->GetClassNameString().UTF8() + ' ';
           e += "Game/";
           e += ctx.DataDirName;
           e += '/' + GetLocalDirAndName(mat, "/") + ' ';
@@ -1672,7 +1674,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       {
         if (UMaterialInterface* parent = Cast<UMaterialInterface>(mi->GetParent()))
         {
-          std::string e = obj->GetClassName().UTF8() + ' ';
+          std::string e = obj->GetClassNameString().UTF8() + ' ';
           e += "Game/";
           e += ctx.DataDirName;
           e += '/' + GetLocalDirAndName(parent, "/") + "_leafs" + ' ';
@@ -1869,7 +1871,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           result += "_Alpha";
         }
         result += VSEP;
-        result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectName().UTF8()).replace_extension().wstring());
+        result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectNameString().UTF8()).replace_extension().wstring());
         if (alpha)
         {
           result += "_Alpha";
@@ -1892,7 +1894,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           continue;
         }
 
-        SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting textures: ") + p.second->GetObjectName().UTF8());
+        SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting textures: ") + p.second->GetObjectNameString().UTF8());
 
         std::error_code err;
         std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
@@ -1900,7 +1902,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         {
           std::filesystem::create_directories(path, err);
         }
-        path /= p.second->GetObjectName().UTF8();
+        path /= p.second->GetObjectNameString().UTF8();
         path.replace_extension(ext);
 
         if (UTexture2D* texture = Cast<UTexture2D>(p.second))
@@ -1924,7 +1926,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             inputFormat = TextureProcessor::TCFormat::G8;
             break;
           default:
-            LogE("Failed to export texture %s. Invalid format!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export texture %s. Invalid format!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
 
@@ -1946,7 +1948,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           }
           if (!mip)
           {
-            LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export texture %s. No mipmaps!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
 
@@ -1964,13 +1966,13 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           {
             if (!processor.Process())
             {
-              LogE("Failed to export %s: %s", texture->GetObjectName().UTF8().c_str(), processor.GetError().c_str());
+              LogE("Failed to export %s: %s", texture->GetObjectNameString().UTF8().c_str(), processor.GetError().c_str());
               continue;
             }
           }
           catch (...)
           {
-            LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectName().UTF8().c_str());
+            LogE("Failed to export %s! Unknown texture processor error!", texture->GetObjectNameString().UTF8().c_str());
             continue;
           }
         }
@@ -2006,13 +2008,13 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
               f = TextureProcessor::TCFormat::G8;
               break;
             default:
-              LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube %s.%s. Invalid face format!", p.second->GetObjectNameString().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
             if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
             {
-              LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectPath().UTF8().c_str(), face->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube %s.%s. Faces have different format!", p.second->GetObjectNameString().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
@@ -2040,7 +2042,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
             }
             if (!mip)
             {
-              LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectName().UTF8().c_str());
+              LogE("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectNameString().UTF8().c_str());
               ok = false;
               break;
             }
@@ -2071,7 +2073,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         }
         else
         {
-          LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassName().UTF8().c_str());
+          LogW("Failed to export a texture object %s(%s). Class is not supported!", p.second->GetObjectPath().UTF8().c_str(), p.second->GetClassNameString().UTF8().c_str());
         }
       }
 
@@ -2170,7 +2172,7 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
       }
       if (std::filesystem::exists(path, err))
       {
-        path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectName().UTF8();
+        path /= component->GetPackage()->GetPackageName().UTF8() + "_" + (actor ? (UObject*)actor : (UObject*)component)->GetObjectNameString().UTF8();
         path.replace_extension("txt");
 
         if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
@@ -2376,7 +2378,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
         }
       }
     }
-    f.AddString("ActorLabel", (untypedActor->GetPackage()->GetPackageName() + "_" + untypedActor->GetObjectName()).UTF8().c_str());
+    f.AddString("ActorLabel", (untypedActor->GetPackage()->GetPackageName() + "_" + untypedActor->GetObjectNameString()).UTF8().c_str());
     f.AddString("FolderPath", untypedActor->GetPackage()->GetPackageName().UTF8().c_str());
     auto layers = untypedActor->GetLayers();
     layers.push_back("RE_All");
@@ -2400,7 +2402,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
   std::error_code err;
   std::filesystem::path dst = ctx.GetTerrainDir();
   dst /= actor->GetPackage()->GetPackageName().UTF8();
-  dst /= actor->GetObjectName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
   if (!std::filesystem::exists(dst, err))
   {
     std::filesystem::create_directories(dst, err);
@@ -2435,7 +2437,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
   dst = ctx.GetTerrainDir();
   dst /= actor->GetPackage()->GetPackageName().UTF8();
-  dst /= actor->GetObjectName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
   if (!std::filesystem::exists(dst, err))
   {
     std::filesystem::create_directories(dst, err);
@@ -2471,7 +2473,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
   dst = ctx.GetTerrainDir();
   dst /= actor->GetPackage()->GetPackageName().UTF8();
-  dst /= actor->GetObjectName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
   dst /= "WeightMaps";
 
   if (!std::filesystem::exists(dst, err))
@@ -2523,7 +2525,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         continue;
       }
 
-      std::filesystem::path texPath = dst / map->GetObjectName().UTF8();
+      std::filesystem::path texPath = dst / map->GetObjectNameString().UTF8();
       texPath.replace_extension(HasAVX2() ? "tga" : "dds");
 
       if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
@@ -2551,8 +2553,8 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
         if (inputFormat == TextureProcessor::TCFormat::None)
         {
-          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". Unsupported pixel format.");
-          LogW("Failed to export %s weightmap %s: unsupported pixel format.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectNameString().UTF8() + ". Unsupported pixel format.");
+          LogW("Failed to export %s weightmap %s: unsupported pixel format.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectNameString().UTF8());
           continue;
         }
 
@@ -2568,8 +2570,8 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         }
         if (!mip)
         {
-          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". No mipmaps.");
-          LogW("Failed to export %s weightmap %s: mo mips.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8());
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectNameString().UTF8() + ". No mipmaps.");
+          LogW("Failed to export %s weightmap %s: mo mips.", actor->GetObjectPath().UTF8().c_str(), map->GetObjectNameString().UTF8());
           continue;
         }
 
@@ -2580,8 +2582,8 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
         if (!processor.Process())
         {
-          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectName().UTF8() + ". " + processor.GetError());
-          LogW("Failed to export %s weightmap %s: %s", actor->GetObjectPath().UTF8().c_str(), map->GetObjectName().UTF8(), processor.GetError().c_str());
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap " + map->GetObjectNameString().UTF8() + ". " + processor.GetError());
+          LogW("Failed to export %s weightmap %s: %s", actor->GetObjectPath().UTF8().c_str(), map->GetObjectNameString().UTF8(), processor.GetError().c_str());
         }
       }
     }
@@ -2589,7 +2591,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
 
   dst = ctx.GetTerrainDir();
   dst /= actor->GetPackage()->GetPackageName().UTF8();
-  dst /= actor->GetObjectName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
 
   if (!std::filesystem::exists(dst, err))
   {
@@ -2615,7 +2617,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
       scale.X *= actor->GetHeightMapRatioX();
       scale.Y *= actor->GetHeightMapRatioY();
     }
-    ctx.TerrainInfo.emplace_back(actor->GetPackage()->GetPackageName().UTF8() + '_' + actor->GetObjectName().UTF8() + '\n');
+    ctx.TerrainInfo.emplace_back(actor->GetPackage()->GetPackageName().UTF8() + '_' + actor->GetObjectNameString().UTF8() + '\n');
     ctx.TerrainInfo.emplace_back(FString::Sprintf("\tLocation: (X=%06f,Y=%06f,Z=%06f)\n", loc.X, loc.Y, loc.Z).UTF8().c_str());
     ctx.TerrainInfo.emplace_back(FString::Sprintf("\tScale: (X=%06f,Y=%06f,Z=%06f)\n", scale.X, scale.Y, scale.Z).UTF8().c_str());
     if (!rot.IsZero())
@@ -2651,13 +2653,13 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
             continue;
           }
 
-          s << padding << padding << GetLocalDir(tm->Material) + tm->Material->GetObjectName().UTF8() << ":\n";
+          s << padding << padding << GetLocalDir(tm->Material) + tm->Material->GetObjectNameString().UTF8() << ":\n";
           auto textures = tm->Material->GetTextureParameters();
           for (const auto& p : textures)
           {
             if (p.second.Texture)
             {
-              s << padding << padding << padding << p.first.UTF8() << ": " << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectName().UTF8() << '\n';
+              s << padding << padding << padding << p.first.UTF8() << ": " << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectNameString().UTF8() << '\n';
             }
           }
           auto vectors = tm->Material->GetVectorParameters();
@@ -2673,7 +2675,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
           }
           if (tm->DisplacementMap)
           {
-            s << padding << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectName().UTF8() << '\n';
+            s << padding << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectNameString().UTF8() << '\n';
             s << padding << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
           }
           s << padding << padding << padding << "Mapping Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
@@ -2727,7 +2729,7 @@ std::string GetLocalDir(UObject* obj, const char* sep)
   FObjectExport* outer = obj->GetExportObject()->Outer;
   while (outer)
   {
-    path = (outer->GetObjectName().UTF8() + sep + path);
+    path = (outer->GetObjectNameString().UTF8() + sep + path);
     outer = outer->Outer;
   }
   if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
@@ -2739,5 +2741,5 @@ std::string GetLocalDir(UObject* obj, const char* sep)
 
 std::string GetLocalDirAndName(UObject* obj, const char* sep)
 {
-  return GetLocalDir(obj, sep) + obj->GetObjectName().UTF8();
+  return GetLocalDir(obj, sep) + obj->GetObjectNameString().UTF8();
 }
