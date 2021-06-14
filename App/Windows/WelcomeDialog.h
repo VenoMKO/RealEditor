@@ -2,7 +2,9 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 
-class WelcomeDialog : public wxDialog {
+#include "../Misc/wxModalWindow.h"
+
+class WelcomeDialog : public wxModalWindow {
 public:
   WelcomeDialog(wxWindow* parent, bool startMode = false);
   ~WelcomeDialog();

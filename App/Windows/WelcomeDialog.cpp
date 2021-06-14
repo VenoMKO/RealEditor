@@ -146,9 +146,10 @@ protected:
 };
 
 WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
-  : wxDialog(parent, wxID_ANY, wxT("Real Editor x64"), wxDefaultPosition, wxSize(729, 387), wxDEFAULT_DIALOG_STYLE)
+  : wxModalWindow(parent, wxID_ANY, wxT("Real Editor x64"), wxDefaultPosition, wxSize(729, 387), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
   SetIcon(wxICON(#114));
+  SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer1;
@@ -397,7 +398,7 @@ int WelcomeDialog::ShowModal()
     OpenByNameField->Enable(false);
     OpenByNameButton->Enable(false);
   }
-  return wxDialog::ShowModal();
+  return wxModalWindow::ShowModal();
 }
 
 void WelcomeDialog::OnRecentActivated(wxDataViewEvent& event)
