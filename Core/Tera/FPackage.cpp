@@ -2518,14 +2518,14 @@ UObject* FPackage::GetObject(const FString& path)
         {
           FString name = component.Substr(0, pos);
           int32 number = std::stoi(component.Substr(pos + 1).String());
-          if (exp->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
+          if (e->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
           {
-            return GetObject(exp, false);
+            return GetObject(e, false);
           }
           number--;
-          if (exp->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
+          if (e->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
           {
-            return GetObject(exp, false);
+            return GetObject(e, false);
           }
         }
         catch (...)
