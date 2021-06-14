@@ -29,6 +29,7 @@ protected:
   void OnSettingsClicked(wxCommandEvent& event);
   void OnUpdateClicked(wxCommandEvent& event);
   void OnCloseClicked(wxCommandEvent& event);
+  void OnCloseWinClicked(wxCloseEvent& event);
 
 protected:
   wxDataViewCtrl* RecentCtrl = nullptr;

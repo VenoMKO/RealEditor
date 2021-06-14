@@ -319,7 +319,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
   SettingsButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnSettingsClicked), NULL, this);
   UpdateButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnUpdateClicked), NULL, this);
   CloseButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnCloseClicked), NULL, this);
-
+  Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(WelcomeDialog::OnCloseWinClicked), NULL, this);
   const auto& lastItems = App::GetSharedApp()->GetConfig().LastFilePackages;
 
   OpenByNameButton->Enable(false);
@@ -344,6 +344,7 @@ WelcomeDialog::~WelcomeDialog()
   SettingsButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnSettingsClicked), NULL, this);
   UpdateButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnUpdateClicked), NULL, this);
   CloseButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnCloseClicked), NULL, this);
+  Disconnect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(WelcomeDialog::OnCloseWinClicked), NULL, this);
 }
 
 void WelcomeDialog::OnExternalOpen(const wxString& path)
@@ -489,5 +490,12 @@ void WelcomeDialog::OnUpdateClicked(wxCommandEvent& event)
 void WelcomeDialog::OnCloseClicked(wxCommandEvent& event)
 {
   QueuedOpenList.clear();
+  EndModal(wxID_CANCEL);
+}
+
+void WelcomeDialog::OnCloseWinClicked(wxCloseEvent& event)
+{
+  // Must veto the close event and end modal properly
+  event.Veto(true);
   EndModal(wxID_CANCEL);
 }
