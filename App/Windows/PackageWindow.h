@@ -35,7 +35,7 @@ public:
     FileHistory->AddFileToHistory(path);
   }
 
-  void SelectObject(const wxString& objectPath);
+  bool SelectObject(const wxString& objectPath);
   void SelectObject(UObject* object);
   wxString GetSelectedObjectPath();
 
@@ -114,6 +114,9 @@ private:
   void OnForwardClicked(wxCommandEvent&);
   void NavigateHistory();
 
+  void OnSearchEnter(wxCommandEvent&);
+  void OnFocusSearch(wxCommandEvent&);
+
   void DebugOnTestCookObject(wxCommandEvent&);
   void DebugOnSplitMod(wxCommandEvent&);
   void DebugOnDupSelection(wxCommandEvent&);
@@ -125,6 +128,7 @@ private:
   App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
   ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
+  wxTextCtrl* SearchField = nullptr;
   wxMenuItem* SettingsWindowMenu = nullptr;
   wxMenuItem* LogWindowMenu = nullptr;
   wxMenuItem* SaveMenu = nullptr;

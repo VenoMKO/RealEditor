@@ -330,6 +330,8 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
   model->DecRef();
 
   StartMode = startMode;
+
+  OpenByNameField->SetHint(wxT("Type a GPK name..."));
 }
 
 WelcomeDialog::~WelcomeDialog()

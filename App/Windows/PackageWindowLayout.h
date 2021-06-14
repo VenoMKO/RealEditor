@@ -146,6 +146,12 @@ void PackageWindow::InitLayout()
   topPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   topPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
+  wxAcceleratorEntry entries[1];
+  entries[0].Set(wxACCEL_CTRL, (int)'F', ControlElementId::SearchAccl);
+  wxAcceleratorTable accel(1, entries);
+  topPanel->SetAcceleratorTable(accel);
+
+
   wxBoxSizer* bSizer14;
   bSizer14 = new wxBoxSizer(wxVERTICAL);
 
@@ -173,6 +179,10 @@ void PackageWindow::InitLayout()
 
   treeSizer->Add(ObjectTreeCtrl, 1, wxALL | wxEXPAND, 4);
 
+  SearchField = new wxTextCtrl(sidebarPanel, ControlElementId::Search, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+  SearchField->SetHint(wxT("Search..."));
+  SearchField->Enable(false);
+  treeSizer->Add(SearchField, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   sidebarPanel->SetSizer(treeSizer);
   sidebarPanel->Layout();

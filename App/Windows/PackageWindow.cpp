@@ -69,6 +69,8 @@ enum ControlElementId {
   Forward,
   ContentSplitter,
   HeartBeat,
+  Search,
+  SearchAccl,
   OpenRecentStart /* OpenRecentStart must be the last id. OpenRecentStart + n - recent file at index n */
 };
 
@@ -203,12 +205,12 @@ wxString PackageWindow::GetPackagePath() const
   return wxString(Package->GetSourcePath().String());
 }
 
-void PackageWindow::SelectObject(const wxString& objectPath)
+bool PackageWindow::SelectObject(const wxString& objectPath)
 {
   UObject* tmp = Package->GetObject(objectPath.ToStdWstring());
   if (!tmp)
   {
-    return;
+    return false;
   }
   FObjectResource* found = tmp->GetExportObject();
   if (found && found->ObjectIndex)
@@ -219,8 +221,10 @@ void PackageWindow::SelectObject(const wxString& objectPath)
       ObjectTreeCtrl->Select(item);
       ObjectTreeCtrl->EnsureVisible(item);
       OnExportObjectSelected(found->ObjectIndex);
+      return true;
     }
   }
+  return false;
 }
 
 void PackageWindow::SelectObject(UObject* object)
@@ -299,6 +303,13 @@ void PackageWindow::OnUpdateProperties(wxCommandEvent&)
 
 void PackageWindow::LoadObjectTree()
 {
+  auto all = Package->GetAllExports();
+  wxArrayString hints;
+  for (FObjectExport* exp : all)
+  {
+    hints.push_back(exp->GetObjectNameString().WString());
+  }
+  SearchField->AutoComplete(hints);
   DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports());
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   DataModel->GetRootImport()->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
@@ -1283,6 +1294,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)
 {
+  SearchField->Enable(true);
   ObjectTreeCtrl->Freeze();
   LoadObjectTree();
   ObjectTreeCtrl->Thaw();
@@ -1695,6 +1707,20 @@ void PackageWindow::OnForwardClicked(wxCommandEvent&)
   NavigateHistory();
 }
 
+void PackageWindow::OnSearchEnter(wxCommandEvent& event)
+{
+  if (SelectObject(SearchField->GetValue()))
+  {
+    SearchField->SetValue(wxEmptyString);
+    ObjectTreeCtrl->SetFocus();
+  }
+}
+
+void PackageWindow::OnFocusSearch(wxCommandEvent&)
+{
+  SearchField->SetFocus();
+}
+
 void PackageWindow::NavigateHistory()
 {
   PerformingHistoryNavigation = true;
@@ -1774,6 +1800,8 @@ EVT_COMMAND(wxID_ANY, SELECT_OBJECT, PackageWindow::OnSelectObject)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_BUTTON(ControlElementId::Back, PackageWindow::OnBackClicked)
 EVT_BUTTON(ControlElementId::Forward, PackageWindow::OnForwardClicked)
+EVT_TEXT_ENTER(ControlElementId::Search, PackageWindow::OnSearchEnter)
+EVT_MENU(ControlElementId::SearchAccl, PackageWindow::OnFocusSearch)
 
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 
