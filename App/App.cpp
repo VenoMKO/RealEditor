@@ -532,7 +532,7 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
   fixedName = UnpackGpkPath(fixedName, frameInfo, selection);
   for (const auto window : PackageWindows)
   {
-    if (window->GetPackage()->GetPackageName().String() == fixedName)
+    if (window->GetPackage()->GetPackageName().ToUpper().String() == fixedName.Upper())
     {
       if (!window->GetPackage()->IsComposite())
       {
