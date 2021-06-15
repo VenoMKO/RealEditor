@@ -79,7 +79,7 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
     if (ext[1] == 'g' || ext[1] == 'G' || ext[1] == 'u' || ext[1] == 'U')
     {
       size_t pos = path.Size();
-      if (path[pos - 1] == '\\')
+      if (path[pos - 1] != '\\')
       {
         pos++;
       }
@@ -89,7 +89,7 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
     else if (ext[1] == 't' || ext[1] == 'T')
     {
       size_t pos = path.Size();
-      if (path[pos - 1] == '\\')
+      if (path[pos - 1] != '\\')
       {
         pos++;
       }
@@ -1409,6 +1409,7 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
   {
     std::scoped_lock<std::mutex> l(MissingPackagesMutex);
     MissingPackages.push_back(name);
+    LogE("Failed to find: %s.gpk", name.UTF8().c_str());
   }
   return nullptr;
 }
