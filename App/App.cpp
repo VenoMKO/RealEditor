@@ -748,8 +748,6 @@ bool App::OnInit()
   return wxApp::OnInit();
 }
 
-
-
 int App::OnRun()
 {
   if (IsReady)

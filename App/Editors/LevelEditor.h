@@ -42,22 +42,22 @@ public:
 protected:
   void CreateRenderer();
   void LoadPersistentLevel();
-  void CreateLevel(ULevel* level, osg::Geode* root);
+  void CreateLevel(ULevel* level, osg::ref_ptr<osg::Geode> root);
   void PrepareToExportLevel(LevelExportContext& ctx);
   void ExportLevel(class T3DFile& file, ULevel* level, LevelExportContext& ctx, ProgressWindow* progress);
   bool ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWindow* progress);
   void OnIdle(wxIdleEvent& e);
 
-  osg::MatrixTransform* CreateStaticMeshComponent(UStaticMeshComponent* actor);
-  osg::MatrixTransform* CreateSkelMeshComponent(USkeletalMeshComponent* component);
-  osg::MatrixTransform* CreatePrefabInstance(UPrefabInstance* instance);
-  osg::Geode* CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
+  osg::ref_ptr<osg::MatrixTransform> CreateStaticMeshComponent(UStaticMeshComponent* actor);
+  osg::ref_ptr<osg::MatrixTransform> CreateSkelMeshComponent(USkeletalMeshComponent* component);
+  osg::ref_ptr<osg::MatrixTransform> CreatePrefabInstance(UPrefabInstance* instance);
+  osg::ref_ptr<osg::Geode> CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor);
 
 protected:
   ULevel* Level = nullptr;
   bool LevelLoaded = false;
   bool ShowEmptyMessage = false;
-  std::unordered_map<UActor*, osg::Geode*> LevelNodes;
+  std::unordered_map<UActor*, osg::ref_ptr<osg::Geode>> LevelNodes;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   OSGCanvas* Canvas = nullptr;
   OSGWindow* OSGProxy = nullptr;

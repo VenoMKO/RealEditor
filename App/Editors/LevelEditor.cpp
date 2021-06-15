@@ -1,5 +1,5 @@
-#include "LevelEditor.h"
 #include "../App.h"
+#include "LevelEditor.h"
 #include "../Windows/PackageWindow.h"
 #include "../Windows/ProgressWindow.h"
 
@@ -147,7 +147,7 @@ void LevelEditor::CreateRenderer()
   Renderer->addEventHandler(new osgViewer::StatsHandler);
 #endif
 
-  osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
+  osg::ref_ptr<osgGA::TrackballManipulator> manipulator = new osgGA::TrackballManipulator;
   manipulator->setAllowThrow(false);
   manipulator->setVerticalAxisFixed(true);
   Renderer->setCameraManipulator(manipulator);
@@ -180,7 +180,7 @@ void LevelEditor::LoadPersistentLevel()
   progress.Layout();
 
   std::thread([&] {
-    CreateLevel(Level, Root.get());
+    CreateLevel(Level, Root);
     UObject* world = Level->GetOuter();
     auto worldInner = world->GetInner();
 
@@ -197,7 +197,7 @@ void LevelEditor::LoadPersistentLevel()
       level->Load();
       if (level->Level)
       {
-        osg::Geode* geode = new osg::Geode;
+        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
         geode->setName(level->Level->GetPackage()->GetPackageName().C_str());
         CreateLevel(level->Level, geode);
         std::scoped_lock<std::mutex> l(osgMutex);
@@ -210,11 +210,11 @@ void LevelEditor::LoadPersistentLevel()
   progress.ShowModal();
 
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
-  Renderer->setSceneData(Root.get());
+  Renderer->setSceneData(Root);
   LevelLoaded = true;
 }
 
-void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
+void LevelEditor::CreateLevel(ULevel* level, osg::ref_ptr<osg::Geode> root)
 {
   if (!level)
   {
@@ -268,7 +268,7 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
     {
       continue;
     }
-    osg::MatrixTransform* componentTransform = nullptr;
+    osg::ref_ptr<osg::MatrixTransform> componentTransform = nullptr;
     if (UStaticMeshActor* staticActor = Cast<UStaticMeshActor>(actor))
     {
       componentTransform = CreateStaticMeshComponent(staticActor->StaticMeshComponent);
@@ -291,7 +291,7 @@ void LevelEditor::CreateLevel(ULevel* level, osg::Geode* root)
       continue;
     }
 
-    osg::MatrixTransform* mt = new osg::MatrixTransform;
+    osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
     mt->setName(actor->GetObjectNameString().UTF8().c_str());
     osg::Matrix m;
     m.makeIdentity();
@@ -323,7 +323,7 @@ void LevelEditor::OnIdle(wxIdleEvent& e)
   Unbind(wxEVT_IDLE, &LevelEditor::OnIdle, this);
 }
 
-osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponent* component)
+osg::ref_ptr<osg::MatrixTransform> LevelEditor::CreateStaticMeshComponent(UStaticMeshComponent* component)
 {
   if (!component)
   {
@@ -369,11 +369,12 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
       indices->push_back(indexContainer.GetIndex(section.FirstIndex + (faceIndex * 3) + 1));
       indices->push_back(indexContainer.GetIndex(section.FirstIndex + (faceIndex * 3) + 2));
     }
-    geo->addPrimitiveSet(indices.get());
-    geo->setVertexArray(vertices.get());
-    geo->setNormalArray(normals.get());
-    geo->setTexCoordArray(0, uvs.get());
+    geo->addPrimitiveSet(indices);
+    geo->setVertexArray(vertices);
+    geo->setNormalArray(normals);
+    geo->setTexCoordArray(0, uvs);
 
+    osg::ref_ptr<osg::BlendFunc> blendMasked = new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (UMaterialInterface* material = Cast<UMaterialInterface>(section.Material))
     {
       if (UTexture2D* tex = material->GetDiffuseTexture())
@@ -381,12 +382,13 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
         osg::ref_ptr<osg::Image> img = new osg::Image;
         tex->RenderTo(img.get(), 64);
         osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
+        osgtex->setUseHardwareMipMapGeneration(true);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
-        geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex.get());
+        geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex);
         if (material->GetBlendMode() == EBlendMode::BLEND_Masked)
         {
-          geo->getOrCreateStateSet()->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+          geo->getOrCreateStateSet()->setAttributeAndModes(blendMasked);
           geo->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
         }
       }
@@ -408,7 +410,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   FVector rotation = component->Rotation.Normalized().Euler();
   FVector scale3d = component->Scale3D * component->Scale;
 
-  osg::MatrixTransform* mt = new osg::MatrixTransform;
+  osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
   mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
@@ -431,7 +433,7 @@ osg::MatrixTransform* LevelEditor::CreateStaticMeshComponent(UStaticMeshComponen
   return mt;
 }
 
-osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponent* component)
+osg::ref_ptr<osg::MatrixTransform> LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponent* component)
 {
   if (!component)
   {
@@ -459,7 +461,7 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
     uvs->push_back(osg::Vec2(uvertices[idx].UVs[0].X, uvertices[idx].UVs[0].Y));
   }
 
-  osg::Geode* geode = new osg::Geode;
+  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
   std::vector<const FSkelMeshSection*> sections = model->GetSections();
   const FMultiSizeIndexContainer* indexContainer = model->GetIndexContainer();
   for (const FSkelMeshSection* section : sections)
@@ -472,12 +474,13 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 1));
       indices->push_back(indexContainer->GetIndex(section->BaseIndex + (faceIndex * 3) + 2));
     }
-    geo->addPrimitiveSet(indices.get());
-    geo->setVertexArray(vertices.get());
-    geo->setNormalArray(normals.get());
-    geo->setTexCoordArray(0, uvs.get());
+    geo->addPrimitiveSet(indices);
+    geo->setVertexArray(vertices);
+    geo->setNormalArray(normals);
+    geo->setTexCoordArray(0, uvs);
 
     // TODO: Use MaterialMap to remap section materials to the global materials list
+    osg::ref_ptr<osg::BlendFunc> blendMasked = new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (mesh->GetMaterials().size() > section->MaterialIndex)
     {
       if (UMaterialInterface* material = Cast<UMaterialInterface>(mesh->GetMaterials()[section->MaterialIndex]))
@@ -489,23 +492,23 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
           osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
-          geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex.get());
+          geo->getOrCreateStateSet()->setTextureAttributeAndModes(0, osgtex);
           if (material->GetBlendMode() == EBlendMode::BLEND_Masked)
           {
-            geo->getOrCreateStateSet()->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            geo->getOrCreateStateSet()->setAttributeAndModes(blendMasked);
             geo->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
           }
         }
       }
     }
-    geode->addDrawable(geo.get());
+    geode->addDrawable(geo);
   }
 
   FVector translation = component->Translation;
   FVector rotation = component->Rotation.Normalized().Euler();
   FVector scale3d = component->Scale3D * component->Scale;
 
-  osg::MatrixTransform* mt = new osg::MatrixTransform;
+  osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
   mt->setName(component->GetObjectNameString().UTF8().c_str());
   osg::Matrix m;
   m.makeIdentity();
@@ -528,7 +531,7 @@ osg::MatrixTransform* LevelEditor::CreateSkelMeshComponent(USkeletalMeshComponen
   return mt;
 }
 
-osg::Geode* LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor)
+osg::ref_ptr<osg::Geode> LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* actor)
 {
   if (!actor || actor->StreamingLevels.empty())
   {
@@ -549,10 +552,10 @@ osg::Geode* LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* 
     return nullptr;
   }
 
-  osg::Geode* result = new osg::Geode;
+  osg::ref_ptr<osg::Geode> result = new osg::Geode;
   for (ULevelStreaming* level : aliveLevels)
   {
-    osg::Geode* lgeode = new osg::Geode;
+    osg::ref_ptr<osg::Geode> lgeode = new osg::Geode;
     lgeode->setName(level->PackageName.UTF8().c_str());
     result->addChild(lgeode);
     CreateLevel(level->Level, lgeode);
@@ -561,9 +564,9 @@ osg::Geode* LevelEditor::CreateStreamingLevelVolumeActor(ULevelStreamingVolume* 
   return result;
 }
 
-osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instance)
+osg::ref_ptr<osg::MatrixTransform> LevelEditor::CreatePrefabInstance(UPrefabInstance* instance)
 {
-  osg::MatrixTransform* root = nullptr;
+  osg::ref_ptr<osg::MatrixTransform> root = nullptr;
 
   for (UObject* archetype : instance->TemplatePrefab->PrefabArchetypes)
   {
@@ -572,7 +575,7 @@ osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instanc
     {
       continue;
     }
-    osg::MatrixTransform* componentTransform = nullptr;
+    osg::ref_ptr<osg::MatrixTransform> componentTransform = nullptr;
     if (UStaticMeshActor* actorSM = Cast<UStaticMeshActor>(actor))
     {
       componentTransform = CreateStaticMeshComponent(Cast<UStaticMeshComponent>(actorSM->StaticMeshComponent));
@@ -590,7 +593,7 @@ osg::MatrixTransform* LevelEditor::CreatePrefabInstance(UPrefabInstance* instanc
       continue;
     }
 
-    osg::MatrixTransform* mt = new osg::MatrixTransform;
+    osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
     mt->setName(actor->GetObjectNameString().UTF8().c_str());
     osg::Matrix m;
     m.makeIdentity();

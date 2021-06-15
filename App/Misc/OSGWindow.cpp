@@ -157,7 +157,8 @@ void OSGWindow::Init()
 {
   if (valid())
   {
-    setState(new osg::State);
+    osg::ref_ptr<osg::State> st = new osg::State;
+    setState(st);
     getState()->setGraphicsContext(this);
 
     if (_traits.valid() && _traits->sharedContext.valid())
