@@ -54,61 +54,75 @@ uint16 FPackage::CoreVersion = 0;
 
 void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::unordered_map<FString, FString>& tfcCache)
 {
-  std::filesystem::path fspath(path.WString());
-  dirCache.resize(0);
-  std::vector<std::filesystem::path> tmpPaths;
-  std::unordered_map<std::string, std::filesystem::path> tmpTfcPaths;
+  PERF_START(S1GameIterator);
+  
+  dirCache.clear();
   FPackage::FilePackageNames.clear();
+
+  std::filesystem::path fspath(path.WString());
+
+  std::vector<std::wstring> tmpPaths;
+  std::unordered_map<std::string, std::wstring> tmpTfcPaths;
+  
   for (auto& p : std::filesystem::recursive_directory_iterator(fspath))
   {
     if (!p.is_regular_file() || !p.file_size())
     {
       continue;
     }
-    std::filesystem::path itemPath = p.path();
-    std::string ext = itemPath.extension().string();
-    if (!_stricmp(ext.c_str(), ".gpk") || !_stricmp(ext.c_str(), ".gmp") || !_stricmp(ext.c_str(), ".upk") || !_stricmp(ext.c_str(), ".u"))
+    const std::filesystem::path& itemPath = p.path();
+    if (!itemPath.has_extension())
     {
-      std::error_code err;
-      std::filesystem::path rel = std::filesystem::relative(itemPath, fspath, err);
-      if (!err)
-      {
-        tmpPaths.push_back(rel);
-        FPackage::FilePackageNames.emplace_back(rel.filename().replace_extension());
-      }
+      continue;
     }
-    else if (!_stricmp(ext.c_str(), ".tfc"))
+    std::string ext = itemPath.extension().string();
+    if (ext[1] == 'g' || ext[1] == 'G' || ext[1] == 'u' || ext[1] == 'U')
     {
-      std::error_code err;
-      std::filesystem::path rel = std::filesystem::relative(itemPath, fspath, err);
-      if (!err)
+      size_t pos = path.Size();
+      if (path[pos - 1] == '\\')
       {
-        tmpTfcPaths[itemPath.filename().replace_extension().string()] = rel;
+        pos++;
       }
+      tmpPaths.emplace_back(itemPath.wstring().substr(pos));
+      FPackage::FilePackageNames.emplace_back(itemPath.filename().replace_extension());
+    }
+    else if (ext[1] == 't' || ext[1] == 'T')
+    {
+      size_t pos = path.Size();
+      if (path[pos - 1] == '\\')
+      {
+        pos++;
+      }
+      tmpTfcPaths[itemPath.filename().replace_extension().string()] = itemPath.wstring().substr(pos);
     }
   }
-
-  std::sort(tmpPaths.begin(), tmpPaths.end(), [](std::filesystem::path& a, std::filesystem::path& b) {
-    auto tA = a.filename().replace_extension();
-    auto tB = b.filename().replace_extension();
-    return tA.wstring() < tB.wstring();
-  });
-
   
+  std::sort(tmpPaths.begin(), tmpPaths.end(), [](const std::wstring& a, const std::wstring& b) {
+    std::wstring_view tA(&a[a.find_last_of('\\')]);
+    std::wstring_view tB(&b[b.find_last_of('\\')]);
+    return tA < tB;
+  });
+  
+  dirCache.reserve(tmpPaths.size());
   for (const auto& path : tmpPaths)
   {
-    dirCache.emplace_back(W2A(path.wstring()));
+    dirCache.emplace_back(W2A(path));
   }
-  for (const auto& item : tmpTfcPaths)
-  {
-    tfcCache[item.first] = W2A(item.second.wstring());
-  }
+  
   // Must copy the dirCache coz it might be freed
   std::thread([=]() mutable {
     std::filesystem::path listPath = fspath / PackageListName;
     FWriteStream s(listPath.wstring());
     s << dirCache;
   }).detach();
+
+  tfcCache.reserve(tmpTfcPaths.size());
+  for (const auto& item : tmpTfcPaths)
+  {
+    tfcCache[item.first] = W2A(item.second);
+  }
+
+  PERF_END(S1GameIterator);
 }
 
 void EncryptMapper(const FString& decrypted, std::vector<char>& encrypted)
