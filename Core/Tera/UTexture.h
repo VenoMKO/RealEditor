@@ -105,3 +105,8 @@ public:
 protected:
   void PostLoad() override;
 };
+
+class UTextureFlipBook : public UTexture2D {
+public:
+  DECL_UOBJ(UTextureFlipBook, UTexture2D);
+};

@@ -50,6 +50,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTextureCube(exp);
   }
+  else if (c == UTextureFlipBook::StaticClassName())
+  {
+    result = new UTextureFlipBook(exp);
+  }
   else if (c == USkeletalMesh::StaticClassName())
   {
     result = new USkeletalMesh(exp);

@@ -34,7 +34,7 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   {
     editor = new ObjectRedirectorEditor(parent, window);
   }
-  else if (c == UTexture2D::StaticClassName() || c == UTerrainWeightMapTexture::StaticClassName())
+  else if (c == UTexture2D::StaticClassName() || c == UTerrainWeightMapTexture::StaticClassName() || c == UTextureFlipBook::StaticClassName())
   {
     editor = new TextureEditor(parent, window);
   }

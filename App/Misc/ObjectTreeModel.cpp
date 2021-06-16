@@ -71,6 +71,14 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   {
     return IcoTexture;
   }
+  if (className == wxT("TextureFlipBook"))
+  {
+    return IcoTexture;
+  }
+  if (className == wxT("TextureCube"))
+  {
+    return IcoTexture;
+  }
   if (className == wxT("ObjectRedirector"))
   {
     return IcoRedirector;
