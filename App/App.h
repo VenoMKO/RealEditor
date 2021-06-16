@@ -13,6 +13,7 @@
 
 #include <Tera/Core.h>
 #include <Utils/AConfiguration.h>
+#include <Utils/ALDevice.h>
 
 class wxEventHandler;
 inline void SendEvent(wxEvtHandler* obj, wxEventType type)
@@ -89,6 +90,11 @@ public:
   {
     GetSharedApp()->GetConfig().LastImportPath = path.ToStdWstring();
     GetSharedApp()->SaveConfig();
+  }
+
+  static ALDevice* GetSharedAudioDevice()
+  {
+    return GetSharedApp()->AudioDevice ? GetSharedApp()->AudioDevice : GetSharedApp()->InitAudioDevice();
   }
 
   static void AddRecentFile(const wxString& path);
@@ -169,6 +175,7 @@ private:
   bool OnCmdLineParsed(wxCmdLineParser& parser) override;
   void OnObjectLoaded(wxCommandEvent& e);
   void ShowWelcomeBeforeExit(wxCommandEvent&);
+  ALDevice* InitAudioDevice();
 
   // Build DirCache and load class packages
   void LoadCore(ProgressWindow*);
@@ -180,6 +187,7 @@ private:
   FAppConfig Config;
   class WelcomeDialog* InitScreen = nullptr;
   BulkImportWindow* BulkImporter = nullptr;
+  ALDevice* AudioDevice = nullptr;
   wxSingleInstanceChecker* InstanceChecker = nullptr;
   RpcServer* Server = nullptr;
   bool IsReady = false;

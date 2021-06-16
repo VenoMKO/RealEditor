@@ -16,6 +16,9 @@ enum ToolEventID : int {
   eID_Texture2D_Channel_A,
   eID_Level_Load,
   eID_StreamingLevel_Source,
+  eID_SoundPlay,
+  eID_SoundStop,
+  eID_SoundPause,
 };
 
 class UObject;
@@ -51,6 +54,8 @@ public:
   virtual std::vector<FPropertyTag*> GetObjectProperties();
 
   virtual void PopulateToolBar(wxToolBar* toolbar);
+
+  virtual void ClearToolbar();
   
   virtual void OnToolBarEvent(wxCommandEvent& e);
 
@@ -77,6 +82,7 @@ protected:
 
 protected:
   UObject* Object = nullptr;
+  wxToolBar* Toolbar = nullptr;
   wxString CompositeObjectPath;
   PackageWindow* Window = nullptr;
   bool Loading = false;

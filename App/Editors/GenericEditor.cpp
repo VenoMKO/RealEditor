@@ -148,6 +148,7 @@ std::vector<FPropertyTag*> GenericEditor::GetObjectProperties()
 
 void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
 {
+  Toolbar = toolbar;
   if (Object->GetDataSize() > 0)
   {
     toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
@@ -167,6 +168,11 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
       toolbar->AddTool(eID_Class, "Class", wxBitmap("#124", wxBITMAP_TYPE_PNG_RESOURCE), "Show class object");
     }
   }
+}
+
+void GenericEditor::ClearToolbar()
+{
+  Toolbar = nullptr;
 }
 
 void GenericEditor::OnToolBarEvent(wxCommandEvent& e)

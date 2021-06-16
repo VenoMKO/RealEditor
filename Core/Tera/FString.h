@@ -290,6 +290,11 @@ public:
     return A2W(Data);
   }
 
+  inline void Erase(std::string::iterator& it)
+  {
+    Data.erase(it);
+  }
+
   inline FString operator+(const std::string& str) const
   {
     FString s(*this);

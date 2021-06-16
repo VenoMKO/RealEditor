@@ -44,5 +44,5 @@ private:
   std::string Error;
   void* Data = nullptr;
   FILE_OFFSET DataSize = 0;
-  FILE_OFFSET DataOffset = 0;;
+  FILE_OFFSET DataOffset = 0;
 };

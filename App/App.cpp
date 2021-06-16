@@ -19,6 +19,7 @@
 #include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
+#include <Utils/ALDevice.h>
 
 const char* APP_NAME = "Real Editor";
 
@@ -337,6 +338,7 @@ void App::AddRecentFile(const wxString& path)
 
 App::~App()
 {
+  delete AudioDevice;
   delete InstanceChecker;
   delete Server;
 
@@ -1102,6 +1104,24 @@ void App::ShowWelcomeBeforeExit(wxCommandEvent&)
   InitScreen = nullptr;
   ShuttingDown = true;
   ALog::Show(false);
+}
+
+ALDevice* App::InitAudioDevice()
+{
+  if (AudioDevice)
+  {
+    delete AudioDevice;
+  }
+  try
+  {
+    AudioDevice = new ALDevice();
+  }
+  catch (const std::exception& e)
+  {
+    AudioDevice = nullptr;
+    LogE("AudioDevice init: %s", e.what());
+  }
+  return AudioDevice;
 }
 
 void App::OnRegisterMime(wxCommandEvent&)

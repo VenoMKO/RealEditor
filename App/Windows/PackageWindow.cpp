@@ -580,12 +580,17 @@ void PackageWindow::OnExportObjectSelected(INT index)
       {
         return;
       }
+      ActiveEditor->ClearToolbar();
       Toolbar->ClearTools();
       ShowEditor(it->second);
       it->second->LoadObject();
     }
     else
     {
+      if (ActiveEditor)
+      {
+        ActiveEditor->ClearToolbar();
+      }
       Toolbar->ClearTools();
       GenericEditor* editor = GenericEditor::CreateEditor(EditorContainer, this, Package->GetObject(index, false));
       ShowEditor(editor);

@@ -92,6 +92,12 @@ IDB_ICO_SLEVEL          RCDATA                  "Resources\\Classes\\icon_slevel
 
 IDB_ICO_GPK_FILE_PNG    RCDATA                  "Resources\\FileIcon.png"
 
+IDB_PLAY                RCDATA                  "Resources\\Btn_Play.png"
+
+IDB_PAUSE               RCDATA                  "Resources\\Btn_Pause.png"
+
+IDB_STOP                RCDATA                  "Resources\\Btn_Stop.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
