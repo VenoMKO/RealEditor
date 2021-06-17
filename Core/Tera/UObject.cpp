@@ -104,19 +104,18 @@ void UObject::AddProperty(FPropertyTag* property)
   {
     return;
   }
-  const FString propName = property->Name.String().ToUpper();
+  const FName propName = property->Name;
   if (property->ClassProperty && Properties.size() && propName != NAME_None)
   {
     // Try to insert the property at the correct index
     // Object properties must be already sorted for this to work correctly 
     int32 lastIndex = -1;
     UClass* objClass = Class;
-    std::vector<FString> classPropNames;
+    std::vector<FName> classPropNames;
 
     while (objClass)
     {
       UField* field = objClass->GetPropertyLink();
-      FString fieldName;
       while (field)
       {
         if (!Cast<UProperty>(field))
@@ -124,7 +123,7 @@ void UObject::AddProperty(FPropertyTag* property)
           field = field->GetNext();
           continue;
         }
-        FString fieldName = field->GetObjectNameString();
+        FName fieldName = field->GetObjectName();
         if (fieldName == propName)
         {
           lastIndex = classPropNames.size();
@@ -138,8 +137,7 @@ void UObject::AddProperty(FPropertyTag* property)
     std::vector<size_t> ordered;
     for (FPropertyTag* tag : Properties)
     {
-      tag->Name.String().ToUpper();
-      auto it = std::find(classPropNames.begin(), classPropNames.end(), tag->Name.String().ToUpper());
+      auto it = std::find(classPropNames.begin(), classPropNames.end(), tag->Name);
       if (it != classPropNames.end())
       {
         ordered.emplace_back(it - classPropNames.begin());
@@ -151,7 +149,7 @@ void UObject::AddProperty(FPropertyTag* property)
     if (it != ordered.rend())
     {
       int32 idx = std::distance(it, ordered.rend()) - 1;
-      if (idx && idx < Properties.size() && Properties[idx]->Name.String().ToUpper() == propName)
+      if (idx && idx < Properties.size() && Properties[idx]->Name == propName)
       {
         // The prop is a static array element. Add it to the end.
         idx++;
