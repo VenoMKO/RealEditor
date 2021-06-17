@@ -1,6 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <wx/dataview.h>
+#include <wx/statusbr.h>
 
 #include "../Misc/wxModalWindow.h"
 
@@ -20,6 +21,7 @@ public:
 
 protected:
   void OnRecentActivated(wxDataViewEvent& event);
+  void OnRecentSelected(wxDataViewEvent& event);
   void OnOpenFileClicked(wxCommandEvent& event);
   void OnOpenByNameText(wxCommandEvent& event);
   void OnOpenByNameEnter(wxCommandEvent& event);
@@ -42,6 +44,7 @@ protected:
   wxButton* UpdateButton = nullptr;
   wxStaticText* Version = nullptr;
   wxButton* CloseButton = nullptr;
+  wxStatusBar* StatusBar = nullptr;
 
   bool StartMode = false;
   bool ModalRunning = false;

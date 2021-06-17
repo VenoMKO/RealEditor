@@ -146,11 +146,12 @@ protected:
 };
 
 WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
-  : wxModalWindow(parent, wxID_ANY, wxT("Real Editor x64"), wxDefaultPosition, wxSize(729, 387), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+  : wxModalWindow(parent, wxID_ANY, wxT("Real Editor x64"), wxDefaultPosition, wxSize(729, 407), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
   SetIcon(wxICON(#114));
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
+  StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
 
   wxBoxSizer* bSizer1;
   bSizer1 = new wxBoxSizer(wxVERTICAL);
@@ -310,6 +311,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
   this->Centre(wxBOTH);
 
   RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(WelcomeDialog::OnRecentActivated), NULL, this);
+  RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(WelcomeDialog::OnRecentSelected), NULL, this);
   OpenFileButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnOpenFileClicked), NULL, this);
   OpenByNameField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(WelcomeDialog::OnOpenByNameText), NULL, this);
   OpenByNameField->Connect(wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler(WelcomeDialog::OnOpenByNameEnter), NULL, this);
@@ -413,6 +415,16 @@ void WelcomeDialog::OnRecentActivated(wxDataViewEvent& event)
   }
   QueuedOpenList.emplace_back(item->Path.WString());
   EndModal(wxID_OK);
+}
+
+void WelcomeDialog::OnRecentSelected(wxDataViewEvent& event)
+{
+  RecentItem* item = (RecentItem*)event.GetItem().GetID();
+  if (!item)
+  {
+    return;
+  }
+  StatusBar->SetStatusText(item->Path.WString());
 }
 
 void WelcomeDialog::OnOpenFileClicked(wxCommandEvent& event)
