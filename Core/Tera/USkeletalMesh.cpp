@@ -1292,8 +1292,8 @@ if (check) {\
       }
       if (hasWeights)
       {
-        SHOW_ERROR_IF(foundMisplaced, FString("Bone ") + fbxBone.boneName + " position does not match!\nMake sure your model uses same skeleton and it was exported with 1.0 scale.");
-        SHOW_ERROR_IF(1, FString("Couldn't find ") + fbxBone.boneName + " bone in the gpk model.\nMake sure you use same skeleton as gpk model.");
+        SHOW_ERROR_IF(foundMisplaced, FString("Bone position mismatch!\n\nBone ") + fbxBone.boneName + " position does not match!\nMake sure your FBX model uses the same skeleton and it was exported with 1.0 scale.");
+        SHOW_ERROR_IF(1, FString("Skeleton mismatch!\n\nThe imported FBX file has extra bone(s) ") + fbxBone.boneName + ".\n" + GetObjectNameString().String() + " does not have this bone.\nMake sure your FBX model shares the skeleton with " + GetObjectNameString().String() + ".");
       }
       continue;
     }

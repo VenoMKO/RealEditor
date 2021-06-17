@@ -372,7 +372,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   GetScene()->GetRootNode()->AddChild(meshNode);
   if (!SaveScene(ctx.Path))
   {
-    ctx.Error = "Failed to write data!";
+    ctx.Error = "IO error!\n\nFailed to write data to the disk! Try a different location.";
     return false;
   }
   return true;
@@ -449,7 +449,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
   
   if (!SaveScene(ctx.Path))
   {
-    ctx.Error = "Failed to write data!";
+    ctx.Error = "IO error!\n\nFailed to write data to the disk! Try a different location.";
     return false;
   }
   return true;
@@ -479,7 +479,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
   if (!holder.Importer->Initialize(uniPath, 0, GetManager()->GetIOSettings()))
   {
-    ctx.Error = "Failed to open the FBX file! It may be corrupted or its version may be incompatible.";
+    ctx.Error = "Failed to open the FBX file!\n\nIt may be corrupted or its version may be incompatible.";
     FbxFree(uniPath);
     return false;
   }
@@ -525,18 +525,18 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
   if (!skel)
   {
-    ctx.Error = "Your model has no skeleton/rig. Skeletal mesh must be rigged to a skeleton, exported by Real Editor.";
+    ctx.Error = "The model has no skeleton/rig.\n\n Skeletal mesh must be rigged to a skeleton, exported by Real Editor.";
     return false;
   }
   if (!mesh)
   {
-    ctx.Error = "The imported FBX scene has no geometry rigged to the skeleton!";
+    ctx.Error = "Missing geometry!\n\nThe imported FBX scene has no geometry rigged to the skeleton!";
     return false;
   }
 
   if (!mesh->IsTriangleMesh())
   {
-    ctx.Error = "The imported 3D model contains polygons with more than 3 vertices. Tera supports only triangular polygons.";
+    ctx.Error = "Malformed 3D model!\n\nThe FBX 3D model contains polygons with more than 3 vertices. Tera supports only triangular polygons.";
     return false;
   }
 
@@ -546,7 +546,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     FbxSkin* skin = (FbxSkin*)mesh->GetDeformer(deformerIndex);
     if (skin->GetSkinningType() != fbxsdk::FbxSkin::eLinear && skin->GetSkinningType() != fbxsdk::FbxSkin::eRigid)
     {
-      ctx.Error = "The imported 3D model uses unsupported skin type! Tera supports only classic linear skin with up to 4 weights/bones per vertex.";
+      ctx.Error = "The FBX 3D model uses unsupported skin type!\n\nTera supports only classic linear skin with up to 4 weights/bones per vertex.";
       return false;
     }
 
@@ -576,7 +576,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
   if (!clusters.size())
   {
-    ctx.Error = "The imported 3D model has no skin. Make sure you've rigged it correctly.";
+    ctx.Error = "Malformed skeletal mesh!\n\nThe FBX 3D model has no skin. Make sure you've rigged it correctly.";
     return false;
   }
 
@@ -589,9 +589,9 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   std::vector<FbxNode*>sortedLinks;
   BuildSortedLinks(clusters, sortedLinks, GetScene());
 
-  if (sortedLinks.size() > 128)
+  if (sortedLinks.size() > 256)
   {
-    ctx.Error = "The imported skeleton has " + std::to_string(sortedLinks.size()) + " bones. Tera supports only up to 128 bones. You should rig your model to a skeleton exported by Real Editor.";
+    ctx.Error = "Too many bones!\n\nThe imported skeleton has " + std::to_string(sortedLinks.size()) + " bones. Tera supports only up to 256 bones. You should rig your model to a skeleton exported by Real Editor.";
     return false;
   }
 
