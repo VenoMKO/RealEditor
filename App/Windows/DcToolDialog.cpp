@@ -11,7 +11,7 @@
 
 #include "../App.h"
 #include "ProgressWindow.h"
-#include "IODialogs.h"
+#include "REDialogs.h"
 
 #include <Tera/Core.h>
 #include <Tera/FStream.h>
@@ -194,11 +194,6 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
 
   UpdateButtons();
 
-  if (NeedsElevation())
-  {
-    FindButton->SetAuthNeeded();
-  }
-
   // Connect Events
   KeyField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnKeyChanged), NULL, this);
   VecField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnVecChanged), NULL, this);
@@ -237,9 +232,7 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
 {
   if (NeedsElevation())
   {
-    wxMessageDialog dlg(this, "RE requires Administrator privileges to access TERA process.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
-    dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
-    if (dlg.ShowModal() == wxID_YES)
+    if (REDialog::Auth(this))
     {
       App::GetSharedApp()->RestartElevated();
     }
@@ -248,13 +241,13 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
   HANDLE proc = DCKeyTool::GetTeraProcess();
   if (!proc)
   {
-    wxMessageBox("Start your Tera client and try again.", "Tera is not running!", wxICON_ERROR, this);
+    REDialog::Error("Start your Tera client and try again.", "Tera is not running!");
     return;
   }
   DCKeyTool tool(proc);
   if (!tool.FindKey())
   {
-    wxMessageBox("Wait for the server selection screen to appear and then try again.", "Couldn't find the key!", wxICON_ERROR, this);
+    REDialog::Error("Wait for the server selection screen to appear and then try again.", "Couldn't find the key!");
     return;
   }
   auto results = tool.GetResults();
@@ -265,8 +258,7 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
   App::GetSharedApp()->SaveConfig();
   UpdateButtons();
 
-  wxString msg = wxString::Format("Key: %s\nVector: %s", results.front().first.c_str(), results.front().second.c_str());
-  wxMessageBox(msg, "Success", wxICON_INFORMATION, this);
+  REDialog::Info(wxString::Format("Key: %s\nVector: %s", results.front().first.c_str(), results.front().second.c_str()));
 }
 
 void DcToolDialog::OnDcFileChanged(wxFileDirPickerEvent& event)
@@ -287,7 +279,7 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
   {
     DcFilePicker->SetPath(wxEmptyString);
     DcFilePicker->SetInitialDirectory(std::filesystem::path(FPackage::GetDcPath().WString()).parent_path().wstring());
-    wxMessageBox("The DC file does not exist or can't be opened!", "Error!", wxICON_ERROR, this);
+    REDialog::Error("The DC file does not exist or can't be opened!");
     DcFilePicker->SetFocus();
     return;
   }
@@ -529,11 +521,11 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
   }).detach();
   if (progress.ShowModal())
   {
-    wxMessageBox("Unpacked the DataCenter file successfully.", "Done!", wxICON_INFORMATION, this);
+    REDialog::Info("Unpacked the DataCenter file successfully.");
   }
   else if (err.size())
   {
-    wxMessageBox(err, "Error!", wxICON_ERROR, this);
+    REDialog::Error(err);
     FindButton->SetFocus();
   }
 }

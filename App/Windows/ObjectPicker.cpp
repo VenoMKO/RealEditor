@@ -2,6 +2,7 @@
 #include "../App.h"
 #include "../Misc/ObjectTreeModel.h"
 #include "CompositePackagePicker.h"
+#include "REDialogs.h"
 
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
@@ -75,7 +76,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   }
   catch (const std::exception& e)
   {
-    wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error(e.what(), "Failed to open the package!");
     Package = nullptr;
     return;
   }
@@ -261,7 +262,7 @@ void ObjectPicker::OnPackageClicked(wxCommandEvent& event)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+      REDialog::Error(e.what(), "Failed to open the package!");
       return;
     }
   }
@@ -284,7 +285,7 @@ void ObjectPicker::OnPackageClicked(wxCommandEvent& event)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+      REDialog::Error(e.what(), "Failed to open the package!");
       return;
     }
   }
@@ -507,7 +508,7 @@ void ObjectNameDialog::OnOkClicked(wxCommandEvent&)
 {
   if (ValidatorFunc && !ValidatorFunc(GetObjectName()))
   {
-    wxMessageBox(wxT("Can't create object with this name."), wxT("Error!"), wxICON_ERROR);
+    REDialog::Warning(wxT("Can't create object with this name."));
     return;
   }
   EndModal(wxID_OK);

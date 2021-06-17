@@ -9,6 +9,7 @@
 #include "../Windows/PackageWindow.h"
 #include "../Windows/TextureImporter.h"
 #include "../Windows/ProgressWindow.h"
+#include "../Windows/REDialogs.h"
 
 #include <Utils/ALog.h>
 #include <Tera/Cast.h>
@@ -284,7 +285,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   if (!mip)
   {
     LogE("Export canceled: This texture object has no mipmaps!");
-    wxMessageBox(wxT("This texture object has no mipmaps!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("This texture object has no mipmaps!");
     return;
   }
 
@@ -327,7 +328,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   else
   {
     std::string msg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
-    wxMessageBox(msg, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(msg);
     return;
   }
 
@@ -345,7 +346,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   }
   else
   {
-    wxMessageBox("Unknown file extension. Export canceled!", wxT("Error!"), wxICON_ERROR);
+    wxMessageBox("Unknown file extension!");
     return;
   }
 
@@ -385,7 +386,7 @@ void TextureEditor::OnExportClicked(wxCommandEvent&)
   if (!result)
   {
     LogE("Failed to export: %s", err.c_str());
-    wxMessageBox(err, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(err);
   }
   else
   {
@@ -495,7 +496,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
 
   if (!cube)
   {
-    wxMessageBox(wxT("Failed to load the cube!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Failed to load the cube!");
     return;
   }
 
@@ -505,7 +506,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
   {
     if (!face)
     {
-      wxMessageBox(wxT("Failed to load the cube face!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("Failed to load the cube face!");
       return;
     }
 
@@ -528,12 +529,12 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
       f = TextureProcessor::TCFormat::G8;
       break;
     default:
-      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Invalid face format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(wxString::Format("Failed to export texture cube %s.%s. Invalid face format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()));
       return;
     }
     if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
     {
-      wxMessageBox(wxString::Format("Failed to export texture cube %s.%s. Faces have different format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(wxString::Format("Failed to export texture cube %s.%s. Faces have different format!", cube->GetObjectPath().UTF8().c_str(), face->GetObjectNameString().UTF8().c_str()));
       return;
     }
     inputFormat = f;
@@ -568,7 +569,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
   }
   else
   {
-    wxMessageBox("Unknown file extension. Export canceled!", wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Unknown file extension!");
     return;
   }
 
@@ -586,7 +587,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
     }
     if (!mip)
     {
-      wxMessageBox(wxString::Format("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectNameString().UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(wxString::Format("Failed to export texture cube face %s.%s. No mipmaps!", cube->GetObjectPath().UTF8().c_str(), faces[faceIdx]->GetObjectNameString().UTF8().c_str()));
       return;
     }
 
@@ -625,7 +626,7 @@ void TextureCubeEditor::OnExportClicked(wxCommandEvent&)
   if (!result)
   {
     LogE("Failed to export: %s", err.c_str());
-    wxMessageBox(err, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(err);
   }
   else
   {

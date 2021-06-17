@@ -1,5 +1,6 @@
 #include "SoundWaveEditor.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/REDialogs.h"
 #include "../App.h"
 
 #include <Utils/ALog.h>
@@ -17,7 +18,7 @@ void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
   const int32 soundDataSize = wave->GetResourceSize();
   if (!soundData || soundDataSize <= 0)
   {
-    wxMessageBox(wxT("PC wave data is empty! Nothing to export!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("PC wave data is empty! Nothing to export!");
     return;
   }
   wxString path = wxSaveFileSelector("sound", wxT("OGG file|*.ogg"), Object->GetObjectNameString().WString(), this);
@@ -32,7 +33,7 @@ void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
   }
   catch (...)
   {
-    wxMessageBox(wxT("Failed to save the file!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Failed to save the file!");
   }
 }
 
@@ -64,13 +65,13 @@ void SoundWaveEditor::OnImportClicked(wxCommandEvent&)
   }
   catch (...)
   {
-    wxMessageBox(wxT("Failed to read the OGG file!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Failed to read the OGG file!");
     return;
   }
 
   if (size <= 0)
   {
-    wxMessageBox(wxT("Invalid OGG file size!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Invalid OGG file size!");
     return;
   }
 
@@ -78,13 +79,13 @@ void SoundWaveEditor::OnImportClicked(wxCommandEvent&)
   {
     if (!travaller.Visit((USoundNodeWave*)Object))
     {
-      wxMessageBox(travaller.GetError(), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(travaller.GetError());
       return;
     }
   }
   catch (...)
   {
-    wxMessageBox("Unexpected error!", wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Unexpected error!");
     return;
   }
   App::GetSharedAudioDevice()->RemoveSoundSource(SoundId);

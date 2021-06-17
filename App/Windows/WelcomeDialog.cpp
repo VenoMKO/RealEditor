@@ -2,7 +2,7 @@
 #include "DcToolDialog.h"
 #include "SettingsWindow.h"
 #include "ProgressWindow.h"
-#include "IODialogs.h"
+#include "REDialogs.h"
 #include "../App.h"
 
 #include <wx/statline.h>
@@ -146,7 +146,7 @@ protected:
 };
 
 WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
-  : wxModalWindow(parent, wxID_ANY, wxT("Real Editor x64"), wxDefaultPosition, wxSize(729, 407), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+  : wxModalWindow(parent, wxID_ANY, wxTheApp->GetAppDisplayName(), wxDefaultPosition, wxSize(729, 407), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
   SetIcon(wxICON(#114));
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));

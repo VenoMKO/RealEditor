@@ -1,6 +1,7 @@
 #include "SettingsWindow.h"
 #include "ProgressWindow.h"
 #include "DcToolDialog.h"
+#include "REDialogs.h"
 #include "../App.h"
 
 #include <wx/statline.h>
@@ -253,7 +254,7 @@ void SettingsWindow::OnBrowseClicked(wxCommandEvent&)
     }
     else
     {
-      wxMessageBox(wxS("Folder must be called \"") + RootDir + wxS("\""), wxS("Error: Invalid path!"), wxICON_ERROR);
+      REDialog::Error(wxS("Folder must be called \"") + RootDir + wxS("\""), "Invalid folder name!");
     }
   }
   openPanel->Destroy();
@@ -288,7 +289,7 @@ void SettingsWindow::OnUpdateDirCacheClicked(wxCommandEvent&)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       ok = false;
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
@@ -296,7 +297,7 @@ void SettingsWindow::OnUpdateDirCacheClicked(wxCommandEvent&)
   progress.ShowModal();
   if (ok)
   {
-    wxMessageBox(wxS("Folder cache has been updated!"), wxS("Done"), wxICON_INFORMATION);
+    REDialog::Info("Folder cache has been updated!");
   }
 }
 
@@ -314,7 +315,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       ok = false;
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
@@ -332,7 +333,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       ok = false;
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
@@ -349,7 +350,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       ok = false;
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
@@ -359,7 +360,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
   progress.ShowModal();
   if (ok)
   {
-    wxMessageBox(wxS("Mappers have been updated!"), wxS("Done"), wxICON_INFORMATION);
+    REDialog::Info("Mappers have been updated!");
   }
 }
 
@@ -372,7 +373,7 @@ void SettingsWindow::OnResetWarningClicked(wxCommandEvent&)
   NewConfig.SavePackageOpen = defaults.SavePackageOpen;
   NewConfig.SavePackageOpenDontAskAgain = defaults.SavePackageOpenDontAskAgain;
   NewConfig.LastFilePackages.clear();
-  wxMessageBox(wxS("UI Warnings were cleared!\nPress Apply to save changes."), wxS("Done"), wxICON_INFORMATION);
+  REDialog::Info("Close this windows and press Apply to save changes.", "UI settings were cleared!");
 }
 
 void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
@@ -385,11 +386,11 @@ void SettingsWindow::OnRegisterClicked(wxCommandEvent&)
   UnregisterButton->Enable(registered);
   if (registered)
   {
-    wxMessageBox(wxS("The filetype has been associated successfully!"), wxS("Done"), wxICON_INFORMATION);
+    REDialog::Info("The file type has been associated successfully!");
   }
   else
   {
-    wxMessageBox(wxS("Failed to associate!\n Try to start RE as an administrator."), wxS("Error!"), wxICON_INFORMATION);
+    REDialog::Error("Try to start RE as an administrator.", "Failed to associate!");
   }
 }
 
@@ -403,11 +404,11 @@ void SettingsWindow::OnUnregisterClicked(wxCommandEvent&)
   UnregisterButton->Enable(registered);
   if (!registered)
   {
-    wxMessageBox(wxS("The filetype has been dissociated successfully!"), wxS("Done"), wxICON_INFORMATION);
+    REDialog::Info("The file type has been dissociated successfully!");
   }
   else
   {
-    wxMessageBox(wxS("Failed to dissociate!"), wxS("Error!"), wxICON_ERROR);
+    REDialog::Error("Try to start RE as an administrator.", "Failed to dissociate!");
   }
 }
 
@@ -415,7 +416,7 @@ void SettingsWindow::OnDcToolClicked(wxCommandEvent&)
 {
   if (NewConfig.RootDir.Empty())
   {
-    wxMessageBox(wxS("Set the S1Game folder first!"), wxS("Error!"), wxICON_ERROR);
+    REDialog::Error("Set the S1Game folder first!");
     return;
   }
   DcToolDialog dlg(this);
@@ -443,21 +444,19 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
   {
     if (err == FPackage::S1DirError::NOT_FOUND)
     {
-      wxMessageBox(wxT("S1Game folder does not exist or can't be accessed."), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("S1Game folder does not exist or can't be accessed.");
     }
     else if (err == FPackage::S1DirError::NAME_MISSMATCH)
     {
-      wxMessageBox(wxT("The folder must be called S1Game!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("The folder must be called S1Game!");
     }
     else if (err == FPackage::S1DirError::CLASSES_NOT_FOUND)
     {
-      wxMessageBox(wxT("S1Game folder does not contain neccessery *.U files."), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("S1Game folder does not contain neccessery *.U files.");
     }
     else if (err == FPackage::S1DirError::ACCESS_DENIED && CurrentConfig.RootDir != PathField->GetValue().ToStdWstring())
     {
-      wxMessageDialog dlg(nullptr, "RE requires Administrator privileges to access S1Game folder.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
-      dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
-      if (dlg.ShowModal() == wxID_YES)
+      if (REDialog::Auth())
       {
         App::GetSharedApp()->GetConfig() = NewConfig;
         App::GetSharedApp()->RestartElevated();

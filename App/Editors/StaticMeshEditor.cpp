@@ -1,5 +1,6 @@
 #include "StaticMeshEditor.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/REDialogs.h"
 #include "../App.h"
 #include <wx/valnum.h>
 
@@ -255,7 +256,7 @@ void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
   FbxUtils utils;
   if (!utils.ExportStaticMesh(Mesh, ctx))
   {
-    wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(ctx.Error);
     return;
   }
 

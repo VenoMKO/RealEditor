@@ -1,6 +1,7 @@
 #include "LevelEditor.h"
 #include "../App.h"
 #include "../Windows/ProgressWindow.h"
+#include "../Windows/REDialogs.h"
 
 #include <Tera/Cast.h>
 #include <Tera/FPackage.h>
@@ -1421,7 +1422,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
   {
     if (ctx.Errors.empty())
     {
-      wxMessageBox(wxT("Successfully exported the level."), wxT("Done!"), wxICON_INFORMATION);
+      REDialog::Info("Successfully exported the level.");
     }
     else
     {
@@ -1432,7 +1433,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
           s << err << '\n';
         }
       }
-      wxMessageBox(wxT("Exported the level but some errors occurred!\nSee the Errors.txt file in the destination folder for more details."), wxT("Done!"), wxICON_WARNING);
+      REDialog::Warning("Successfully exported the level but some errors occurred during the process!\nSee the Errors.txt file in the destination folder for more details.");
     }
   }
 }

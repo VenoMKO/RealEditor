@@ -251,7 +251,7 @@
     <ClCompile Include="Core\Tera\ULightMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Windows\IODialogs.cpp">
+    <ClCompile Include="App\Windows\REDialogs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\MaterialMapperDialog.cpp">
@@ -382,7 +382,7 @@
     <ClInclude Include="App\Editors\PrefabEditor.h" />
     <ClInclude Include="Core\Tera\ULightMap.h" />
     <ClInclude Include="Core\Utils\MeshTravaller.h" />
-    <ClInclude Include="App\Windows\IODialogs.h" />
+    <ClInclude Include="App\Windows\REDialogs.h" />
     <ClInclude Include="App\Windows\MaterialMapperDialog.h" />
     <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="App\Windows\DependsResolveDialog.h" />

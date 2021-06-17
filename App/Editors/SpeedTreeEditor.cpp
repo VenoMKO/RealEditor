@@ -1,5 +1,5 @@
 #include "SpeedTreeEditor.h"
-
+#include "../Windows/REDialogs.h"
 enum ExportMode {
   ExportSpt,
   ExportSptAndMaterials
@@ -27,14 +27,14 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
   case ExportMode::ExportSpt:
     if (!((USpeedTree*)Object)->GetSptData(&sptData, &sptDataSize, false) || !sptDataSize || !sptData)
     {
-      wxMessageBox(wxT("The object appears to be empty!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("The object appears to be empty!");
       return;
     }
     break;
   case ExportMode::ExportSptAndMaterials:
     if (!((USpeedTree*)Object)->GetSptData(&sptData, &sptDataSize, true) || !sptDataSize || !sptData)
     {
-      wxMessageBox(wxT("The object appears to be empty!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("The object appears to be empty!");
       return;
     }
     break;
@@ -52,7 +52,7 @@ void SpeedTreeEditor::OnExportClicked(wxCommandEvent& e)
   FWriteStream s(path.ToStdWstring());
   if (!s.IsGood())
   {
-    wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+    REDialog::Error("Failed to create/open \"" + path + "\"");
     free(sptData);
     return;
   }
@@ -72,7 +72,7 @@ void SpeedTreeEditor::OnImportClicked(wxCommandEvent& e)
   FReadStream s(path.ToStdWstring());
   if (!s.IsGood())
   {
-    wxMessageBox("Failed to open \"" + path + "\"", "Error!", wxICON_ERROR);
+    REDialog::Error("Failed to open \"" + path + "\"");
     return;
   }
   FILE_OFFSET size = s.GetSize();

@@ -2,6 +2,7 @@
 #include "LevelEditor.h"
 #include "../Windows/PackageWindow.h"
 #include "../Windows/ProgressWindow.h"
+#include "../Windows/REDialogs.h"
 
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
@@ -39,7 +40,7 @@ void LevelEditor::OnTick()
     if (LevelLoaded && ShowEmptyMessage)
     {
       ShowEmptyMessage = false;
-      wxMessageBox("Probably the level consists of lights, sounds, emitters, or other actors that can't be rendered.", "There are no actors to display!", wxICON_INFORMATION);
+      REDialog::Info("Probably the level consists of lights, sounds, emitters, or other actors that can't be rendered.", "No actors to display!");
     }
   }
 }
@@ -158,18 +159,18 @@ void LevelEditor::LoadPersistentLevel()
 {
   if (LevelLoaded)
   {
-    wxMessageBox("Level is already loaded!", wxEmptyString, wxICON_INFORMATION);
+    REDialog::Warning("Level is already loaded!");
     return;
   }
   if (!Level)
   {
     if (Object)
     {
-      wxMessageBox(wxString::Format("Failed to load the level %s.gmp!", ((ULevelStreaming*)Object)->PackageName.UTF8().c_str()), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(wxString::Format("Failed to load the level %s.gmp!", ((ULevelStreaming*)Object)->PackageName.UTF8().c_str()));
     }
     else
     {
-      wxMessageBox(wxT("Failed to load the level!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("Failed to load the level!");
     }
     return;
   }

@@ -29,7 +29,7 @@
     <ClCompile Include="App\Misc\wxModalWindow.cpp" />
     <ClCompile Include="App\Windows\DcToolDialog.cpp" />
     <ClCompile Include="App\Windows\DependsResolveDialog.cpp" />
-    <ClCompile Include="App\Windows\IODialogs.cpp" />
+    <ClCompile Include="App\Windows\REDialogs.cpp" />
     <ClCompile Include="App\Misc\OSGWindow.cpp" />
     <ClCompile Include="App\Editors\TextureEditor.cpp" />
     <ClCompile Include="App\Misc\ObjectProperties.cpp" />
@@ -121,7 +121,7 @@
     <ClInclude Include="App\Misc\wxModalWindow.h" />
     <ClInclude Include="App\Windows\DcToolDialog.h" />
     <ClInclude Include="App\Windows\DependsResolveDialog.h" />
-    <ClInclude Include="App\Windows\IODialogs.h" />
+    <ClInclude Include="App\Windows\REDialogs.h" />
     <ClInclude Include="App\Misc\OSGWindow.h" />
     <ClInclude Include="App\Editors\TextureEditor.h" />
     <ClInclude Include="App\Misc\ObjectProperties.h" />

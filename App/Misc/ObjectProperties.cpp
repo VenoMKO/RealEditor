@@ -1,6 +1,7 @@
 #include "ObjectProperties.h"
 #include "../App.h"
 #include "../Windows/ObjectPicker.h"
+#include "../Windows/REDialogs.h"
 
 #include <Tera/FObjectResource.h>
 #include <Tera/FPackage.h>
@@ -835,7 +836,7 @@ void AByteArrayProperty::OnExportClicked(wxPropertyGrid* pg)
     FWriteStream s(path.ToStdWstring());
     if (!s.IsGood())
     {
-      wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+      REDialog::Error("Failed to create/open \"" + path + "\"");
       delete[] bytes;
       return;
     }
@@ -857,7 +858,7 @@ void AByteArrayProperty::OnImportClicked(wxPropertyGrid* pg)
   FReadStream s(path.ToStdWstring());
   if (!s.IsGood())
   {
-    wxMessageBox("Failed to open \"" + path + "\"", "Error!", wxICON_ERROR);
+    REDialog::Error("Failed to open \"" + path + "\"");
     return;
   }
   

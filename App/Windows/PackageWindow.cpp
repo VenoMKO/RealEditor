@@ -8,7 +8,7 @@
 #include "ObjectPicker.h"
 #include "TextureImporter.h"
 #include "DependsResolveDialog.h"
-#include "IODialogs.h"
+#include "REDialogs.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -580,17 +580,12 @@ void PackageWindow::OnExportObjectSelected(INT index)
       {
         return;
       }
-      ActiveEditor->ClearToolbar();
       Toolbar->ClearTools();
       ShowEditor(it->second);
       it->second->LoadObject();
     }
     else
     {
-      if (ActiveEditor)
-      {
-        ActiveEditor->ClearToolbar();
-      }
       Toolbar->ClearTools();
       GenericEditor* editor = GenericEditor::CreateEditor(EditorContainer, this, Package->GetObject(index, false));
       ShowEditor(editor);
@@ -899,7 +894,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
   }
   catch (const std::exception& e)
   {
-    wxMessageBox(e.what(), "Error!", wxICON_ERROR, this);
+    REDialog::Error(e.what());
   }
 }
 
@@ -947,7 +942,7 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 {
   if (Package->IsComposite())
   {
-    wxMessageBox(wxT("This package is composite. To save this package use \"Save as\"."), wxT("Error!"), wxICON_ERROR, this);
+    REDialog::Error("This package is composite. To save this package use \"Save as\".");
     return;
   }
 
@@ -1016,7 +1011,7 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
   {
     wxString err = wxT("Failed to save the package! Error: ");
     err += A2W(context.Error);
-    wxMessageBox(err, "Error!", wxICON_ERROR);
+    REDialog::Error(err, "Error!");
     return;
   }
 
@@ -1079,7 +1074,7 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
   {
     wxString err = wxT("Failed to save the package! Error: ");
     err += A2W(context.Error);
-    wxMessageBox(err,"Error!", wxICON_ERROR, this);
+    REDialog::Error(err);
   }
   else
   {
@@ -1189,14 +1184,14 @@ void PackageWindow::OnDcToolClicked(wxCommandEvent&)
 
 void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 {
-  wxMessageBox(_("Select a source file you want to decrypt(e.g. CompositePackageMapper.dat). You can find these files in your S1Game\\CookedPC folder."), _("Select source..."), wxICON_INFORMATION);
+  REDialog::Info("Select a source file you want to decrypt(e.g. CompositePackageMapper.dat). You can find these files in your S1Game\\CookedPC folder.", "Select source...");
   wxString source = IODialog::OpenMapperForDecryption(this);
   if (source.empty())
   {
     return;
   }
   wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".txt").wstring();
-  wxMessageBox(_("Select where you want to save the decrypted file."), _("Select destination..."), wxICON_INFORMATION);
+  REDialog::Info("Select where you want to save the decrypted file.", "Select destination...");
   wxString destination = IODialog::SaveDecryptedMapperFile(this, destFileName);
   if (destination.empty())
   {
@@ -1216,7 +1211,7 @@ void PackageWindow::OnDecryptClicked(wxCommandEvent&)
     }
     catch (...)
     {
-      wxMessageBox(_("Failed to decrypt the file!"), _("Error!"), wxICON_ERROR);
+      REDialog::Error(_("Failed to decrypt the file!"));
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1227,7 +1222,7 @@ void PackageWindow::OnDecryptClicked(wxCommandEvent&)
     }
     catch (...)
     {
-      wxMessageBox(_("Failed to save the file!"), _("Error!"), wxICON_ERROR);
+      REDialog::Error(_("Failed to save the file!"));
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1239,14 +1234,14 @@ void PackageWindow::OnDecryptClicked(wxCommandEvent&)
 
 void PackageWindow::OnEncryptClicked(wxCommandEvent&)
 {
-  wxMessageBox(_("Select a source file you want to encrypt(e.g. CompositePackageMapper.txt)"), _("Select source..."), wxICON_INFORMATION);
+  REDialog::Info("Select a source file you want to encrypt(e.g. CompositePackageMapper.txt)", "Select source...");
   wxString source = IODialog::OpenMapperForEncryption(this);
   if (source.empty())
   {
     return;
   }
   wxString destFileName = std::filesystem::path(source.ToStdWstring()).filename().replace_extension(".dat").wstring();
-  wxMessageBox(_("Select where you want to save the encrypted file."), _("Select destination..."), wxICON_INFORMATION);
+  REDialog::Info("Select where you want to save the encrypted file.", "Select destination...");
   wxString destination = IODialog::SaveEncryptedMapperFile(this, destFileName);
   if (destination.empty())
   {
@@ -1271,7 +1266,7 @@ void PackageWindow::OnEncryptClicked(wxCommandEvent&)
     }
     catch (...)
     {
-      wxMessageBox(_("Failed to read the source file!"), _("Error!"), wxICON_ERROR);
+      REDialog::Error("Failed to read the source file!");
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1281,7 +1276,7 @@ void PackageWindow::OnEncryptClicked(wxCommandEvent&)
     }
     catch (...)
     {
-      wxMessageBox(_("Failed to encrypt the file!"), _("Error!"), wxICON_ERROR);
+      REDialog::Error("Failed to encrypt the file!");
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1340,7 +1335,7 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
 
 void PackageWindow::OnPackageError(wxCommandEvent& e)
 {
-  wxMessageBox(e.GetString(), "Failed to load the package!", wxICON_ERROR);
+  REDialog::Error(e.GetString(), "Failed to load the package!");
   FPackage::UnloadPackage(Package);
   Close();
 }
@@ -1533,7 +1528,7 @@ void PackageWindow::OnDuplicateClicked(PACKAGE_INDEX objIndex)
     }
     if (dest->GetClassName() != NAME_Package)
     {
-      wxMessageBox(wxT("The selected object is not a package/folder."), "Error!", wxICON_ERROR, this);
+      REDialog::Error("The selected object is not a package/folder.");
       dest = nullptr;
     }
   }
@@ -1630,10 +1625,10 @@ void PackageWindow::OnCopyObjectClicked(PACKAGE_INDEX objIndex)
     FString err = s.GetError();
     if (err.Size())
     {
-      wxMessageBox(err.WString(), wxT("Failed to copy the object!"));
+      REDialog::Error(err.WString(), wxT("Failed to copy the object!"));
       return;
     }
-    wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to copy the object!"));
+    REDialog::Error(wxT("Unknown error occured. See the log for more details."), wxT("Failed to copy the object!"));
     s.Clear();
   }
 }
@@ -1682,10 +1677,10 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
     FString err = s.GetError();
     if (err.Size())
     {
-      wxMessageBox(err.WString(), wxT("Failed to paste the object!"));
+      REDialog::Error(err.WString(), wxT("Failed to paste the object!"));
       return;
     }
-    wxMessageBox(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
+    REDialog::Error(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
     return;
   }
   LoadObjectTree();

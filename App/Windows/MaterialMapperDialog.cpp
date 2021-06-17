@@ -1,5 +1,7 @@
 #include "MaterialMapperDialog.h"
 #include "ObjectPicker.h"
+#include "REDialogs.h"
+
 #include <Tera/UObject.h>
 #include <Tera/FPackage.h>
 #include <Tera/Cast.h>
@@ -285,11 +287,11 @@ void MaterialMapperDialog::OnAddClicked(wxCommandEvent&)
     material = picker.GetSelectedObject();
     if (!material)
     {
-      wxMessageBox(wxT("Selected object is not a Material Instance Constant!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("Selected object is not a Material Instance Constant!");
     }
     if (std::find(ObjectMaterials.begin(), ObjectMaterials.end(), material) != ObjectMaterials.end())
     {
-      wxMessageBox(wxT("Selected object already exists in the model materials list!"), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error("Selected object already exists in the model materials list!");
       material = nullptr;
     }
   }

@@ -1,4 +1,5 @@
 #include "LevelExportOptions.h"
+#include "REDialogs.h"
 #include "../App.h"
 
 #include <wx/notebook.h>
@@ -573,7 +574,7 @@ void LevelExportOptionsWindow::OnExportClicked(wxCommandEvent& event)
   GlobalScale->GetValidator()->TransferFromWindow();
   if (GlobalScaleValue <= 0.)
   {
-    wxMessageBox(wxT("Global Scale must be greater than 0!"), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Global Scale must be greater than 0!");
     GlobalScale->SetFocus();
     return;
   }

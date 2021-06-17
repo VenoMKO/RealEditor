@@ -1,6 +1,7 @@
 #include "../App.h"
 #include "BulkImportWindow.h"
 #include "ProgressWindow.h"
+#include "REDialogs.h"
 #include "TextureImporter.h"
 #include "ObjectPicker.h"
 
@@ -1177,18 +1178,18 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
 
   if (result)
   {
-    auto icon = wxICON_INFORMATION;
-    wxString msg = wxT("Done! Packages extracted sucessfully!");
     if (operation.HasErrors())
     {
-      msg += wxT("\nSome operations have failed. See Errors.txt in the otput folder.");
-      icon = wxICON_WARNING;
+      REDialog::Warning(wxT("Some operations have failed. See Errors.txt in the otput folder."));
     }
-    wxMessageBox(msg, wxT("Finished"), icon);
+    else
+    {
+      REDialog::Info(wxT("Packages extracted sucessfully!"));
+    }
   }
   else
   {
-    wxMessageBox(wxT("Failed to execute operations. See Errors.txt in the otput folder."), wxT("Error"), wxICON_ERROR);
+    REDialog::Error(wxT("See the Errors.txt file in the otput folder."), wxT("Failed to execute operations!"));
   }
 }
 

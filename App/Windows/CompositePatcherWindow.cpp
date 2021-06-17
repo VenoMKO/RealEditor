@@ -1,5 +1,6 @@
 #include "CompositePatcherWindow.h"
 #include "PackageWindow.h"
+#include "REDialogs.h"
 #include "../App.h"
 
 #include <wx/statline.h>
@@ -181,7 +182,7 @@ void CompositePatcherWindow::OnSelectClicked(wxCommandEvent&)
 
   if (!map.count(name))
   {
-    wxMessageBox("Failed to find package!", wxT("Error!"), wxICON_ERROR);
+    REDialog::Error("Failed to find package!");
     return;
   }
 
@@ -209,20 +210,20 @@ void CompositePatcherWindow::OnPatchClicked(wxCommandEvent&)
   entry.CompositeName = CompositeNameField->GetValue();
   if (entry.Object.empty())
   {
-    wxMessageBox(wxT("Object is can't be empty."), wxT("Error!"));
+    REDialog::Error(wxT("Object is can't be empty."));
     ObjectField->SetFocus();
     return;
   }
   if (entry.Filename.empty())
   {
-    wxMessageBox(wxT("Container is can't be empty."), wxT("Error!"));
+    REDialog::Error(wxT("Container is can't be empty."));
     ContainerField->SetFocus();
     return;
   }
   long offset = 0;
   if (!OffsetField->GetValue().ToLong(&offset) || offset < 0)
   {
-    wxMessageBox(wxT("Offset is invalid."), wxT("Error!"));
+    REDialog::Error(wxT("Offset is invalid."));
     OffsetField->SetFocus();
     return;
   }
@@ -230,7 +231,7 @@ void CompositePatcherWindow::OnPatchClicked(wxCommandEvent&)
   long size = 0;
   if (!SizeField->GetValue().ToLong(&size) || size < 0)
   {
-    wxMessageBox(wxT("Size is invalid."), wxT("Error!"));
+    REDialog::Error(wxT("Size is invalid."));
     SizeField->SetFocus();
     return;
   }
@@ -250,11 +251,11 @@ void CompositePatcherWindow::OnPatchClicked(wxCommandEvent&)
   }
   catch (const std::exception& e)
   {
-    wxMessageBox(e.what(), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(e.what());
     EndModal(wxID_CANCEL);
     return;
   }
-  wxMessageBox(wxT("Composite package map has been patched."), wxT("Done!"), wxICON_INFORMATION);
+  REDialog::Info(wxT("Composite package map has been patched."));
   EndModal(wxID_OK);
 }
 

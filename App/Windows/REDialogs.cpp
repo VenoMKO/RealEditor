@@ -1,4 +1,6 @@
 #include <wx/filedlg.h>
+#include <wx/statline.h>
+#include <wx/statbmp.h>
 #include "../App.h"
 
 #include <Utils/AConfiguration.h>
@@ -44,6 +46,175 @@ namespace
       }
     }
   }
+
+  bool GetShieldIcon(wxBitmap& shieldBM)
+  {
+    HMODULE	hShellDLL;
+    HRESULT	hr;
+    bool isOK = true;
+
+    HRESULT(CALLBACK * pfnSHGetStockIconInfo)(SHSTOCKICONID siid, UINT uFlags, SHSTOCKICONINFO * psii);
+
+    hShellDLL = LoadLibraryW(L"shell32.dll");
+    if (hShellDLL == nullptr)
+      return false;
+
+    (*(FARPROC*)&pfnSHGetStockIconInfo) = GetProcAddress(hShellDLL, "SHGetStockIconInfo");
+    if (pfnSHGetStockIconInfo)
+    {
+      SHSTOCKICONINFO stockInfo;
+      stockInfo.cbSize = sizeof(SHSTOCKICONINFO);
+      hr = pfnSHGetStockIconInfo(SIID_SHIELD, SHGSI_ICON, &stockInfo);
+      if (hr == S_OK)
+      {
+        wxIcon uacShieldIcon;
+        uacShieldIcon.CreateFromHICON(stockInfo.hIcon);
+        shieldBM.CopyFromIcon(uacShieldIcon);
+        DestroyIcon(stockInfo.hIcon);
+      }
+      else
+      {
+        isOK = false;
+      }
+    }
+    else
+    {
+      isOK = false;
+    }
+    FreeLibrary(hShellDLL);
+    return isOK;
+  }
+
+  class AuthDialog : public wxDialog {
+  public:
+    AuthDialog(wxWindow* parent = nullptr, const wxString& title = wxEmptyString)
+      : wxDialog(parent, wxID_ANY, wxTheApp->GetVendorDisplayName(), wxDefaultPosition, wxSize(526, 201))
+    {
+      SetIcon(wxICON(#114));
+      SetSizeHints(wxDefaultSize, wxDefaultSize);
+
+      wxBoxSizer* bSizer11;
+      bSizer11 = new wxBoxSizer(wxVERTICAL);
+
+      wxPanel* m_panel4;
+      m_panel4 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+      m_panel4->SetBackgroundColour(wxColour(255, 255, 255));
+
+      wxBoxSizer* bSizer14;
+      bSizer14 = new wxBoxSizer(wxHORIZONTAL);
+
+      ShieldIcon = new wxStaticBitmap(m_panel4, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize(48, 48), 0);
+      bSizer14->Add(ShieldIcon, 0, wxTOP | wxBOTTOM | wxLEFT, 10);
+
+      wxBoxSizer* bSizer15;
+      bSizer15 = new wxBoxSizer(wxVERTICAL);
+
+      wxStaticText* m_staticText9;
+      m_staticText9 = new wxStaticText(m_panel4, wxID_ANY, wxT("This action requires Real Editor to have elevated permissions."), wxDefaultPosition, wxDefaultSize, 0);
+      m_staticText9->Wrap(-1);
+      m_staticText9->SetFont(wxFont(11, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxT("Segoe UI Semibold")));
+      m_staticText9->SetForegroundColour(wxColour(0, 45, 128));
+
+      bSizer15->Add(m_staticText9, 0, wxALL, 10);
+
+      wxString desc = title;
+      if (desc.size())
+      {
+        desc += '\n';
+      }
+      desc += wxT("Press Restart as Administrator to restart Real Editor under different credentials.\nAll unsaved changes will be lost.");
+      Description = new wxStaticText(m_panel4, wxID_ANY, desc, wxDefaultPosition, wxDefaultSize, 0);
+      Description->Wrap(460);
+      bSizer15->Add(Description, 0, wxRIGHT | wxLEFT, 10);
+
+
+      bSizer14->Add(bSizer15, 1, wxEXPAND, 5);
+
+
+      m_panel4->SetSizer(bSizer14);
+      m_panel4->Layout();
+      bSizer14->Fit(m_panel4);
+      bSizer11->Add(m_panel4, 1, wxEXPAND, 5);
+
+      wxBoxSizer* bSizer12;
+      bSizer12 = new wxBoxSizer(wxVERTICAL);
+
+      wxStaticLine* m_staticline2;
+      m_staticline2 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
+      bSizer12->Add(m_staticline2, 0, wxEXPAND, 5);
+
+      wxPanel* m_panel5;
+      m_panel5 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+      wxBoxSizer* bSizer13;
+      bSizer13 = new wxBoxSizer(wxHORIZONTAL);
+
+
+      bSizer13->Add(0, 0, 1, wxEXPAND, 5);
+
+      OkButton = new wxButton(m_panel5, wxID_ANY, wxT("Restart as Administrator"), wxDefaultPosition, wxDefaultSize, 0);
+      bSizer13->Add(OkButton, 0, wxALL, 5);
+
+      CancelButton = new wxButton(m_panel5, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+      bSizer13->Add(CancelButton, 0, wxALL, 5);
+
+
+      m_panel5->SetSizer(bSizer13);
+      m_panel5->Layout();
+      bSizer13->Fit(m_panel5);
+      bSizer12->Add(m_panel5, 1, wxEXPAND | wxTOP | wxBOTTOM, 10);
+
+
+      bSizer11->Add(bSizer12, 0, wxEXPAND, 5);
+
+
+      this->SetSizer(bSizer11);
+      this->Layout();
+
+      this->Centre(wxBOTH);
+
+      wxBitmap shield;
+      if (GetShieldIcon(shield))
+      {
+        ShieldIcon->SetBitmap(shield);
+      }
+
+      wxAcceleratorEntry entries[2];
+      entries[0].Set(wxACCEL_NORMAL, WXK_RETURN, wxID_OK);
+      entries[1].Set(wxACCEL_NORMAL, WXK_ESCAPE, wxID_CANCEL);
+      wxAcceleratorTable accel(2, entries);
+      this->SetAcceleratorTable(accel);
+
+      OkButton->SetFocus();
+      OkButton->SetAuthNeeded();
+      OkButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AuthDialog::OnOkClicked), nullptr, this);
+      CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AuthDialog::OnCancelClicked), nullptr, this);
+    }
+
+    ~AuthDialog()
+    {
+      OkButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AuthDialog::OnOkClicked), nullptr, this);
+      CancelButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AuthDialog::OnCancelClicked), nullptr, this);
+    }
+
+  protected:
+    wxDECLARE_EVENT_TABLE();
+
+    void OnOkClicked(wxCommandEvent& event)
+    {
+      EndModal(wxID_OK);
+    }
+
+    void OnCancelClicked(wxCommandEvent& event)
+    {
+      EndModal(wxID_CANCEL);
+    }
+
+  protected:
+    wxStaticBitmap* ShieldIcon = nullptr;
+    wxStaticText* Description = nullptr;
+    wxButton* OkButton = nullptr;
+    wxButton* CancelButton = nullptr;
+  };
 }
 
 namespace IODialog
@@ -252,3 +423,22 @@ namespace IODialog
     return result;
   }
 }
+
+namespace REDialog
+{
+  int Message(wxWindow* parent, const wxString& title, const wxString& message, int style)
+  {
+    return wxMessageBox(title + L"\n\n" + message, wxTheApp->GetAppDisplayName(), style);
+  }
+
+  bool Auth(wxWindow* parent, const wxString& desc)
+  {
+    AuthDialog dlg(parent, desc);
+    return dlg.ShowModal() == wxID_OK;
+  }
+}
+
+wxBEGIN_EVENT_TABLE(AuthDialog, wxDialog)
+EVT_MENU(wxID_OK, AuthDialog::OnOkClicked)
+EVT_MENU(wxID_CANCEL, AuthDialog::OnCancelClicked)
+wxEND_EVENT_TABLE()

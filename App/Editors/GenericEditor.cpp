@@ -1,5 +1,6 @@
 #include "GenericEditor.h"
 #include "../Windows/PackageWindow.h"
+#include "../Windows/REDialogs.h"
 #include "../App.h"
 
 #include <Utils/ALog.h>
@@ -237,7 +238,7 @@ void GenericEditor::OnExportClicked(wxCommandEvent& e)
   FWriteStream s(path.ToStdWstring());
   if (!s.IsGood())
   {
-    wxMessageBox("Failed to create/open \"" + path + "\"", "Error!", wxICON_ERROR);
+    REDialog::Error("Failed to create/open \"" + path + "\"");
     return;
   }
   if (size <= 0)
@@ -256,7 +257,7 @@ void GenericEditor::OnExportClicked(wxCommandEvent& e)
 
   if (!s.IsGood())
   {
-    wxMessageBox("Failed to save data to \"" + path + "\"", "Error!", wxICON_ERROR);
+    REDialog::Error("Failed to save data to \"" + path + "\"");
     return;
   }
 }
@@ -275,13 +276,13 @@ void GenericEditor::OnImportClicked(wxCommandEvent& e)
 void GenericEditor::OnSourceClicked(wxCommandEvent& e)
 {
   wxString pkg = CompositeObjectPath.substr(0, CompositeObjectPath.find('.'));
-  ((App*)wxTheApp)->OpenNamedPackage(pkg, CompositeObjectPath);
+  App::GetSharedApp()->OpenNamedPackage(pkg, CompositeObjectPath);
 }
 
 void GenericEditor::OnClassClicked(wxCommandEvent& e)
 {
   if (UClass* cls = Object->GetClass())
   {
-    ((App*)wxTheApp)->OpenNamedPackage(cls->GetPackage()->GetPackageName().WString(), cls->GetObjectPath().WString());
+    App::GetSharedApp()->OpenNamedPackage(cls->GetPackage()->GetPackageName().WString(), cls->GetObjectPath().WString());
   }
 }

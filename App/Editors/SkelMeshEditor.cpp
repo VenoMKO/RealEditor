@@ -1,5 +1,5 @@
 #include "SkelMeshEditor.h"
-#include "../Windows/IODialogs.h"
+#include "../Windows/REDialogs.h"
 #include "../Windows/PackageWindow.h"
 #include "../Windows/ProgressWindow.h"
 #include "../Windows/MaterialMapperDialog.h"
@@ -441,13 +441,13 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
   }
   catch (const std::exception& e)
   {
-    wxMessageBox(e.what(), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(e.what());
     return;
   }
 
   if (!r)
   {
-    wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(ctx.Error);
     return;
   }
   if (opts.GetExportTextures())
@@ -721,7 +721,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   FbxUtils utils;
   if (!utils.ImportSkeletalMesh(ctx))
   {
-    wxMessageBox(ctx.Error, wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(ctx.Error);
     return;
   }
 
@@ -733,7 +733,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     {
       if (!Mesh->ValidateVisitor(&ctx.ImportData, 0, error, askUser, warningIndex))
       {
-        wxMessageBox(error.WString(), wxT("Error!"), wxICON_ERROR);
+        REDialog::Error(error.WString());
         return;
       }
       if (error.Empty())
@@ -741,7 +741,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
         break;
       }
       warningIndex++;
-      auto userResponse = wxMessageBox(error.WString(), wxT("Warning!"), askUser ? (wxYES_NO | wxICON_WARNING) : wxICON_WARNING);
+      auto userResponse = REDialog::Warning(error.WString(), wxT("Warning!"), this, askUser ? wxYES_NO : wxOK);
       if (askUser && userResponse != wxYES)
       {
         return;
@@ -781,7 +781,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     {
       err = "Failed to create a LOD. Unknown error.";
     }
-    wxMessageBox(err.WString(), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(err.WString());
   }
 }
 

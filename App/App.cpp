@@ -3,7 +3,7 @@
 #include "Windows/SettingsWindow.h"
 #include "Windows/CompositePackagePicker.h"
 #include "Windows/BulkImportWindow.h"
-#include "Windows/IODialogs.h"
+#include "Windows/REDialogs.h"
 #include "Windows/DcToolDialog.h"
 #include "Windows/WelcomeDialog.h"
 
@@ -22,6 +22,7 @@
 #include <Utils/ALDevice.h>
 
 const char* APP_NAME = "Real Editor";
+const char* VENDOR_NAME = "Real Editor x64";
 
 wxIMPLEMENT_APP(App);
 
@@ -393,7 +394,7 @@ wxString App::ShowOpenByNameDialog(wxWindow* parent)
     {
       return result;
     }
-    wxMessageBox("The specified package file does not exists! Check the name or try a different one.", "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error("The specified package file does not exists! Check the name or try a different one.", "Failed to open the package!");
   }
   return wxString();
 }
@@ -446,20 +447,20 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
   catch (const std::exception& e)
   {
     LogE("Failed to open the package: %s", e.what());
-    wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error(e.what(), "Failed to open the package!");
     return false;
   }
   catch (...)
   {
     LogE("Failed to open the package: Unexpected exception!");
-    wxMessageBox("Unexpected exception!", "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error("Unknown error.", "Failed to open the package!");
     return false;
   }
 
   if (package == nullptr)
   {
     LogE("Failed to open the package: Unknow error");
-    wxMessageBox("Unknown error!", "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error("Unknown error.", "Failed to open the package!");
     return false;
   }
 
@@ -566,29 +567,30 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
   catch (const std::exception& e)
   {
     LogE("Failed to open the package: %s", e.what());
-    wxMessageBox(e.what(), "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error(e.what(), "Failed to open the package!");
     return false;
   }
   catch (const char* msg)
   {
     LogE("Failed to open the package: %s.", msg);
-    wxMessageBox(msg, "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error(msg, "Failed to open the package!");
     return false;
   }
   catch (...)
   {
     LogE("Failed to open the package. Unexpected exception occurred!");
-    wxMessageBox("Unexpected exception occurred!", "Failed to open the package!", wxICON_ERROR);
+    REDialog::Error("Unexpected exception occurred!", "Failed to open the package!");
     return false;
   }
 
   if (package == nullptr)
   {
     LogE("Failed to open the package: Unknow error");
-    wxString msg = wxString::Format("Package %s does not exist!\n\nPossible solutions:\n", fixedName.ToStdString().c_str());
+    wxString msg = "Possible solutions:\n";
+    msg += " * Check the file name\n";
     msg += " * Press Window -> Settings and Rebuild Cache\n";
     msg += " * Rebuild ObjectDump.txt\n";
-    wxMessageBox(msg, "Error!", wxICON_ERROR);
+    REDialog::Error(msg, wxS("Package ") + fixedName + wxS(" not found!"));
     return false;
   }
   if (!package->IsComposite())
@@ -627,13 +629,13 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
       catch (const char* msg)
       {
         LogE("Failed to load the package: %s.", msg);
-        wxMessageBox(msg, "Failed to open the package!", wxICON_ERROR);
+        REDialog::Error(msg, "Failed to open the package!");
         return;
       }
       catch (...)
       {
         LogE("Failed to load the package. Unexpected exception occurred!");
-        wxMessageBox("Unexpected exception occurred!", "Failed to load the package!", wxICON_ERROR);
+        REDialog::Error("Unexpected exception occurred!", "Failed to load the package!");
         return;
       }
       if (!package->IsOperationCancelled())
@@ -695,12 +697,13 @@ bool App::OnInit()
   // If the executable name changes our AppData storage path will change too. We don't want that.
   // So we set AppName manually. This will keep paths consistent.
   SetAppName(APP_NAME);
-  SetAppDisplayName(APP_NAME);
+  SetAppDisplayName(VENDOR_NAME);
+  SetVendorDisplayName(VENDOR_NAME);
 
   // Update executable path if MIME is registered
   if (CheckMimeTypes(false))
   {
-    // Check weather the app path matches the on in the registry
+    // Check weather the app path matches the one in the registry
     if (!CheckMimeTypes(true))
     {
       // Update app path
@@ -717,9 +720,7 @@ bool App::OnInit()
   FPackage::S1DirError verr = FPackage::ValidateRootDirCandidate(Config.RootDir);
   if (verr == FPackage::S1DirError::ACCESS_DENIED)
   {
-    wxMessageDialog dlg(nullptr, "RE requires Administrator privileges to access S1Game folder.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
-    dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
-    if (dlg.ShowModal() == wxID_YES)
+    if (REDialog::Auth())
     {
       App::GetSharedApp()->RestartElevated();
     }
@@ -1025,7 +1026,18 @@ void App::DelayLoad(wxCommandEvent& e)
   }
   if (!anyLoaded)
   {
-    ExitMainLoop();
+    InitScreen = new WelcomeDialog(nullptr, true);
+    InitScreen->Center();
+    InitScreen->ShowModal();
+    OpenList = InitScreen->GetOpenList();
+    InitScreen->Destroy();
+    InitScreen = nullptr;
+    if (OpenList.empty())
+    {
+      ExitMainLoop();
+    }
+    SendEvent(this, DELAY_LOAD);
+    return;
   }
 }
 
@@ -1053,7 +1065,7 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
 
 void App::OnLoadError(wxCommandEvent& e)
 {
-  wxMessageBox(e.GetString(), "Error!", wxICON_ERROR);
+  REDialog::Error(e.GetString(), "Error!");
   FPackage::UnloadDefaultClassPackages();
   ExitMainLoop();
   // TODO: try to recover. Ask for a new root dir and reload.
@@ -1253,7 +1265,7 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
       if (err)
       {
         std::filesystem::rename(backup, dest.WString());
-        wxMessageBox(wxT("Failed to write package to the disk."), wxT("Error!"), wxICON_ERROR);
+        REDialog::Error("Check if the destination is available and have free space.", "Failed to write package to the disk!");
       }
       else
       {
@@ -1262,8 +1274,7 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
     }
     catch (const std::exception& e)
     {
-      std::string text = "Failed to write package to the disk.\n";
-      wxMessageBox(text + e.what(), wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what(), "Failed to write package to the disk!");
     }
   }
 }
@@ -1304,7 +1315,7 @@ void App::DumpCompositeObjects()
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1321,7 +1332,7 @@ void App::DumpCompositeObjects()
     }
     catch (const std::exception& e)
     {
-      wxMessageBox(e.what(), wxS("Error!"), wxICON_ERROR);
+      REDialog::Error(e.what());
       SendEvent(&progress, UPDATE_PROGRESS_FINISH);
       return;
     }
@@ -1438,7 +1449,7 @@ void App::DumpCompositeObjects()
           if (!progress.IsCanceled())
           {
             progress.SetCanceled();
-            wxMessageBox(wxT("Failed to write data to your disk!\nCheck if your drive has free space."), wxS("Error!"), wxICON_ERROR);
+            REDialog::Error("Check if your drive has free space.", "Failed to write data to your disk!");
             SendEvent(&progress, UPDATE_PROGRESS_FINISH);
           }
           return;
@@ -1471,11 +1482,11 @@ void App::DumpCompositeObjects()
       s << pair.first << ": " << pair.second << '\n';
     }
 
-    wxMessageBox(_("Failed to iterate some of the packages!\nSee ") + errDst.filename().wstring() + _(" file for details"), _(""), wxICON_WARNING);
+    REDialog::Warning("Failed to iterate some of the packages!\nSee " + errDst.filename().string() + " file for details");
   }
   else
   {
-    wxMessageBox(wxString::Format("Saved %Iu objects from %Iu gpks.", totalSavedGpkObjects, totalSavedGPKs), _("Done!"), wxICON_INFORMATION);
+    REDialog::Info(wxString::Format("Saved %Iu objects from %Iu gpks.", totalSavedGpkObjects, totalSavedGPKs));
   }
 }
 

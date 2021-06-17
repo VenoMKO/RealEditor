@@ -1,7 +1,7 @@
 #include "TextureImporter.h"
 #include "../App.h"
 #include "../Windows/ProgressWindow.h"
-#include "../Windows/IODialogs.h"
+#include "../Windows/REDialogs.h"
 
 #include <Tera/FStream.h>
 #include <Tera/UTexture.h>
@@ -488,7 +488,7 @@ bool TextureImporter::Run()
     {
       std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
       LogE(errmsg.c_str());
-      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(errmsg);
       return false;
     }
     }
@@ -513,7 +513,7 @@ bool TextureImporter::Run()
     {
       std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
       LogE(errmsg.c_str());
-      wxMessageBox(errmsg, wxT("Error!"), wxICON_ERROR);
+      REDialog::Error(errmsg);
       return false;
     }
     }
@@ -556,7 +556,7 @@ bool TextureImporter::Run()
 
   if (!progress.ShowModal())
   {
-    wxMessageBox(processor.GetError(), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(processor.GetError());
     return false;
   }
 
@@ -598,7 +598,7 @@ bool TextureImporter::Run()
 
   if (!travaller.Visit(Texture))
   {
-    wxMessageBox(travaller.GetError(), wxT("Error!"), wxICON_ERROR);
+    REDialog::Error(travaller.GetError());
     return false;
   }
 

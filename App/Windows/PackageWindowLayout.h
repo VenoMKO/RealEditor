@@ -77,20 +77,21 @@ void PackageWindow::InitLayout()
 
   m_menu4->AppendSeparator();*/
 
-  wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DataCenter Tool...")), wxS("Unpack and export datacenter files"), wxITEM_NORMAL);
+  wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DataCenter tool...")), wxS("Unpack and export datacenter files"), wxITEM_NORMAL);
   m_menu4->Append(dcMenu);
 
-  m_menu4->AppendSeparator();
+  wxMenu* mapperTools = new wxMenu();
 
-  wxMenuItem* m_menuItem65 = new wxMenuItem(m_menu4, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
-  m_menu4->Append(m_menuItem65);
+  wxMenuItem* m_menuItem65 = new wxMenuItem(mapperTools, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
+  mapperTools->Append(m_menuItem65);
+  mapperTools->AppendSeparator();
 
-  m_menu4->AppendSeparator();
+  wxMenuItem* m_menuItem66 = new wxMenuItem(mapperTools, ControlElementId::DecryptMapper, wxString(wxT("Decrypt a mapper file...")), wxS("Decrypt a *Mapper.dat file and save it as a text file at a location of your choice."), wxITEM_NORMAL);
+  mapperTools->Append(m_menuItem66);
+  wxMenuItem* m_menuItem67 = new wxMenuItem(mapperTools, ControlElementId::EncryptMapper, wxString(wxT("Encrypt a mapper file...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
+  mapperTools->Append(m_menuItem67);
 
-  wxMenuItem* m_menuItem66 = new wxMenuItem(m_menu4, ControlElementId::DecryptMapper, wxString(wxT("Decrypt a mapper file...")), wxS("Decrypt a *Mapper.dat file and save it as a text file at a location of your choice."), wxITEM_NORMAL);
-  m_menu4->Append(m_menuItem66);
-  wxMenuItem* m_menuItem67 = new wxMenuItem(m_menu4, ControlElementId::EncryptMapper, wxString(wxT("Encrypt a mapper file...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
-  m_menu4->Append(m_menuItem67);
+  m_menu4->AppendSubMenu(mapperTools, wxT("Mapper tools"));
 
   m_menu4->AppendSeparator();
 
@@ -476,6 +477,7 @@ void PackageWindow::ShowEditor(GenericEditor* editor)
   if (ActiveEditor && ActiveEditor != editor)
   {
     Toolbar->Unbind(wxEVT_TOOL, &GenericEditor::OnToolBarEvent, ActiveEditor);
+    ActiveEditor->ClearToolbar();
   }
   bool shown = false;
   for (std::pair<const INT, GenericEditor*>& item : Editors)

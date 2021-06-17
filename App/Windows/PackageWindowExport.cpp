@@ -1,7 +1,7 @@
 #include "PackageWindow.h"
 #include "ProgressWindow.h"
 #include "../App.h"
-#include "IODialogs.h"
+#include "REDialogs.h"
 
 #include <filesystem>
 
@@ -84,7 +84,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 
   if (exports.empty())
   {
-    wxMessageBox("The package has no supported objects to export.", "Nothing to export!", wxICON_INFORMATION, this);
+    REDialog::Warning("The package has no supported objects to export.", "Nothing to export!");
     return;
   }
 
@@ -345,10 +345,10 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
   {
     if (!count)
     {
-      wxMessageBox(wxT("No supported objects to export."), wxT("Done!"), wxICON_INFORMATION, this);
+      REDialog::Warning("The package has no supported objects to export.", "Nothing to export!");
       return;
     }
-    wxMessageBox(wxString::Format("Exported %d objects.", count), wxT("Done!"), wxICON_INFORMATION, this);
+    REDialog::Info(wxString::Format("Exported %d objects.", count), "Finished!");
   }
   else
   {
@@ -365,7 +365,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
     }
     LogE("%s", logMsg.ToStdString().c_str());
     wxString desc = !count ? "Failed to export objects!" : "Failed to export some objects!";
-    desc += "See the log for details.";
-    wxMessageBox(desc, "Warning!", wxICON_WARNING, this);
+    desc += " See the log for details.";
+    REDialog::Warning(desc);
   }
 }
