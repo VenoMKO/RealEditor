@@ -194,6 +194,11 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
 
   UpdateButtons();
 
+  if (NeedsElevation())
+  {
+    FindButton->SetAuthNeeded();
+  }
+
   // Connect Events
   KeyField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnKeyChanged), NULL, this);
   VecField->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(DcToolDialog::OnVecChanged), NULL, this);

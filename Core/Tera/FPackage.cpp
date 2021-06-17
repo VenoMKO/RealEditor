@@ -574,16 +574,16 @@ MTransStream& FPackage::GetTransactionStream()
   return TranscationStream;
 }
 
-bool FPackage::IsValidRootDir(const FString& s1game)
+FPackage::S1DirError FPackage::ValidateRootDirCandidate(const FString& s1game)
 {
   if (s1game.Empty() || !std::filesystem::exists(s1game.WString()))
   {
-    return false;
+    return S1DirError::NOT_FOUND;
   }
   if (s1game.Filename(false) != "S1Game")
   {
     LogE("Error! Folder name \"%s\" does not match the \"S1Game\"", s1game.Filename(false).UTF8());
-    return false;
+    return S1DirError::NAME_MISSMATCH;
   }
   const char* classPackages[] = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
   std::filesystem::path root = s1game.WString();
@@ -592,10 +592,24 @@ bool FPackage::IsValidRootDir(const FString& s1game)
     if (!std::filesystem::exists(root / "CookedPC" / name))
     {
       LogE("Error! %s was not found in the S1Game folder.", name);
-      return false;
+      return S1DirError::CLASSES_NOT_FOUND;
     }
   }
-  return true;
+  std::filesystem::path testWritePermissionsFile = root / "re.tmp";
+  FILE* f = _wfopen(testWritePermissionsFile.wstring().c_str(), L"w");
+  if (!f)
+  {
+    LogE("Error! Not enough permissions to write to the S1Game folder.");
+    return S1DirError::ACCESS_DENIED;
+  }
+  fclose(f);
+  std::error_code err;
+  if (!std::filesystem::remove(testWritePermissionsFile, err))
+  {
+    LogE("Error! Not enough permissions to write to the S1Game folder.");
+    return S1DirError::ACCESS_DENIED;
+  }
+  return S1DirError::OK;
 }
 
 void FPackage::CleanCacheDir()

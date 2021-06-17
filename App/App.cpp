@@ -714,7 +714,18 @@ bool App::OnInit()
   {
     Config = cfg.GetConfig();
   }
-  if (!FPackage::IsValidRootDir(Config.RootDir))
+  FPackage::S1DirError verr = FPackage::ValidateRootDirCandidate(Config.RootDir);
+  if (verr == FPackage::S1DirError::ACCESS_DENIED)
+  {
+    wxMessageDialog dlg(nullptr, "RE requires Administrator privileges to access S1Game folder.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
+    dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
+    if (dlg.ShowModal() == wxID_YES)
+    {
+      App::GetSharedApp()->RestartElevated();
+    }
+    return false;
+  }
+  if (verr != FPackage::S1DirError::OK)
   {
     FAppConfig newConfig = Config;
     newConfig.RootDir.Clear();

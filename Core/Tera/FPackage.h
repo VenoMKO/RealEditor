@@ -59,6 +59,14 @@ class FPackage : public std::enable_shared_from_this<FPackage> {
 public:
   friend FPackageDumpHelper;
 
+  enum class S1DirError {
+    OK = 0,
+    NOT_FOUND,
+    NAME_MISSMATCH,
+    CLASSES_NOT_FOUND,
+    ACCESS_DENIED,
+  };
+
   // Removes all files in a tmp dir. Should be called before any package is open.
   static void CleanCacheDir();
   // RootDir's Core.u version
@@ -118,7 +126,7 @@ public:
   // Get the shared transaction stream
   static MTransStream& GetTransactionStream();
   // Validate the root dir
-  static bool IsValidRootDir(const FString& s1game = {});
+  static S1DirError ValidateRootDirCandidate(const FString& s1game = {});
 
 private:
   // Packages must be loaded/created from the static methods

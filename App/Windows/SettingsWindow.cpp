@@ -434,23 +434,39 @@ void SettingsWindow::OnCancelClicked(wxCommandEvent&)
 
 void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
-  if (FPackage::IsValidRootDir(PathField->GetValue().ToStdWstring()))
+  FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(PathField->GetValue().ToStdWstring());
+  if (err == FPackage::S1DirError::OK)
   {
-    /* Don't show the annoying message
-    if (!WasRegistered && RegisterButton->IsEnabled())
-    {
-      wxMessageDialog dialog(nullptr, wxT("You haven't associated *.gpk filetype with the ") + wxTheApp->GetAppDisplayName() + wxT(". This allows you to open packages without starting the application. Would you like to associate now?"), wxT("Associate *.gpk files?"), wxYES_NO | wxICON_INFORMATION);
-      if (dialog.ShowModal() == wxID_YES)
-      {
-        wxCommandEvent tmp;
-        OnRegisterClicked(tmp);
-      }
-    }*/
     EndModal(wxID_OK);
   }
   else
   {
-    wxMessageBox(wxT("The provided S1Game folder does not exists, or does not have all neccessery *.U files!\nCheck the folder or provide a different path."), wxT("Error!"), wxICON_ERROR);
+    if (err == FPackage::S1DirError::NOT_FOUND)
+    {
+      wxMessageBox(wxT("S1Game folder does not exist or can't be accessed."), wxT("Error!"), wxICON_ERROR);
+    }
+    else if (err == FPackage::S1DirError::NAME_MISSMATCH)
+    {
+      wxMessageBox(wxT("The folder must be called S1Game!"), wxT("Error!"), wxICON_ERROR);
+    }
+    else if (err == FPackage::S1DirError::CLASSES_NOT_FOUND)
+    {
+      wxMessageBox(wxT("S1Game folder does not contain neccessery *.U files."), wxT("Error!"), wxICON_ERROR);
+    }
+    else if (err == FPackage::S1DirError::ACCESS_DENIED && CurrentConfig.RootDir != PathField->GetValue().ToStdWstring())
+    {
+      wxMessageDialog dlg(nullptr, "RE requires Administrator privileges to access S1Game folder.\n", "Error!", wxICON_AUTH_NEEDED | wxICON_QUESTION | wxYES_NO);
+      dlg.SetYesNoLabels(wxS("Restart as Administrator"), wxS("Cancel"));
+      if (dlg.ShowModal() == wxID_YES)
+      {
+        App::GetSharedApp()->GetConfig() = NewConfig;
+        App::GetSharedApp()->RestartElevated();
+      }
+    }
+    else
+    {
+      EndModal(wxID_OK);
+    }
   }
 }
 
