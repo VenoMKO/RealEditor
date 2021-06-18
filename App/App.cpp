@@ -813,6 +813,7 @@ int App::OnRun()
 
 void App::LoadCore(ProgressWindow* pWindow)
 {
+  PERF_START(LoadCore);
   FPackage::CleanCacheDir();
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating S1Game folder contents...");
   FPackage::SetRootPath(Config.RootDir);
@@ -967,6 +968,7 @@ void App::LoadCore(ProgressWindow* pWindow)
       return;
     }
   }
+  PERF_END(LoadCore);
 
   SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
   SendEvent(this, DELAY_LOAD);
