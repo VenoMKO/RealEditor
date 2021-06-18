@@ -529,6 +529,11 @@ public:
   bool AcceptVisitor(class MeshTravallerData* importData, uint32 lodIdx, FString& error);
   bool ValidateVisitor(class MeshTravallerData* importData, uint32 lodIdx, FString& error, bool& askUser, int32 warningIndex);
 
+  const FBoxSphereBounds& GetBounds()
+  {
+    return Bounds;
+  }
+
 private:
   FBoxSphereBounds Bounds;
   FVector Origin;

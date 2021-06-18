@@ -297,6 +297,11 @@ public:
 
   std::vector<UObject*> GetMaterials(int32 lodIdx = -1) const;
 
+  const FBoxSphereBounds& GetBounds() const
+  {
+    return Bounds;
+  }
+
 protected:
   DECL_UREF(UObject, FBodySetup);
 

@@ -225,6 +225,16 @@ public:
     return FString();
   }
 
+  inline bool EndsWith(const char* suffix) const
+  {
+    auto sfxlen = strlen(suffix);
+    if (sfxlen > Data.size())
+    {
+      return false;
+    }
+    return Data.compare(Data.size() - sfxlen, sfxlen, suffix) == 0;
+  }
+
   inline bool operator==(const FString& a) const
   {
     size_t lenA = a.Data.size();

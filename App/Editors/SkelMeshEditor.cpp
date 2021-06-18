@@ -9,6 +9,7 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 #include <osgUtil/SmoothingVisitor>
+#include <osg/MatrixTransform>
 #include <osg/BlendFunc>
 #include <osg/Depth>
 
@@ -22,6 +23,10 @@
 
 #include <filesystem>
 #include <functional>
+
+static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
+static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
+static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
 
 enum ExportMode {
   ExportGeometry = wxID_HIGHEST + 1,
@@ -833,8 +838,8 @@ void SkelMeshEditor::CreateRenderModel()
   {
     return;
   }
-  Root = new osg::Geode;
 
+  osg::ref_ptr<osg::Geode> root = new osg::Geode;
   const FStaticLODModel* model = Mesh->GetLod(0);
 
   osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
@@ -888,10 +893,73 @@ void SkelMeshEditor::CreateRenderModel()
         }
       }
     }
-    Root->addDrawable(geo.get());
+    root->addDrawable(geo.get());
   }
+
+
+  FVector customRotation;
+  FString objName = Mesh->GetObjectNameString().ToUpper();
+  if (objName.Find("_FACE") != std::string::npos)
+  {
+    customRotation.X = 90;
+    customRotation.Z = 180 + 90;
+  }
+  else if (objName.Find("_TAIL") != std::string::npos)
+  {
+    customRotation.Y = 90;
+  }
+  else if (objName.Find("_HAIR") != std::string::npos)
+  {
+    customRotation.X = 90;
+    customRotation.Z = 180 + 90;
+  }
+  else if (objName.StartWith("ATTACH_"))
+  {
+    customRotation.Z = -90;
+  }
+  else if (objName.StartWith("SWITCH_"))
+  {
+    customRotation.Z = 180;
+    customRotation.X = 90;
+  }
+
+  if (!customRotation.IsZero())
+  {
+    osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
+    osg::Matrix m;
+    m.makeIdentity();
+    osg::Quat quat;
+    quat.makeRotate(
+      customRotation.X * M_PI / 180., RollAxis,
+      customRotation.Y * M_PI / 180., PitchAxis,
+      customRotation.Z * M_PI / 180., YawAxis
+    );
+    m.preMultRotate(quat);
+    mt->setMatrix(m);
+    mt->addChild(root);
+    Root = new osg::Geode;
+    Root->addChild(mt);
+  }
+  else
+  {
+    Root = new osg::Geode;
+    Root->addChild(root);
+  }
+
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+
+  if (customRotation.IsZero())
+  {
+    float distance = Root->getBoundingBox().radius() * 1.25;
+    osg::Vec3d center = Root->getBoundingBox().center();
+    center[0] = Mesh->GetBounds().Origin.X;
+    center[1] = Mesh->GetBounds().Origin.Y;
+    osg::Vec3d eye = { center[0] + distance, center[1] + distance, center[2] * 1.75 };
+    osg::Vec3d up = { -.18, -.14, .97 };
+    osgGA::TrackballManipulator* manipulator = (osgGA::TrackballManipulator*)Renderer->getCameraManipulator();
+    manipulator->setTransformation(eye, center, up);
+  }
 }
 
 void SkelMeshEditor::OnRefreshClicked()
