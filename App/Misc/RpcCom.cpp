@@ -1,15 +1,13 @@
 #include "../App.h"
 
 const char* RpcPort = "4545";
+const char* RpcHost = "localhost";
 
 bool RpcConnection::OnExec(const wxString& topic, const wxString& message)
 {
-  if (MainApplication)
+  if (wxTheApp && topic == "open")
   {
-    if (topic == "open")
-    {
-      MainApplication->OnRpcOpenFile(message);
-    }
+    App::GetSharedApp()->OnRpcOpenFile(message);
   }
   return true;
 }
@@ -17,7 +15,7 @@ bool RpcConnection::OnExec(const wxString& topic, const wxString& message)
 void RpcClient::SendRequest(const wxString& topic, const wxString& data)
 {
   RpcClient* client = new RpcClient;
-  wxConnectionBase* conn = client->MakeConnection("localhost", RpcPort, topic);
+  wxConnectionBase* conn = client->MakeConnection(RpcHost, RpcPort, topic);
   if (conn)
   {
     conn->Execute(data);
@@ -26,8 +24,12 @@ void RpcClient::SendRequest(const wxString& topic, const wxString& data)
   delete client;
 }
 
-void RpcServer::RunWithDelegate(App* delegate)
+void RpcServer::Run()
 {
-  MainApplication = delegate;
   Create(RpcPort);
+}
+
+wxConnectionBase* RpcServer::OnAcceptConnection(const wxString& topic)
+{
+  return new RpcConnection;
 }

@@ -1,35 +1,21 @@
 #pragma once
+// DDE does not allow user -> admin communications.
+// So opening gpks from Explorer won't work if RE runs with admin rights.
+// Disabling DDE forces WX to use TCP implementation. No DDE - no issue.
+#define wxUSE_DDE_FOR_IPC 0
+
 #include <wx/wx.h>
 #include <wx/ipc.h>
 
-class App;
-
 class RpcConnection : public wxConnection {
-public:
-  void SetDelegate(App* delegate)
-  {
-    MainApplication = delegate;
-  }
-
 protected:
-  bool OnExec(const wxString& topic, const wxString& message);
-
-private:
-  App* MainApplication = NULL;
+  bool OnExec(const wxString& topic, const wxString& message) override;
 };
 
 class RpcServer : public wxServer {
 public:
-  void RunWithDelegate(App* delegate);
-
-  wxConnectionBase* OnAcceptConnection(const wxString& topic) 
-  {
-    RpcConnection* conn = new RpcConnection;
-    conn->SetDelegate(MainApplication);
-    return conn;
-  }
-private:
-  App* MainApplication = NULL;
+  void Run();
+  wxConnectionBase* OnAcceptConnection(const wxString& topic) override;
 };
 
 class RpcClient : public wxClient {

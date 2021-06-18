@@ -145,7 +145,7 @@ protected:
   wxImageList* IconList = nullptr;
 };
 
-WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
+WelcomeDialog::WelcomeDialog(wxWindow* parent)
   : wxModalWindow(parent, wxID_ANY, wxTheApp->GetAppDisplayName(), wxDefaultPosition, wxSize(729, 407), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
   SetIcon(wxICON(#114));
@@ -330,8 +330,6 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent, bool startMode)
   RecentModel* model = new RecentModel(lastItems);
   RecentCtrl->AssociateModel(model);
   model->DecRef();
-
-  StartMode = startMode;
 
   OpenByNameField->SetHint(wxT("Type a GPK name..."));
 }

@@ -689,6 +689,12 @@ bool App::OnInit()
       }
       exit(0);
     }
+    if (_strcmpi(argv[idx], "-s") == 0)
+    {
+      // This delay ensures that previous RE instance has returned
+      // from the ShellExecuteEx, deleted its InstanceChecker and RpcServer
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
   }
 #ifdef _DEBUG
   _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
@@ -775,15 +781,15 @@ int App::OnRun()
 
     wxInitAllImageHandlers();
     Server = new RpcServer;
-    Server->RunWithDelegate(this);
+    Server->Run();
     if (Config.LogConfig.ShowLog)
     {
       ALog::SharedLog()->Show();
     }
 
-    if (OpenList.empty())
+    if (OpenList.empty() || NeedsInitialScreen)
     {
-      InitScreen = new WelcomeDialog(nullptr, true);
+      InitScreen = new WelcomeDialog(nullptr);
       InitScreen->Center();
       InitScreen->ShowModal();
       OpenList = InitScreen->GetOpenList();
@@ -1006,7 +1012,7 @@ void App::DelayLoad(wxCommandEvent& e)
     DumpCompositeObjects();
     if (!anyLoaded)
     {
-      InitScreen = new WelcomeDialog(nullptr, true);
+      InitScreen = new WelcomeDialog(nullptr);
       if (InitScreen->ShowModal() != wxID_OK)
       {
         InitScreen->Destroy();
@@ -1026,7 +1032,7 @@ void App::DelayLoad(wxCommandEvent& e)
   }
   if (!anyLoaded)
   {
-    InitScreen = new WelcomeDialog(nullptr, true);
+    InitScreen = new WelcomeDialog(nullptr);
     InitScreen->Center();
     InitScreen->ShowModal();
     OpenList = InitScreen->GetOpenList();
@@ -1035,8 +1041,9 @@ void App::DelayLoad(wxCommandEvent& e)
     if (OpenList.empty())
     {
       ExitMainLoop();
+      return;
     }
-    SendEvent(this, DELAY_LOAD);
+    DelayLoad(e);
     return;
   }
 }
@@ -1057,6 +1064,8 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
 {
   static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
+    { wxCMD_LINE_SWITCH, "i", "private", "for internal usage" },
+    { wxCMD_LINE_SWITCH, "s", "private", "for internal usage" },
     { wxCMD_LINE_PARAM,  NULL, NULL, "Package path", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE },
     { wxCMD_LINE_NONE }
   };
@@ -1091,6 +1100,15 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
   {
     for (int idx = 0; idx < paramsCount; ++idx)
     {
+      if (parser.GetParam(idx) == "-s")
+      {
+        continue;
+      }
+      if (parser.GetParam(idx) == "-i")
+      {
+        NeedsInitialScreen = true;
+        continue;
+      }
       OpenList.push_back(parser.GetParam(idx));
     }
   }
@@ -1174,6 +1192,10 @@ void App::RestartElevated(bool keepWindows)
   std::wstring params;
   if (keepWindows)
   {
+    if (InitScreen)
+    {
+      params += L"-i ";
+    }
     for (auto window : PackageWindows)
     {
       wxString sel = window->GetSelectedObjectPath();
@@ -1189,9 +1211,10 @@ void App::RestartElevated(bool keepWindows)
     }
     if (DcToolIsOpen)
     {
-      params += L"DCTOOL";
+      params += L"DCTOOL ";
     }
   }
+  params += L"-s ";
   SHELLEXECUTEINFO shExInfo = { 0 };
   shExInfo.cbSize = sizeof(shExInfo);
   shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -1203,10 +1226,12 @@ void App::RestartElevated(bool keepWindows)
   shExInfo.nShow = SW_SHOW;
   shExInfo.hInstApp = 0;
   SaveConfig();
-  delete InstanceChecker;
-  InstanceChecker = nullptr;
   if (ShellExecuteEx(&shExInfo))
   {
+    delete Server;
+    Server = nullptr;
+    delete InstanceChecker;
+    InstanceChecker = nullptr;
     exit(0);
   }
 }

@@ -7,7 +7,7 @@
 
 class WelcomeDialog : public wxModalWindow {
 public:
-  WelcomeDialog(wxWindow* parent, bool startMode = false);
+  WelcomeDialog(wxWindow* parent);
   ~WelcomeDialog();
 
   void OnExternalOpen(const wxString& path);
@@ -46,7 +46,6 @@ protected:
   wxButton* CloseButton = nullptr;
   wxStatusBar* StatusBar = nullptr;
 
-  bool StartMode = false;
   bool ModalRunning = false;
 
   std::vector<wxString> QueuedOpenList;

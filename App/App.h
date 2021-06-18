@@ -201,5 +201,6 @@ private:
   bool NeedsRestart = false;
   bool ShuttingDown = false;
   bool DcToolIsOpen = false;
+  bool NeedsInitialScreen = false;
 };
 
