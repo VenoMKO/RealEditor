@@ -823,6 +823,53 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
+  std::mutex mapperErrorMutex;
+  FString mapperError;
+  std::thread compositMapper([&mapperErrorMutex, &mapperError] {
+    try
+    {
+      FPackage::LoadCompositePackageMapper();
+    }
+    catch (const std::exception& e)
+    {
+      std::scoped_lock<std::mutex> l(mapperErrorMutex);
+      if (mapperError.Empty())
+      {
+        mapperError = e.what();
+      }
+    }
+  });
+
+  std::thread pkgMapper([&mapperErrorMutex, &mapperError] {
+    try
+    {
+      FPackage::LoadPkgMapper();
+    }
+    catch (const std::exception& e)
+    {
+      std::scoped_lock<std::mutex> l(mapperErrorMutex);
+      if (mapperError.Empty())
+      {
+        mapperError = e.what();
+      }
+    }
+  });
+
+  std::thread objectRedirectorMapper([&mapperErrorMutex, &mapperError] {
+    try
+    {
+      FPackage::LoadObjectRedirectorMapper();
+    }
+    catch (const std::exception& e)
+    {
+      std::scoped_lock<std::mutex> l(mapperErrorMutex);
+      if (mapperError.Empty())
+      {
+        mapperError = e.what();
+      }
+    }
+  });
+
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading stripped meta data...");
 #ifndef _DEBUG
   {
@@ -890,69 +937,23 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
+
+  pkgMapper.join();
+  compositMapper.join();
+  objectRedirectorMapper.join();
+
+  if (mapperError.Size())
+  {
+    SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+    SendEvent(this, LOAD_CORE_ERROR, mapperError.String());
+    pWindow->Destroy();
+    ExitMainLoop();
+    return;
+  }
+
   if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
-    SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
-    std::mutex errorMutex;
-    FString error;
-    std::thread pkgMapper([&errorMutex, &error] {
-      try
-      {
-        FPackage::LoadPkgMapper();
-      }
-      catch (const std::exception& e)
-      {
-        std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.Empty())
-        {
-          error = e.what();
-        }
-      }
-    });
-
-    std::thread compositMapper([&errorMutex, &error] {
-      try
-      {
-        FPackage::LoadCompositePackageMapper();
-      }
-      catch (const std::exception& e)
-      {
-        std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.Empty())
-        {
-          error = e.what();
-        }
-      }
-    });
-
-    std::thread objectRedirectorMapper([&errorMutex, &error] {
-      try
-      {
-        FPackage::LoadObjectRedirectorMapper();
-      }
-      catch (const std::exception& e)
-      {
-        std::scoped_lock<std::mutex> l(errorMutex);
-        if (error.Empty())
-        {
-          error = e.what();
-        }
-      }
-    });
-
-    pkgMapper.join();
-    compositMapper.join();
-    objectRedirectorMapper.join();
-
-    if (error.Size())
-    {
-      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, error.String());
-      pWindow->Destroy();
-      ExitMainLoop();
-      return;
-    }
-
     const auto& compositeMap = FPackage::GetCompositePackageMap();
     CompositePackageNames.reserve(compositeMap.size());
     for (const auto& pair : compositeMap)
