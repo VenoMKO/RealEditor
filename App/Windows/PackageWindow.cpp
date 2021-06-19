@@ -306,8 +306,12 @@ void PackageWindow::OnUpdateProperties(wxCommandEvent&)
 
 void PackageWindow::LoadObjectTree()
 {
-  auto all = Package->GetAllExports();
-  DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), std::vector<FString>());
+  std::vector<FObjectImport*> imps;
+#ifdef _DEBUG
+  // Imports confuse some users. Show them in DEBUG builds only.
+  imps = Package->GetRootImports();
+#endif
+  DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), imps, std::vector<FString>());
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   if (ObjectTreeNode* rimp = DataModel->GetRootImport())
   {
@@ -1753,19 +1757,29 @@ void PackageWindow::OnSearchText(wxCommandEvent&)
 {
   // This is extremely expensive!!!
   // TODO: figure out a way to not rebuild the whole model on every char
+  bool needsRestore = false;
   FString currentSearch = SearchField->GetValue().ToStdWstring();
   if (DataModel && !DataModel->GetSearchValue().Size() && currentSearch.Size())
   {
+    ObjectTreeCtrl->SaveTreeState();
     UpdateAccelerators();
   }
+  else if (DataModel && DataModel->GetSearchValue().Size() && !currentSearch.Size())
+  {
+    needsRestore = true;
+  }
   DataModel = nullptr;
+  std::vector<FObjectImport*> imps;
+#ifdef _DUBUG
+  imps = Package->GetRootImports();
+#endif
   if (currentSearch.Size())
   {
-    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), currentSearch);
+    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), imps, currentSearch);
   }
   else
   {
-    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), std::vector<FString>());
+    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), imps, std::vector<FString>());
   }
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   if (ObjectTreeNode* rimp = DataModel->GetRootImport())
@@ -1777,6 +1791,10 @@ void PackageWindow::OnSearchText(wxCommandEvent&)
   if (SearchField->GetValue().size())
   {
     ObjectTreeCtrl->ExpandAll();
+  }
+  if (needsRestore)
+  {
+    ObjectTreeCtrl->RestoreTreeState();
   }
   ObjectTreeCtrl->Thaw();
 }

@@ -196,6 +196,12 @@ namespace
       CancelButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AuthDialog::OnCancelClicked), nullptr, this);
     }
 
+    int ShowModal() wxOVERRIDE
+    {
+      MessageBeep(MB_ICONINFORMATION);
+      return wxDialog::ShowModal();
+    }
+
   protected:
     wxDECLARE_EVENT_TABLE();
 

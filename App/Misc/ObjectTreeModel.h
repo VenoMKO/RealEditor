@@ -155,7 +155,11 @@ public:
   using wxDataViewCtrl::wxDataViewCtrl;
   void AddExportObject(FObjectExport* exp);
   void ExpandAll();
+  void SaveTreeState();
+  void RestoreTreeState();
 private:
   void OnSize(wxSizeEvent& e);
   wxDECLARE_EVENT_TABLE();
+private:
+  std::map<PACKAGE_INDEX, bool> Expanded;
 };

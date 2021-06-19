@@ -524,6 +524,52 @@ void ObjectTreeDataViewCtrl::ExpandAll()
   }
 }
 
+void ObjectTreeDataViewCtrl::SaveTreeState()
+{
+  std::function<void(ObjectTreeNode*)> expFunc;
+  expFunc = [&](ObjectTreeNode* item) {
+    if (!item)
+    {
+      return;
+    }
+    ObjectTreeNodePtrArray& children = item->GetChildren();
+    Expanded[item->GetObjectIndex()] = IsExpanded(wxDataViewItem(item));
+    for (ObjectTreeNode* child : children)
+    {
+      expFunc(child);
+    }
+  };
+  if (ObjectTreeModel* model = (ObjectTreeModel*)GetModel())
+  {
+    Expanded.clear();
+    expFunc(model->GetRootExport());
+  }
+}
+
+void ObjectTreeDataViewCtrl::RestoreTreeState()
+{
+  std::function<void(ObjectTreeNode*)> expFunc;
+  expFunc = [&](ObjectTreeNode* item) {
+    if (!item)
+    {
+      return;
+    }
+    ObjectTreeNodePtrArray& children = item->GetChildren();
+    if (Expanded[item->GetObjectIndex()])
+    {
+      Expand(wxDataViewItem(item));
+    }
+    for (ObjectTreeNode* child : children)
+    {
+      expFunc(child);
+    }
+  };
+  if (ObjectTreeModel* model = (ObjectTreeModel*)GetModel())
+  {
+    expFunc(model->GetRootExport());
+  }
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())
