@@ -7,10 +7,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RealEditor", "RE.vcxproj", 
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug ASAN|x64 = Debug ASAN|x64
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{86FBF694-90B7-43ED-9F10-184668AEA516}.Debug ASAN|x64.ActiveCfg = Debug ASAN|x64
+		{86FBF694-90B7-43ED-9F10-184668AEA516}.Debug ASAN|x64.Build.0 = Debug ASAN|x64
 		{86FBF694-90B7-43ED-9F10-184668AEA516}.Debug|x64.ActiveCfg = Debug|x64
 		{86FBF694-90B7-43ED-9F10-184668AEA516}.Debug|x64.Build.0 = Debug|x64
 		{86FBF694-90B7-43ED-9F10-184668AEA516}.Release|x64.ActiveCfg = Release|x64
