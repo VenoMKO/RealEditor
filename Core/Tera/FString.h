@@ -210,6 +210,11 @@ public:
     return result;
   }
 
+  inline bool Contains(const FString& a)
+  {
+    return Data.find(a.Data) != std::string::npos;
+  }
+
   inline FString Filename(bool extension = true) const
   {
     return FString(FilenameString(extension));

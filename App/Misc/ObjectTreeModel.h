@@ -19,10 +19,12 @@ WX_DEFINE_ARRAY_PTR(ObjectTreeNode*, ObjectTreeNodePtrArray);
 class ObjectTreeNode {
 public:
 
-  ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const std::vector<FString>& allowedClasses = {});
+  ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const std::vector<FString>& allowedClasses);
+  ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const FString& search);
   ObjectTreeNode(std::vector<FObjectImport*> imps);
 
-  ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const std::vector<FString>& allowedClasses = {});
+  ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const std::vector<FString>& allowedClasses);
+  ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const FString& search);
 
   ObjectTreeNode(ObjectTreeNode* parent, FObjectImport* imp);
 
@@ -58,6 +60,13 @@ public:
   void Append(ObjectTreeNode* child);
 
   ObjectTreeNode* FindItemByObjectIndex(PACKAGE_INDEX index);
+  ObjectTreeNode* FindItemByName(const FString& name);
+  ObjectTreeNode* FindFirstItemMatch(const FString& name);
+
+  FObjectExport* GetExport()
+  {
+    return Export;
+  }
 
 private:
   FObjectExport* Export = nullptr;
@@ -72,8 +81,10 @@ private:
 
 class ObjectTreeModel : public wxDataViewModel {
 public:
-  ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const std::vector<FString>& allowedClasses = {});
-
+  ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const std::vector<FString>& allowedClasses);
+  
+  ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const FString& search);
+  
   ~ObjectTreeModel()
   {
     delete RootExport;
@@ -123,8 +134,17 @@ public:
     return RootImport;
   }
 
+  FString GetSearchValue() const
+  {
+    return SearchName;
+  }
+
+protected:
+  void BuildIcons();
+
 private:
   std::vector<FString> Filter;
+  FString SearchName;
   ObjectTreeNode* RootExport = nullptr;
   ObjectTreeNode* RootImport = nullptr;
   wxImageList* IconList = nullptr;
@@ -134,6 +154,7 @@ class ObjectTreeDataViewCtrl : public wxDataViewCtrl {
 public:
   using wxDataViewCtrl::wxDataViewCtrl;
   void AddExportObject(FObjectExport* exp);
+  void ExpandAll();
 private:
   void OnSize(wxSizeEvent& e);
   wxDECLARE_EVENT_TABLE();

@@ -3,6 +3,7 @@
 #include <wx/splitter.h>
 #include <wx/toolbar.h>
 #include <wx/filehistory.h>
+#include <wx/srchctrl.h>
 #include <wx/propgrid/manager.h>
 
 #include "../Editors/GenericEditor.h"
@@ -115,12 +116,18 @@ private:
   void NavigateHistory();
 
   void OnSearchEnter(wxCommandEvent&);
+  void OnSearchText(wxCommandEvent&);
   void OnFocusSearch(wxCommandEvent&);
+  void OnEscClicked(wxCommandEvent& e);
+  void ClearSearch(bool preserveSelection = true);
+  void OnSearchCancelClicked(wxCommandEvent&);
 
   void DebugOnTestCookObject(wxCommandEvent&);
   void DebugOnSplitMod(wxCommandEvent&);
   void DebugOnDupSelection(wxCommandEvent&);
   void DebugMarkDirty(wxCommandEvent&);
+
+  void UpdateAccelerators();
 
   wxDECLARE_EVENT_TABLE();
 
@@ -128,7 +135,7 @@ private:
   App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
   ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
-  wxTextCtrl* SearchField = nullptr;
+  wxSearchCtrl* SearchField = nullptr;
   wxMenuItem* SettingsWindowMenu = nullptr;
   wxMenuItem* LogWindowMenu = nullptr;
   wxMenuItem* SaveMenu = nullptr;
@@ -153,6 +160,7 @@ private:
   wxPanel* ObjectInfoPanel = nullptr;
   wxImageList* ImageList = nullptr;
   wxStatusBar* StatusBar = nullptr;
+  wxPanel* TopPanel = nullptr;
   ArchiveInfoView* PackageInfoView = nullptr;
   wxFileHistory* FileHistory = nullptr;
   bool PerformingHistoryNavigation = false;

@@ -71,6 +71,7 @@ enum ControlElementId {
   HeartBeat,
   Search,
   SearchAccl,
+  EscButton,
   OpenRecentStart /* OpenRecentStart must be the last id. OpenRecentStart + n - recent file at index n */
 };
 
@@ -171,8 +172,10 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   
   ObjectTreeCtrl->Bind(wxEVT_SIZE, &PackageWindow::OnSize, this);
   PropertiesCtrl->Bind(wxEVT_SIZE, &PackageWindow::OnSize, this);
+  SearchField->Connect(wxEVT_COMMAND_SEARCHCTRL_SEARCH_BTN, wxCommandEventHandler(PackageWindow::OnSearchEnter), nullptr, this);
   HeartBeat.Bind(wxEVT_TIMER, &PackageWindow::OnTick, this);
   HeartBeat.Start(1);
+  UpdateAccelerators();
 }
 
 void PackageWindow::OnCloseWindow(wxCloseEvent& event)
@@ -304,16 +307,15 @@ void PackageWindow::OnUpdateProperties(wxCommandEvent&)
 void PackageWindow::LoadObjectTree()
 {
   auto all = Package->GetAllExports();
-  wxArrayString hints;
-  for (FObjectExport* exp : all)
-  {
-    hints.push_back(exp->GetObjectNameString().WString());
-  }
-  SearchField->AutoComplete(hints);
-  DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports());
+  DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), std::vector<FString>());
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
-  DataModel->GetRootImport()->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
+  if (ObjectTreeNode* rimp = DataModel->GetRootImport())
+  {
+    rimp->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
+  }
+  ObjectTreeCtrl->Freeze();
   ObjectTreeCtrl->AssociateModel(DataModel.get());
+  ObjectTreeCtrl->Thaw();
 }
 
 void PackageWindow::OnTick(wxTimerEvent& e)
@@ -576,10 +578,6 @@ void PackageWindow::OnExportObjectSelected(INT index)
     auto it = Editors.find(index);
     if (it != Editors.end())
     {
-      if (it->second == ActiveEditor)
-      {
-        return;
-      }
       Toolbar->ClearTools();
       ShowEditor(it->second);
       it->second->LoadObject();
@@ -782,6 +780,25 @@ void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
 void PackageWindow::DebugMarkDirty(wxCommandEvent&)
 {
   Package->MarkDirty(true);
+}
+
+void PackageWindow::UpdateAccelerators()
+{
+  if (SearchField->GetValue().size())
+  {
+    wxAcceleratorEntry entries[2];
+    entries[0].Set(wxACCEL_CTRL, (int)'F', ControlElementId::SearchAccl);
+    entries[1].Set(wxACCEL_NORMAL, WXK_ESCAPE, ControlElementId::EscButton);
+    wxAcceleratorTable accel(2, entries);
+    TopPanel->SetAcceleratorTable(accel);
+  }
+  else
+  {
+    wxAcceleratorEntry entries[1];
+    entries[0].Set(wxACCEL_CTRL, (int)'F', ControlElementId::SearchAccl);
+    wxAcceleratorTable accel(1, entries);
+    TopPanel->SetAcceleratorTable(accel);
+  }
 }
 
 void PackageWindow::FixOSG()
@@ -1709,16 +1726,102 @@ void PackageWindow::OnForwardClicked(wxCommandEvent&)
 
 void PackageWindow::OnSearchEnter(wxCommandEvent& event)
 {
-  if (SelectObject(SearchField->GetValue()))
+  FString search = SearchField->GetValue().ToStdWstring();
+  if (!DataModel || search.Empty())
+  {
+    return;
+  }
+  bool completeMatch = true;
+  ObjectTreeNode* node = DataModel->GetRootExport()->FindItemByName(search);
+  if (!node)
+  {
+    completeMatch = false;
+    node = DataModel->GetRootExport()->FindFirstItemMatch(search);
+  }
+  FObjectExport* exp = node->GetExport();
+  if (completeMatch)
   {
     SearchField->SetValue(wxEmptyString);
-    ObjectTreeCtrl->SetFocus();
+    // node is dead here
+    node = nullptr;
   }
+  SelectObject(Package->GetObject(exp));
+  ObjectTreeCtrl->SetFocus();
+}
+
+void PackageWindow::OnSearchText(wxCommandEvent&)
+{
+  // This is extremely expensive!!!
+  // TODO: figure out a way to not rebuild the whole model on every char
+  FString currentSearch = SearchField->GetValue().ToStdWstring();
+  if (DataModel && !DataModel->GetSearchValue().Size() && currentSearch.Size())
+  {
+    UpdateAccelerators();
+  }
+  DataModel = nullptr;
+  if (currentSearch.Size())
+  {
+    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), currentSearch);
+  }
+  else
+  {
+    DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), Package->GetRootImports(), std::vector<FString>());
+  }
+  DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
+  if (ObjectTreeNode* rimp = DataModel->GetRootImport())
+  {
+    rimp->SetCustomObjectIndex(FAKE_IMPORT_ROOT);
+  }
+  ObjectTreeCtrl->Freeze();
+  ObjectTreeCtrl->AssociateModel(DataModel.get());
+  if (SearchField->GetValue().size())
+  {
+    ObjectTreeCtrl->ExpandAll();
+  }
+  ObjectTreeCtrl->Thaw();
 }
 
 void PackageWindow::OnFocusSearch(wxCommandEvent&)
 {
   SearchField->SetFocus();
+}
+
+void PackageWindow::OnEscClicked(wxCommandEvent& e)
+{
+  if (SearchField->GetValue().size())
+  {
+    ClearSearch();
+    e.Skip(true);
+    return;
+  }
+}
+
+void PackageWindow::ClearSearch(bool preserveSelection)
+{
+  if (!SearchField->GetValue().size())
+  {
+    return;
+  }
+  FObjectExport* exp = nullptr;
+  if (preserveSelection)
+  {
+    if (ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID())
+    {
+      exp = node->GetExport();
+    }
+  }
+  SearchField->SetValue(wxEmptyString);
+  if (exp)
+  {
+    SelectObject(Package->GetObject(exp));
+  }
+  ObjectTreeCtrl->SetFocus();
+  UpdateAccelerators();
+}
+
+void PackageWindow::OnSearchCancelClicked(wxCommandEvent&)
+{
+  ClearSearch();
 }
 
 void PackageWindow::NavigateHistory()
@@ -1800,8 +1903,9 @@ EVT_COMMAND(wxID_ANY, SELECT_OBJECT, PackageWindow::OnSelectObject)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_BUTTON(ControlElementId::Back, PackageWindow::OnBackClicked)
 EVT_BUTTON(ControlElementId::Forward, PackageWindow::OnForwardClicked)
-EVT_TEXT_ENTER(ControlElementId::Search, PackageWindow::OnSearchEnter)
+EVT_TEXT(ControlElementId::Search, PackageWindow::OnSearchText)
 EVT_MENU(ControlElementId::SearchAccl, PackageWindow::OnFocusSearch)
+EVT_MENU(ControlElementId::EscButton, PackageWindow::OnEscClicked)
 
 EVT_TIMER(wxID_ANY, PackageWindow::OnTick)
 

@@ -35,6 +35,36 @@ inline int GetSuitableExportsCount(FObjectExport* exp, const std::vector<FString
   return result;
 }
 
+inline int GetSuitableExportsCount(FObjectExport* exp, const FString& filter, bool recursivly)
+{
+  int result = 0;
+  if (exp->GetObjectNameString().ToUpper().Contains(filter.ToUpper()) && (!exp->Outer || exp->Outer->GetClassName() == NAME_Package || exp->Outer->GetClassName() == "Level"))
+  {
+    result++;
+  }
+  else
+  {
+    bool contains = false;
+    for (FObjectExport* child : exp->Inner)
+    {
+      int tmp = GetSuitableExportsCount(child, filter, true);
+      if (recursivly)
+      {
+        result += tmp;
+      }
+      if (tmp)
+      {
+        contains = true;
+      }
+    }
+    if (contains)
+    {
+      result++;
+    }
+  }
+  return result;
+}
+
 enum ClassIco : int {
   IcoPackage = 0,
   IcoField,
@@ -142,6 +172,19 @@ ObjectTreeNode::ObjectTreeNode(const std::string& name, std::vector<FObjectExpor
   }
 }
 
+ObjectTreeNode::ObjectTreeNode(const std::string& name, std::vector<FObjectExport*> exps, const FString& search)
+{
+  Name = A2W(name);
+  for (FObjectExport* exp : exps)
+  {
+    if (search.Empty() || GetSuitableExportsCount(exp, search, true))
+    {
+      ObjectTreeNode* child = new ObjectTreeNode(this, exp, search);
+      Children.Add(child);
+    }
+  }
+}
+
 ObjectTreeNode::ObjectTreeNode(std::vector<FObjectImport*> imps)
 {
   Name = wxT("Imports");
@@ -162,6 +205,21 @@ ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const
     if (allowedClasses.empty() || GetSuitableExportsCount(expChild, allowedClasses, true))
     {
       ObjectTreeNode* child = new ObjectTreeNode(this, expChild, allowedClasses);
+      Children.Add(child);
+    }
+  }
+}
+
+ObjectTreeNode::ObjectTreeNode(ObjectTreeNode* parent, FObjectExport* exp, const FString& search)
+  : Export(exp)
+  , Parent(parent)
+{
+  Resource = (FObjectResource*)exp;
+  for (FObjectExport* expChild : exp->Inner)
+  {
+    if (search.Empty() || GetSuitableExportsCount(expChild, search, true))
+    {
+      ObjectTreeNode* child = new ObjectTreeNode(this, expChild, search);
       Children.Add(child);
     }
   }
@@ -235,6 +293,46 @@ ObjectTreeNode* ObjectTreeNode::FindItemByObjectIndex(PACKAGE_INDEX index)
   return nullptr;
 }
 
+ObjectTreeNode* ObjectTreeNode::FindItemByName(const FString& name)
+{
+  const FString upper = name.ToUpper();
+  if (Export)
+  {
+    if (Export->GetClassName() != NAME_Package && Export->GetObjectNameString().ToUpper() == upper)
+    {
+      return this;
+    }
+  }
+  for (ObjectTreeNode* child : Children)
+  {
+    if (ObjectTreeNode* result = child->FindItemByName(name))
+    {
+      return result;
+    }
+  }
+  return nullptr;
+}
+
+ObjectTreeNode* ObjectTreeNode::FindFirstItemMatch(const FString& name)
+{
+  const FString upper = name.ToUpper();
+  if (Export)
+  {
+    if (Export->GetClassName() != NAME_Package && Export->GetObjectNameString().ToUpper().Contains(upper))
+    {
+      return this;
+    }
+  }
+  for (ObjectTreeNode* child : Children)
+  {
+    if (ObjectTreeNode* result = child->FindFirstItemMatch(name))
+    {
+      return result;
+    }
+  }
+  return nullptr;
+}
+
 ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const std::vector<FString>& allowedClasses)
 {
   Filter = allowedClasses;
@@ -243,19 +341,31 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
   {
     RootImport = new ObjectTreeNode(rootImports);
   }
+  BuildIcons();
+}
+
+ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FObjectExport*>& rootExports, std::vector<FObjectImport*>& rootImports, const FString& search)
+{
+  SearchName = search;
+  RootExport = new ObjectTreeNode(packageName, rootExports, search);
+  BuildIcons();
+}
+
+void ObjectTreeModel::BuildIcons()
+{
   IconList = new wxImageList(16, 16, true, 2);
-  
+
   // ORDER MATTERS!!!
   // Keep in sync with the ClassIco enum and ObjectClassToClassIco
 
   // Package icon
   wxBitmap bitmap = wxArtProvider::GetBitmap(wxART_FOLDER, wxART_OTHER, wxSize(16, 16));
   IconList->Add(bitmap);
-  
+
   // Field icon
   bitmap = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, wxART_OTHER, wxSize(16, 16));
   IconList->Add(bitmap);
-  
+
   const wxString imageres = R"(C:\Windows\system32\imageres.dll)";
 
   // Default icon
@@ -277,7 +387,7 @@ ObjectTreeModel::ObjectTreeModel(const std::string& packageName, std::vector<FOb
 
   // Redirector
   IconList->Add(wxBitmap("#119", wxBITMAP_TYPE_PNG_RESOURCE));
-  
+
   // Imp dir
   IconList->Add(wxBitmap("#123", wxBITMAP_TYPE_PNG_RESOURCE));
 
@@ -380,13 +490,37 @@ void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp)
   ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
   if (ObjectTreeNode* parentNode = exp->GetOuter() ? model->FindItemByObjectIndex(exp->OuterIndex) : model->GetRootExport())
   {
-    ObjectTreeNode* itemNode = new ObjectTreeNode(parentNode, exp);
+    ObjectTreeNode* itemNode = new ObjectTreeNode(parentNode, exp, FString());
     parentNode->GetChildren().Add(itemNode);
     wxDataViewItem parent = wxDataViewItem((void*)parentNode);
     wxDataViewItem item = wxDataViewItem((void*)itemNode);
     model->ItemAdded(parent, item);
     Select(item);
     EnsureVisible(item);
+  }
+}
+
+void ObjectTreeDataViewCtrl::ExpandAll()
+{
+  std::function<void(ObjectTreeNode*)> expFunc;
+  expFunc = [&](ObjectTreeNode* item) {
+    if (!item)
+    {
+      return;
+    }
+    ObjectTreeNodePtrArray& children = item->GetChildren();
+    if (children.size())
+    {
+      Expand(wxDataViewItem(item));
+    }
+    for (ObjectTreeNode* child : children)
+    {
+      expFunc(child);
+    }
+  };
+  if (ObjectTreeModel* model = (ObjectTreeModel*)GetModel())
+  {
+    expFunc(model->GetRootExport());
   }
 }
 

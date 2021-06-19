@@ -143,20 +143,13 @@ void PackageWindow::InitLayout()
   wxBoxSizer* topSizer;
   topSizer = new wxBoxSizer(wxVERTICAL);
 
-  wxPanel* topPanel;
-  topPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  topPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
-
-  wxAcceleratorEntry entries[1];
-  entries[0].Set(wxACCEL_CTRL, (int)'F', ControlElementId::SearchAccl);
-  wxAcceleratorTable accel(1, entries);
-  topPanel->SetAcceleratorTable(accel);
-
+  TopPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  TopPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
   wxBoxSizer* bSizer14;
   bSizer14 = new wxBoxSizer(wxVERTICAL);
 
-  SidebarSplitter = new wxSplitterWindow(topPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE);
+  SidebarSplitter = new wxSplitterWindow(TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE);
   SidebarSplitter->Connect(wxEVT_IDLE, wxIdleEventHandler(PackageWindow::SidebarSplitterOnIdle), NULL, this);
   SidebarSplitter->SetMinimumPaneSize(230);
 
@@ -180,9 +173,10 @@ void PackageWindow::InitLayout()
 
   treeSizer->Add(ObjectTreeCtrl, 1, wxALL | wxEXPAND, 4);
 
-  SearchField = new wxTextCtrl(sidebarPanel, ControlElementId::Search, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-  SearchField->SetHint(wxT("Search..."));
+  SearchField = new wxSearchCtrl(sidebarPanel, ControlElementId::Search, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+  SearchField->SetHint(wxT("Search(Ctrl+F)..."));
   SearchField->Enable(false);
+  SearchField->ShowCancelButton(true);
   treeSizer->Add(SearchField, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   sidebarPanel->SetSizer(treeSizer);
@@ -401,11 +395,13 @@ void PackageWindow::InitLayout()
   bSizer14->Add(SidebarSplitter, 1, wxEXPAND, 0);
 
 
-  topPanel->SetSizer(bSizer14);
-  topPanel->Layout();
-  bSizer14->Fit(topPanel);
-  topSizer->Add(topPanel, 1, wxEXPAND | wxALL, 0);
+  TopPanel->SetSizer(bSizer14);
+  TopPanel->Layout();
+  bSizer14->Fit(TopPanel);
+  topSizer->Add(TopPanel, 1, wxEXPAND | wxALL, 0);
   SetSizer(topSizer);
+
+  SearchField->Connect(wxEVT_COMMAND_SEARCHCTRL_CANCEL_BTN, wxCommandEventHandler(PackageWindow::OnSearchCancelClicked), nullptr, this);
 
   // Reduce flickering on resizing
   std::vector<wxWindow*> flickeringWindows = { menuBar, stExpFlags , stObjFlags, stOffset, stSize, stPropSize, stDataSize, stProperties, EditorContainer, contentSplitterPanel, sidebarPanel,
