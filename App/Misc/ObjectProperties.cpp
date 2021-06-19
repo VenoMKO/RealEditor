@@ -85,6 +85,29 @@ inline wxString GetObjectNameForIndex(FPropertyValue* value)
   return wxT("NULL");
 }
 
+inline wxString GetGuidValue(FPropertyValue* v)
+{
+  wxString result;
+  std::vector<FPropertyValue*> arr = v->GetArray();
+  if (arr.size())
+  {
+    if (arr.front()->Type == FPropertyValue::VID::Field)
+    {
+      FGuid guid;
+      for (int32 idx = 0; idx < arr.size(); ++idx)
+      {
+        guid[idx] = arr[idx]->GetArray().front()->GetInt();
+      }
+      result = guid.FormattedString().WString();
+    }
+  }
+  if (!result.size())
+  {
+    result = "<Error>";
+  }
+  return result;
+}
+
 void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, const std::vector<FPropertyTag*>& properties)
 {
   std::vector<wxPropertyCategory*> cats = { cat };
@@ -127,7 +150,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
 {
   if (value->Type == FPropertyValue::VID::Int)
   {
-    auto pgp = new AIntProperty(value, idx);
+    wxPGProperty* pgp = new AIntProperty(value, idx);
     pgp->Enable(cat->IsEnabled());
     if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
     {
@@ -280,6 +303,17 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   }
   else if (value->Type == FPropertyValue::VID::Struct)
   {
+    if (value->Struct && value->Struct->GetObjectName() == "Guid")
+    {
+      AGuideProperty* pgp = new AGuideProperty(value, idx);
+      pgp->Enable(cat->IsEnabled());
+      if (value->Property->ClassProperty && value->Property->ClassProperty->GetToolTip().Size())
+      {
+        pgp->SetHelpString(value->Property->ClassProperty->GetToolTip().WString());
+      }
+      mgr->AppendIn(cat, pgp);
+      return;
+    }
     wxPropertyCategory* ncat = new wxPropertyCategory(idx >= 0 ? wxString::Format("%d", idx) : _GetPropertyName(value), GetPropertyId(value));
     ncat->Enable(cat->IsEnabled());
     mgr->AppendIn(cat, ncat);
@@ -896,4 +930,96 @@ void AByteArrayProperty::OnImportClicked(wxPropertyGrid* pg)
   AllowChanges = true;
   SetValueFromString(wxString::Format("%lluKb", arr.size() / 1024));
   AllowChanges = false;
+}
+
+AGuideProperty::AGuideProperty(FPropertyValue* value, int32 idx)
+  : wxStringProperty(GetPropertyName(value, idx), GetPropertyId(value), GetGuidValue(value))
+  , Value(value)
+{
+  if (value->Field && value->Field->GetToolTip().Size())
+  {
+    SetHelpString(value->Field->GetToolTip().WString());
+  }
+  else if (value->Struct && value->Struct->GetToolTip().Size())
+  {
+    SetHelpString(value->Field->GetToolTip().WString());
+  }
+}
+
+bool AGuideProperty::ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const
+{
+  wxString newVal = value.GetString();
+  if (newVal == "0")
+  {
+    newVal = "00000000-00000000-00000000-00000000";
+    value = newVal;
+    return true;
+  }
+  if (newVal.size() < 32 && newVal.size() > 35)
+  {
+    validationInfo.SetFailureMessage("The value must be 32 or 35 characters long");
+    return false;
+  }
+  int cnt = 0;
+  uint32 vals[4] = { 0 };
+  for (int off = 0; off < newVal.size(); off += 1)
+  {
+    bool skip = false;
+    for (int cidx = 0; cidx < 8; ++cidx)
+    {
+      if (cidx + off >= newVal.size())
+      {
+        return false;
+      }
+      if (!std::isxdigit(newVal[cidx + off]))
+      {
+        if (newVal[cidx + off] == '-')
+        {
+          skip = true;
+          break;
+        }
+        validationInfo.SetFailureMessage("The value must consist of: 0-9, A-F and '-'");
+        return false;
+      }
+    }
+    if (skip)
+    {
+      continue;
+    }
+    if (cnt > 3)
+    {
+      validationInfo.SetFailureMessage("Value does not match the pattern: xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx'");
+      return false;
+    }
+    unsigned long tmp = 0;
+    newVal.Mid(off, 8).ToULong(&tmp, 16);
+    vals[cnt] = tmp;
+    cnt++;
+    off += 7;
+  }
+  std::vector<FPropertyValue*> arr = Value->GetArray();
+  FGuid n;
+  for (int idx = 0; idx < 4; ++idx)
+  {
+    arr[idx]->GetArray()[0]->GetInt() = vals[idx];
+    n[idx] = vals[idx];
+  }
+  value = wxString(n.FormattedString().WString());
+  return true;
+}
+
+void AGuideProperty::OnSetValue()
+{
+  wxString str = m_value.GetString();
+  FGuid g(str.ToStdString());
+  std::vector<FPropertyValue*> arr = Value->GetArray();
+  for (int idx = 0; idx < 4; ++idx)
+  {
+    uint32& v = arr[idx]->GetArray()[0]->GetInt();
+    if (v != g[idx])
+    {
+      v = g[idx];
+      Value->Property->Owner->MarkDirty();
+    }
+  }
 }

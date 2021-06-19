@@ -49,6 +49,59 @@ FGuid FGuid::Generate()
   return FGuid();
 }
 
+FGuid::FGuid(const FString& str)
+{
+  int cnt = 0;
+  uint32 vals[4] = { 0 };
+  for (int off = 0; off < str.Size(); off += 1)
+  {
+    bool skip = false;
+    for (int cidx = 0; cidx < 8; ++cidx)
+    {
+      if (cidx + off >= str.Size())
+      {
+        LogE("Guid string is malformed or too short: %s", str.C_str());
+        return;
+      }
+      if (!std::isxdigit(str[cidx + off]))
+      {
+        if (str[cidx + off] == '-')
+        {
+          skip = true;
+          break;
+        }
+        LogE("Guid item at index %d is not hex %s", cnt, str.Substr(off, 8).C_str());
+        return;
+      }
+    }
+    if (skip)
+    {
+      continue;
+    }
+    if (cnt > 3)
+    {
+      LogE("Guid string is malformed: %s", str.C_str());
+      return;
+    }
+    size_t size = 0;
+    try
+    {
+      vals[cnt] = std::stoul(str.Substr(off, 8).WString(), &size, 16);
+    }
+    catch (...)
+    {
+      LogE("Failed to parse guid item at index %d - %s", cnt, str.Substr(off, 8).C_str());
+      return;
+    }
+    cnt++;
+    off += 7;
+  }
+  for (int32 idx = 0; idx < 4; ++idx)
+  {
+    operator[](idx) = vals[idx];
+  }
+}
+
 FStream& operator<<(FStream& s, FGuid& g)
 {
   return s << g.A << g.B << g.C << g.D;

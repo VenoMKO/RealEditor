@@ -106,3 +106,15 @@ protected:
   FPropertyValue* Value = nullptr;
   bool AllowChanges = false;
 };
+
+class AGuideProperty : public wxStringProperty {
+public:
+  AGuideProperty(FPropertyValue* value, int32 idx);
+  bool ValidateValue(wxVariant& value, wxPGValidationInfo& validationInfo) const override;
+
+  void OnSetValue() override;
+
+protected:
+  FPropertyValue* Value = nullptr;
+  bool AllowChanges = false;
+};

@@ -9,8 +9,11 @@ public:
 
   static FGuid Generate();
 
-  FGuid()
-  {}
+  FGuid() = default;
+
+  // Accepts formats: x-x-x-x, x-x-xx, etc...
+  // If failed to parse the GUID will be invalid(0000)
+  FGuid(const FString& str);
 
   FGuid(uint32 a, uint32 b, uint32 c, uint32 d)
     : A(a)
