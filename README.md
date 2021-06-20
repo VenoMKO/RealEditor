@@ -46,6 +46,7 @@ Currently under development. Some features are not implemented yet or may not wo
 | **Speed Trees** | YES | NO | SPT | SpeedTree |
 | **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
 | **SWF/GFX** | YES | YES | Binary | GFxMovieInfo, SwfMovie |
+| **DataCenter_Final** | YES | NO | XML/JSON | DataCenter_Final.dat |
 
 
 * Material graph viewer
