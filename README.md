@@ -5,6 +5,31 @@ Currently under development. Some features are not implemented yet or may not wo
 
 ![Header Screenshot](.gitresources/header.jpg)
 
+### Features
+
+| Type | Export | Import | Format | Classes |
+| --- | --- | --- | --- | --- |
+| **Textures** | YES | YES | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
+| **Sounds** | YES | YES | OGG | SoundNodeWave |
+| **3D models** | YES | NO | FBX | StaticMesh |
+| **3D models** | YES | YES | FBX | SkeletalMesh |
+| **Speed Trees** | YES | NO | SPT | SpeedTree |
+| **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
+| **SWF/GFX** | YES | YES | Binary | GFxMovieInfo, SwfMovie |
+| **DataCenter_Final** | YES | NO | XML/JSON | DataCenter_Final.dat |
+
+
+* Material graph viewer
+* Bulk composite extraction and modding
+* Combining composite mods to a single mod file
+* Cross-region mods
+* Encrypt/Decrypt mappers
+
+### Plans
+
+* Animation renderer / exporter to *.fbx
+* 32-bit Tera support (maybe)
+
 ### Wiki
 
 * [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
@@ -35,30 +60,8 @@ Currently under development. Some features are not implemented yet or may not wo
 * [Smartscreen and Antiviruses](https://github.com/VenoMKO/RealEditor/wiki/Smartscreen-and-Antiviruses)
 * [Automatic composite mod installation via TMM](https://github.com/VenoMKO/TMM#tmm-tera-mod-manager)
 
-### Features
+***
 
-| Type | Export | Import | Format | Classes |
-| --- | --- | --- | --- | --- |
-| **Textures** | YES | YES | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
-| **Sounds** | YES | YES | OGG | SoundNodeWave |
-| **3D models** | YES | NO | FBX | StaticMesh |
-| **3D models** | YES | YES | FBX | SkeletalMesh |
-| **Speed Trees** | YES | NO | SPT | SpeedTree |
-| **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
-| **SWF/GFX** | YES | YES | Binary | GFxMovieInfo, SwfMovie |
-| **DataCenter_Final** | YES | NO | XML/JSON | DataCenter_Final.dat |
-
-
-* Material graph viewer
-* Bulk composite extraction and modding
-* Combining composite mods to a single mod file
-* Cross-region mods
-* Encrypt/Decrypt mappers
-
-### Plans
-
-* Animation renderer / exporter to *.fbx
-* 32-bit Tera support (maybe)
 
 ### System requirements
 
