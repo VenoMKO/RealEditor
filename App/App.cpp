@@ -1013,25 +1013,6 @@ void App::DelayLoad(wxCommandEvent& e)
   else if (needsObjDump)
   {
     DumpCompositeObjects();
-    if (!anyLoaded)
-    {
-      InitScreen = new WelcomeDialog(nullptr);
-      if (InitScreen->ShowModal() != wxID_OK)
-      {
-        InitScreen->Destroy();
-        InitScreen = nullptr;
-        ExitMainLoop();
-        return;
-      }
-      OpenList = InitScreen->GetOpenList();
-      InitScreen->Destroy();
-      InitScreen = nullptr;
-      if (OpenList.size())
-      {
-        SendEvent(this, DELAY_LOAD);
-        return;
-      }
-    }
   }
   if (!anyLoaded)
   {

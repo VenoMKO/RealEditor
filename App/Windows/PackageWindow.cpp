@@ -22,6 +22,7 @@
 
 #include <wx/menu.h>
 #include <wx/sizer.h>
+#include <wx/display.h>
 #include <wx/statline.h>
 #include <wx/collpane.h>
 #include <wx/evtloop.h>
@@ -158,11 +159,18 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   }
   OnNoneObjectSelected();
   {
+    int width = SidebarSplitter->GetSize().x;
+    if (pos.x == WIN_POS_FULLSCREEN)
+    {
+      wxDisplay display(wxDisplay::GetFromWindow(this));
+      wxRect screen = display.GetClientArea();
+      width = screen.GetWidth();
+    }
     wxSize hint;
     float dx;
     hint = Application->GetLastWindowObjectSash();
     dx = float(hint.x) / float(hint.y);
-    SidebarSplitter->SetSashPosition(SidebarSplitter->GetSize().x * dx);
+    SidebarSplitter->SetSashPosition(width * dx);
 
     hint = Application->GetLastWindowPropSash();
     PropertiesPos = hint.y - hint.x;
