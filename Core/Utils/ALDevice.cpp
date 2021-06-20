@@ -6,6 +6,7 @@
 
 #include <Tera/Core.h>
 #include <Tera/USoundNode.h>
+#include <Utils/ALog.h>
 
 ALenum SoundState2AL(ALSoundSource::SoundState st)
 {
@@ -150,14 +151,17 @@ size_t ALDevice::AddSoundSource(ALSoundObserver* observer, class USoundNodeWave*
   ALSoundSource* src = new ALSoundSource;
   src->Observer = observer;
   src->Sound = sound;
+  alGetError();
   if (ov_open_callbacks(src, &vf, nullptr, 0, cb) < 0)
   {
+    LogE("Failed to open %s", sound->GetObjectNameString().UTF8().c_str());
     delete src;
     return 0;
   }
   vorbis_info* vi = ov_info(&vf, -1);
   if (!vi)
   {
+    LogE("Failed to read ogg info %s", sound->GetObjectNameString().UTF8().c_str());
     delete src;
     ov_clear(&vf);
     return 0;
@@ -165,7 +169,6 @@ size_t ALDevice::AddSoundSource(ALSoundObserver* observer, class USoundNodeWave*
 
   uint32 SampleRate = vi->rate;
   uint32 NumChannels = vi->channels;
-  uint32 Duration = ov_time_total(&vf, -1);
 
   alGenBuffers(1, &src->BufferId);
   size_t data_len = ov_pcm_total(&vf, -1) * vi->channels * 2;
@@ -173,6 +176,7 @@ size_t ALDevice::AddSoundSource(ALSoundObserver* observer, class USoundNodeWave*
   for (size_t size = 0, offset = 0, sel = 0; (size = ov_read(&vf, (char*)src->PcmData + offset, 4096, 0, 2, 1, (int*)&sel)) != 0; offset += size) {
     if (size < 0)
     {
+      LogE("Malformed ogg stream %s", sound->GetObjectNameString().UTF8().c_str());
       delete src;
       ov_clear(&vf);
       return 0;
@@ -182,12 +186,29 @@ size_t ALDevice::AddSoundSource(ALSoundObserver* observer, class USoundNodeWave*
   ALenum err = alGetError();
   if (err != AL_NO_ERROR)
   {
+    LogE("Failed to create AL buffer %s", sound->GetObjectNameString().UTF8().c_str());
     delete src;
     ov_clear(&vf);
     return 0;
   }
   alGenSources(1, &src->Id);
+  err = alGetError();
+  if (err != AL_NO_ERROR)
+  {
+    LogE("Failed to generate AL source %s", sound->GetObjectNameString().UTF8().c_str());
+    delete src;
+    ov_clear(&vf);
+    return 0;
+  }
   alSourceQueueBuffers(src->Id, 1, &src->BufferId);
+  err = alGetError();
+  if (err != AL_NO_ERROR)
+  {
+    LogE("Failed to queue AL buffer %s", sound->GetObjectNameString().UTF8().c_str());
+    delete src;
+    ov_clear(&vf);
+    return 0;
+  }
   ov_clear(&vf);
   size_t result = 0;
   {

@@ -96,7 +96,10 @@ void SoundWaveEditor::OnImportClicked(wxCommandEvent&)
 
 void SoundWaveEditor::OnPlayClicked(wxCommandEvent&)
 {
-  App::GetSharedAudioDevice()->Play(SoundId);
+  if (!App::GetSharedAudioDevice()->Play(SoundId))
+  {
+    LogE("Failed to start the sound.");
+  }
 }
 
 void SoundWaveEditor::OnPauseClicked(wxCommandEvent&)
