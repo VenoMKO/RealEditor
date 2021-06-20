@@ -23,10 +23,10 @@ void PackageWindow::InitLayout()
   fileMenu->AppendSeparator();
 
   wxMenu* openMenu = new wxMenu;
-  wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(wxT("Package...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
+  wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(wxT("GPK file...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
   openMenu->Append(m_menuItem4);
   wxMenuItem* m_menuItem41;
-  m_menuItem41 = new wxMenuItem(openMenu, ControlElementId::OpenByName, wxString(wxT("Named package...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
+  m_menuItem41 = new wxMenuItem(openMenu, ControlElementId::OpenByName, wxString(wxT("By name...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
   openMenu->Append(m_menuItem41);
   wxMenuItem* m_menuItem5;
   m_menuItem5 = new wxMenuItem(openMenu, ControlElementId::OpenComposite, wxString(wxT("Composite package...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
