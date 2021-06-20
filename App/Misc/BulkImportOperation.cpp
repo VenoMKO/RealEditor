@@ -347,6 +347,8 @@ void BulkImportOperation::ImportTexture(FPackage* package, UTexture2D* texture, 
   travaller.SetFormat(processorFormat);
   travaller.SetAddressX(texture->AddressX);
   travaller.SetAddressY(texture->AddressY);
+  travaller.SetSRGB(texture->SRGB);
+  travaller.SetCompression(texture->CompressionSettings);
 
   if (isNormal)
   {
