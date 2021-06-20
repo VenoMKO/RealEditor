@@ -434,7 +434,11 @@ namespace REDialog
 {
   int Message(wxWindow* parent, const wxString& title, const wxString& message, int style)
   {
-    return wxMessageBox(title + L"\n\n" + message, wxTheApp->GetAppDisplayName(), style);
+    if (!message.Contains("\n\n"))
+    {
+      return wxMessageBox(title + L"\n\n" + message, wxTheApp->GetAppDisplayName(), style);
+    }
+    return wxMessageBox(message, wxTheApp->GetAppDisplayName(), style);
   }
 
   bool Auth(wxWindow* parent, const wxString& desc)

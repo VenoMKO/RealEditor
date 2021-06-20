@@ -1250,7 +1250,8 @@ if (check) {\
     bool foundMisplaced = false;
     const RawBone& fbxBone = importData->Bones[fbxBoneIdx];
     const FString fbxName = fbxBone.boneName.Split(':').back().ToUpper();
-    
+    FVector gpkPos;
+    FVector fbxPos;
     for (int32 gpkBoneIdx = 0; gpkBoneIdx < RefSkeleton.size(); ++gpkBoneIdx)
     {
       const FMeshBone& gpkBone = RefSkeleton[gpkBoneIdx];
@@ -1271,6 +1272,8 @@ if (check) {\
           }
           if (hasWeights)
           {
+            gpkPos = gpkBone.BonePos.Position;
+            fbxPos = fbxBone.position;
             foundMisplaced = true;
             continue;
           }
@@ -1292,7 +1295,7 @@ if (check) {\
       }
       if (hasWeights)
       {
-        SHOW_ERROR_IF(foundMisplaced, FString("Bone position mismatch!\n\nBone ") + fbxBone.boneName + " position does not match!\nMake sure your FBX model uses the same skeleton and it was exported with 1.0 scale.");
+        SHOW_ERROR_IF(foundMisplaced, FString("Bone position mismatch!\n\nBone ") + fbxBone.boneName + FString::Sprintf(" position does not match!\nGpk:(X:%.2f Y:%.2f Z:%.2f) Fbx:(X:%.2f Y:%.2f Z:%.2f)\nMake sure your FBX model uses the same skeleton and it was exported with 1.0 scale.", gpkPos.X, gpkPos.Y, gpkPos.Z, fbxPos.X, fbxPos.Y, fbxPos.Z));
         SHOW_ERROR_IF(1, FString("Skeleton mismatch!\n\nThe imported FBX file has extra bone(s) ") + fbxBone.boneName + ".\n" + GetObjectNameString().String() + " does not have this bone.\nMake sure your FBX model shares the skeleton with " + GetObjectNameString().String() + ".");
       }
       continue;
