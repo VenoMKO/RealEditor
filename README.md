@@ -52,5 +52,5 @@ You can get the latest version in the [Releases](https://github.com/VenoMKO/Real
 * CPU with AVX2 instructions (Intel Haswell / AMD Excavator or newer)
 
 ## Contacts
-* Discord Yupi#9153
-* Tumblr [YupiMods](https://yupimods.tumblr.com/)
+* Discord: Yupi#9153
+* Tumblr: [YupiMods](https://yupimods.tumblr.com/)
