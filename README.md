@@ -9,14 +9,14 @@ Currently under development. Some features are not implemented yet or may not wo
 
 | Type | Export | Import | Format | Classes |
 | --- | --- | --- | --- | --- |
-| **Textures** | YES | YES | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
-| **Sounds** | YES | YES | OGG | SoundNodeWave |
-| **3D models** | YES | NO | FBX | StaticMesh |
-| **3D models** | YES | YES | FBX | SkeletalMesh |
-| **Speed Trees** | YES | NO | SPT | SpeedTree |
-| **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
-| **SWF/GFX** | YES | YES | Binary | GFxMovieInfo, SwfMovie |
-| **DataCenter_Final** | YES | NO | XML/JSON | DataCenter_Final.dat |
+| **Textures** | :heavy_check_mark: | :heavy_check_mark: | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
+| **Sounds** | :heavy_check_mark: | :heavy_check_mark: | OGG | SoundNodeWave |
+| **3D models** | :heavy_check_mark: | :x: | FBX | StaticMesh |
+| **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX | SkeletalMesh |
+| **Speed Trees** | :heavy_check_mark: | :x: | SPT | SpeedTree |
+| **Maps, Dungeons** | :heavy_check_mark: | :x: | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
+| **SWF/GFX** | :heavy_check_mark: | :heavy_check_mark: | Binary | GFxMovieInfo, SwfMovie |
+| **DataCenter** | :heavy_check_mark: | :x: | XML/JSON | DataCenter_Final.dat |
 
 
 * Material graph viewer
