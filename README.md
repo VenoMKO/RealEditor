@@ -41,7 +41,7 @@ Currently under development. Some features are not implemented yet or may not wo
 | --- | --- | --- | --- | --- |
 | **Textures** | YES | YES | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
 | **Sounds** | YES | YES | OGG | SoundNodeWave |
-| **3D models** | YES | NO (yet) | FBX | StaticMesh |
+| **3D models** | YES | NO | FBX | StaticMesh |
 | **3D models** | YES | YES | FBX | SkeletalMesh |
 | **Speed Trees** | YES | NO | SPT | SpeedTree |
 | **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
