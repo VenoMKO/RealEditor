@@ -37,24 +37,22 @@ Currently under development. Some features are not implemented yet or may not wo
 
 ### Features
 
-* Opening/Saving 64-bit packages
-* GPK/GMP bulk export
-* GMP export to Unreal Engine 4
-* Textures export/import
-* Sounds export/import
-* 3D model export/import
-* SpeedTree export
-* GMP Map viewer
-* Properties viewer
-* Texture viewer
-* 3D model viewer
+| Type | Export | Import | Format | Classes |
+| --- | --- | --- | --- | --- |
+| **Textures** | YES | YES | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
+| **Sounds** | YES | YES | OGG | SoundNodeWave |
+| **3D models(static)** | YES | NO (yet) | FBX | StaticMesh |
+| **3D models(skeletal)** | YES | YES | FBX | SkeletalMesh |
+| **Speed Trees** | YES | NO | SPT | SpeedTree |
+| **Maps, Dungeons** | YES | NO | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
+| **SWF/GFX** | YES | YES | Binary | GFxMovieInfo, SwfMovie |
+
+
 * Material graph viewer
 * Bulk composite extraction and modding
-* Dumping table of contents of composite packages
 * Combining composite mods to a single mod file
-* Remove region locking from packages
+* Cross-region mods
 * Encrypt/Decrypt mappers
-
 
 ### Plans
 
