@@ -1,4 +1,5 @@
 #include "UObjectReferencer.h"
+#include "FObjectResource.h"
 #include "FPackage.h"
 
 bool UObjectReferencer::RegisterProperty(FPropertyTag* property)
@@ -32,6 +33,21 @@ void UObjectReferencer::AddObject(UObject* obj)
   val->GetObjectIndex() = GetPackage()->GetObjectIndex(obj);
   ReferencedObjects->emplace_back(val);
   MarkDirty();
+}
+
+void UObjectReferencer::RemoveExport(FObjectExport* exp)
+{
+  if (!exp || !ReferencedObjects)
+  {
+    return;
+  }
+  for (int32 idx = 0; idx < ReferencedObjects->size(); ++idx)
+  {
+    if (ReferencedObjects->at(idx)->GetObjectIndex() == exp->ObjectIndex)
+    {
+      ReferencedObjects->erase(ReferencedObjects->begin() + idx);
+    }
+  }
 }
 
 std::vector<UObject*> UObjectReferencer::GetObject()

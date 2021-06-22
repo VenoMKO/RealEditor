@@ -432,6 +432,7 @@
     <ClInclude Include="App\Windows\WelcomeDialog.h" />
     <ClInclude Include="App\Misc\wxModalWindow.h" />
     <ClInclude Include="Core\Utils\ALDevice.h" />
+    <ClInclude Include="Core\Utils\FPackageObserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

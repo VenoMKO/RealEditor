@@ -97,6 +97,10 @@ wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDEFINE_EVENT(SELECT_OBJECT, wxCommandEvent);
 wxDEFINE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
+wxDEFINE_EVENT(OBJECT_CHANGED, wxCommandEvent);
+wxDEFINE_EVENT(OBJECT_ADD, wxCommandEvent);
+wxDEFINE_EVENT(OBJECT_DEL, wxCommandEvent);
+
 const wxString HelpUrl = wxS("https://github.com/VenoMKO/RealEditor/wiki");
 
 #include "PackageWindowLayout.h"
@@ -201,6 +205,7 @@ void PackageWindow::OnCloseWindow(wxCloseEvent& event)
     Editors.clear();
   }
   wxFrame::OnCloseWindow(event);
+  Package->RemoveObserver(this);
   Application->PackageWindowWillClose(this);
 }
 
@@ -784,7 +789,6 @@ void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
 
   if (FObjectExport* exp = Package->DuplicateExport(mi->GetExportObject(), mi->GetExportObject()->Outer, name.ToStdWstring()))
   {
-    ObjectTreeCtrl->AddExportObject(exp);
     OnExportObjectSelected(exp->ObjectIndex);
   }
 }
@@ -865,6 +869,60 @@ bool PackageWindow::Destroy()
     Show(true);
   }
   return r;
+}
+
+void PackageWindow::OnObjectDirty(FObjectExport* obj)
+{
+  SendEvent(this, OBJECT_CHANGED, obj->ObjectIndex);
+}
+
+void PackageWindow::OnObjectDirty(wxCommandEvent& e)
+{
+  if (!DataModel)
+  {
+    return;
+  }
+  PACKAGE_INDEX id = (PACKAGE_INDEX)e.GetInt();
+  if (ObjectTreeNode* node = DataModel->FindItemByObjectIndex(id))
+  {
+    DataModel->ItemChanged(wxDataViewItem(node));
+  }
+}
+
+void PackageWindow::OnObjectAdded(wxCommandEvent& e)
+{
+  PACKAGE_INDEX id = (PACKAGE_INDEX)e.GetInt();
+  if (!DataModel)
+  {
+    return;
+  }
+  if (ObjectTreeNode* node = DataModel->FindItemByObjectIndex(id))
+  {
+    return;
+  }
+  if (id > 0)
+  {
+    ObjectTreeCtrl->AddExportObject(Package->GetExportObject(id), false);
+  }
+  else if (id < 0)
+  {
+    ObjectTreeCtrl->AddImportObject(Package->GetImportObject(id));
+  }
+}
+
+void PackageWindow::OnExportAdded(FObjectExport* obj)
+{
+  SendEvent(this, OBJECT_ADD, obj->ObjectIndex);
+}
+
+void PackageWindow::OnImportAdded(FObjectImport* imp)
+{
+  SendEvent(this, OBJECT_ADD, imp->ObjectIndex);
+}
+
+void PackageWindow::OnExportRemoved(PACKAGE_INDEX index)
+{
+  ObjectTreeCtrl->RemoveExp(index);
 }
 
 void PackageWindow::OnNoneObjectSelected()
@@ -1323,6 +1381,7 @@ void PackageWindow::OnDumpCompositeObjectsClicked(wxCommandEvent&)
 
 void PackageWindow::OnPackageReady(wxCommandEvent&)
 {
+  Package->AddObserver(this);
   SearchField->Enable(true);
   ObjectTreeCtrl->Freeze();
   LoadObjectTree();
@@ -1444,7 +1503,6 @@ void PackageWindow::OnAddPackageClicked(int parentIdx)
 
   if (FObjectExport* newExp = Package->AddExport(FString(name.ToStdWstring()), NAME_Package, parent))
   {
-    ObjectTreeCtrl->AddExportObject(newExp);
     OnExportObjectSelected(newExp->ObjectIndex);
   }
 }
@@ -1529,7 +1587,6 @@ void PackageWindow::OnAddTextureClicked(int parentIdx)
     return;
   }
 
-  ObjectTreeCtrl->AddExportObject(exp);
   OnExportObjectSelected(exp->ObjectIndex);
 }
 
@@ -1712,7 +1769,6 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
     REDialog::Error(wxT("Unknown error occured. See the log for more details."), wxT("Failed to paste the object!"));
     return;
   }
-  LoadObjectTree();
   SelectObject(s.GetTransactedObject());
 }
 
@@ -1926,6 +1982,8 @@ EVT_CLOSE(PackageWindow::OnCloseWindow)
 EVT_COMMAND(wxID_ANY, PACKAGE_READY, PackageWindow::OnPackageReady)
 EVT_COMMAND(wxID_ANY, PACKAGE_ERROR, PackageWindow::OnPackageError)
 EVT_COMMAND(wxID_ANY, SELECT_OBJECT, PackageWindow::OnSelectObject)
+EVT_COMMAND(wxID_ANY, OBJECT_CHANGED, PackageWindow::OnObjectDirty)
+EVT_COMMAND(wxID_ANY, OBJECT_ADD, PackageWindow::OnObjectAdded)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_BUTTON(ControlElementId::Back, PackageWindow::OnBackClicked)
 EVT_BUTTON(ControlElementId::Forward, PackageWindow::OnForwardClicked)

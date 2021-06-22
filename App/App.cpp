@@ -589,6 +589,8 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
     wxString msg = "Possible solutions:\n";
     msg += " * Check the file name\n";
     msg += " * Press Window -> Settings and Rebuild Cache\n";
+    msg += "If the package is composite:\n";
+    msg += " * Open TMM and click Restore original .dat\n";
     msg += " * Rebuild ObjectDump.txt\n";
     REDialog::Error(msg, wxS("Package ") + fixedName + wxS(" not found!"));
     return false;

@@ -153,7 +153,9 @@ private:
 class ObjectTreeDataViewCtrl : public wxDataViewCtrl {
 public:
   using wxDataViewCtrl::wxDataViewCtrl;
-  void AddExportObject(FObjectExport* exp);
+  void AddExportObject(FObjectExport* exp, bool select = true);
+  void AddImportObject(FObjectImport* imp);
+  void RemoveExp(PACKAGE_INDEX idx);
   void ExpandAll();
   void SaveTreeState();
   void RestoreTreeState();

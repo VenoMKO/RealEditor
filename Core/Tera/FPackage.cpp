@@ -12,6 +12,8 @@
 #include "UObjectReferencer.h"
 #include "Cast.h"
 
+#include <Utils/FPackageObserver.h>
+
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -2917,6 +2919,10 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
     }
     classPackageImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
     Imports.push_back(classPackageImport);
+    for (FPackageObserver* observer : Observers)
+    {
+      observer->OnImportAdded(classPackageImport);
+    }
     MarkDirty();
   }
 
@@ -2925,6 +2931,10 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
   {
     classImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
     Imports.push_back(classImport);
+    for (FPackageObserver* observer : Observers)
+    {
+      observer->OnImportAdded(classImport);
+    }
     LogI("Added class: %s", classImport->GetFullObjectName().UTF8().c_str());
     MarkDirty();
     return classImport->ObjectIndex;
@@ -3088,6 +3098,10 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     outerPackage = importObject;
     MarkDirty();
     LogI("Added import: %s", importObject->GetFullObjectName().UTF8().c_str());
+    for (FPackageObserver* observer : Observers)
+    {
+      observer->OnImportAdded(importObject);
+    }
 
     GetNameIndex(outerPackageName, true);
   }
@@ -3135,6 +3149,10 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     importObject->OuterIndex = outerImp->ObjectIndex;
   }
 
+  for (FPackageObserver* observer : Observers)
+  {
+    observer->OnImportAdded(importObject);
+  }
   Imports.push_back(importObject);
   importObject->ObjectIndex = -(PACKAGE_INDEX)Imports.size();
   output = importObject;
@@ -3180,6 +3198,11 @@ FObjectExport* FPackage::AddExport(const FString& objectName, const FString& obj
     exp->OuterIndex = 0;
   }
 
+  for (FPackageObserver* observer : Observers)
+  {
+    observer->OnExportAdded(exp);
+  }
+
   UObject* object = UObject::Object(exp);
   object->SetClass(cls);
   object->MarkDirty();
@@ -3216,6 +3239,11 @@ void FPackage::RemoveExport(FObjectExport* exp)
   // TODO: remove Name
   delete ExportObjects[exp->ObjectIndex];
   ExportObjects.erase(exp->ObjectIndex);
+  if (Referencer)
+  {
+    Referencer->RemoveExport(exp);
+  }
+
   if (!exp->OuterIndex)
   {
     RootExports.erase(std::remove(RootExports.begin(), RootExports.end(), exp), RootExports.end());
@@ -3226,6 +3254,10 @@ void FPackage::RemoveExport(FObjectExport* exp)
   }
   Exports.erase(std::remove(Exports.begin(), Exports.end(), exp), Exports.end());
   Depends.erase(Depends.begin() + exp->ObjectIndex - 1);
+  for (FPackageObserver* observer : Observers)
+  {
+    observer->OnExportRemoved(exp->ObjectIndex);
+  }
   delete exp;
 }
 
@@ -3261,6 +3293,23 @@ void FPackage::ConvertObjectToRedirector(UObject*& source, UObject* targer)
   redirector->AddProperty(tag);
   
   redirector->MarkDirty();
+}
+
+void FPackage::ObjectChanged(UObject* object)
+{
+  if (!object)
+  {
+    return;
+  }
+  if (object->GetPackage() != this)
+  {
+    object->GetPackage()->ObjectChanged(object);
+    return;
+  }
+  for (FPackageObserver* observer : Observers)
+  {
+    observer->OnObjectDirty(object->GetExportObject());
+  }
 }
 
 void FPackage::RetainPackage(std::shared_ptr<FPackage> package)

@@ -166,6 +166,7 @@
     <ClInclude Include="Core\Utils\DCKeyTool.h" />
     <ClInclude Include="Core\Utils\DDS.h" />
     <ClInclude Include="Core\Utils\FbxUtils.h" />
+    <ClInclude Include="Core\Utils\FPackageObserver.h" />
     <ClInclude Include="Core\Utils\MeshTravaller.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="Core\Utils\T3DUtils.h" />

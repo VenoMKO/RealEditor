@@ -62,6 +62,7 @@ void UObject::MarkDirty(bool dirty)
   {
     Export->ObjectFlags &= ~RF_Marked;
   }
+  GetPackage()->ObjectChanged(this);
 }
 
 FILE_OFFSET UObject::GetSerialOffset() const

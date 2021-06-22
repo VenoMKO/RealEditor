@@ -54,6 +54,8 @@ struct FPackageDumpHelper {
   static void GetPoolItemInfo(const FString& item, FStream& s, CompositeDumpEntry& output);
 };
 
+struct FPackageObserver;
+
 // GPK/GMP/UPK/UMAP/U file representation class
 class FPackage : public std::enable_shared_from_this<FPackage> {
 public:
@@ -427,6 +429,25 @@ public:
     return Composite;
   }
 
+  void ObjectChanged(UObject* object);
+
+  inline void AddObserver(FPackageObserver* observer)
+  {
+    if (std::find(Observers.begin(), Observers.end(), observer) == Observers.end())
+    {
+      Observers.emplace_back(observer);
+    }
+  }
+
+  inline void RemoveObserver(FPackageObserver* observer)
+  {
+    auto it = std::find(Observers.begin(), Observers.end(), observer);
+    if (it != Observers.end())
+    {
+      Observers.erase(it);
+    }
+  }
+
   // Add a package to a temporary depends list so it won't get released while the current package still needs it.
   void RetainPackage(std::shared_ptr<FPackage> package);
 
@@ -494,6 +515,8 @@ private:
   // List of packages we rely on
   std::mutex ExternalPackagesMutex;
   std::vector<std::shared_ptr<FPackage>> ExternalPackages;
+
+  std::vector<FPackageObserver*> Observers;
 
   static FString RootDir;
   static std::recursive_mutex PackagesMutex;

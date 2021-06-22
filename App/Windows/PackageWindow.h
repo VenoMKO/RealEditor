@@ -12,6 +12,8 @@
 #include <map>
 #include <vector>
 
+#include <Utils/FPackageObserver.h>
+
 wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
 wxDECLARE_EVENT(SELECT_OBJECT, wxCommandEvent);
 wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
@@ -22,7 +24,9 @@ class ArchiveInfoView;
 class FPackage;
 class UObject;
 
-class PackageWindow : public wxFrame {
+class PackageWindow 
+  : public wxFrame
+  , public FPackageObserver {
 public:
   PackageWindow(std::shared_ptr<FPackage>& package, App* application);
   ~PackageWindow();
@@ -49,6 +53,18 @@ public:
   bool Show(bool show = true) wxOVERRIDE;
 
   bool Destroy() wxOVERRIDE;
+
+  void OnObjectDirty(class FObjectExport* obj) override;
+
+  void OnExportAdded(class FObjectExport* obj) override;
+
+  void OnImportAdded(class FObjectImport* imp) override;
+
+  void OnExportRemoved(PACKAGE_INDEX index) override;
+
+  void OnObjectDirty(wxCommandEvent& e);
+
+  void OnObjectAdded(wxCommandEvent& e);
 
 private:
 

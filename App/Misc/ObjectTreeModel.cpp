@@ -485,9 +485,13 @@ ObjectTreeNode* ObjectTreeModel::FindItemByObjectIndex(PACKAGE_INDEX index)
   return nullptr;
 }
 
-void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp)
+void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp, bool select)
 {
   ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  if (!exp || !model || model->FindItemByObjectIndex(exp->ObjectIndex))
+  {
+    return;
+  }
   if (ObjectTreeNode* parentNode = exp->GetOuter() ? model->FindItemByObjectIndex(exp->OuterIndex) : model->GetRootExport())
   {
     ObjectTreeNode* itemNode = new ObjectTreeNode(parentNode, exp, FString());
@@ -495,8 +499,45 @@ void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp)
     wxDataViewItem parent = wxDataViewItem((void*)parentNode);
     wxDataViewItem item = wxDataViewItem((void*)itemNode);
     model->ItemAdded(parent, item);
-    Select(item);
-    EnsureVisible(item);
+    if (select)
+    {
+      Select(item);
+      EnsureVisible(item);
+    }
+  }
+}
+
+void ObjectTreeDataViewCtrl::AddImportObject(FObjectImport* imp)
+{
+  ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  if (!imp || !model || model->FindItemByObjectIndex(imp->ObjectIndex))
+  {
+    return;
+  }
+  if (ObjectTreeNode* parentNode = imp->GetOuter() ? model->FindItemByObjectIndex(imp->OuterIndex) : model->GetRootImport())
+  {
+    ObjectTreeNode* itemNode = new ObjectTreeNode(parentNode, imp);
+    parentNode->GetChildren().Add(itemNode);
+    wxDataViewItem parent = wxDataViewItem((void*)parentNode);
+    wxDataViewItem item = wxDataViewItem((void*)itemNode);
+    model->ItemAdded(parent, item);
+  }
+}
+
+void ObjectTreeDataViewCtrl::RemoveExp(PACKAGE_INDEX idx)
+{
+  ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  if (idx < 0 || !model)
+  {
+    return;
+  }
+  if (ObjectTreeNode* node = model->FindItemByObjectIndex(idx))
+  {
+    if (ObjectTreeNode* parent = node->GetParent())
+    {
+      parent->GetChildren().Remove(node);
+    }
+    model->ItemDeleted(wxDataViewItem(node->GetParent()), wxDataViewItem(node));
   }
 }
 
