@@ -159,6 +159,7 @@ public:
   void ExpandAll();
   void SaveTreeState();
   void RestoreTreeState();
+  void SelectObject(PACKAGE_INDEX idx);
 private:
   void OnSize(wxSizeEvent& e);
   wxDECLARE_EVENT_TABLE();

@@ -611,6 +611,17 @@ void ObjectTreeDataViewCtrl::RestoreTreeState()
   }
 }
 
+void ObjectTreeDataViewCtrl::SelectObject(PACKAGE_INDEX idx)
+{
+  ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  if (ObjectTreeNode* node = model->FindItemByObjectIndex(idx))
+  {
+    wxDataViewItem item(node);
+    Select(item);
+    EnsureVisible(item);
+  }
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())

@@ -231,14 +231,9 @@ bool PackageWindow::SelectObject(const wxString& objectPath)
   FObjectResource* found = tmp->GetExportObject();
   if (found && found->ObjectIndex)
   {
-    if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(found->ObjectIndex))
-    {
-      auto item = wxDataViewItem(node);
-      ObjectTreeCtrl->Select(item);
-      ObjectTreeCtrl->EnsureVisible(item);
-      OnExportObjectSelected(found->ObjectIndex);
-      return true;
-    }
+    ObjectTreeCtrl->SelectObject(found->ObjectIndex);
+    OnExportObjectSelected(found->ObjectIndex);
+    return true;
   }
   return false;
 }
@@ -249,17 +244,13 @@ void PackageWindow::SelectObject(UObject* object)
   {
     return;
   }
-  PACKAGE_INDEX idx = GetPackage()->GetObjectIndex(object);
-  if (idx == INDEX_NONE || idx == 0)
+  if (PACKAGE_INDEX idx = GetPackage()->GetObjectIndex(object))
   {
-    return;
-  }
-  if (ObjectTreeNode* node = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(idx))
-  {
-    auto item = wxDataViewItem(node);
-    ObjectTreeCtrl->Select(item);
-    ObjectTreeCtrl->EnsureVisible(item);
-    OnExportObjectSelected(idx);
+    ObjectTreeCtrl->SelectObject(idx);
+    if (idx > 0)
+    {
+      OnExportObjectSelected(idx);
+    }
   }
 }
 
@@ -1503,6 +1494,7 @@ void PackageWindow::OnAddPackageClicked(int parentIdx)
 
   if (FObjectExport* newExp = Package->AddExport(FString(name.ToStdWstring()), NAME_Package, parent))
   {
+    ObjectTreeCtrl->AddExportObject(newExp, true);
     OnExportObjectSelected(newExp->ObjectIndex);
   }
 }
@@ -1587,6 +1579,7 @@ void PackageWindow::OnAddTextureClicked(int parentIdx)
     return;
   }
 
+  ObjectTreeCtrl->SelectObject(exp->ObjectIndex);
   OnExportObjectSelected(exp->ObjectIndex);
 }
 
