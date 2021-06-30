@@ -806,6 +806,7 @@ int App::OnRun()
     ProgressWindow* progressWindow = new ProgressWindow(nullptr);
     progressWindow->SetActionText(wxS("Loading..."));
     progressWindow->SetCurrentProgress(-1);
+    progressWindow->SetCanCancel(false);
     progressWindow->Show();
     std::thread([this, progressWindow] { LoadCore(progressWindow); IsReady = true; }).detach();
     return wxApp::OnRun();

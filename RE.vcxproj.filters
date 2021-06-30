@@ -161,7 +161,7 @@
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\UAnimSequence.cpp">
+    <ClCompile Include="Core\Tera\UAnimation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Misc\ArchiveInfo.cpp">
@@ -284,6 +284,12 @@
     <ClCompile Include="Core\Utils\ALDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\AnimSetEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\AnimationEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -352,7 +358,7 @@
     <ClInclude Include="App\Editors\SoundWaveEditor.h" />
     <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
-    <ClInclude Include="Core\Tera\UAnimSequence.h" />
+    <ClInclude Include="Core\Tera\UAnimation.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\UActor.h" />
@@ -433,6 +439,8 @@
     <ClInclude Include="App\Misc\wxModalWindow.h" />
     <ClInclude Include="Core\Utils\ALDevice.h" />
     <ClInclude Include="Core\Utils\FPackageObserver.h" />
+    <ClInclude Include="App\Editors\AnimSetEditor.h" />
+    <ClInclude Include="App\Editors\AnimationEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

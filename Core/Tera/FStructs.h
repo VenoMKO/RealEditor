@@ -3,6 +3,18 @@
 #include "FString.h"
 #include "FName.h"
 
+#define Quant16BitDiv     (32767.f)
+#define Quant16BitFactor  (32767.f)
+#define Quant16BitOffs    (32767)
+
+#define Quant10BitDiv     (511.f)
+#define Quant10BitFactor  (511.f)
+#define Quant10BitOffs    (511)
+
+#define Quant11BitDiv     (1023.f)
+#define Quant11BitFactor  (1023.f)
+#define Quant11BitOffs    (1023)
+
 struct FGuid
 {
 public:
@@ -239,6 +251,7 @@ struct FVector2D {
 struct FVector4;
 struct FVector {
   static const FVector One;
+  static const FVector Zero;
 
   FVector()
   {}
@@ -353,6 +366,30 @@ struct FVector {
   {
     X += v.X; Y += v.Y; Z += v.Z;
     return *this;
+  }
+
+  float& operator[](const int32 idx)
+  {
+    switch (idx)
+    {
+    case 0:
+      return X;
+    case 1:
+      return Y;
+    }
+    return Z;
+  }
+
+  const float& operator[](const int32 idx) const
+  {
+    switch (idx)
+    {
+    case 0:
+      return X;
+    case 1:
+      return Y;
+    }
+    return Z;
   }
 
   bool Normalize()
@@ -1068,6 +1105,12 @@ struct FMatrix {
 
   FVector Rotate(FVector& v);
 
+  struct FRotator Rotator() const;
+
+  FVector GetOrigin() const;
+
+  void ScaleTranslation(const FVector& scale3D);
+
   float M[4][4];
 };
 
@@ -1093,6 +1136,8 @@ struct FRotationMatrix : FRotationTranslationMatrix {
 };
 
 struct FQuat {
+  static const FQuat Identity;
+
   float X = 0;
   float Y = 0;
   float Z = 0;
@@ -1109,11 +1154,64 @@ struct FQuat {
 
   FQuat(const FMatrix& matrix);
 
+  float& operator[](int32 idx)
+  {
+    switch (idx)
+    {
+    case 0:
+      return X;
+    case 1:
+      return Y;
+    case 2:
+      return Z;
+    }
+    return W;
+  }
+
+  const float& operator[](int32 idx) const
+  {
+    switch (idx)
+    {
+    case 0:
+      return X;
+    case 1:
+      return Y;
+    case 2:
+      return Z;
+    }
+    return W;
+  }
+
   FQuat Inverse() const;
+
+  FVector Euler() const;
+
+  FVector FbxEuler() const;
 
   FRotator Rotator() const;
 
+  void Normalize(float tolerance = 1.e-8)
+  {
+    const float ss = X * X + Y * Y + Z * Z + W * W;
+    if (ss > tolerance)
+    {
+      const float s = 1. / sqrt(ss);
+      X *= s;
+      Y *= s;
+      Z *= s;
+      W *= s;
+    }
+    else
+    {
+      *this = FQuat::Identity;
+    }
+  }
+
   friend FStream& operator<<(FStream& s, FQuat& f);
+};
+
+struct FQuatRotationTranslationMatrix : public FMatrix {
+  FQuatRotationTranslationMatrix(const FQuat& q, const FVector& origin);
 };
 
 struct FRotator
@@ -1322,6 +1420,107 @@ public:
   }
 
   friend FStream& operator<<(FStream& s, FFloat16& v);
+};
+
+class FFloatInfo {
+public:
+  enum { MantissaBits = 23 };
+  enum { ExponentBits = 8 };
+  enum { SignShift = 31 };
+  enum { ExponentBias = 127 };
+
+  enum { MantissaMask = 0x007fffff };
+  enum { ExponentMask = 0x7f800000 };
+  enum { SignMask = 0x80000000 };
+
+  typedef float FloatType;
+  typedef uint32 PackedType;
+
+  static PackedType ToPackedType(FloatType Value)
+  {
+    return *(PackedType*)&Value;
+  }
+
+  static FloatType ToFloatType(PackedType Value)
+  {
+    return *(FloatType*)&Value;
+  }
+};
+
+template<uint32 TExpCount, uint32 TMantCount, bool TRound, typename FloatInfo = FFloatInfo>
+class TPackedFloat
+{
+public:
+  enum { NumOutputsBits = TExpCount + TMantCount + 1 };
+
+  enum { MantissaShift = FloatInfo::MantissaBits - TMantCount };
+  enum { ExponentBias = (1 << (TExpCount - 1)) - 1 };
+  enum { SignShift = TExpCount + TMantCount };
+
+  enum { MantissaMask = (1 << TMantCount) - 1 };
+  enum { ExponentMask = ((1 << TExpCount) - 1) << TMantCount };
+  enum { SignMask = 1 << SignShift };
+
+  enum { MinExponent = -ExponentBias - 1 };
+  enum { MaxExponent = ExponentBias };
+
+  typedef typename FloatInfo::PackedType  PackedType;
+  typedef typename FloatInfo::FloatType  FloatType;
+
+  PackedType Encode(FloatType v) const
+  {
+    if (v == (FloatType)0.0)
+    {
+      return (PackedType)0;
+    }
+
+    const PackedType packed = FloatInfo::ToPackedType(v);
+    PackedType  mantissa = packed & FloatInfo::MantissaMask;
+    int32 exponent = (packed & FloatInfo::ExponentMask) >> FloatInfo::MantissaBits;
+    const PackedType sign = packed >> FloatInfo::SignShift;
+
+    exponent -= FloatInfo::ExponentBias;
+
+    if (TRound)
+    {
+      mantissa += (1 << (MantissaShift - 1));
+      if (mantissa & (1 << FloatInfo::MantissaBits))
+      {
+        mantissa = 0;
+        ++exponent;
+      }
+    }
+
+    mantissa >>= MantissaShift;
+
+    if (exponent < MinExponent)
+    {
+      return (PackedType)0;
+    }
+    if (exponent > MaxExponent)
+    {
+      exponent = MaxExponent;
+    }
+
+    exponent -= MinExponent;
+    return (sign << SignShift) | (exponent << TMantCount) | (mantissa);
+  }
+
+  FloatType Decode(PackedType v) const
+  {
+    if (v == (PackedType)0)
+    {
+      return (FloatType)0.0;
+    }
+
+    PackedType mantissa = v & MantissaMask;
+    int32 exponent = (v & ExponentMask) >> TMantCount;
+    const PackedType sign = v >> SignShift;
+    exponent += MinExponent;
+    exponent += FloatInfo::ExponentBias;
+    mantissa <<= MantissaShift;
+    return FloatInfo::ToFloatType((sign << FloatInfo::SignShift) | (exponent << FloatInfo::MantissaBits) | (mantissa));
+  }
 };
 
 struct FVector2DHalf {
@@ -1792,4 +1991,366 @@ struct FPrecomputedVolumeDistanceField {
   std::vector<FColor> Data;
 
   friend FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f);
+};
+
+struct FQuatFixed48NoW {
+  uint16 X = 0;
+  uint16 Y = 0;
+  uint16 Z = 0;
+
+  FQuatFixed48NoW() = default;
+
+  FQuatFixed48NoW(const FQuat& q)
+  {
+    FromQuat(q);
+  }
+
+  void FromQuat(const FQuat& q)
+  {
+    FQuat t(q);
+    if (t.W < 0.f)
+    {
+      t.X = -t.X;
+      t.Y = -t.Y;
+      t.Z = -t.Z;
+      t.W = -t.W;
+    }
+    t.Normalize();
+
+    X = (int32)(t.X * Quant16BitFactor) + Quant16BitOffs;
+    Y = (int32)(t.Y * Quant16BitFactor) + Quant16BitOffs;
+    Z = (int32)(t.Z * Quant16BitFactor) + Quant16BitOffs;
+  }
+
+  void ToQuat(FQuat& q) const
+  {
+    const float fX = ((int32)X - (int32)Quant16BitOffs) / Quant16BitDiv;
+    const float fY = ((int32)Y - (int32)Quant16BitOffs) / Quant16BitDiv;
+    const float fZ = ((int32)Z - (int32)Quant16BitOffs) / Quant16BitDiv;
+    const float w = 1.f - fX * fX - fY * fY - fZ * fZ;
+
+    q.X = fX;
+    q.Y = fY;
+    q.Z = fZ;
+    q.W = w > 0.f ? sqrt(w) : 0.f;
+  }
+
+  friend FStream& operator<<(FStream& s, FQuatFixed48NoW& q);
+};
+
+struct FQuatFixed32NoW {
+  uint32 Packed = 0;
+
+  FQuatFixed32NoW() = default;
+
+  FQuatFixed32NoW(const FQuat& q)
+  {
+    FromQuat(q);
+  }
+
+  void FromQuat(const FQuat& q)
+  {
+    FQuat t(q);
+    if (t.W < 0.f)
+    {
+      t.X = -t.X;
+      t.Y = -t.Y;
+      t.Z = -t.Z;
+      t.W = -t.W;
+    }
+    t.Normalize();
+
+    const uint32 packedX = (int32)(t.X * Quant11BitFactor) + Quant11BitOffs;
+    const uint32 packedY = (int32)(t.Y * Quant11BitFactor) + Quant11BitOffs;
+    const uint32 packedZ = (int32)(t.Z * Quant10BitFactor) + Quant10BitOffs;
+
+    const uint32 xShift = 21;
+    const uint32 yShift = 10;
+    Packed = (packedX << xShift) | (packedY << yShift) | (packedZ);
+  }
+
+  void ToQuat(FQuat& result) const
+  {
+    const uint32 xShift = 21;
+    const uint32 yShift = 10;
+    const uint32 zMask = 0x000003ff;
+    const uint32 yMask = 0x001ffc00;
+    const uint32 xMask = 0xffe00000;
+
+    const uint32 unpackedX = Packed >> xShift;
+    const uint32 unpackedY = (Packed & yMask) >> yShift;
+    const uint32 unpackedZ = (Packed & zMask);
+
+    const float X = ((int32)unpackedX - (int32)Quant11BitOffs) / Quant11BitDiv;
+    const float Y = ((int32)unpackedY - (int32)Quant11BitOffs) / Quant11BitDiv;
+    const float Z = ((int32)unpackedZ - (int32)Quant10BitOffs) / Quant10BitDiv;
+    const float wSquared = 1.f - X * X - Y * Y - Z * Z;
+
+    result.X = X;
+    result.Y = Y;
+    result.Z = Z;
+    result.W = wSquared > 0.f ? sqrt(wSquared) : 0.f;
+  }
+
+  friend FStream& operator<<(FStream& s, FQuatFixed32NoW& q);
+};
+
+struct FQuatFloat96NoW {
+  float X = 0;
+  float Y = 0;
+  float Z = 0;
+
+  FQuatFloat96NoW() = default;
+
+  FQuatFloat96NoW(const FQuat& q)
+  {
+    FromQuat(q);
+  }
+
+  FQuatFloat96NoW(float x, float y, float z)
+    : X(x)
+    , Y(y)
+    , Z(z)
+  {}
+
+  void FromQuat(const FQuat& q)
+  {
+    FQuat temp(q);
+    if (temp.W < 0.f)
+    {
+      temp.X = -temp.X;
+      temp.Y = -temp.Y;
+      temp.Z = -temp.Z;
+      temp.W = -temp.W;
+    }
+    temp.Normalize();
+    X = temp.X;
+    Y = temp.Y;
+    Z = temp.Z;
+  }
+
+  void ToQuat(FQuat& q) const
+  {
+    const float w = 1.f - X * X - Y * Y - Z * Z;
+
+    q.X = X;
+    q.Y = Y;
+    q.Z = Z;
+    q.W = w > 0.f ? sqrt(w) : 0.f;
+  }
+
+  friend FStream& operator<<(FStream& s, FQuatFloat96NoW& q);
+};
+
+
+
+struct FVectorFixed48 {
+  uint16 X = 0;
+  uint16 Y = 0;
+  uint16 Z = 0;
+
+  FVectorFixed48() = default;
+
+  FVectorFixed48(const FVector& v)
+  {
+    FromVector(v);
+  }
+
+  void FromVector(const FVector& v)
+  {
+    FVector temp(v / 128.0f);
+
+    X = (int32)(temp.X * Quant16BitFactor) + Quant16BitOffs;
+    Y = (int32)(temp.Y * Quant16BitFactor) + Quant16BitOffs;
+    Z = (int32)(temp.Z * Quant16BitFactor) + Quant16BitOffs;
+  }
+
+  void ToVector(FVector& result) const
+  {
+    const float fX = ((int32)X - (int32)Quant16BitOffs) / Quant16BitDiv;
+    const float fY = ((int32)Y - (int32)Quant16BitOffs) / Quant16BitDiv;
+    const float fZ = ((int32)Z - (int32)Quant16BitOffs) / Quant16BitDiv;
+
+    result.X = fX * 128.0f;
+    result.Y = fY * 128.0f;
+    result.Z = fZ * 128.0f;
+  }
+
+  friend FStream& operator<<(FStream& s, FVectorFixed48& v);
+};
+
+struct FVectorIntervalFixed32NoW {
+  uint32 Packed = 0;
+
+  FVectorIntervalFixed32NoW() = default;
+
+  FVectorIntervalFixed32NoW(const FVector& v, const float* mins, const float* ranges)
+  {
+    FromVector(v, mins, ranges);
+  }
+
+  void FromVector(const FVector& v, const float* mins, const float* ranges)
+  {
+    FVector tmp(v);
+
+    tmp.X -= mins[0];
+    tmp.Y -= mins[1];
+    tmp.Z -= mins[2];
+
+    const uint32 pX = (int32)((tmp.X / ranges[0]) * Quant10BitFactor) + Quant10BitOffs;
+    const uint32 pY = (int32)((tmp.Y / ranges[1]) * Quant11BitFactor) + Quant11BitOffs;
+    const uint32 pZ = (int32)((tmp.Z / ranges[2]) * Quant11BitFactor) + Quant11BitOffs;
+
+    const uint32 ZShift = 21;
+    const uint32 YShift = 10;
+    Packed = (pZ << ZShift) | (pY << YShift) | (pX);
+  }
+
+  void ToVector(FVector& result, const float* mins, const float* ranges) const
+  {
+    const uint32 ZShift = 21;
+    const uint32 YShift = 10;
+    const uint32 XMask = 0x000003ff;
+    const uint32 YMask = 0x001ffc00;
+    const uint32 ZMask = 0xffe00000;
+
+    const uint32 uZ = Packed >> ZShift;
+    const uint32 uY = (Packed & YMask) >> YShift;
+    const uint32 uX = (Packed & XMask);
+
+    const float X = ((((int32)uX - (int32)Quant10BitOffs) / Quant10BitDiv) * ranges[0] + mins[0]);
+    const float Y = ((((int32)uY - (int32)Quant11BitOffs) / Quant11BitDiv) * ranges[1] + mins[1]);
+    const float Z = ((((int32)uZ - (int32)Quant11BitOffs) / Quant11BitDiv) * ranges[2] + mins[2]);
+
+    result.X = X;
+    result.Y = Y;
+    result.Z = Z;
+  }
+
+  friend FStream& operator<<(FStream& s, FVectorIntervalFixed32NoW& v);
+};
+
+
+struct FQuatIntervalFixed32NoW {
+  uint32 Packed = 0;
+
+  FQuatIntervalFixed32NoW() = default;
+
+  FQuatIntervalFixed32NoW(const FQuat& q, const float* mins, const float* ranges)
+  {
+    FromQuat(q, mins, ranges);
+  }
+
+  void FromQuat(const FQuat& q, const float* mins, const float* ranges)
+  {
+    FQuat t(q);
+    if (t.W < 0.f)
+    {
+      t.X = -t.X;
+      t.Y = -t.Y;
+      t.Z = -t.Z;
+      t.W = -t.W;
+    }
+    t.Normalize();
+
+    t.X -= mins[0];
+    t.Y -= mins[1];
+    t.Z -= mins[2];
+
+    const uint32 PackedX = (int32)((t.X / ranges[0]) * Quant11BitFactor) + Quant11BitOffs;
+    const uint32 PackedY = (int32)((t.Y / ranges[1]) * Quant11BitFactor) + Quant11BitOffs;
+    const uint32 PackedZ = (int32)((t.Z / ranges[2]) * Quant10BitFactor) + Quant10BitOffs;
+
+    const uint32 XShift = 21;
+    const uint32 YShift = 10;
+    Packed = (PackedX << XShift) | (PackedY << YShift) | (PackedZ);
+  }
+
+  void ToQuat(FQuat& result, const float* mins, const float* ranges) const
+  {
+    const uint32 XShift = 21;
+    const uint32 YShift = 10;
+    const uint32 ZMask = 0x000003ff;
+    const uint32 YMask = 0x001ffc00;
+    const uint32 XMask = 0xffe00000;
+
+    const uint32 UnpackedX = Packed >> XShift;
+    const uint32 UnpackedY = (Packed & YMask) >> YShift;
+    const uint32 UnpackedZ = (Packed & ZMask);
+
+    const float X = ((((int32)UnpackedX - (int32)Quant11BitOffs) / Quant11BitDiv) * ranges[0] + mins[0]);
+    const float Y = ((((int32)UnpackedY - (int32)Quant11BitOffs) / Quant11BitDiv) * ranges[1] + mins[1]);
+    const float Z = ((((int32)UnpackedZ - (int32)Quant10BitOffs) / Quant10BitDiv) * ranges[2] + mins[2]);
+    const float WSquared = 1.f - X * X - Y * Y - Z * Z;
+
+    result.X = X;
+    result.Y = Y;
+    result.Z = Z;
+    result.W = WSquared > 0.f ? sqrt(WSquared) : 0.f;
+  }
+
+  friend FStream& operator<<(FStream& s, FQuatIntervalFixed32NoW& q);
+};
+
+struct FQuatFloat32NoW {
+  uint32 Packed = 0;
+
+  FQuatFloat32NoW() = default;
+
+  FQuatFloat32NoW(const FQuat& q)
+  {
+    FromQuat(q);
+  }
+
+  void FromQuat(const FQuat& q)
+  {
+    FQuat tmp(q);
+    if (tmp.W < 0.f)
+    {
+      tmp.X = -tmp.X;
+      tmp.Y = -tmp.Y;
+      tmp.Z = -tmp.Z;
+      tmp.W = -tmp.W;
+    }
+    tmp.Normalize();
+
+    TPackedFloat<3, 7, true> packed37;
+    TPackedFloat<3, 6, true> packed36;
+
+    const uint32 px = packed37.Encode(tmp.X);
+    const uint32 py = packed37.Encode(tmp.Y);
+    const uint32 pz = packed36.Encode(tmp.Z);
+
+    const uint32 XShift = 21;
+    const uint32 YShift = 10;
+    Packed = (px << XShift) | (py << YShift) | (pz);
+  }
+
+  void ToQuat(FQuat& result) const
+  {
+    const uint32 XShift = 21;
+    const uint32 YShift = 10;
+    const uint32 ZMask = 0x000003ff;
+    const uint32 YMask = 0x001ffc00;
+    const uint32 XMask = 0xffe00000;
+
+    const uint32 ux = Packed >> XShift;
+    const uint32 uy = (Packed & YMask) >> YShift;
+    const uint32 uz = (Packed & ZMask);
+
+    TPackedFloat<3, 7, true> packed37;
+    TPackedFloat<3, 6, true> packed36;
+
+    const float X = packed37.Decode(ux);
+    const float Y = packed37.Decode(uy);
+    const float Z = packed36.Decode(uz);
+    const float WSquared = 1.f - X * X - Y * Y - Z * Z;
+
+    result.X = X;
+    result.Y = Y;
+    result.Z = Z;
+    result.W = WSquared > 0.f ? sqrt(WSquared) : 0.f;
+  }
+
+  friend FStream& operator<<(FStream& s, FQuatFloat32NoW& q);
 };

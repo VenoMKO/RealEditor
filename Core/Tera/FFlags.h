@@ -96,6 +96,13 @@ enum EFExportFlags : uint32
   EF_Composit = 0x00000008
 };
 
+enum AnimationKeyFormat : uint8 {
+  AKF_ConstantKeyLerp = 0,
+  AKF_VariableKeyLerp = 1,
+  AKF_PerTrackCompression = 2,
+  AKF_MAX = 3,
+};
+
 enum EPixelFormat : uint32
 {
   PF_Unknown = 0,
@@ -350,7 +357,7 @@ enum EBlendMode
   BLEND_MAX = 8,
 };
 
-enum AnimationCompressionFormat
+enum AnimationCompressionFormat : uint8
 {
   ACF_None = 0,
   ACF_Float96NoW = 1,

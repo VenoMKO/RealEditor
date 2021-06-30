@@ -13,7 +13,7 @@
 
 // #define CUSTOM_BUILD ".1"
 static const unsigned short APP_VER_MAJOR = 2;
-static const unsigned short APP_VER_MINOR = 1;
+static const unsigned short APP_VER_MINOR = 10;
 static const unsigned int BUILD_NUMBER = (
 #include "../../build_num.txt"
 );
@@ -229,6 +229,12 @@ std::string Sprintf(const std::string fmt, ...);
 
 void memswap(void* a, void* b, size_t size);
 
+template<class T>
+inline T Align(const T ptr, int32 alignment)
+{
+  return (T)(((int64)ptr + alignment - 1) & ~(alignment - 1));
+}
+
 FString GetTempDir();
 FString GetTempFilePath();
 
@@ -278,6 +284,10 @@ bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* comp
 #if ENABLE_PERF_SAMPLE
 #define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
 #define PERF_END(ID) LogE("Perf %s: %dms", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
+#define PERF_START_I(ID) uint64 start##ID = 0
+#define PERF_ITER_BEGIN(ID) auto _tmpStart##ID = std::chrono::high_resolution_clock::now()
+#define PERF_ITER_END(ID) start##ID += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - _tmpStart##ID).count();
+#define PERF_END_I(ID) LogE("Perf %s: %llums", #ID, start##ID)
 #else
 #define PERF_START(ID)
 #define PERF_END(ID)

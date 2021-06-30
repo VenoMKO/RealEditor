@@ -8,6 +8,7 @@
 #include <Tera/FStream.h>
 #include <Tera/FPackage.h>
 
+#include "AnimationEditor.h"
 #include "ObjectRedirectorEditor.h"
 #include "TextureEditor.h"
 #include "SkelMeshEditor.h"
@@ -34,6 +35,14 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   if (c == UObjectRedirector::StaticClassName())
   {
     editor = new ObjectRedirectorEditor(parent, window);
+  }
+  else if (c == UAnimSet::StaticClassName())
+  {
+    editor = new AnimSetEditor(parent, window);
+  }
+  else if (c == UAnimSequence::StaticClassName())
+  {
+    editor = new AnimSequenceEditor(parent, window);
   }
   else if (c == UTexture2D::StaticClassName() || c == UTerrainWeightMapTexture::StaticClassName() || c == UTextureFlipBook::StaticClassName())
   {

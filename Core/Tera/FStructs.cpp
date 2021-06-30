@@ -9,6 +9,8 @@
 
 const FMatrix FMatrix::Identity(FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 1, 0), FPlane(0, 0, 0, 1));
 const FVector FVector::One(1, 1, 1);
+const FVector FVector::Zero(0, 0, 0);
+const FQuat FQuat::Identity(0, 0, 0, 1);
 
 void VectorMatrixMultiply(void* output, const void* m1, const void* m2)
 {
@@ -820,6 +822,50 @@ FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f)
   return s;
 }
 
+FStream& operator<<(FStream& s, FQuatFixed48NoW& q)
+{
+  s << q.X;
+  s << q.Y;
+  s << q.Z;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FQuatFixed32NoW& q)
+{
+  return s << q.Packed;
+}
+
+FStream& operator<<(FStream& s, FQuatFloat96NoW& q)
+{
+  s << q.X;
+  s << q.Y;
+  s << q.Z;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FVectorFixed48& v)
+{
+  s << v.X;
+  s << v.Y;
+  s << v.Z;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FVectorIntervalFixed32NoW& v)
+{
+  return s << v.Packed;
+}
+
+FStream& operator<<(FStream& s, FQuatIntervalFixed32NoW& q)
+{
+  return s << q.Packed;
+}
+
+FStream& operator<<(FStream& s, FQuatFloat32NoW& q)
+{
+  return s << q.Packed;;
+}
+
 FRotator FRotator::Normalized() const
 {
   FRotator result;
@@ -896,6 +942,35 @@ FVector FMatrix::Rotate(FVector& v)
   return FVector(dx, dy, dz);
 }
 
+FRotator FMatrix::Rotator() const
+{
+  const FVector XAxis = GetAxis(0);
+  const FVector YAxis = GetAxis(1);
+  const FVector ZAxis = GetAxis(2);
+
+  FRotator	Rotator = FRotator(
+    round(atan2(XAxis.Z, sqrt((XAxis.X* XAxis.X) + (XAxis.Y* XAxis.Y))) * 32768.f / M_PI),
+    round(atan2(XAxis.Y, XAxis.X) * 32768.f / M_PI),
+    0
+  );
+
+  const FVector SYAxis = FRotationMatrix(Rotator).GetAxis(1);
+  Rotator.Roll = round(atan2(ZAxis | SYAxis, YAxis | SYAxis) * 32768.f / M_PI);
+  return Rotator;
+}
+
+FVector FMatrix::GetOrigin() const
+{
+  return FVector(M[3][0], M[3][1], M[3][2]);
+}
+
+void FMatrix::ScaleTranslation(const FVector& scale3D)
+{
+  M[3][0] *= scale3D.X;
+  M[3][1] *= scale3D.Y;
+  M[3][2] *= scale3D.Z;
+}
+
 FQuat::FQuat(const FMatrix& matrix)
 {
   const float tr = matrix.M[0][0] + matrix.M[1][1] + matrix.M[2][2];
@@ -949,17 +1024,28 @@ FQuat FQuat::Inverse() const
   return FQuat(-X, -Y, -Z, W);
 }
 
+FVector FQuat::Euler() const
+{
+  return FQuatRotationTranslationMatrix(*this, FVector(0.f)).Rotator().Euler();
+}
+
+FVector FQuat::FbxEuler() const
+{
+  FQuat tmp(*this);
+  tmp[1] = -tmp[1];
+  tmp[3] = -tmp[3];
+  return FQuatRotationTranslationMatrix(tmp, FVector(0.f)).Rotator().Euler();
+}
+
 FRotator FQuat::Rotator() const
 {
   // UE4
   const float singularityTest = Z * X - W * Y;
   const float yawY = 2.f * (W * Z + X * Y);
   const float yawX = (1.f - 2.f * ((Y * Y) + (Z * Z)));
-
   const float SINGULARITY_THRESHOLD = 0.4999995f;
   const float RAD_TO_DEG = (180.f) / M_PI;
   FVector tmp;
-
   if (singularityTest < -SINGULARITY_THRESHOLD)
   {
     tmp.Y = -90.f;
@@ -1080,4 +1166,39 @@ void FRawIndexBuffer::SortIndices()
     }
     delete[] PrimitiveGroups;
   }
+}
+
+FQuatRotationTranslationMatrix::FQuatRotationTranslationMatrix(const FQuat& qIn, const FVector& origin)
+{
+  FQuat q(qIn);
+  q.Normalize();
+  const float x2 = q.X + q.X;
+  const float y2 = q.Y + q.Y;
+  const float z2 = q.Z + q.Z;
+  const float xx = q.X * x2;
+  const float xy = q.X * y2;
+  const float xz = q.X * z2;
+  const float yy = q.Y * y2;
+  const float yz = q.Y * z2;
+  const float zz = q.Z * z2;
+  const float wx = q.W * x2;
+  const float wy = q.W * y2;
+  const float wz = q.W * z2;
+
+  M[0][0] = 1.0f - (yy + zz);
+  M[1][0] = xy - wz;
+  M[2][0] = xz + wy;
+  M[3][0] = origin.X;
+  M[0][1] = xy + wz;
+  M[1][1] = 1.0f - (xx + zz);
+  M[2][1] = yz - wx;
+  M[3][1] = origin.Y;
+  M[0][2] = xz - wy;
+  M[1][2] = yz + wx;
+  M[2][2] = 1.0f - (xx + yy);
+  M[3][2] = origin.Z;
+  M[0][3] = 0.0f;
+  M[1][3] = 0.0f;
+  M[2][3] = 0.0f;
+  M[3][3] = 1.0f;
 }

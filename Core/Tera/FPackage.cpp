@@ -2424,6 +2424,10 @@ UObject* FPackage::GetObject(FObjectImport* imp, bool load)
 
 UObject* FPackage::GetObject(FObjectExport* exp, bool load)
 {
+  if (!exp)
+  {
+    return nullptr;
+  }
   if (exp->ObjectIndex == VEXP_INDEX)
   {
     for (VObjectExport* vexp : VExports)
@@ -2508,9 +2512,9 @@ UObject* FPackage::GetObject(const FString& path)
     size_t pos = component.FindLastOf('_');
     if (pos != std::string::npos)
     {
+      FString name = component.Substr(0, pos);
       try
       {
-        FString name = component.Substr(0, pos);
         int32 number = std::stoi(component.Substr(pos + 1).String());
         for (FObjectExport* in : inner)
         {
@@ -2535,19 +2539,21 @@ UObject* FPackage::GetObject(const FString& path)
   }
   if (!exp)
   {
+    // 99% of calls land in the previous loop. This loop can be slow without affecting overall performance.
     FString component = components.back();
+    FString componentUpper = component.ToUpper();
     for (FObjectExport* e : Exports)
     {
-      if (e->ObjectName.String(true) == component || e->ObjectName.String(false) == component)
+      if (e->ObjectName.String(true).ToUpper() == componentUpper || e->ObjectName.String(false).ToUpper() == componentUpper)
       {
         return GetObject(e, false);
       }
       size_t pos = component.FindLastOf('_');
       if (pos != std::string::npos)
       {
+        FString name = component.Substr(0, pos);
         try
         {
-          FString name = component.Substr(0, pos);
           int32 number = std::stoi(component.Substr(pos + 1).String());
           if (e->ObjectName.String(false) == name && e->ObjectName.GetNumber() == number)
           {

@@ -92,6 +92,18 @@ bool IsUnrealBone(FbxNode* link)
   return false;
 }
 
+inline void SetCurveKey(FbxAnimCurve* curve, FbxTime& t, float value, bool last)
+{
+  int key = curve->KeyAdd(t);
+  curve->KeySetValue(key, value);
+  curve->KeySetTangentMode(key, FbxAnimCurveDef::eTangentGenericClampProgressive);
+  curve->KeySetInterpolation(key, last ? FbxAnimCurveDef::eInterpolationConstant : FbxAnimCurveDef::eInterpolationCubic);
+  if (last)
+  {
+    curve->KeySetConstantMode(key, FbxAnimCurveDef::eConstantStandard);
+  }
+};
+
 void RecursiveBuildLinks(FbxNode* link, std::vector<FbxNode*>& outLinks)
 {
   if (IsUnrealBone(link))
@@ -209,7 +221,6 @@ void SetGlobalDefaultPosition(FbxNode* node, FbxAMatrix globalPosition)
   {
     localPosition = globalPosition;
   }
-
   node->LclTranslation.Set(localPosition.GetT());
   node->LclRotation.Set(localPosition.GetR());
   node->LclScaling.Set(localPosition.GetS());
@@ -229,13 +240,58 @@ FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& bo
     skeletonAttribute->SetSkeletonType((!idx && refSkeleton.size() > 1) ? FbxSkeleton::eRoot : FbxSkeleton::eLimbNode);
     FbxNode* boneNode = FbxNode::Create(scene, bone.Name.String().C_str());
     boneNode->SetNodeAttribute(skeletonAttribute);
-
     FbxVector4 lT = FbxVector4(bone.BonePos.Position.X * scale[0], bone.BonePos.Position.Y * -scale[1], bone.BonePos.Position.Z * scale[2]);
-    FbxQuaternion lQ = FbxQuaternion(bone.BonePos.Orientation.X, bone.BonePos.Orientation.Y * -1., bone.BonePos.Orientation.Z, bone.BonePos.Orientation.W * 1.);
-    lQ[3] *= -1.;
+    FbxQuaternion lQ = FbxQuaternion(bone.BonePos.Orientation.X, -bone.BonePos.Orientation.Y, bone.BonePos.Orientation.Z, -bone.BonePos.Orientation.W);
     FbxAMatrix lGM;
     lGM.SetT(lT);
     lGM.SetQ(lQ);
+
+    SetGlobalDefaultPosition(boneNode, lGM);
+
+    if (idx)
+    {
+      boneNodes[bone.ParentIndex]->AddChild(boneNode);
+    }
+    boneNodes.PushBack(boneNode);
+  }
+  return boneNodes[0];
+}
+
+FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, UAnimSequence* sequence, int32 frame, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene, const FbxVector4& scale)
+{
+  if (!sourceMesh)
+  {
+    return nullptr;
+  }
+  std::vector<FMeshBone> refSkeleton = sourceMesh->GetReferenceSkeleton();
+  for (int32 idx = 0; idx < refSkeleton.size(); ++idx)
+  {
+    const FMeshBone& bone = refSkeleton[idx];
+    FbxSkeleton* skeletonAttribute = FbxSkeleton::Create(scene, "");
+    skeletonAttribute->SetSkeletonType((!idx && refSkeleton.size() > 1) ? FbxSkeleton::eRoot : FbxSkeleton::eLimbNode);
+    FbxNode* boneNode = FbxNode::Create(scene, bone.Name.String().C_str());
+    boneNode->SetNodeAttribute(skeletonAttribute);
+
+    FVector pos;
+    FQuat quat;
+    FbxVector4 lT;
+    FbxQuaternion lQ;
+    FbxAMatrix lGM;
+    if (sequence->GetBoneTransform(sourceMesh, bone.Name, frame, pos, quat))
+    {
+      // For unknown reason -quat.W produces incorrect result.
+      // I am too lazy to figure out why. Quat.W works fine, so be it.
+      lQ = FbxQuaternion(quat.X, -quat.Y, quat.Z, quat.W);
+      lT = FbxVector4(pos.X * scale[0], pos.Y * -scale[1], pos.Z * scale[2]);
+    }
+    else
+    {
+      lQ = FbxQuaternion(bone.BonePos.Orientation.X, -bone.BonePos.Orientation.Y, bone.BonePos.Orientation.Z, -bone.BonePos.Orientation.W);
+      lT = FbxVector4(bone.BonePos.Position.X * scale[0], bone.BonePos.Position.Y * -scale[1], bone.BonePos.Position.Z * scale[2]);
+    }
+    
+    lGM.SetQ(lQ);
+    lGM.SetT(lT);
 
     SetGlobalDefaultPosition(boneNode, lGM);
 
@@ -453,6 +509,459 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
     return false;
   }
   return true;
+}
+
+bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, FbxExportContext& ctx)
+{
+  FbxDynamicArray<FbxNode*> bones;
+  FbxVector4 scale(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z);
+  FbxNode* skelRootNode = CreateSkeleton(sourceMesh, bones, GetScene(), scale);
+  GetScene()->GetRootNode()->AddChild(skelRootNode);
+
+  FbxAnimStack* animStack = FbxAnimStack::Create(GetScene(), sequence->SequenceName.String().C_str());
+  FbxAnimLayer* animLayer = FbxAnimLayer::Create(GetScene(), sequence->SequenceName.String().C_str());
+  animStack->AddMember(animLayer);
+  ExportSequence(sourceMesh, sequence, (void*)&bones, animLayer, ctx);
+  if (ctx.CompressTracks)
+  {
+    FbxAnimCurveFilterKeyReducer filter;
+    filter.Apply(animStack);
+  }
+
+  if (ctx.ExportMesh)
+  {
+    const FStaticLODModel* lod = sourceMesh->GetLod(0);
+    if (!lod)
+    {
+      ctx.Error = "Failed to get the lod model!";
+      goto lSaveSceneSeq;
+    }
+
+    const std::vector<FSoftSkinVertex> verticies = lod->GetVertices();
+    if (verticies.empty())
+    {
+      ctx.Error = "The model has no vertices!";
+      goto lSaveSceneSeq;
+    }
+
+    FbxMesh* mesh = FbxMesh::Create(GetScene(), "geometry");
+    mesh->InitControlPoints(verticies.size());
+
+    for (uint32 idx = 0; idx < verticies.size(); ++idx)
+    {
+      const FSoftSkinVertex& v = verticies[idx];
+      mesh->GetControlPoints()[idx] = FbxVector4(v.Position.X * ctx.Scale3D.X, -v.Position.Y * ctx.Scale3D.Y, v.Position.Z * ctx.Scale3D.Z);
+    }
+
+    FbxLayer* layer = mesh->GetLayer(0);
+    if (!layer)
+    {
+      layer = mesh->GetLayer(mesh->CreateLayer());
+    }
+
+    const int32 numTexCoords = lod->GetNumTexCoords();
+    FbxLayerElementUV* uvDiffuseLayer = FbxLayerElementUV::Create(mesh, "DiffuseUV");
+    std::vector<FbxLayerElementUV*> customUVLayers;
+    for (int32 idx = 1; idx < numTexCoords; ++idx)
+    {
+      std::string layerName = "Custom_" + std::to_string(idx);
+      customUVLayers.push_back(FbxLayerElementUV::Create(mesh, layerName.c_str()));
+    }
+
+    FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
+    FbxLayerElementBinormal* layerElementBinormal = FbxLayerElementBinormal::Create(mesh, "");
+    FbxLayerElementTangent* layerElementTangent = FbxLayerElementTangent::Create(mesh, "");
+
+    uvDiffuseLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+    uvDiffuseLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementBinormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementTangent->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+    std::vector<FbxVector4> tmpNormals;
+    std::vector<FbxVector4> tmpTangents;
+    std::vector<FbxVector4> tmpBinormals;
+    tmpNormals.reserve(verticies.size());
+    tmpTangents.reserve(verticies.size());
+    tmpBinormals.reserve(verticies.size());
+    for (uint32 idx = 0; idx < verticies.size(); ++idx)
+    {
+      const FSoftSkinVertex& v = verticies[idx];
+      FVector tmp;
+      tmp = v.TangentX;
+      tmpTangents.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+      tmp = -(FVector)v.TangentY;
+      tmpBinormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+      tmp = v.TangentZ;
+      tmpNormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+
+      uvDiffuseLayer->GetDirectArray().Add(FbxVector2(v.UVs[0].X, -v.UVs[0].Y + 1.f));
+      for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
+      {
+        customUVLayers[uvIdx]->GetDirectArray().Add(FbxVector2(v.UVs[uvIdx + 1].X, -v.UVs[uvIdx + 1].Y + 1.f));
+      }
+    }
+
+    for (uint32 idx = 0; idx < lod->GetIndexContainer()->GetElementCount(); ++idx)
+    {
+      int32 index = lod->GetIndexContainer()->GetIndex(idx);
+      layerElementTangent->GetDirectArray().Add(tmpTangents[index]);
+      layerElementBinormal->GetDirectArray().Add(tmpBinormals[index]);
+      layerElementNormal->GetDirectArray().Add(tmpNormals[index]);
+    }
+    tmpNormals.clear();
+    tmpTangents.clear();
+    tmpBinormals.clear();
+
+    layer->SetNormals(layerElementNormal);
+    layer->SetBinormals(layerElementBinormal);
+    layer->SetTangents(layerElementTangent);
+
+    {
+      int32 etype = (int32)FbxLayerElement::EType::eTextureDiffuse;
+      layer->SetUVs(uvDiffuseLayer, (FbxLayerElement::EType)etype);
+      for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
+      {
+        etype++;
+        layer->SetUVs(customUVLayers[uvIdx], (FbxLayerElement::EType)etype);
+      }
+    }
+
+    FbxLayerElementMaterial* matLayer = FbxLayerElementMaterial::Create(mesh, "");
+    matLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygon);
+    matLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eIndexToDirect);
+    layer->SetMaterials(matLayer);
+
+    const std::vector<const FSkelMeshSection*> sections = lod->GetSections();
+
+    for (const FSkelMeshSection* section : sections)
+    {
+      const int32 material = section->MaterialIndex;
+      const int32 numTriangles = section->NumTriangles;
+
+      for (int32 triangleIndex = 0; triangleIndex < numTriangles; ++triangleIndex)
+      {
+        mesh->BeginPolygon(material);
+        for (int32 pointIdx = 0; pointIdx < 3; ++pointIdx)
+        {
+          int32 vertIndex = lod->GetIndexContainer()->GetIndex(section->BaseIndex + (triangleIndex * 3) + pointIdx);
+          mesh->AddPolygon(vertIndex);
+        }
+        mesh->EndPolygon();
+      }
+    }
+
+    FbxGeometryConverter lGeometryConverter(GetManager());
+    lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
+    lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
+
+    char* meshName = FbxWideToUtf8(sourceMesh->GetObjectNameString().WString().c_str());
+    FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
+    FbxFree(meshName);
+    meshNode->SetNodeAttribute(mesh);
+
+    std::vector<UObject*> materials = sourceMesh->GetMaterials();
+    for (int32 idx = 0; idx < materials.size(); ++idx)
+    {
+      UObject* mat = materials[idx];
+      std::string matName = mat ? mat->GetObjectName().String() : ("Material_" + std::to_string(idx + 1));
+      FbxSurfaceMaterial* fbxMaterial = FbxSurfaceLambert::Create(GetScene(), matName.c_str());
+      ((FbxSurfaceLambert*)fbxMaterial)->Diffuse.Set(FbxDouble3(0.72, 0.72, 0.72));
+      meshNode->AddMaterial(fbxMaterial);
+    }
+
+    FbxDynamicArray<FbxNode*> bonesArray = bones;
+
+    FbxAMatrix meshMatrix = meshNode->EvaluateGlobalTransform();
+    FbxGeometry* meshAttribute = (FbxGeometry*)mesh;
+    FbxSkin* skin = FbxSkin::Create(GetScene(), "");
+
+    for (int boneIndex = 0; boneIndex < bonesArray.Size(); boneIndex++)
+    {
+      FbxNode* boneNode = bonesArray[boneIndex];
+
+      FbxCluster* currentCluster = FbxCluster::Create(GetScene(), "");
+      currentCluster->SetLink(boneNode);
+      currentCluster->SetLinkMode(FbxCluster::eTotalOne);
+
+      int32 vertIndex = 0;
+      for (const FSoftSkinVertex& v : verticies)
+      {
+        for (int influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
+        {
+          uint16 influenceBone = v.BoneMap->at(v.InfluenceBones[influenceIndex]);
+          float w = (float)v.InfluenceWeights[influenceIndex];
+          float influenceWeight = w / 255.0f;
+
+          if (influenceBone == boneIndex && influenceWeight > 0.f)
+          {
+            currentCluster->AddControlPointIndex(vertIndex, influenceWeight);
+          }
+        }
+        vertIndex++;
+      }
+      currentCluster->SetTransformMatrix(meshMatrix);
+      FbxAMatrix linkMatrix = boneNode->EvaluateGlobalTransform();
+      currentCluster->SetTransformLinkMatrix(linkMatrix);
+      skin->AddCluster(currentCluster);
+    }
+
+    meshAttribute->AddDeformer(skin);
+    CreateBindPose(meshNode, GetScene());
+
+    GetScene()->GetRootNode()->AddChild(meshNode);
+  }
+
+lSaveSceneSeq:
+  bool ok = SaveScene(ctx.Path);
+  if (!ok)
+  {
+    ctx.Error = "IO error!\n\nFailed to write data to the disk! Try a different location.";
+  }
+  if (ctx.ProgressDescFunc)
+  {
+    ctx.ProgressDescFunc("Cleanup...");
+  }
+  return ok;
+}
+
+bool FbxUtils::ExportAnimationSet(USkeletalMesh* sourceMesh, UAnimSet* animSet, FbxExportContext& ctx)
+{
+  FbxDynamicArray<FbxNode*> bones;
+  FbxVector4 scale(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z);
+  FbxNode* skelRootNode = CreateSkeleton(sourceMesh, bones, GetScene(), scale);
+  GetScene()->GetRootNode()->AddChild(skelRootNode);
+  
+  std::vector<UAnimSequence*> sequences = animSet->GetSequences();
+  if (ctx.ProgressMaxFunc)
+  {
+    ctx.ProgressMaxFunc(sequences.size());
+  }
+  int32 total = (int32)sequences.size();
+  for (int32 idx = 0; idx < total; ++idx)
+  {
+    UAnimSequence* seq = sequences[idx];
+    if (ctx.ProgressDescFunc && seq)
+    {
+      ctx.ProgressDescFunc(FString::Sprintf("Building: %s(%d/%d)", seq->SequenceName.String().C_str(), idx + 1, total));
+    }
+    if (ctx.ProgressFunc)
+    {
+      ctx.ProgressFunc(idx + 1);
+    }
+    FbxAnimStack* animStack = FbxAnimStack::Create(GetScene(), seq->SequenceName.String().C_str());
+    FbxAnimLayer* animLayer = FbxAnimLayer::Create(GetScene(), seq->SequenceName.String().C_str());
+    animStack->AddMember(animLayer);
+    ExportSequence(sourceMesh, seq, (void*)&bones, animLayer, ctx);
+    if (ctx.CompressTracks)
+    {
+      FbxAnimCurveFilterKeyReducer filter;
+      filter.Apply(animStack);
+    }
+  }
+
+  if (ctx.ExportMesh)
+  {
+    const FStaticLODModel* lod = sourceMesh->GetLod(0);
+    if (!lod)
+    {
+      ctx.Error = "Failed to get the lod model!";
+      goto lSaveSceneSet;
+    }
+
+    const std::vector<FSoftSkinVertex> verticies = lod->GetVertices();
+    if (verticies.empty())
+    {
+      ctx.Error = "The model has no vertices!";
+      goto lSaveSceneSet;
+    }
+
+    FbxMesh* mesh = FbxMesh::Create(GetScene(), "geometry");
+    mesh->InitControlPoints(verticies.size());
+
+    for (uint32 idx = 0; idx < verticies.size(); ++idx)
+    {
+      const FSoftSkinVertex& v = verticies[idx];
+      mesh->GetControlPoints()[idx] = FbxVector4(v.Position.X * ctx.Scale3D.X, -v.Position.Y * ctx.Scale3D.Y, v.Position.Z * ctx.Scale3D.Z);
+    }
+
+    FbxLayer* layer = mesh->GetLayer(0);
+    if (!layer)
+    {
+      layer = mesh->GetLayer(mesh->CreateLayer());
+    }
+
+    const int32 numTexCoords = lod->GetNumTexCoords();
+    FbxLayerElementUV* uvDiffuseLayer = FbxLayerElementUV::Create(mesh, "DiffuseUV");
+    std::vector<FbxLayerElementUV*> customUVLayers;
+    for (int32 idx = 1; idx < numTexCoords; ++idx)
+    {
+      std::string layerName = "Custom_" + std::to_string(idx);
+      customUVLayers.push_back(FbxLayerElementUV::Create(mesh, layerName.c_str()));
+    }
+
+    FbxLayerElementNormal* layerElementNormal = FbxLayerElementNormal::Create(mesh, "");
+    FbxLayerElementBinormal* layerElementBinormal = FbxLayerElementBinormal::Create(mesh, "");
+    FbxLayerElementTangent* layerElementTangent = FbxLayerElementTangent::Create(mesh, "");
+
+    uvDiffuseLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByControlPoint);
+    uvDiffuseLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementNormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementNormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementBinormal->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementBinormal->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+    layerElementTangent->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygonVertex);
+    layerElementTangent->SetReferenceMode(FbxLayerElement::EReferenceMode::eDirect);
+
+    std::vector<FbxVector4> tmpNormals;
+    std::vector<FbxVector4> tmpTangents;
+    std::vector<FbxVector4> tmpBinormals;
+    tmpNormals.reserve(verticies.size());
+    tmpTangents.reserve(verticies.size());
+    tmpBinormals.reserve(verticies.size());
+    for (uint32 idx = 0; idx < verticies.size(); ++idx)
+    {
+      const FSoftSkinVertex& v = verticies[idx];
+      FVector tmp;
+      tmp = v.TangentX;
+      tmpTangents.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+      tmp = -(FVector)v.TangentY;
+      tmpBinormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+      tmp = v.TangentZ;
+      tmpNormals.emplace_back(FbxVector4(tmp.X, -tmp.Y, tmp.Z)).Normalize();
+
+      uvDiffuseLayer->GetDirectArray().Add(FbxVector2(v.UVs[0].X, -v.UVs[0].Y + 1.f));
+      for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
+      {
+        customUVLayers[uvIdx]->GetDirectArray().Add(FbxVector2(v.UVs[uvIdx + 1].X, -v.UVs[uvIdx + 1].Y + 1.f));
+      }
+    }
+
+    for (uint32 idx = 0; idx < lod->GetIndexContainer()->GetElementCount(); ++idx)
+    {
+      int32 index = lod->GetIndexContainer()->GetIndex(idx);
+      layerElementTangent->GetDirectArray().Add(tmpTangents[index]);
+      layerElementBinormal->GetDirectArray().Add(tmpBinormals[index]);
+      layerElementNormal->GetDirectArray().Add(tmpNormals[index]);
+    }
+    tmpNormals.clear();
+    tmpTangents.clear();
+    tmpBinormals.clear();
+
+    layer->SetNormals(layerElementNormal);
+    layer->SetBinormals(layerElementBinormal);
+    layer->SetTangents(layerElementTangent);
+
+    {
+      int32 etype = (int32)FbxLayerElement::EType::eTextureDiffuse;
+      layer->SetUVs(uvDiffuseLayer, (FbxLayerElement::EType)etype);
+      for (int32 uvIdx = 0; uvIdx < customUVLayers.size(); ++uvIdx)
+      {
+        etype++;
+        layer->SetUVs(customUVLayers[uvIdx], (FbxLayerElement::EType)etype);
+      }
+    }
+
+    FbxLayerElementMaterial* matLayer = FbxLayerElementMaterial::Create(mesh, "");
+    matLayer->SetMappingMode(FbxLayerElement::EMappingMode::eByPolygon);
+    matLayer->SetReferenceMode(FbxLayerElement::EReferenceMode::eIndexToDirect);
+    layer->SetMaterials(matLayer);
+
+    const std::vector<const FSkelMeshSection*> sections = lod->GetSections();
+
+    for (const FSkelMeshSection* section : sections)
+    {
+      const int32 material = section->MaterialIndex;
+      const int32 numTriangles = section->NumTriangles;
+
+      for (int32 triangleIndex = 0; triangleIndex < numTriangles; ++triangleIndex)
+      {
+        mesh->BeginPolygon(material);
+        for (int32 pointIdx = 0; pointIdx < 3; ++pointIdx)
+        {
+          int32 vertIndex = lod->GetIndexContainer()->GetIndex(section->BaseIndex + (triangleIndex * 3) + pointIdx);
+          mesh->AddPolygon(vertIndex);
+        }
+        mesh->EndPolygon();
+      }
+    }
+
+    FbxGeometryConverter lGeometryConverter(GetManager());
+    lGeometryConverter.ComputeEdgeSmoothingFromNormals(mesh);
+    lGeometryConverter.ComputePolygonSmoothingFromEdgeSmoothing(mesh);
+
+    char* meshName = FbxWideToUtf8(sourceMesh->GetObjectNameString().WString().c_str());
+    FbxNode* meshNode = FbxNode::Create(GetScene(), meshName);
+    FbxFree(meshName);
+    meshNode->SetNodeAttribute(mesh);
+
+    std::vector<UObject*> materials = sourceMesh->GetMaterials();
+    for (int32 idx = 0; idx < materials.size(); ++idx)
+    {
+      UObject* mat = materials[idx];
+      std::string matName = mat ? mat->GetObjectName().String() : ("Material_" + std::to_string(idx + 1));
+      FbxSurfaceMaterial* fbxMaterial = FbxSurfaceLambert::Create(GetScene(), matName.c_str());
+      ((FbxSurfaceLambert*)fbxMaterial)->Diffuse.Set(FbxDouble3(0.72, 0.72, 0.72));
+      meshNode->AddMaterial(fbxMaterial);
+    }
+
+    FbxDynamicArray<FbxNode*> bonesArray = bones;
+
+    FbxAMatrix meshMatrix = meshNode->EvaluateGlobalTransform();
+    FbxGeometry* meshAttribute = (FbxGeometry*)mesh;
+    FbxSkin* skin = FbxSkin::Create(GetScene(), "");
+
+    for (int boneIndex = 0; boneIndex < bonesArray.Size(); boneIndex++)
+    {
+      FbxNode* boneNode = bonesArray[boneIndex];
+
+      FbxCluster* currentCluster = FbxCluster::Create(GetScene(), "");
+      currentCluster->SetLink(boneNode);
+      currentCluster->SetLinkMode(FbxCluster::eTotalOne);
+
+      int32 vertIndex = 0;
+      for (const FSoftSkinVertex& v : verticies)
+      {
+        for (int influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
+        {
+          uint16 influenceBone = v.BoneMap->at(v.InfluenceBones[influenceIndex]);
+          float w = (float)v.InfluenceWeights[influenceIndex];
+          float influenceWeight = w / 255.0f;
+
+          if (influenceBone == boneIndex && influenceWeight > 0.f)
+          {
+            currentCluster->AddControlPointIndex(vertIndex, influenceWeight);
+          }
+        }
+        vertIndex++;
+      }
+      currentCluster->SetTransformMatrix(meshMatrix);
+      FbxAMatrix linkMatrix = boneNode->EvaluateGlobalTransform();
+      currentCluster->SetTransformLinkMatrix(linkMatrix);
+      skin->AddCluster(currentCluster);
+    }
+
+    meshAttribute->AddDeformer(skin);
+    CreateBindPose(meshNode, GetScene());
+
+    GetScene()->GetRootNode()->AddChild(meshNode);
+  }
+
+lSaveSceneSet:
+  ctx.ProgressDescFunc("Saving...");
+  bool ok = SaveScene(ctx.Path);
+  if (!ok)
+  {
+    ctx.Error = "IO error!\n\nFailed to write data to the disk! Try a different location.";
+  }
+  if (ctx.ProgressDescFunc)
+  {
+    ctx.ProgressDescFunc("Clean up...");
+  }
+  return ok;
 }
 
 bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
@@ -1671,8 +2180,106 @@ bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, c
       layer->SetNormals(layerElementNormal);
     }
   }
+  return true;
+}
 
+bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, void* boneNodes, void* animLayer, FbxExportContext& ctx)
+{
+  FbxAnimLayer* layer = (FbxAnimLayer*)animLayer;
+  FbxDynamicArray<FbxNode*>& bones = *(FbxDynamicArray<FbxNode*>*)boneNodes;
   
+  int32 numRawFrames = sequence->GetRawFramesCount();
+  if (numRawFrames != sequence->NumFrames)
+  {
+    LogW("Sequence %s frames mismatch!", sequence->SequenceName.String().C_str());
+  }
+
+  FbxVector4 scale(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z);
+  PERF_START_I(Curves);
+  PERF_START_I(Keys);
+  PERF_START_I(Skel);
+  for (int32 frame = 0; frame < numRawFrames; ++frame)
+  {
+    PERF_ITER_BEGIN(Skel);
+    FbxDynamicArray<FbxNode*> targetBones;
+    FbxNode* refRoot = CreateSkeleton(sourceMesh, sequence, frame, targetBones, GetScene(), scale);
+    PERF_ITER_END(Skel);
+
+    FbxTime t;
+    t.SetSecondDouble(sequence->SequenceLength / float(numRawFrames - 1) * double(frame) * sequence->RateScale * ctx.TrackRateScale);
+    const bool last = frame + 1 == numRawFrames;
+
+    for (int32 boneIndex = 0; boneIndex < targetBones.Size(); ++boneIndex)
+    {
+      FbxDouble3 rot = targetBones[boneIndex]->LclRotation.Get();
+      FbxDouble3 pos = targetBones[boneIndex]->LclTranslation.Get();
+
+      FbxAnimCurve* curves[6];
+      PERF_ITER_BEGIN(Curves);
+      FbxNode* currentBone = bones[boneIndex];
+      curves[0] = currentBone->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X, true);
+      curves[1] = currentBone->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y, true);
+      curves[2] = currentBone->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z, true);
+
+      curves[3] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X, true);
+      curves[4] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y, true);
+      curves[5] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z, true);
+      PERF_ITER_END(Curves);
+
+      for (FbxAnimCurve* curve : curves)
+      {
+        curve->KeyModifyBegin();
+      }
+
+      int32 cidx = 0;
+      for (; cidx < 3; ++cidx)
+      {
+        SetCurveKey(curves[cidx], t, pos[cidx], last);
+      }
+      for (; cidx < 6; ++cidx)
+      {
+        SetCurveKey(curves[cidx], t, rot[cidx - 3], last);
+      }
+
+      for (FbxAnimCurve* curve : curves)
+      {
+        curve->KeyModifyEnd();
+      }
+    }
+    refRoot->Destroy(true);
+  }
+  PERF_END_I(Curves);
+  PERF_END_I(Keys);
+  PERF_END_I(Skel);
+
+  for (int32 boneIndex = 0; boneIndex < bones.Size(); ++boneIndex)
+  {
+    FbxNode* currentBone = bones[boneIndex];
+    FbxAnimCurve* curves[3];
+
+    curves[0] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+    curves[1] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Y);
+    curves[2] = currentBone->LclRotation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_Z);
+
+    FbxAnimCurveFilterUnroll filter;
+    FbxStatus filterStatus;
+    filter.SetForceAutoTangents(true);
+    filter.Apply(&curves[0], 3, &filterStatus);
+    if (filterStatus != FbxStatus::EStatusCode::eSuccess)
+    {
+      LogE("Failed to filter curves: %s", filterStatus.GetErrorString());
+    }
+
+    if (ctx.ResampleTracks)
+    {
+      FbxAnimCurveFilterResample filter;
+      filter.SetIntelligentMode(true);
+      FbxTime period;
+      period.SetSecondDouble(1. / 60.);
+      filter.SetPeriodTime(period);
+      filter.Apply(curves, 3);
+    }
+  }
   return true;
 }
 

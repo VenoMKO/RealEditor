@@ -78,6 +78,27 @@ struct FStaticMeshExportConfig {
   friend FStream& operator<<(FStream& s, FStaticMeshExportConfig& c);
 };
 
+struct FAnimationExportConfig {
+  enum ConfigKey : uint16 {
+    CFG_Mesh = 1,
+    CFG_ScaleFactor,
+    CFG_RateFactor,
+    CFG_Compress,
+    CFG_Resample,
+    CFG_Split,
+    CFG_End = 0xFFFF
+  };
+
+  bool ExportMesh = true;
+  bool Compress = true;
+  bool Split = true;
+  bool Resample = false;
+  float ScaleFactor = 1.;
+  float RateFactor = 1.;
+
+  friend FStream& operator<<(FStream& s, FAnimationExportConfig& c);
+};
+
 struct FMapExportConfig {
   enum class ActorClass : uint32
   {
@@ -226,6 +247,10 @@ struct FAppConfig
     CFG_SkelMeshImportBegin = 140,
     CFG_SkelMeshImportEnd,
 
+    // AnimSet, AnimSequence
+    CFG_AnimationExportBegin = 150,
+    CFG_AnimationExportEnd,
+
     CFG_End = 0xFFFF
   };
   uint32 Magic = PACKAGE_MAGIC;
@@ -323,6 +348,9 @@ struct FAppConfig
 
   // CFG_StaticMeshExportBegin: StaticMesh export settings
   FStaticMeshExportConfig StaticMeshExportConfig;
+
+  // CFG_AnimationExportBegin: Animation export options
+  FAnimationExportConfig AnimationExportConfig;
 
   friend FStream& operator<<(FStream& s, FAppConfig& c);
 };

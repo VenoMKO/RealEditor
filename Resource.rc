@@ -98,6 +98,10 @@ IDB_PAUSE               RCDATA                  "Resources\\Btn_Pause.png"
 
 IDB_STOP                RCDATA                  "Resources\\Btn_Stop.png"
 
+IDB_ICO_ANIMSET         RCDATA                  "Resources\\Classes\\icon_animset.png"
+
+IDB_ICO_ANIMSEQ         RCDATA                  "Resources\\Classes\\icon_animseq.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

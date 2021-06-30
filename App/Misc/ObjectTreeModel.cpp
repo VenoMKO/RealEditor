@@ -79,6 +79,8 @@ enum ClassIco : int {
   IcoMi,
   IcoLevel,
   IcoSLevel,
+  IcoAnimSet,
+  IcoAnimSeq,
 };
 
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
@@ -141,18 +143,26 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   {
     return IcoMat;
   }
+  if (className == wxT("AnimSet"))
+  {
+    return IcoAnimSet;
+  }
+  if (className == wxT("AnimSequence"))
+  {
+    return IcoAnimSeq;
+  }
   if (className == wxT("MaterialInstanceConstant") || className == wxT("MaterialInstance"))
   {
     return IcoMi;
   }
-  else if (className == wxT("Level"))
+  if (className == wxT("Level"))
   {
     return IcoLevel;
   }
-  else if (className == wxT("LevelStreaming") || className == wxT("LevelStreamingAlwaysLoaded") || className == wxT("LevelStreamingDistance") ||
-           className == wxT("LevelStreamingKismet") || className == wxT("LevelStreamingPersistent") || className == wxT("S1LevelStreamingDistance") ||
-           className == wxT("S1LevelStreamingBaseLevel") || className == wxT("S1LevelStreamingSound") || className == wxT("S1LevelStreamingSuperLow") ||
-           className == wxT("S1LevelStreamingVOID"))
+  if (className == wxT("LevelStreaming") || className == wxT("LevelStreamingAlwaysLoaded") || className == wxT("LevelStreamingDistance") ||
+      className == wxT("LevelStreamingKismet") || className == wxT("LevelStreamingPersistent") || className == wxT("S1LevelStreamingDistance") ||
+      className == wxT("S1LevelStreamingBaseLevel") || className == wxT("S1LevelStreamingSound") || className == wxT("S1LevelStreamingSuperLow") ||
+      className == wxT("S1LevelStreamingVOID"))
   {
     return IcoSLevel;
   }
@@ -402,6 +412,12 @@ void ObjectTreeModel::BuildIcons()
 
   // StreamingLevel icon
   IconList->Add(wxBitmap("#129", wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // AnimSet icon
+  IconList->Add(wxBitmap("#134", wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // AnimSequence icon
+  IconList->Add(wxBitmap("#135", wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const

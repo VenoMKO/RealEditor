@@ -18,7 +18,7 @@
 #include "USkeletalMesh.h"
 #include "UStaticMesh.h"
 #include "USoundNode.h"
-#include "UAnimSequence.h"
+#include "UAnimation.h"
 #include "UPhysAsset.h"
 #include "ULevelStreaming.h"
 #include "USpeedTree.h"
@@ -229,6 +229,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UPrefabInstance::StaticClassName())
   {
     result = new UPrefabInstance(exp);
+  }
+  else if (c == UAnimSet::StaticClassName())
+  {
+    result = new UAnimSet(exp);
   }
   else if (c == UAnimSequence::StaticClassName())
   {

@@ -15,6 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\Editors\AnimationEditor.cpp" />
     <ClCompile Include="App\Editors\ClassEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditorExport.cpp" />
@@ -75,7 +76,7 @@
     <ClCompile Include="Core\Tera\FStructs.cpp" />
     <ClCompile Include="Core\Tera\UActor.cpp" />
     <ClCompile Include="Core\Tera\UActorComponent.cpp" />
-    <ClCompile Include="Core\Tera\UAnimSequence.cpp" />
+    <ClCompile Include="Core\Tera\UAnimation.cpp" />
     <ClCompile Include="Core\Tera\UClass.cpp" />
     <ClCompile Include="Core\Tera\UComponent.cpp" />
     <ClCompile Include="Core\Tera\ULevel.cpp" />
@@ -108,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h" />
+    <ClInclude Include="App\Editors\AnimationEditor.h" />
     <ClInclude Include="App\Editors\ClassEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
@@ -148,7 +150,7 @@
     <ClInclude Include="Core\Tera\kDOP.h" />
     <ClInclude Include="Core\Tera\UActor.h" />
     <ClInclude Include="Core\Tera\UActorComponent.h" />
-    <ClInclude Include="Core\Tera\UAnimSequence.h" />
+    <ClInclude Include="Core\Tera\UAnimation.h" />
     <ClInclude Include="Core\Tera\ULevel.h" />
     <ClInclude Include="Core\Tera\ULevelStreaming.h" />
     <ClInclude Include="Core\Tera\ULight.h" />
@@ -375,7 +377,7 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>FREEIMAGE_LIB;OSG_LIBRARY_STATIC;_CRTDBG_MAP_ALLOC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;GLEW_STATIC;DUMP_PATH="C:\\Users\\VenoMKO\\Desktop\\ReDumps";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;$(OGGWIN)\include;$(VORBISWIN)\include;$(NVTRISTRIP)\include;$(ZYDIS)\include;$(CRYPTOPP)\include;$(OPENAL)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\Debug.$(Platform)\include;$(SolutionDir)Extern\wxWidgets\include\msvc;$(SolutionDir)Extern\wxWidgets\include;$(SolutionDir)Extern;$(SolutionDir)Core;$(OSGWIN)\include;$(FREEIMAGEWIN)\include;$(FBXWIN)\include;$(OGGWIN)\include;$(VORBISWIN)\include;$(NVTRISTRIP)\include;$(ZYDIS)\include;$(CRYPTOPP)\include;$(OPENAL)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -385,16 +387,16 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(NVTRISTRIP)\lib\;$(FREEIMAGEWIN)\lib\;$(OGGWIN)\lib\$(Configuration)\;$(VORBISWIN)\win32\VS2010\x64\$(Configuration)\;$(OSGWIN)\lib\debug\;$(FBXWIN)\lib\vs2017\x64\debug\;$(ZYDIS)\debug\lib;$(CRYPTOPP)\x64\Output\Debug\;$(OPENAL)\Debug\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\Debug.$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(NVTRISTRIP)\lib\;$(FREEIMAGEWIN)\lib\;$(OGGWIN)\lib\Debug\;$(VORBISWIN)\win32\VS2010\x64\Debug\;$(OSGWIN)\lib\debug\;$(FBXWIN)\lib\vs2017\x64\debug\;$(ZYDIS)\debug\lib;$(CRYPTOPP)\x64\Output\Debug\;$(OPENAL)\Debug\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;libfbxsdk-mt.lib;libxml2-mt.lib;wininet.lib;libogg.lib;libvorbis_static.lib;libvorbisfile_static.lib;NvTriStrip64d.lib;Zydis.lib;cryptlib.lib;OpenAL32.lib</AdditionalDependencies>
       <StackReserveSize>
       </StackReserveSize>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PreBuildEvent>
-      <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
-msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
-"$(ProjectDir)build_inc.bat" "$(Configuration)"</Command>
+      <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=Debug;Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=Debug;Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
+"$(ProjectDir)build_inc.bat" "Debug"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

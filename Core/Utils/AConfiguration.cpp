@@ -327,6 +327,10 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.StaticMeshExportConfig;
         CheckKey(FAppConfig::CFG_StaticMeshExportEnd);
         break;
+      case FAppConfig::CFG_AnimationExportBegin:
+        s << c.AnimationExportConfig;
+        CheckKey(FAppConfig::CFG_AnimationExportEnd);
+        break;
       case FAppConfig::CFG_SavePackageDontAskAgain:
         s << c.SavePackageDontShowAgain;
         break;
@@ -419,6 +423,11 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKey(FAppConfig::CFG_StaticMeshExportBegin);
     s << c.StaticMeshExportConfig;
     SerializeKey(FAppConfig::CFG_StaticMeshExportEnd);
+
+    // AnimationsExport
+    SerializeKey(FAppConfig::CFG_AnimationExportBegin);
+    s << c.AnimationExportConfig;
+    SerializeKey(FAppConfig::CFG_AnimationExportEnd);
 
     // End
     SerializeKey(FAppConfig::CFG_End);
@@ -555,8 +564,58 @@ FStream& operator<<(FStream& s, FSkelMeshImportConfig& c)
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_FlipTangentY, c.FlipTangentY, d.FlipTangentY);
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_TangentYByUV, c.TangentYBasisByUV, d.TangentYBasisByUV);
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_AverageTangentZ, c.AverageTangentZ, d.AverageTangentZ);
-    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_OptimizeIndices, c.OptimizeIndexBuffer, c.OptimizeIndexBuffer);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_OptimizeIndices, c.OptimizeIndexBuffer, d.OptimizeIndexBuffer);
     SerializeKey(FSkelMeshImportConfig::CFG_End);
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FAnimationExportConfig& c)
+{
+  if (s.IsReading())
+  {
+    while (s.IsGood())
+    {
+      uint16 key = 0;
+      s << key;
+      switch (key)
+      {
+      case FAnimationExportConfig::CFG_Mesh:
+        s << c.ExportMesh;
+        break;
+      case FAnimationExportConfig::CFG_Compress:
+        s << c.Compress;
+        break;
+      case FAnimationExportConfig::CFG_RateFactor:
+        s << c.RateFactor;
+        break;
+      case FAnimationExportConfig::CFG_Resample:
+        s << c.Resample;
+        break;
+      case FAnimationExportConfig::CFG_ScaleFactor:
+        s << c.ScaleFactor;
+        break;
+      case FAnimationExportConfig::CFG_Split:
+        s << c.Split;
+        break;
+      default:
+        s.Close();
+        // no break
+      case FAnimationExportConfig::CFG_End:
+        return s;
+      }
+    }
+  }
+  else
+  {
+    FAnimationExportConfig d;
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Mesh, c.ExportMesh, d.ExportMesh);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Compress, c.Compress, d.Compress);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_RateFactor, c.RateFactor, d.RateFactor);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Resample, c.Resample, d.Resample);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Split, c.Split, d.Split);
+    SerializeKey(FAnimationExportConfig::CFG_End);
   }
   return s;
 }
