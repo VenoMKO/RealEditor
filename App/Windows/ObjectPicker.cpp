@@ -238,7 +238,7 @@ void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
 void ObjectPicker::OnPackageClicked(wxCommandEvent& event)
 {
   wxMenu menu;
-  menu.Append(1, wxT("Open a normal package..."));
+  menu.Append(1, wxT("Open a GPK file..."));
   menu.Append(2, wxT("Open a composite package..."));
 
   const int selectedMenuId = GetPopupMenuSelectionFromUser(menu);
