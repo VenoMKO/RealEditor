@@ -240,8 +240,11 @@ protected:
         SkeletonField->SetValue(mesh->GetObjectPath().WString());
       }
     }
-    OkButton->Enable(mesh);
-    Mesh = mesh;
+    if (mesh)
+    {
+      Mesh = mesh;
+    }
+    OkButton->Enable(Mesh);
   }
 
   void OnDefaultClicked(wxCommandEvent& event)
