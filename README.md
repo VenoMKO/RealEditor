@@ -6,11 +6,12 @@
 
 | Type | Export | Import | Format | Classes |
 | --- | --- | --- | --- | --- |
-| **Textures** | :heavy_check_mark: | :heavy_check_mark: | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap |
+| **Textures** | :heavy_check_mark: | :heavy_check_mark: | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap, TextureCube |
 | **Sounds** | :heavy_check_mark: | :heavy_check_mark: | OGG | SoundNodeWave |
+| **Animations** | :heavy_check_mark: | :x: | FBX | AnimSet, AnimSequence |
 | **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX | SkeletalMesh |
 | **3D models** | :heavy_check_mark: | :x: | FBX | StaticMesh |
-| **Speed Trees** | :heavy_check_mark: | :x: | SPT | SpeedTree |
+| **Speed Trees** | :heavy_check_mark: | :heavy_check_mark: | SPT | SpeedTree |
 | **Maps, Dungeons** | :heavy_check_mark: | :x: | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
 | **SWF/GFX** | :heavy_check_mark: | :heavy_check_mark: | Binary | GFxMovieInfo, SwfMovie |
 | **DataCenter** | :heavy_check_mark: | :x: | XML/JSON | DataCenter_Final.dat |
@@ -31,6 +32,7 @@
 
 ### **Export assets**
 * [Export a 3D model](https://github.com/VenoMKO/RealEditor/wiki/Export-a-3D-model)
+* [Export animations](https://github.com/VenoMKO/RealEditor/wiki/Export-animations)
 * [Export DataCenter.dat](https://github.com/VenoMKO/RealEditor/wiki/Export-DataCenter.dat-as-XML-or-JSON)
 * [Export Levels, Maps, Dungeons to Unreal Engine 4](https://github.com/VenoMKO/RealEditor/wiki/Export-Levels,-Maps,-Dungeons-to-Unreal-Engine-4)
 * [Export/Import sounds and music](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
