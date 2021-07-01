@@ -9,7 +9,9 @@
 #include <vector>
 #include <utility>
 
-#define MERGE_COVEX_HULLS 0
+#define MERGE_CONVEX_HULLS 0
+// Reduce bezier tangents. For debug only.
+#define ANIMATION_LOW_BEZIER 0
 
 struct VTriangle {
   uint32 WedgeIndex[3] = { 0 };
@@ -92,16 +94,27 @@ bool IsUnrealBone(FbxNode* link)
   return false;
 }
 
-inline void SetCurveKey(FbxAnimCurve* curve, FbxTime& t, float value, bool last)
+inline void SetCurveKey(FbxAnimCurve* curve, const FbxTime& time, float value, bool last)
 {
-  int key = curve->KeyAdd(t);
-  curve->KeySetValue(key, value);
-  curve->KeySetTangentMode(key, FbxAnimCurveDef::eTangentGenericClampProgressive);
-  curve->KeySetInterpolation(key, last ? FbxAnimCurveDef::eInterpolationConstant : FbxAnimCurveDef::eInterpolationCubic);
+#if ANIMATION_LOW_BEZIER
+  int key = curve->KeyAdd(time);
+  FbxAnimCurveDef::EInterpolationType interpolation = FbxAnimCurveDef::eInterpolationCubic;
+  FbxAnimCurveDef::ETangentMode tangentMode = FbxAnimCurveDef::eTangentAuto;
+  curve->KeySet(key, time, value, interpolation, tangentMode, .01, .01, FbxAnimCurveDef::eWeightedAll, .01, .01);
   if (last)
   {
     curve->KeySetConstantMode(key, FbxAnimCurveDef::eConstantStandard);
   }
+#else
+  int key = curve->KeyAdd(time);
+  curve->KeySetValue(key, value);
+  curve->KeySetInterpolation(key, last ? FbxAnimCurveDef::eInterpolationConstant : FbxAnimCurveDef::eInterpolationCubic);
+  curve->KeySetTangentMode(key, FbxAnimCurveDef::eTangentAuto);
+  if (last)
+  {
+    curve->KeySetConstantMode(key, FbxAnimCurveDef::eConstantStandard);
+  }
+#endif
 };
 
 void RecursiveBuildLinks(FbxNode* link, std::vector<FbxNode*>& outLinks)
@@ -522,9 +535,9 @@ bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence*
   FbxAnimLayer* animLayer = FbxAnimLayer::Create(GetScene(), sequence->SequenceName.String().C_str());
   animStack->AddMember(animLayer);
   ExportSequence(sourceMesh, sequence, (void*)&bones, animLayer, ctx);
-  if (ctx.CompressTracks)
+  if (ctx.CompressTracks && sequence && sequence->GetRawFramesCount() > 2)
   {
-    FbxAnimCurveFilterKeyReducer filter;
+    FbxAnimCurveFilterConstantKeyReducer filter;
     filter.Apply(animStack);
   }
 
@@ -2058,7 +2071,7 @@ bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, c
 
   FKAggregateGeom aggGeom = bodySetup->GetAggregateGeometry();
 
-  if (MERGE_COVEX_HULLS)
+  if (MERGE_CONVEX_HULLS)
   {
     int32 totalVertCount = 0;
     int32 totalIndexCount = 0;
