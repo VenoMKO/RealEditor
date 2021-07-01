@@ -88,6 +88,7 @@ enum ObjTreeMenuId {
   Duplicate,
   CopyObject,
   PasteObject,
+  CopyGpkName,
 };
 
 #define MAX_SELECTION_HISTORY 50
@@ -396,9 +397,10 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
   wxMenu menu;
   menu.SetClientData((void*)node);
   bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript);
+  bool isRootExp = false;
   if (node->GetObjectIndex() >= 0)
   {
-    bool isRootExp = node->GetObjectIndex() == FAKE_EXPORT_ROOT;
+    isRootExp = node->GetObjectIndex() == FAKE_EXPORT_ROOT;
     bool isPackage = node->GetClassName() == NAME_Package;
 
     if (isPackage || isRootExp)
@@ -434,6 +436,12 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     }
     menu.Append(ObjTreeMenuId::CopyName, wxT("Copy object name"));
     menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
+  }
+
+  if (isRootExp)
+  {
+    menu.AppendSeparator();
+    menu.Append(ObjTreeMenuId::CopyGpkName, wxT("Copy GPK name"));
   }
   
   if (!menu.GetMenuItemCount())
@@ -484,6 +492,9 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     break;
   case PasteObject:
     OnPasteObjectClicked(node->GetObjectIndex());
+    break;
+  case CopyGpkName:
+    OnCopyGpkNameClicked();
     break;
   default:
     break;
@@ -1763,6 +1774,17 @@ void PackageWindow::OnPasteObjectClicked(PACKAGE_INDEX objIndex)
     return;
   }
   SelectObject(s.GetTransactedObject());
+}
+
+void PackageWindow::OnCopyGpkNameClicked()
+{
+  if (wxTheClipboard->Open())
+  {
+    wxTheClipboard->Clear();
+    wxTheClipboard->SetData(new wxTextDataObject(Package->GetPackageName().WString()));
+    wxTheClipboard->Flush();
+    wxTheClipboard->Close();
+  }
 }
 
 void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)

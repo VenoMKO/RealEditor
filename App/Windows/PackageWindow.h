@@ -105,6 +105,7 @@ private:
   void OnDuplicateClicked(PACKAGE_INDEX objIndex);
   void OnCopyObjectClicked(PACKAGE_INDEX objIndex);
   void OnPasteObjectClicked(PACKAGE_INDEX objIndex);
+  void OnCopyGpkNameClicked();
 
   void OnPackageReady(wxCommandEvent&);
   void OnPackageError(wxCommandEvent& e);
