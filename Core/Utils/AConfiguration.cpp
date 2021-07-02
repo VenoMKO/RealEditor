@@ -358,6 +358,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_LastDcSavePath:
         s << c.LastDcSavePath;
         break;
+      case FAppConfig::CFG_FastObjectDump:
+        s << c.FastObjectDump;
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -398,6 +401,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_LastDcMode, c.LastDcMode);
     SerializeKeyValue(FAppConfig::CFG_LastDcPath, c.LastDcPath);
     SerializeKeyValue(FAppConfig::CFG_LastDcSavePath, c.LastDcSavePath);
+    SerializeKeyValue(FAppConfig::CFG_FastObjectDump, c.FastObjectDump);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

@@ -226,6 +226,7 @@ struct FAppConfig
     CFG_LastDcMode,
     CFG_LastDcPath,
     CFG_LastDcSavePath,
+    CFG_FastObjectDump,
 
     // Log
     CFG_LogBegin = 100,
@@ -311,6 +312,8 @@ struct FAppConfig
   FString LastDcPath;
   // CFG_LastDcSavePath
   FString LastDcSavePath;
+  // CFG_FastObjectDump
+  bool FastObjectDump = true;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const

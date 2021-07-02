@@ -3513,7 +3513,7 @@ std::vector<FString> FPackageDumpHelper::GetPoolItems(const FString& pool)
   return FPackage::CompositPackageList.at(pool);
 }
 
-void FPackageDumpHelper::GetPoolItemInfo(const FString& item, FStream& s, CompositeDumpEntry& output)
+void FPackageDumpHelper::GetPoolItemInfo(const FString& item, bool fast, FStream& s, CompositeDumpEntry& output)
 {
   const FCompositePackageMapEntry& streamInfo = FPackage::CompositPackageMap.at(item);
   output.ObjectPath = streamInfo.ObjectPath;
@@ -3607,6 +3607,11 @@ void FPackageDumpHelper::GetPoolItemInfo(const FString& item, FStream& s, Compos
 
   for (FObjectExport* exp : pkg.Exports)
   {
+    if (fast && ((exp->Outer && exp->Outer->GetClassName() != NAME_Package) || exp->GetClassName() == NAME_Package))
+    {
+      // Skip all components and packages
+      continue;
+    }
     CompositeDumpEntry::CompositeDumpExport& e = output.Exports.emplace_back();
     e.Index = exp->ObjectIndex;
     e.ObjectName = exp->GetObjectNameString();

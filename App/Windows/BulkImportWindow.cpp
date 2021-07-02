@@ -946,8 +946,12 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   FAppConfig& cfg = App::GetSharedApp()->GetConfig();
   if (cfg.CompositeDumpPath.Size())
   {
-    PreviousStreamPath = cfg.CompositeDumpPath.WString();
-    PathPicker->SetPath(PreviousStreamPath);
+    std::error_code err;
+    if (std::filesystem::exists(cfg.CompositeDumpPath.WString(), err))
+    {
+      PreviousStreamPath = cfg.CompositeDumpPath.WString();
+      PathPicker->SetPath(PreviousStreamPath);
+    }
   }
   wxDataViewModel* model = new BulkImportModel(Actions);
   OperationsList->AssociateModel(model);
@@ -1011,6 +1015,12 @@ void BulkImportWindow::OnFirstIdle(wxIdleEvent&)
 
   if (FirstStartName.size() && FirstStartClass.size() && PathPicker->GetPath().empty())
   {
+    int result = REDialog::Warning(wxT("Press OK and select your ObjectDump.txt file. If you dont have one, press Cancel, then click Edit -> Dump all composite objects... After that try again and select the dump file."), wxT("ObjectDump.txt not found!"), this, wxOK | wxCANCEL);
+    if (result != wxOK)
+    {
+      Close();
+      return;
+    }
     wxString extensions = wxS("Objects dump file (*.txt)|*.txt");
     wxString path = wxFileSelector("Select a composite dump...", wxEmptyString, wxT("ObjectDump.txt"), extensions, extensions, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (path.empty())

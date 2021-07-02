@@ -21,7 +21,8 @@ enum ControlElementId {
   Register,
   Unregister,
   Update,
-  DcTool
+  DcTool,
+  FastDump,
 };
 
 bool IsValidDir(const wxString& path)
@@ -178,11 +179,15 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer7->Fit(m_panel5);
   bSizer6->Add(m_panel5, 0, wxALL, 5);
 
-
   m_panel3->SetSizer(bSizer6);
   m_panel3->Layout();
   bSizer6->Fit(m_panel3);
   bSizer11->Add(m_panel3, 0, wxALL, 5);
+
+  FastObjDump = new wxCheckBox(m_panel6, ControlElementId::FastDump, wxT("Reduced ObjectDump"));
+  FastObjDump->SetToolTip(wxT("Generate small ObjectDump.txt by skipping Components and UPackages."));
+  FastObjDump->SetValue(CurrentConfig.FastObjectDump);
+  bSizer11->Add(FastObjDump, 0, wxALL, 5);
 
 
   m_panel6->SetSizer(bSizer11);
@@ -435,6 +440,7 @@ void SettingsWindow::OnCancelClicked(wxCommandEvent&)
 
 void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
+  NewConfig.FastObjectDump = FastObjDump->GetValue();
   FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(PathField->GetValue().ToStdWstring());
   if (err == FPackage::S1DirError::OK)
   {

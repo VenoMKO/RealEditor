@@ -1392,14 +1392,15 @@ void App::DumpCompositeObjects()
         FPackageDumpHelper::CompositeDumpEntry& output = localDump.emplace_back();
         try
         {
-          FPackageDumpHelper::GetPoolItemInfo(item, poolStream, output);
+          FPackageDumpHelper::GetPoolItemInfo(item, App::GetSharedApp()->GetConfig().FastObjectDump, poolStream, output);
         }
         catch (const std::exception& exc)
         {
           std::string errpkg = pool.UTF8() + '.' + item.UTF8();
+          std::scoped_lock<std::mutex> l(failedMutex);
           failed.emplace_back(std::make_pair(errpkg, std::string("Failed to dump: ") + exc.what()));
         }
-        dumpApproxReserve += output.Exports.size() * 60; // Reserve approx. 60 chars per export entry
+        dumpApproxReserve += output.Exports.size() * 120; // Reserve 120 chars per export entry
         dumpApproxReserve += output.ObjectPath.Size() + 15; // Reserve for objectPath
         localCount++;
         if (localCount % 31 == 0)
@@ -1427,6 +1428,10 @@ void App::DumpCompositeObjects()
       dumpStr.reserve(dumpApproxReserve);
       for (const FPackageDumpHelper::CompositeDumpEntry& entry : localDump)
       {
+        if (entry.Exports.empty())
+        {
+          continue;
+        }
         dumpStr += "// ObjectPath: " + entry.ObjectPath.UTF8() + '\n';
         for (const auto& exp : entry.Exports)
         {

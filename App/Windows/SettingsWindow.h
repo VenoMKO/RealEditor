@@ -40,6 +40,7 @@ private:
   wxStaticText* VersionLabel;
   wxButton* CancelButton;
   wxButton* ApplyButton;
+  wxCheckBox* FastObjDump;
 
   bool AllowRebuild = true;
   bool WasRegistered = false;

@@ -50,8 +50,8 @@ struct FPackageDumpHelper {
   static FString GetPoolPath(const FString& item);
   // Returns composite GPKs stored inside of a composite GPK file
   static std::vector<FString> GetPoolItems(const FString& pool);
-  // Dumps contents of a composite GPK(not a composite GPK file)
-  static void GetPoolItemInfo(const FString& item, FStream& s, CompositeDumpEntry& output);
+  // Dumps contents of a composite GPK(not a composite GPK file). Fast - ignore UPackage and components
+  static void GetPoolItemInfo(const FString& item, bool fast, FStream& s, CompositeDumpEntry& output);
 };
 
 struct FPackageObserver;
