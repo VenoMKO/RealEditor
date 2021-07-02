@@ -22,9 +22,8 @@
 
 void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 {
-
-  static const std::vector<std::string> filter = { UTexture2D::StaticClassName(), USkeletalMesh::StaticClassName(), UStaticMesh::StaticClassName(), USoundNodeWave::StaticClassName(), USpeedTree::StaticClassName() };
-
+  static const std::vector<std::string> filter = { UTexture2D::StaticClassName(), UTerrainWeightMapTexture::StaticClassName(), UTextureCube::StaticClassName(), UTextureFlipBook::StaticClassName(), USkeletalMesh::StaticClassName(), UStaticMesh::StaticClassName(), USoundNodeWave::StaticClassName(), USpeedTree::StaticClassName(), UAnimSet::StaticClassName() };
+  int32 additionalCount = 0;
   std::function<void(FObjectExport*, std::vector<FObjectExport*>&)> rCollectExports;
   rCollectExports = [&](FObjectExport* exp, std::vector<FObjectExport*>& output) {
     FString className = exp->GetClassNameString();
@@ -50,6 +49,10 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
     if (std::find(filter.begin(), filter.end(), className.UTF8()) != filter.end())
     {
       output.push_back(exp);
+      if (className == UAnimSet::StaticClassName())
+      {
+        additionalCount += (int32)exp->Inner.size();
+      }
     }
     else
     {
@@ -98,11 +101,13 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
   std::vector<FObjectExport*> failedExports;
 
   ProgressWindow progress(this, wxT("Exporting..."));
-  progress.SetMaxProgress(exports.size());
+  additionalCount += (int32)exports.size();
+  progress.SetMaxProgress(additionalCount);
   int32 count = 0;
   PERF_START(BulkExport);
   std::thread([&] {
-    for (int idx = 0; idx < exports.size(); ++idx)
+    int progressCounter = 0;
+    for (int idx = 0; idx < exports.size(); ++idx, ++progressCounter)
     {
       if (progress.IsCanceled())
       {
@@ -110,7 +115,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         return;
       }
       FObjectExport* exp = exports[idx];
-      SendEvent(&progress, UPDATE_PROGRESS, idx);
+      SendEvent(&progress, UPDATE_PROGRESS, progressCounter);
       SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Exporting: ") + exp->GetObjectNameString().WString());
       std::filesystem::path dest(root);
       std::vector<std::wstring> pathComponents;
@@ -165,7 +170,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         continue;
       }
 
-      if (obj->GetClassName() == UTexture2D::StaticClassName())
+      if (obj->GetClassName() == UTexture2D::StaticClassName() || obj->GetClassName() == UTextureFlipBook::StaticClassName() || obj->GetClassName() == UTerrainWeightMapTexture::StaticClassName())
       {
         UTexture2D* texture = Cast<UTexture2D>(obj);
         if (!texture)
@@ -242,6 +247,140 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           failedExports.push_back(exp);
           LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
           continue;
+        }
+        continue;
+      }
+      if (obj->GetClassName() == UTextureCube::StaticClassName())
+      {
+        auto faces = Cast<UTextureCube>(obj)->GetFaces();
+        bool invalidFace = faces.empty();
+        TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+        for (UTexture2D* face : faces)
+        {
+          if (!face)
+          {
+            invalidFace = true;
+            LogE("Failed to load the cube face!");
+            break;
+          }
+
+          TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
+          switch (face->Format)
+          {
+          case PF_DXT1:
+            f = TextureProcessor::TCFormat::DXT1;
+            break;
+          case PF_DXT3:
+            f = TextureProcessor::TCFormat::DXT3;
+            break;
+          case PF_DXT5:
+            f = TextureProcessor::TCFormat::DXT5;
+            break;
+          case PF_A8R8G8B8:
+            f = TextureProcessor::TCFormat::ARGB8;
+            break;
+          case PF_G8:
+            f = TextureProcessor::TCFormat::G8;
+            break;
+          default:
+            continue;
+          }
+          if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+          {
+            invalidFace = true;
+            break;
+          }
+          inputFormat = f;
+        }
+        if (invalidFace)
+        {
+          continue;
+        }
+        wxString ext = IODialog::GetLastTextureExtension();
+        if (ext.empty())
+        {
+          ext = wxT("dds");
+        }
+        ext.MakeLower();
+        TextureProcessor::TCFormat outputFormat = TextureProcessor::TCFormat::None;
+        if (ext == "png")
+        {
+          outputFormat = TextureProcessor::TCFormat::PNG;
+        }
+        else if (ext == "tga")
+        {
+          outputFormat = TextureProcessor::TCFormat::TGA;
+        }
+        else if (ext == "dds")
+        {
+          outputFormat = TextureProcessor::TCFormat::DDS;
+        }
+        else
+        {
+          continue;
+        }
+
+        TextureProcessor processor(inputFormat, outputFormat);
+        bool noMip = false;
+        for (int32 faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
+        {
+          FTexture2DMipMap* mip = nullptr;
+          for (FTexture2DMipMap* mipmap : faces[faceIdx]->Mips)
+          {
+            if (mipmap->Data && mipmap->Data->GetAllocation() && mipmap->SizeX && mipmap->SizeY)
+            {
+              mip = mipmap;
+              break;
+            }
+          }
+          if (!mip)
+          {
+            noMip = true;
+            break;
+          }
+          processor.SetInputCubeFace(faceIdx, mip->Data->GetAllocation(), mip->Data->GetBulkDataSize(), mip->SizeX, mip->SizeY);
+        }
+        if (noMip)
+        {
+          continue;
+        }
+
+        processor.SetOutputPath(W2A(dest.replace_extension(ext.ToStdWstring()).wstring()));
+
+        bool result = false;
+        std::string err;
+        try
+        {
+          if (!(result = processor.Process()))
+          {
+            err = processor.GetError();
+            if (err.empty())
+            {
+              err = "Texture Processor: failed with an unknown error!";
+            }
+          }
+          else
+          {
+            count++;
+          }
+        }
+        catch (const std::exception& e)
+        {
+          err = e.what();
+          result = false;
+        }
+        catch (...)
+        {
+          result = false;
+          err = processor.GetError();
+          if (err.empty())
+          {
+            err = "Texture Processor: Unexpected exception!";
+          }
+        }
+        if (!result)
+        {
+          LogE("Failed to export: %s", err.c_str());
         }
         continue;
       }
@@ -335,6 +474,77 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           }
         }
         continue;
+      }
+      if (obj->GetClassName() == UAnimSet::StaticClassName())
+      {
+        FbxExportContext ctx;
+        FAppConfig& appConfig = App::GetSharedApp()->GetConfig();
+        ctx.ExportMesh = appConfig.AnimationExportConfig.ExportMesh;
+        ctx.Scale3D = FVector(appConfig.AnimationExportConfig.ScaleFactor);
+        ctx.CompressTracks = appConfig.AnimationExportConfig.Compress;
+        ctx.ResampleTracks = appConfig.AnimationExportConfig.Resample;
+        ctx.TrackRateScale = appConfig.AnimationExportConfig.RateFactor;
+        ctx.SplitTakes = appConfig.AnimationExportConfig.Split;
+
+        UAnimSet* set = Cast<UAnimSet>(obj);
+        USkeletalMesh* source = nullptr;
+        std::vector<FObjectExport*> allExports = obj->GetPackage()->GetAllExports();
+        for (FObjectExport* exp : allExports)
+        {
+          if (exp->GetClassName() == USkeletalMesh::StaticClassName())
+          {
+            USkeletalMesh* skelMesh = Cast<USkeletalMesh>(obj->GetPackage()->GetObject(exp));
+            if (set->GetSkeletalMeshMatchRatio(skelMesh))
+            {
+              source = skelMesh;
+              break;
+            }
+          }
+        }
+        if (!source)
+        {
+          source = set->GetPreviewSkeletalMesh();
+        }
+        if (!source)
+        {
+          continue;
+        }
+        if (ctx.SplitTakes)
+        {
+          dest.replace_extension().wstring();
+          std::error_code err;
+          std::filesystem::create_directories(dest, err);
+          std::vector<UObject*> inner = set->GetInner();
+          int32 total = (int32)inner.size();
+          for (int32 idx = 0; idx < total; ++idx)
+          {
+            if (UAnimSequence* seq = Cast<UAnimSequence>(inner[idx]))
+            {
+              progressCounter++;
+              count++;
+              SendEvent(&progress, UPDATE_PROGRESS, progressCounter);
+              ctx.Path = (dest / seq->SequenceName.String().WString()).replace_extension("fbx").wstring();
+              FbxUtils fbx;
+              if (!fbx.ExportAnimationSequence(source, seq, ctx))
+              {
+                break;
+              }
+            }
+          }
+        }
+        else
+        {
+          ctx.Path = dest.replace_extension("fbx").wstring();
+          int32 lastCount = 0;
+          ctx.ProgressFunc = [&](int32 prg) {
+            SendEvent(&progress, UPDATE_PROGRESS, progressCounter + prg);
+            lastCount = prg;
+          };
+          FbxUtils fbx;
+          fbx.ExportAnimationSet(source, set, ctx);
+          progressCounter += lastCount;
+          count += lastCount;
+        }
       }
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
