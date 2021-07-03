@@ -86,6 +86,7 @@ struct FAnimationExportConfig {
     CFG_Compress,
     CFG_Resample,
     CFG_Split,
+    CFG_InvqW,
     CFG_End = 0xFFFF
   };
 
@@ -95,6 +96,7 @@ struct FAnimationExportConfig {
   bool Resample = false;
   float ScaleFactor = 1.;
   float RateFactor = 1.;
+  bool InverseQuatW = false;
 
   friend FStream& operator<<(FStream& s, FAnimationExportConfig& c);
 };

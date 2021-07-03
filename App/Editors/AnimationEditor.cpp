@@ -22,7 +22,7 @@
 class AnimExportOptions : public wxDialog {
 public:
   AnimExportOptions(wxWindow* parent, UAnimSet* anim, USkeletalMesh* mesh)
-    : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(519, 198))
+    : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(562, 198))
     , AnimationSet(anim)
     , Mesh(mesh)
     , DefaultMesh(anim->GetPreviewSkeletalMesh())
@@ -109,6 +109,11 @@ public:
 
     bSizer5->Add(Resample, 0, wxRIGHT | wxLEFT, 5);
 
+    InvqW = new wxCheckBox(this, wxID_ANY, wxT("Inverse qW"), wxDefaultPosition, wxDefaultSize, 0);
+    InvqW->SetToolTip(wxT("Inverse quat W when exporting. Enable this if your skeleton has orientation issues."));
+
+    bSizer5->Add(InvqW, 0, wxRIGHT | wxLEFT, 5);
+
 
     bSizer1->Add(bSizer5, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
 
@@ -182,6 +187,7 @@ public:
     ctx.CompressTracks = Compress->GetValue();
     ctx.SplitTakes = Split->GetValue();
     ctx.ResampleTracks = Resample->GetValue();
+    ctx.InverseAnimQuatW = InvqW->GetValue();
   }
 
   void ApplyConfig(const FAnimationExportConfig& cfg)
@@ -194,6 +200,7 @@ public:
     Resample->SetValue(cfg.Resample);
     Scale->GetValidator()->TransferToWindow();
     Rate->GetValidator()->TransferToWindow();
+    InvqW->SetValue(cfg.InverseQuatW);
   }
 
   void SaveConfig(FAnimationExportConfig& cfg)
@@ -206,6 +213,7 @@ public:
     cfg.Compress = Compress->GetValue();
     cfg.Split = Split->GetValue();
     cfg.Resample = Resample->GetValue();
+    cfg.InverseQuatW = InvqW->GetValue();
   }
 
   void AllowSplit(bool flag)
@@ -276,6 +284,7 @@ protected:
   wxCheckBox* Split = nullptr;
   wxCheckBox* Compress = nullptr;
   wxCheckBox* Resample = nullptr;
+  wxCheckBox* InvqW = nullptr;
   wxButton* DefaultButton = nullptr;
   wxButton* OkButton = nullptr;
   wxButton* CancelButton = nullptr;

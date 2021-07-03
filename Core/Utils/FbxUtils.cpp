@@ -270,7 +270,7 @@ FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, FbxDynamicArray<FbxNode*>& bo
   return boneNodes[0];
 }
 
-FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, UAnimSequence* sequence, int32 frame, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene, const FbxVector4& scale)
+FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, UAnimSequence* sequence, int32 frame, FbxDynamicArray<FbxNode*>& boneNodes, FbxScene* scene, const FbxVector4& scale, bool inverseQuatW)
 {
   if (!sourceMesh)
   {
@@ -292,9 +292,8 @@ FbxNode* CreateSkeleton(USkeletalMesh* sourceMesh, UAnimSequence* sequence, int3
     FbxAMatrix lGM;
     if (sequence->GetBoneTransform(sourceMesh, bone.Name, frame, pos, quat))
     {
-      // For unknown reason -quat.W produces incorrect result.
-      // I am too lazy to figure out why. Quat.W works fine, so be it.
-      lQ = FbxQuaternion(quat.X, -quat.Y, quat.Z, quat.W);
+      // For unknown reason -quat.W produces incorrect result for some animations.
+      lQ = FbxQuaternion(quat.X, -quat.Y, quat.Z, inverseQuatW ? -quat.W : quat.W);
       lT = FbxVector4(pos.X * scale[0], pos.Y * -scale[1], pos.Z * scale[2]);
     }
     else
@@ -2215,7 +2214,7 @@ bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence
   {
     PERF_ITER_BEGIN(Skel);
     FbxDynamicArray<FbxNode*> targetBones;
-    FbxNode* refRoot = CreateSkeleton(sourceMesh, sequence, frame, targetBones, GetScene(), scale);
+    FbxNode* refRoot = CreateSkeleton(sourceMesh, sequence, frame, targetBones, GetScene(), scale, ctx.InverseAnimQuatW);
     PERF_ITER_END(Skel);
 
     FbxTime t;

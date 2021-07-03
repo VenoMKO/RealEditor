@@ -602,6 +602,9 @@ FStream& operator<<(FStream& s, FAnimationExportConfig& c)
       case FAnimationExportConfig::CFG_Split:
         s << c.Split;
         break;
+      case FAnimationExportConfig::CFG_InvqW:
+        s << c.InverseQuatW;
+        break;
       default:
         s.Close();
         // no break
@@ -619,6 +622,7 @@ FStream& operator<<(FStream& s, FAnimationExportConfig& c)
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Resample, c.Resample, d.Resample);
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Split, c.Split, d.Split);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_InvqW, c.InverseQuatW, d.InverseQuatW);
     SerializeKey(FAnimationExportConfig::CFG_End);
   }
   return s;

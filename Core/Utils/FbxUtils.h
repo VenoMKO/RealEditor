@@ -29,6 +29,7 @@ struct FbxExportContext {
   bool CompressTracks = true;
   bool ResampleTracks = false;
   float TrackRateScale = 1.;
+  bool InverseAnimQuatW = false;
 
   bool ApplyRootTransform = false;
   FVector PrePivot;
