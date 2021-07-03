@@ -387,7 +387,7 @@ void ObjectPicker::OnShowContextMenu(wxDataViewEvent& event)
 
 ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(FObjectExport* parent, FPackage* package)
 {
-  return [&](const wxString& name) {
+  return [=](const wxString& name) {
     if (!package)
     {
       return false;
