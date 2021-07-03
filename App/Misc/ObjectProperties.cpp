@@ -757,7 +757,7 @@ void AObjectProperty::OnChangeObjectClicked(wxPropertyGrid* pg)
       }
     }
   }
-  ObjectPicker picker = ObjectPicker(pg->GetPanel(), GetLabel(), true, selection ? selection->GetPackage()->GetPackageName().WString() : thisPackage->GetPackageName().WString(), selection ? selection->GetExportObject()->ObjectIndex : 0, filter);
+  ObjectPicker picker = ObjectPicker(pg->GetPanel(), GetLabel(), true, selection ? selection->GetPackage()->Ref() : thisPackage->Ref(), selection ? selection->GetExportObject()->ObjectIndex : 0, filter);
   if (!picker.IsValid() || picker.ShowModal() != wxID_OK)
   {
     AllowChanges = false;
