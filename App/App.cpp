@@ -212,10 +212,9 @@ void App::OnRpcOpenFile(const wxString& path)
     event->SetString(path);
     wxQueueEvent(this, event);
   }
-  else
+  if (wxWindow* top = GetTopWindow())
   {
-    
-    GetTopWindow()->Raise();
+    top->Raise();
   }
 }
 
@@ -475,7 +474,7 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
   }
   PackageWindows.push_back(window);
   window->Show();
-
+  window->Raise();
   if (!package->IsReady())
   {
     std::thread([package, window]() {
