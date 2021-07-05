@@ -2019,10 +2019,30 @@ bool FPackage::Save(PackageSaveContext& context)
 
   writer << Summary;
 
-  std::vector<FObjectExport*> sortedExports = Exports;
+  std::vector<FObjectExport*> newExports;
+  std::vector<FObjectExport*> sortedExports;
+  for (FObjectExport* exp : Exports)
+  {
+    if (exp->SerialOffset)
+    {
+      sortedExports.emplace_back(exp);
+    }
+    else
+    {
+      newExports.emplace_back(exp);
+    }
+  }
   std::sort(sortedExports.begin(), sortedExports.end(), [](FObjectExport* a, FObjectExport* b) {
     return a->SerialOffset < b->SerialOffset && a->SerialOffset;
   });
+  std::sort(newExports.begin(), newExports.end(), [](FObjectExport* a, FObjectExport* b) {
+    return a->ObjectIndex < b->ObjectIndex;
+  });
+  if (newExports.size())
+  {
+    // Ensure all new exports are in the end
+    sortedExports.insert(sortedExports.end(), newExports.begin(), newExports.end());
+  }
 
   // Check if header size did change and we honor offsets
   bool moveTables = context.PreserveOffsets && (Summary.NamesOffset != writer.GetPosition());
@@ -3168,11 +3188,17 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   return true;
 }
 
-FObjectExport* FPackage::AddExport(const FString& objectName, const FString& objectClass, FObjectExport* parent)
+FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& objectClass, FObjectExport* parent)
 {
-  if (objectName.Empty() || objectClass.Empty())
+  if (inObjectName.Empty() || objectClass.Empty())
   {
     return nullptr;
+  }
+  FString objectName = inObjectName;
+  if (objectName.Back())
+  {
+    // Add null-terminator
+    objectName.Resize(objectName.Size() + 1);
   }
 
   UClass* cls = GetClass(objectClass);
