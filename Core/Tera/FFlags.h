@@ -53,6 +53,7 @@ enum EObjectFlags : uint64
   RF_PendingFieldPatches = 0x0000000000200000,		//@script patcher: indicates that this struct will receive additional member properties from the script patcher
   RF_IsCrossLevelReferenced = 0x0000000000400000,		// This object has been pointed to by a cross-level reference, and therefore requires additional cleanup upon deletion
   RF_IsTransacting = 0x0000000000800000, // The object is being moved
+  RF_TransNew = 0x0000000001000000, // The object is new and needs serialization(used by MTransStream to prevent double-serialization of existing objects)
 
   RF_Saved = 0x0000000080000000,		// Object has been saved via SavePackage. Temporary.
   RF_Transactional = 0x0000000100000000,		// Object is transactional.

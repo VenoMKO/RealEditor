@@ -451,6 +451,16 @@ public:
   // Add a package to a temporary depends list so it won't get released while the current package still needs it.
   void RetainPackage(std::shared_ptr<FPackage> package);
 
+  void SetNoTexturePullOnSave(bool flag)
+  {
+    NoTexturePullOnSave = flag;
+  }
+
+  bool GetNoTexturePullOnSave() const
+  {
+    return NoTexturePullOnSave;
+  }
+
 private:
   void _DebugDump() const;
   void Load(FStream& s);
@@ -481,6 +491,8 @@ private:
 
   bool AllowEdit = true;
   bool Composite = false;
+  // Temp fix: prevent disabling texture cache on save if a package contains cloned textures
+  bool NoTexturePullOnSave = false;
   bool AllowForcedExportResolving = true;
 
   std::vector<FNameEntry> Names;

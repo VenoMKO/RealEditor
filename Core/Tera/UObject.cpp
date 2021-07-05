@@ -46,6 +46,11 @@ void UObject::SetTransacting(bool flag)
   flag ? Export->ObjectFlags |= RF_IsTransacting : Export->ObjectFlags &= ~RF_IsTransacting;
 }
 
+void UObject::SetIsNewTrans(bool flag)
+{
+  flag ? Export->ObjectFlags |= RF_TransNew : Export->ObjectFlags &= ~RF_TransNew;
+}
+
 bool UObject::HasAnyFlags(uint64 flags) const
 {
   return (GetObjectFlags() & flags) != 0 || flags == RF_AllFlags;

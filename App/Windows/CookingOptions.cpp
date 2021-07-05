@@ -36,7 +36,8 @@ CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, 
   bSizer13 = new wxBoxSizer(wxVERTICAL);
 
   DisableTextureCachingButton = new wxCheckBox(m_panel6, wxID_ANY, wxT("Disable texture caching"), wxDefaultPosition, wxDefaultSize, 0);
-  DisableTextureCachingButton->SetValue(true);
+  DisableTextureCachingButton->SetValue(!package->GetNoTexturePullOnSave());
+  DisableTextureCachingButton->Enable(!package->GetNoTexturePullOnSave());
   bSizer13->Add(DisableTextureCachingButton, 0, wxALL, 5);
 
   wxStaticText* m_staticText31;
@@ -137,6 +138,18 @@ void CookingOptionsWindow::ConfigureSaveContext(PackageSaveContext& ctx)
   ctx.DisableTextureCaching = DisableTextureCachingButton->GetValue();
   ctx.PreserveOffsets = PreserveOffsetsButton->GetValue();
   ctx.EmbedObjectPath = EnableCompositeInfoButton->GetValue();
+}
+
+int CookingOptionsWindow::ShowModal()
+{
+  if (!EnableCompositeInfoButton->IsEnabled() && !DisableTextureCachingButton->IsEnabled() &&
+      !PreserveOffsetsButton->IsEnabled() && !CompressPackageButton->IsEnabled())
+  {
+    // No point to show this if no options available
+    return wxID_OK;
+  }
+  SaveButton->SetFocus();
+  return wxDialog::ShowModal();
 }
 
 void CookingOptionsWindow::OnSaveClicked(wxCommandEvent& event)

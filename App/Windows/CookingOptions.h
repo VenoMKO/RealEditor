@@ -10,6 +10,8 @@ public:
 
 	void ConfigureSaveContext(PackageSaveContext& ctx);
 
+	int ShowModal() wxOVERRIDE;
+
 private:
 	void OnSaveClicked(wxCommandEvent& event);
 	void OnCancelClicked(wxCommandEvent& event);

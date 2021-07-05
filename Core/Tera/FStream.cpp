@@ -2,6 +2,7 @@
 #include "FPackage.h"
 #include "UObject.h"
 #include "UClass.h"
+#include "UTexture.h"
 #include "FObjectResource.h"
 
 #include "Cast.h"
@@ -577,6 +578,8 @@ bool MTransStream::StartObjectTransaction(class UObject* obj)
 
 bool MTransStream::EndObjectTransaction(class UObject* obj)
 {
+  // Notice: all new objects must have RF_TransNew flag(obj->SetIsNewTrans(true))!
+
   for (const FString& name : Names)
   {
     DestPackage->GetNameIndex(name, true);
@@ -588,6 +591,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     FString name = CustomRootName.Empty() ? Root->GetObjectNameString() : FString(CustomRootName.WString());
     FObjectExport* exp = DestPackage->AddExport(name, Root->GetClassNameString(), obj ? obj->GetExportObject() : nullptr);
     newRoot = DestPackage->GetObject(exp, false);
+    newRoot->SetIsNewTrans(true);
   }
   else
   {
@@ -661,6 +665,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
       FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), mapped->GetExportObject());
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
+      map[dep]->SetIsNewTrans(true);
       continue;
     }
     if (!dep->GetOuter())
@@ -669,6 +674,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
       FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), nullptr);
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
+      map[dep]->SetIsNewTrans(true);
       continue;
     }
     if (dep->GetOuter() == Root)
@@ -677,6 +683,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
       FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), map[Root]->GetExportObject());
       DBreakIf(!exp);
       map[dep] = DestPackage->GetObject(exp, false);
+      map[dep]->SetIsNewTrans(true);
       continue;
     }
     // Find parent
@@ -694,10 +701,12 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
       FObjectExport* exp = DestPackage->AddExport(parent->GetObjectNameString(), parent->GetClassNameString(), map[parent->GetOuter()]->GetExportObject());
       DBreakIf(!exp);
       map[parent] = DestPackage->GetObject(exp, false);
+      map[parent]->SetIsNewTrans(true);
     }
     FObjectExport* exp = DestPackage->AddExport(dep->GetObjectNameString(), dep->GetClassNameString(), map[dep->GetOuter()]->GetExportObject());
     DBreakIf(!exp);
     map[dep] = DestPackage->GetObject(exp, false);
+    map[dep]->SetIsNewTrans(true);
   }
   DependsMap = map;
 
@@ -717,7 +726,7 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
   {
     UObject* mapped = map[dep];
     DBreakIf(!mapped);
-    if (DestPackage->GetObjectIndex(mapped) < 0 || mapped->GetExportObject()->SerialOffset)
+    if (DestPackage->GetObjectIndex(mapped) < 0 || mapped->GetExportObject()->SerialOffset || mapped == dep)
     {
       continue;
     }
@@ -729,18 +738,29 @@ bool MTransStream::EndObjectTransaction(class UObject* obj)
     
     Reading = false;
 
-    DBreakIf(!dep->GetExportObject());
-    dep->SetTransacting(true);
-    dep->Serialize(*this);
-    dep->SetTransacting(false);
-    
-    Position = 0;
-    Reading = true;
-    
-    
-    mapped->SetTransacting(true);
-    mapped->Serialize(*this);
-    mapped->SetTransacting(false);
+    if (Cast<UTexture>(dep))
+    {
+      // FIXME: Can't disable texture caching if the package has cloned textures.
+      // Tell FPackage that it can't disable TFC during save operation.
+      DestPackage->SetNoTexturePullOnSave(true);
+    }
+
+    // If an object has no RF_TransNew flag - the object already exists in the DestPackage and does not need serialization.
+    if (mapped->IsNewTrans())
+    {
+      DBreakIf(!dep->GetExportObject());
+      dep->SetTransacting(true);
+      dep->Serialize(*this);
+      dep->SetTransacting(false);
+
+      Position = 0;
+      Reading = true;
+
+      mapped->SetIsNewTrans(false);
+      mapped->SetTransacting(true);
+      mapped->Serialize(*this);
+      mapped->SetTransacting(false);
+    }
   }
 
   for (UObject* dep : Depends)

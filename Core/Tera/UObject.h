@@ -316,6 +316,13 @@ public:
 
   void SetTransacting(bool flag);
 
+  inline bool IsNewTrans() const
+  {
+    return HasAnyFlags(RF_TransNew);
+  }
+
+  void SetIsNewTrans(bool flag);
+
   // Check if UObject has any object flags
   bool HasAnyFlags(uint64 flags) const;
 
