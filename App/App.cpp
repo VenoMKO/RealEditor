@@ -1115,6 +1115,11 @@ void App::OnObjectLoaded(wxCommandEvent& e)
 
 void App::ShowWelcomeBeforeExit(wxCommandEvent&)
 {
+  if (!Config.ShowWelcomeOnClose)
+  {
+    ExitMainLoop();
+    return;
+  }
   InitScreen = new WelcomeDialog(nullptr);
   if (InitScreen->ShowModal() == wxID_OK)
   {

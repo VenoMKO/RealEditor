@@ -31,6 +31,7 @@ protected:
   void OnSettingsClicked(wxCommandEvent& event);
   void OnUpdateClicked(wxCommandEvent& event);
   void OnCloseClicked(wxCommandEvent& event);
+  void OnShowWelcomeClicked(wxCommandEvent& event);
   void OnCloseWinClicked(wxCloseEvent& event);
 
 protected:
@@ -45,6 +46,7 @@ protected:
   wxStaticText* Version = nullptr;
   wxButton* CloseButton = nullptr;
   wxStatusBar* StatusBar = nullptr;
+  wxCheckBox* ShowWelcome = nullptr;
 
   bool ModalRunning = false;
 

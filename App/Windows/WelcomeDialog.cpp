@@ -275,6 +275,11 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   bSizer5->Fit(m_panel3);
   bSizer3->Add(m_panel3, 0, wxEXPAND | wxALL, 5);
 
+  ShowWelcome = new wxCheckBox(this, wxID_ANY, wxT("Show this dialog when a last GPK window is closed"), wxDefaultPosition, wxDefaultSize, 0);
+  ShowWelcome->SetToolTip(wxT("Disable this option if you want Real Editor to exit after a last GPK window is closed."));
+  ShowWelcome->SetValue(true);
+  bSizer3->Add(ShowWelcome, 0, wxALL, 5);
+
 
   bSizer3->Add(0, 0, 1, wxEXPAND, 5);
 
@@ -310,6 +315,8 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
 
   this->Centre(wxBOTH);
 
+  ShowWelcome->SetValue(App::GetSharedApp()->GetConfig().ShowWelcomeOnClose);
+
   RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(WelcomeDialog::OnRecentActivated), NULL, this);
   RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(WelcomeDialog::OnRecentSelected), NULL, this);
   OpenFileButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnOpenFileClicked), NULL, this);
@@ -321,6 +328,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   SettingsButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnSettingsClicked), NULL, this);
   UpdateButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnUpdateClicked), NULL, this);
   CloseButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnCloseClicked), NULL, this);
+  ShowWelcome->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(WelcomeDialog::OnShowWelcomeClicked), NULL, this);
   Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(WelcomeDialog::OnCloseWinClicked), NULL, this);
   const auto& lastItems = App::GetSharedApp()->GetConfig().LastFilePackages;
 
@@ -346,6 +354,7 @@ WelcomeDialog::~WelcomeDialog()
   SettingsButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnSettingsClicked), NULL, this);
   UpdateButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnUpdateClicked), NULL, this);
   CloseButton->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnCloseClicked), NULL, this);
+  ShowWelcome->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(WelcomeDialog::OnShowWelcomeClicked), NULL, this);
   Disconnect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(WelcomeDialog::OnCloseWinClicked), NULL, this);
 }
 
@@ -482,7 +491,7 @@ void WelcomeDialog::OnSettingsClicked(wxCommandEvent& event)
 {
   ModalRunning = true;
   FAppConfig cfg;
-  SettingsWindow dlg(App::GetSharedApp()->GetConfig(), cfg, false);
+  SettingsWindow dlg(App::GetSharedApp()->GetConfig(), cfg, FPackage::GetCoreVersion());
   if (dlg.ShowModal() == wxID_OK)
   {
     App::GetSharedApp()->GetConfig() = cfg;
@@ -503,6 +512,12 @@ void WelcomeDialog::OnCloseClicked(wxCommandEvent& event)
 {
   QueuedOpenList.clear();
   EndModal(wxID_CANCEL);
+}
+
+void WelcomeDialog::OnShowWelcomeClicked(wxCommandEvent& event)
+{
+  App::GetSharedApp()->GetConfig().ShowWelcomeOnClose = ShowWelcome->GetValue();
+  App::GetSharedApp()->SaveConfig();
 }
 
 void WelcomeDialog::OnCloseWinClicked(wxCloseEvent& event)
