@@ -91,7 +91,7 @@ struct FAnimationExportConfig {
   };
 
   bool ExportMesh = true;
-  bool Compress = true;
+  bool Compress = false;
   bool Split = true;
   bool Resample = false;
   float ScaleFactor = 1.;
