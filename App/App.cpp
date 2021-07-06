@@ -664,7 +664,7 @@ void App::PackageWindowWillClose(const PackageWindow* frame)
       break;
     }
   }
-  if (PackageWindows.empty())
+  if (PackageWindows.empty() && !IgnoreWinClose)
   {
     SendEvent(this, SHOW_FINAL_INIT);
   }
@@ -1267,7 +1267,10 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
     package->GetStream().Close();
     FPackage::UnloadPackage(win->GetPackage());
     PackageWindows.erase(std::remove(PackageWindows.begin(), PackageWindows.end(), win), PackageWindows.end());
+    IgnoreWinClose = true;
     win->Close();
+    IgnoreWinClose = false;
+    bool ok = false;
     try
     {
       std::filesystem::path backup = GetTempFilePath().WString();
@@ -1281,12 +1284,21 @@ void App::SaveAndReopenPackage(std::shared_ptr<FPackage> package, const FString&
       }
       else
       {
-        OpenPackage(dest.WString());
+        ok = true;
       }
     }
     catch (const std::exception& e)
     {
       REDialog::Error(e.what(), "Failed to write package to the disk!");
+    }
+    if (ok)
+    {
+      OpenPackage(dest.WString());
+    }
+    else if (PackageWindows.empty())
+    {
+      // Show welcome if no package windows left
+      SendEvent(this, DELAY_LOAD);
     }
   }
 }

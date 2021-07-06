@@ -202,5 +202,6 @@ private:
   bool ShuttingDown = false;
   bool DcToolIsOpen = false;
   bool NeedsInitialScreen = false;
+  bool IgnoreWinClose = false;
 };
 
