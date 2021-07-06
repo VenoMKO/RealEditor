@@ -779,7 +779,7 @@ int App::OnRun()
     // Proper fix would be to close FPackage::Stream after load
     // or to use MStreams instead.
     _setmaxstdio(8192);
-
+    SetExitOnFrameDelete(false);
     wxInitAllImageHandlers();
     Server = new RpcServer;
     Server->Run();
@@ -1131,6 +1131,7 @@ void App::ShowWelcomeBeforeExit(wxCommandEvent&)
   InitScreen = nullptr;
   ShuttingDown = true;
   ALog::Show(false);
+  ExitMainLoop();
 }
 
 ALDevice* App::InitAudioDevice()
