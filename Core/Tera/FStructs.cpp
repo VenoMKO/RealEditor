@@ -1202,3 +1202,11 @@ FQuatRotationTranslationMatrix::FQuatRotationTranslationMatrix(const FQuat& qIn,
   M[2][3] = 0.0f;
   M[3][3] = 1.0f;
 }
+
+FBox::FBox(const std::vector<FVector>& points)
+{
+  for (const FVector& point : points)
+  {
+    (*this) += point;
+  }
+}

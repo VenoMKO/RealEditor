@@ -1,21 +1,22 @@
 #include "USkeletalMesh.h"
 #include "FObjectResource.h"
 #include <Tera/Cast.h>
+#include <Tera/FPackage.h>
 #include <Utils/MeshTravaller.h>
 
 #define SCALE_TOLERANCE .1f
 #define THRESH_POINTS_ARE_SAME (0.002f)
-#define THRESH_NORMALS_ARE_SAME (0.0002f)
+#define THRESH_NORMALS_ARE_SAME (0.00002f)
 
 struct FSkinVertexMeta {
   FSoftSkinVertex Vertex;
   uint32 PointWedgeIdx = 0;
 };
 
-bool PointsEqual(const FVector& V1, const FVector& V2, bool bNoEpsilon = false)
+bool PointsEqual(const FVector& a, const FVector& b, bool bNoEpsilon = false)
 {
   const float e = bNoEpsilon ? 0.0f : THRESH_POINTS_ARE_SAME * 4.;
-  if (abs(V1.X - V2.X) > e || abs(V1.Y - V2.Y) > e || abs(V1.Z - V2.Z) > e)
+  if (fabs(a.X - b.X) > e || fabs(a.Y - b.Y) > e || fabs(a.Z - b.Z) > e)
   {
     return false;
   }
@@ -23,10 +24,10 @@ bool PointsEqual(const FVector& V1, const FVector& V2, bool bNoEpsilon = false)
   return true;
 }
 
-bool NormalsEqual(const FVector& V1, const FVector& V2)
+bool NormalsEqual(const FVector& a, const FVector& b)
 {
-  const float e = THRESH_NORMALS_ARE_SAME * 4.;
-  if (abs(V1.X - V2.X) > e || abs(V1.Y - V2.Y) > e || abs(V1.Z - V2.Z) > e)
+  const float e = THRESH_NORMALS_ARE_SAME * 4.f;
+  if (fabs(a.X - b.X) > e || fabs(a.Y - b.Y) > e || fabs(a.Z - b.Z) > e)
   {
     return false;
   }
@@ -93,11 +94,11 @@ int32 AddSkinVertex(std::vector<FSkinVertexMeta>& Vertices, FSkinVertexMeta& Ver
     bool bUVsEqual = true;
     for (int32 UVIdx = 0; UVIdx < MAX_TEXCOORDS; ++UVIdx)
     {
-      if (abs(Vertex.UVs[UVIdx].X - OtherVertex.UVs[UVIdx].X) > (1.0f / 1024.0f))
+      if (fabs(Vertex.UVs[UVIdx].X - OtherVertex.UVs[UVIdx].X) > (1.0f / 1024.0f))
       {
         bUVsEqual = false;
       };
-      if (abs(Vertex.UVs[UVIdx].Y - OtherVertex.UVs[UVIdx].Y) > (1.0f / 1024.0f))
+      if (fabs(Vertex.UVs[UVIdx].Y - OtherVertex.UVs[UVIdx].Y) > (1.0f / 1024.0f))
       {
         bUVsEqual = false;
       }
@@ -105,27 +106,21 @@ int32 AddSkinVertex(std::vector<FSkinVertexMeta>& Vertices, FSkinVertexMeta& Ver
 
     if (!bUVsEqual)
       continue;
-    
-    if (!NormalsEqual(OtherVertex.TangentX, Vertex.TangentX))
-      continue;
-
-    if (!NormalsEqual(OtherVertex.TangentY, Vertex.TangentY))
-      continue;
 
     if (!NormalsEqual(OtherVertex.TangentZ, Vertex.TangentZ))
       continue;
     
-    bool	InfluencesMatch = 1;
-    for (uint32 InfluenceIndex = 0; InfluenceIndex < MAX_INFLUENCES; InfluenceIndex++)
+    bool influencesMatch = true;
+    for (uint32 influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
     {
-      if (Vertex.InfluenceBones[InfluenceIndex] != OtherVertex.InfluenceBones[InfluenceIndex] ||
-          Vertex.InfluenceWeights[InfluenceIndex] != OtherVertex.InfluenceWeights[InfluenceIndex])
+      if (Vertex.InfluenceBones[influenceIndex] != OtherVertex.InfluenceBones[influenceIndex] ||
+          Vertex.InfluenceWeights[influenceIndex] != OtherVertex.InfluenceWeights[influenceIndex])
       {
-        InfluencesMatch = 0;
+        influencesMatch = false;
         break;
       }
     }
-    if (!InfluencesMatch)
+    if (!influencesMatch)
       continue;
 
     return VertexIndex;
@@ -662,6 +657,50 @@ int SortSkeletalMeshVertIndexAndZ(const void* a, const void* b)
 
 bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, FString& error)
 {
+  if (importData->ImportSkeleton)
+  {
+    RefSkeleton.clear();
+    for (const RawBone& rawBone : importData->Bones)
+    {
+      FMeshBone& bone = RefSkeleton.emplace_back();
+      bone.Name.SetPackage(GetPackage());
+      bone.Name.SetString(rawBone.boneName);
+      bone.Name.SetIndex(GetPackage()->GetNameIndex(rawBone.boneName, true));
+      bone.BonePos.Position = rawBone.position;
+      bone.BonePos.Orientation = rawBone.orientation;
+      bone.ParentIndex = rawBone.parentIndex;
+      bone.BoneColor = FColor(255, 255, 255);
+      bone.NumChildren = rawBone.numChildren;
+    }
+    
+    SkeletalDepth = 0;
+    for (int32 boneIndex = 0; boneIndex < RefSkeleton.size(); ++boneIndex)
+    {
+      int32 parent = RefSkeleton[boneIndex].ParentIndex;
+      int32 depth = 1;
+
+      RefSkeleton[boneIndex].Depth = 1;
+      if (parent != boneIndex)
+      {
+        depth += RefSkeleton[parent].Depth;
+      }
+      if (SkeletalDepth < depth)
+      {
+        SkeletalDepth = depth;
+      }
+      RefSkeleton[boneIndex].Depth = depth;
+    }
+  }
+  if (importData->CalculateBounds)
+  {
+    FBox boundingBox(importData->Points);
+    FBox tmp = boundingBox;
+    FVector center = (tmp.Min + tmp.Max) * 0.5f;
+    boundingBox.Min = tmp.Min + (tmp.Min - center);
+    boundingBox.Max = tmp.Max + (tmp.Max - center);
+    boundingBox.Min.Z = tmp.Min.Z + (tmp.Min.Z - center.Z) * .1f;
+    Bounds = FBoxSphereBounds(boundingBox);
+  }
   std::vector<int32> matmap(importData->Materials.size());
   for (int32 idx = 0; idx < matmap.size(); ++idx)
   {
@@ -1022,7 +1061,7 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
         }
         vertex.InfluenceWeights[0] += 255 - totalInfluenceWeight;
       }
-      FSkinVertexMeta vertexMeta = { vertex, importData->Wedges[vertexIndex].pointIndex };
+      FSkinVertexMeta vertexMeta = { vertex, importData->Wedges[face.wedgeIndices[vertexIndex]].pointIndex };
       int32	skinVertexIndex = AddSkinVertex(*chunkVertices, vertexMeta);
       if (skinVertexIndex > (uint32)UINT32_MAX)
       {
@@ -1196,6 +1235,13 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
     lod.RequiredBones[idx] = idx;
   }
 
+  if (importData->ImportSkeleton)
+  {
+    // Old skeleton may not match the new one, thus all LODs are invalid. Remove them.
+    LodModels.resize(1);
+    lodIdx = 0;
+  }
+
   std::swap(LodModels[lodIdx], lod);
 
   for (FSkelMeshChunk& chunk : LodModels[lodIdx].Chunks)
@@ -1244,63 +1290,73 @@ if (check) {\
 }//
 
   importData->Fbx2GpkBoneMap.clear();
-  for (int32 fbxBoneIdx = 0; fbxBoneIdx < importData->Bones.size(); ++fbxBoneIdx)
+  if (importData->ImportSkeleton)
   {
-    int32 foundIndex = -1;
-    bool foundMisplaced = false;
-    const RawBone& fbxBone = importData->Bones[fbxBoneIdx];
-    const FString fbxName = fbxBone.boneName.Split(':').back().ToUpper();
-    FVector gpkPos;
-    FVector fbxPos;
-    for (int32 gpkBoneIdx = 0; gpkBoneIdx < RefSkeleton.size(); ++gpkBoneIdx)
+    for (int32 fbxBoneIdx = 0; fbxBoneIdx < importData->Bones.size(); ++fbxBoneIdx)
     {
-      const FMeshBone& gpkBone = RefSkeleton[gpkBoneIdx];
-      if (gpkBone.Name.String().ToUpper() == fbxName)
+      int32 foundIndex = -1;
+      bool foundMisplaced = false;
+      const RawBone& fbxBone = importData->Bones[fbxBoneIdx];
+      const FString fbxName = fbxBone.boneName.Split(':').back().ToUpper();
+      FVector gpkPos;
+      FVector fbxPos;
+      for (int32 gpkBoneIdx = 0; gpkBoneIdx < RefSkeleton.size(); ++gpkBoneIdx)
       {
-        if (abs(gpkBone.BonePos.Position.X - fbxBone.position.X) > SCALE_TOLERANCE ||
-            abs(gpkBone.BonePos.Position.Y - fbxBone.position.Y) > SCALE_TOLERANCE || 
-            abs(gpkBone.BonePos.Position.Z - fbxBone.position.Z) > SCALE_TOLERANCE)
+        const FMeshBone& gpkBone = RefSkeleton[gpkBoneIdx];
+        if (gpkBone.Name.String().ToUpper() == fbxName)
         {
-          bool hasWeights = false;
-          for (const RawInfluence& inf : importData->Influences)
+          if (abs(gpkBone.BonePos.Position.X - fbxBone.position.X) > SCALE_TOLERANCE ||
+            abs(gpkBone.BonePos.Position.Y - fbxBone.position.Y) > SCALE_TOLERANCE ||
+            abs(gpkBone.BonePos.Position.Z - fbxBone.position.Z) > SCALE_TOLERANCE)
           {
-            if (inf.boneIndex == fbxBoneIdx)
+            bool hasWeights = false;
+            for (const RawInfluence& inf : importData->Influences)
             {
-              hasWeights = true;
-              break;
+              if (inf.boneIndex == fbxBoneIdx)
+              {
+                hasWeights = true;
+                break;
+              }
+            }
+            if (hasWeights)
+            {
+              gpkPos = gpkBone.BonePos.Position;
+              fbxPos = fbxBone.position;
+              foundMisplaced = true;
+              continue;
             }
           }
-          if (hasWeights)
-          {
-            gpkPos = gpkBone.BonePos.Position;
-            fbxPos = fbxBone.position;
-            foundMisplaced = true;
-            continue;
-          }
-        }
-        foundIndex = gpkBoneIdx;
-        break;
-      }
-    }
-    if (foundIndex < 0)
-    {
-      bool hasWeights = false;
-      for (const RawInfluence& inf : importData->Influences)
-      {
-        if (inf.boneIndex == fbxBoneIdx)
-        {
-          hasWeights = true;
+          foundIndex = gpkBoneIdx;
           break;
         }
       }
-      if (hasWeights)
+      if (foundIndex < 0)
       {
-        SHOW_ERROR_IF(foundMisplaced, FString("Bone position mismatch!\n\nBone ") + fbxBone.boneName + FString::Sprintf(" position does not match!\nGpk:(X:%.2f Y:%.2f Z:%.2f) Fbx:(X:%.2f Y:%.2f Z:%.2f)\nMake sure your FBX model uses the same skeleton and it was exported with 1.0 scale.", gpkPos.X, gpkPos.Y, gpkPos.Z, fbxPos.X, fbxPos.Y, fbxPos.Z));
-        SHOW_ERROR_IF(1, FString("Skeleton mismatch!\n\nThe imported FBX file has extra bone(s) ") + fbxBone.boneName + ".\n" + GetObjectNameString().String() + " does not have this bone.\nMake sure your FBX model shares the skeleton with " + GetObjectNameString().String() + ".");
+        bool hasWeights = false;
+        for (const RawInfluence& inf : importData->Influences)
+        {
+          if (inf.boneIndex == fbxBoneIdx)
+          {
+            hasWeights = true;
+            break;
+          }
+        }
+        if (hasWeights)
+        {
+          SHOW_ERROR_IF(foundMisplaced, FString("Bone position mismatch!\n\nBone ") + fbxBone.boneName + FString::Sprintf(" position does not match!\nGpk:(X:%.2f Y:%.2f Z:%.2f) Fbx:(X:%.2f Y:%.2f Z:%.2f)\nMake sure your FBX model uses the same skeleton and it was exported with 1.0 scale.", gpkPos.X, gpkPos.Y, gpkPos.Z, fbxPos.X, fbxPos.Y, fbxPos.Z));
+          SHOW_ERROR_IF(1, FString("Skeleton mismatch!\n\nThe imported FBX file has extra bone(s) ") + fbxBone.boneName + ".\n" + GetObjectNameString().String() + " does not have this bone.\nMake sure your FBX model shares the skeleton with " + GetObjectNameString().String() + ".");
+        }
+        continue;
       }
-      continue;
+      importData->Fbx2GpkBoneMap[fbxBoneIdx] = foundIndex;
     }
-    importData->Fbx2GpkBoneMap[fbxBoneIdx] = foundIndex;
+  }
+  else
+  {
+    for (int32 fbxBoneIdx = 0; fbxBoneIdx < importData->Bones.size(); ++fbxBoneIdx)
+    {
+      importData->Fbx2GpkBoneMap[fbxBoneIdx] = fbxBoneIdx;
+    }
   }
   return true;
 }

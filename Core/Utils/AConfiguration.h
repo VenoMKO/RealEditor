@@ -50,15 +50,17 @@ struct FSkelMeshImportConfig {
     CFG_TangentYByUV,
     CFG_AverageTangentZ,
     CFG_OptimizeIndices,
+    CFG_UpdateBounds,
     CFG_End = 0xFFFF
   };
 
-  bool ImportSkeleton = false;
+  bool ImportSkeleton = true;
   bool ImportTangents = true;
   bool FlipTangentY = false;
   bool TangentYBasisByUV = true;
   bool AverageTangentZ = false;
   bool OptimizeIndexBuffer = true;
+  bool UpdateBounds = true;
 
   friend FStream& operator<<(FStream& s, FSkelMeshImportConfig& c);
 };

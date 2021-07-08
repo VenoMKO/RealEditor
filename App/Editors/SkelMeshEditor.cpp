@@ -276,7 +276,6 @@ public:
 
     FAppConfig cfg = App::GetSharedApp()->GetConfig();
 
-    ImportSkeleton->Enable(false);
     ImportSkeleton->SetValue(cfg.SkelMeshImportConfig.ImportSkeleton);
     ImportTangents->SetValue(cfg.SkelMeshImportConfig.ImportTangents);
     FlipBinormals->SetValue(cfg.SkelMeshImportConfig.FlipTangentY);

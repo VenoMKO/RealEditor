@@ -420,6 +420,11 @@ struct FVector {
     return FVector(X * s, Y * s, Z * s);
   }
 
+  float Size() const
+  {
+    return sqrt(X * X + Y * Y + Z * Z);
+  }
+
   friend FStream& operator<<(FStream& s, FVector& v);
 
   float X = 0;
@@ -503,6 +508,41 @@ struct FBox {
   FVector Min;
   FVector Max;
   uint8 IsValid = 0;
+
+  FBox() = default;
+
+  FBox(const std::vector<FVector>& points);
+
+  FBox& operator+=(const FVector& v)
+  {
+    if (IsValid)
+    {
+      Min.X = std::min(Min.X, v.X);
+      Min.Y = std::min(Min.Y, v.Y);
+      Min.Z = std::min(Min.Z, v.Z);
+
+      Max.X = std::max(Max.X, v.X);
+      Max.Y = std::max(Max.Y, v.Y);
+      Max.Z = std::max(Max.Z, v.Z);
+    }
+    else
+    {
+      Min = Max = v;
+      IsValid = 1;
+    }
+    return *this;
+  }
+
+  FVector GetExtent() const
+  {
+    return (Max - Min) * 0.5f;
+  }
+
+  void GetCenterAndExtents(FVector& center, FVector& extents) const
+  {
+    extents = GetExtent();
+    center = Min + extents;
+  }
 
   friend FStream& operator<<(FStream& s, FBox& b);
 };
@@ -747,7 +787,7 @@ public:
   FColor()
   {}
 
-  FColor(uint8 r, uint8 g, uint8 b, uint8 a)
+  FColor(uint8 r, uint8 g, uint8 b, uint8 a = 0)
     : B(b)
     , G(g)
     , R(r)
@@ -903,6 +943,14 @@ struct FBoxSphereBounds {
   FVector	Origin;
   FVector	BoxExtent;
   float	SphereRadius = 0;
+
+  FBoxSphereBounds() = default;
+
+  FBoxSphereBounds(const FBox& box)
+  {
+    box.GetCenterAndExtents(Origin, BoxExtent);
+    SphereRadius = BoxExtent.Size();
+  }
 
   friend FStream& operator<<(FStream& s, FBoxSphereBounds& bounds);
 };

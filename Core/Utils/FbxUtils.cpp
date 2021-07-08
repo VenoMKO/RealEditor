@@ -25,6 +25,11 @@ struct VVertex {
   int32 VertexIndex = 0;
   FVector2D UVs[MAX_TEXCOORDS];
   uint16 MatIndex = 0;
+
+  bool operator<(const VVertex& b) const
+  {
+    return VertexIndex < b.VertexIndex;
+  }
 };
 
 struct FVertInfluence {
@@ -546,6 +551,7 @@ bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence*
     if (!lod)
     {
       ctx.Error = "Failed to get the lod model!";
+      // we want to export animations regardless of 3D model errors
       goto lSaveSceneSeq;
     }
 
@@ -553,6 +559,7 @@ bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence*
     if (verticies.empty())
     {
       ctx.Error = "The model has no vertices!";
+      // we want to export animations regardless of 3D model errors
       goto lSaveSceneSeq;
     }
 
@@ -1012,6 +1019,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     return false;
   }
 
+  if (ctx.ImportData.ConvertScene)
   {
     FbxAxisSystem::EFrontVector frontVector = (FbxAxisSystem::EFrontVector)-FbxAxisSystem::eParityOdd;
     const FbxAxisSystem unrealZUp(FbxAxisSystem::eZAxis, frontVector, FbxAxisSystem::eRightHanded);
@@ -1224,13 +1232,11 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     bone.Transform.Position.X = static_cast<float>(localLinkT.mData[0]);
     bone.Transform.Position.Y = static_cast<float>(-localLinkT.mData[1]);
     bone.Transform.Position.Z = static_cast<float>(localLinkT.mData[2]);
-    bone.Transform.Orientation.X = static_cast<float>(linkIndex ? -localLinkQ.mData[0] : localLinkQ.mData[0]);
-    bone.Transform.Orientation.Y = static_cast<float>(linkIndex ? -localLinkQ.mData[1] : localLinkQ.mData[1]);
-    bone.Transform.Orientation.Z = static_cast<float>(linkIndex ? -localLinkQ.mData[2] : localLinkQ.mData[2]);
-    bone.Transform.Orientation.W = static_cast<float>(localLinkQ.mData[3]);
+    bone.Transform.Orientation.X = static_cast<float>(localLinkQ.mData[0]);
+    bone.Transform.Orientation.Y = static_cast<float>(-localLinkQ.mData[1]);
+    bone.Transform.Orientation.Z = static_cast<float>(localLinkQ.mData[2]);
+    bone.Transform.Orientation.W = static_cast<float>(-localLinkQ.mData[3]);
   }
-
-  
 
   std::vector<FString> uvSets;
   if (mesh->GetLayerCount() > 0)
@@ -1311,6 +1317,8 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   FbxLayerElement::EMappingMode normalMappingMode(FbxLayerElement::eByControlPoint);
   FbxLayerElement::EReferenceMode tangentReferenceMode(FbxLayerElement::eDirect);
   FbxLayerElement::EMappingMode tangentMappingMode(FbxLayerElement::eByControlPoint);
+  FbxLayerElement::EReferenceMode binormalReferenceMode(FbxLayerElement::eDirect);
+  FbxLayerElement::EMappingMode binormalMappingMode(FbxLayerElement::eByControlPoint);
 
   if (layerElementNormal)
   {
@@ -1322,6 +1330,12 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   {
     tangentReferenceMode = layerElementTangent->GetReferenceMode();
     tangentMappingMode = layerElementTangent->GetMappingMode();
+  }
+
+  if (layerElementBinormal)
+  {
+    binormalReferenceMode = layerElementBinormal->GetReferenceMode();
+    binormalMappingMode = layerElementBinormal->GetMappingMode();
   }
 
   bool bHasNormalInformation = layerElementNormal != nullptr;
@@ -1350,7 +1364,8 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   int32 triangleCount = mesh->GetPolygonCount();
   std::vector<VTriangle> faces;
   faces.resize(triangleCount);
-  FbxDynamicArray<VVertex> wedges = FbxDynamicArray<VVertex>();
+  std::vector<VVertex> wedges;
+  std::map<VVertex, int32> wedgeToIndexMap;
   VVertex tmpWedges[3];
   for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
   {
@@ -1367,7 +1382,10 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
         int32 normalMapIndex = (normalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
         int32 normalValueIndex = (normalReferenceMode == FbxLayerElement::eDirect) ? normalMapIndex : layerElementNormal->GetIndexArray().GetAt(normalMapIndex);
-        int32 tangentMapIndex = tmpIndex;
+        int32 tangentMapIndex = (tangentMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
+        int32 tangentValueIndex = (tangentReferenceMode == FbxLayerElement::eDirect) ? tangentMapIndex : layerElementTangent->GetIndexArray().GetAt(tangentMapIndex);
+        int32 binormalMapIndex = (binormalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
+        int32 binormalValueIndex = (binormalReferenceMode == FbxLayerElement::eDirect) ? binormalMapIndex : layerElementBinormal->GetIndexArray().GetAt(binormalMapIndex);
 
         // Normal
 
@@ -1389,9 +1407,21 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
           triangle.TangentX[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
           triangle.TangentX[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
 
-          triangle.TangentY[unrealVertexIndex] = triangle.TangentX[unrealVertexIndex] ^ triangle.TangentZ[unrealVertexIndex];
-          triangle.TangentY[unrealVertexIndex] = -triangle.TangentY[unrealVertexIndex].Z;
-          triangle.TangentY[unrealVertexIndex].Normalize();
+          if (layerElementBinormal)
+          {
+            tempValue = layerElementBinormal->GetDirectArray().GetAt(binormalMapIndex);
+            tempValue = totalMatrixForNormal.MultT(tempValue);
+
+            triangle.TangentY[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
+            triangle.TangentY[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
+            triangle.TangentY[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
+          }
+          else
+          {
+            triangle.TangentY[unrealVertexIndex] = triangle.TangentX[unrealVertexIndex] ^ triangle.TangentZ[unrealVertexIndex];
+            triangle.TangentY[unrealVertexIndex] = -triangle.TangentY[unrealVertexIndex].Z;
+            triangle.TangentY[unrealVertexIndex].Normalize();
+          }
         }
       }
       else
@@ -1471,15 +1501,24 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
     for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
     {
-      VVertex wedge;
-      wedge.VertexIndex = tmpWedges[vertexIndex].VertexIndex;
-      wedge.MatIndex = tmpWedges[vertexIndex].MatIndex;
-      wedge.UVs[0] = tmpWedges[vertexIndex].UVs[0];
-      wedge.UVs[1] = tmpWedges[vertexIndex].UVs[1];
-      wedge.UVs[2] = tmpWedges[vertexIndex].UVs[2];
-      wedge.UVs[3] = tmpWedges[vertexIndex].UVs[3];
-      wedges.PushBack(wedge);
-      triangle.WedgeIndex[vertexIndex] = (int)wedges.Size() - 1;
+      int32 w = 0;
+      if (wedgeToIndexMap.count(tmpWedges[vertexIndex]))
+      {
+        w = wedgeToIndexMap[tmpWedges[vertexIndex]];
+      }
+      else
+      {
+        w = (int32)wedges.size();
+        VVertex& wedge = wedges.emplace_back();
+        wedge.VertexIndex = tmpWedges[vertexIndex].VertexIndex;
+        wedge.MatIndex = tmpWedges[vertexIndex].MatIndex;
+        wedge.UVs[0] = tmpWedges[vertexIndex].UVs[0];
+        wedge.UVs[1] = tmpWedges[vertexIndex].UVs[1];
+        wedge.UVs[2] = tmpWedges[vertexIndex].UVs[2];
+        wedge.UVs[3] = tmpWedges[vertexIndex].UVs[3];
+        wedgeToIndexMap[wedge] = w;
+      }
+      triangle.WedgeIndex[vertexIndex] = w;
     }
   }
 
@@ -1552,8 +1591,8 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   {
     ctx.ImportData.Points.emplace_back(p.mData[0], p.mData[1], p.mData[2]);
   }
-  ctx.ImportData.Wedges.resize(wedges.Size());
-  for (int i = 0; i < (int)wedges.Size(); i++)
+  ctx.ImportData.Wedges.resize(wedges.size());
+  for (int i = 0; i < (int)wedges.size(); i++)
   {
     ctx.ImportData.Wedges[i].pointIndex = wedges[i].VertexIndex;
     ctx.ImportData.Wedges[i].materialIndex = wedges[i].MatIndex;
@@ -1619,12 +1658,12 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     const RawInfluence* A = (const RawInfluence*)a;
     const RawInfluence* B = (const RawInfluence*)b;
     if (A->vertexIndex > B->vertexIndex) return  1;
-    else if (A->vertexIndex < B->vertexIndex) return -1;
-    else if (A->weight < B->weight) return  1;
-    else if (A->weight > B->weight) return -1;
-    else if (A->boneIndex > B->boneIndex) return  1;
-    else if (A->boneIndex < B->boneIndex) return -1;
-    else									    return  0;
+    if (A->vertexIndex < B->vertexIndex) return -1;
+    if (A->weight < B->weight) return  1;
+    if (A->weight > B->weight) return -1;
+    if (A->boneIndex > B->boneIndex) return  1;
+    if (A->boneIndex < B->boneIndex) return -1;
+    return  0;
   });
 
   ctx.ImportData.Materials = mats;
@@ -1637,6 +1676,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     bone.parentIndex = refBone.ParentIndex;
     bone.orientation = refBone.Transform.Orientation;
     bone.position = refBone.Transform.Position;
+    bone.numChildren = refBone.NumChildren;
   }
   ctx.ImportData.UVSetCount = uniqueUVCount;
   if (uniqueUVCount > 0)

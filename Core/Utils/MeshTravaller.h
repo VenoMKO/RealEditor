@@ -30,6 +30,7 @@ struct RawBone {
   int32 parentIndex = 0;
   FVector position;
   FQuat orientation;
+  int32 numChildren = 0;
 };
 
 struct RawMaterial {
@@ -50,6 +51,10 @@ struct MeshTravallerData {
   bool AverageNormals = false;
   // Optimize index buffer via NvTriStrip
   bool OptimizeIndexBuffer = true;
+  // Convert scene coordinate system
+  bool ConvertScene = true;
+  // Update bounds
+  bool CalculateBounds = true;
 
   std::vector<FVector> Points;
   std::vector<RawTriangle> Faces;

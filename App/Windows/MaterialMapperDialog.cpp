@@ -150,10 +150,9 @@ protected:
 bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>& fbxMaterials, const std::vector<UObject*>& objectMaterials, std::vector<std::pair<FString, UObject*>>& output)
 {
   output.resize(fbxMaterials.size());
-  std::vector<bool> exact(fbxMaterials.size());
+  bool exact = false;
   for (int32 fbxIdx = 0; fbxIdx < fbxMaterials.size(); ++fbxIdx)
   {
-    int32 dist = INT_MAX;
     const wxString fbxName = fbxMaterials[fbxIdx].ToUpper().WString();
     for (auto objectMaterial : objectMaterials)
     {
@@ -161,12 +160,12 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
       {
         continue;
       }
-      int32 cmp = fbxName.Cmp(objectMaterial->GetObjectNameString().ToUpper().UTF8().c_str());
-      if (cmp >= 0 && dist > cmp)
+      wxString objectMaterialName = objectMaterial->GetObjectNameString().ToUpper().WString();
+      if ((fbxName.Find(objectMaterialName) != wxNOT_FOUND) || (objectMaterialName.Find(fbxName) != wxNOT_FOUND))
       {
-        exact[fbxIdx] = !cmp;
-        dist = cmp;
+        exact = true;
         output[fbxIdx] = std::make_pair(fbxMaterials[fbxIdx], objectMaterial);
+        break;
       }
     }
     if (output[fbxIdx].first.Empty())
@@ -174,16 +173,7 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
       output[fbxIdx] = std::make_pair(fbxMaterials[fbxIdx], nullptr);
     }
   }
-  bool exactMatch = true;
-  for (bool e : exact)
-  {
-    if (!e)
-    {
-      exactMatch = false;
-      break;
-    }
-  }
-  return exactMatch;
+  return exact;
 }
 
 MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)

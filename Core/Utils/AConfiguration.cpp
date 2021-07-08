@@ -554,8 +554,11 @@ FStream& operator<<(FStream& s, FSkelMeshImportConfig& c)
       case FSkelMeshImportConfig::CFG_AverageTangentZ:
         s << c.AverageTangentZ;
         break;
-      case  FSkelMeshImportConfig::CFG_OptimizeIndices:
+      case FSkelMeshImportConfig::CFG_OptimizeIndices:
         s << c.OptimizeIndexBuffer;
+        break;
+      case FSkelMeshImportConfig::CFG_UpdateBounds:
+        s << c.UpdateBounds;
         break;
       default:
         s.Close();
@@ -574,6 +577,7 @@ FStream& operator<<(FStream& s, FSkelMeshImportConfig& c)
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_TangentYByUV, c.TangentYBasisByUV, d.TangentYBasisByUV);
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_AverageTangentZ, c.AverageTangentZ, d.AverageTangentZ);
     SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_OptimizeIndices, c.OptimizeIndexBuffer, d.OptimizeIndexBuffer);
+    SerializeKVIfNotDefault(FSkelMeshImportConfig::CFG_UpdateBounds, c.UpdateBounds, d.UpdateBounds);
     SerializeKey(FSkelMeshImportConfig::CFG_End);
   }
   return s;
