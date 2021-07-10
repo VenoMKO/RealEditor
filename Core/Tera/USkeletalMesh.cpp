@@ -1290,7 +1290,7 @@ if (check) {\
 }//
 
   importData->Fbx2GpkBoneMap.clear();
-  if (importData->ImportSkeleton)
+  if (!importData->ImportSkeleton)
   {
     for (int32 fbxBoneIdx = 0; fbxBoneIdx < importData->Bones.size(); ++fbxBoneIdx)
     {

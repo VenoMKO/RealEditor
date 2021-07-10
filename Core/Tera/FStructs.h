@@ -952,6 +952,26 @@ struct FBoxSphereBounds {
     SphereRadius = BoxExtent.Size();
   }
 
+  FBoxSphereBounds operator+(const FBoxSphereBounds& a) const
+  {
+    FBox	box;
+    box += (Origin - BoxExtent);
+    box += (Origin + BoxExtent);
+    box += (a.Origin - a.BoxExtent);
+    box += (a.Origin + a.BoxExtent);
+
+    FBoxSphereBounds	result(box);
+    result.SphereRadius = std::min(
+      result.SphereRadius,
+      std::max(
+        (Origin - result.Origin).Size() + SphereRadius,
+        (a.Origin - result.Origin).Size() + a.SphereRadius
+      )
+    );
+
+    return result;
+  }
+
   friend FStream& operator<<(FStream& s, FBoxSphereBounds& bounds);
 };
 

@@ -56,11 +56,11 @@ struct MeshTravallerData {
   // Update bounds
   bool CalculateBounds = true;
 
+  std::vector<RawBone> Bones;
+  std::vector<FString> Materials;
   std::vector<FVector> Points;
   std::vector<RawTriangle> Faces;
   std::vector<int32> Indices;
-  std::vector<FString> Materials;
-  std::vector<RawBone> Bones;
   std::vector<RawWedge> Wedges;
   std::vector<RawInfluence> Influences;
 

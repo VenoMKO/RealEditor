@@ -388,6 +388,149 @@ void CreateBindPose(FbxNode* meshRootNode, FbxScene* scene)
   }
 }
 
+bool ImportBones(std::vector<FbxNode*>& nodeArray, FbxImportContext& ctx, std::vector<FbxNode*>& sortedLinks, std::vector<VBone>& refBones, FbxScene* scene)
+{
+  scene->GetFbxManager()->CreateMissingBindPoses(scene);
+  std::vector<FbxCluster*> clusters;
+  for (FbxNode* node : nodeArray)
+  {
+    FbxMesh* mesh = node->GetMesh();
+    for (int32 deformerIndex = 0; deformerIndex < mesh->GetDeformerCount(FbxDeformer::eSkin); ++deformerIndex)
+    {
+      FbxSkin* skin = (FbxSkin*)mesh->GetDeformer(deformerIndex);
+      for (int32 clusterIndex = 0; clusterIndex < skin->GetClusterCount(); ++clusterIndex)
+      {
+        clusters.emplace_back(skin->GetCluster(clusterIndex));
+      }
+    }
+  }
+  if (clusters.empty())
+  {
+    ctx.Error = "Error!\n\nThe FBX file has no skeleton binned to geometry.";
+    return false;
+  }
+  BuildSortedLinks(clusters, sortedLinks, scene);
+  if (sortedLinks.empty())
+  {
+    ctx.Error = std::string(nodeArray.front()->GetName()) + " has no bones!";
+    return false;
+  }
+
+  std::vector<FbxAMatrix>globalsPerLink;
+  globalsPerLink.resize(sortedLinks.size());
+  globalsPerLink[0].SetIdentity();
+
+  bool globalLinkFoundFlag = false;
+  bool nonIdentityScaleFound = false;
+  FbxVector4 localLinkT;
+  FbxQuaternion localLinkQ;
+  FbxNode* link = nullptr;
+  refBones.resize(sortedLinks.size());
+  for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
+  {
+    link = sortedLinks[linkIndex];
+    int32 parentIndex = 0;
+    FbxNode* parent = link->GetParent();
+    if (linkIndex)
+    {
+      for (int32 parentLinkIndex = 0; parentLinkIndex < linkIndex; ++parentLinkIndex)
+      {
+        FbxNode* otherLink = sortedLinks[parentLinkIndex];
+        if (otherLink == parent)
+        {
+          parentIndex = parentLinkIndex;
+          break;
+        }
+      }
+    }
+
+    globalLinkFoundFlag = false;
+    for (FbxCluster* cluster : clusters)
+    {
+      if (link == cluster->GetLink())
+      {
+        cluster->GetTransformLinkMatrix(globalsPerLink[linkIndex]);
+        globalLinkFoundFlag = true;
+        break;
+      }
+    }
+    if (!globalLinkFoundFlag)
+    {
+      FbxAMatrix localMatrix;
+      localMatrix.SetR(link->LclRotation.Get());
+      FbxAMatrix postRotationMatrix, preRotationMatrix;
+      FbxVector4 postRotation, preRotation;
+      preRotation = link->GetPreRotation(FbxNode::eSourcePivot);
+      postRotation = link->GetPostRotation(FbxNode::eSourcePivot);
+      preRotationMatrix.SetR(preRotation);
+      postRotationMatrix.SetR(postRotation);
+
+      localMatrix = preRotationMatrix * localMatrix * postRotationMatrix;
+
+      localLinkT = link->LclTranslation.Get();
+      FbxVector4 rotatePivot = link->GetRotationPivot(FbxNode::eSourcePivot);
+      localLinkT[0] += rotatePivot[0];
+      localLinkT[1] += rotatePivot[1];
+      localLinkT[2] += rotatePivot[2];
+
+      localMatrix.SetT(localLinkT);
+      localMatrix.SetS(link->LclScaling.Get());
+      globalsPerLink[linkIndex] = globalsPerLink[parentIndex] * localMatrix;
+    }
+    if (linkIndex)
+    {
+      FbxAMatrix	matrix;
+      matrix = globalsPerLink[parentIndex].Inverse() * globalsPerLink[linkIndex];
+      localLinkT = matrix.GetT();
+      localLinkQ = matrix.GetQ();
+    }
+    else
+    {
+      localLinkT = globalsPerLink[linkIndex].GetT();
+      localLinkQ = globalsPerLink[linkIndex].GetQ();
+    }
+    {
+      static float SCALE_TOLERANCE = .1f;
+      FbxVector4 gs = globalsPerLink[linkIndex].GetS();
+      if ((gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
+          (gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
+          (gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE))
+      {
+        nonIdentityScaleFound = true;
+      }
+    }
+
+
+    VBone& bone = refBones[linkIndex];
+    bone.Name = FString(link->GetName()).Split(':').back();
+    bone.ParentIndex = parentIndex;
+    bone.NumChildren = 0;
+
+    for (int32 childIndex = 0; childIndex < link->GetChildCount(); ++childIndex)
+    {
+      FbxNode* child = link->GetChild(childIndex);
+      if (IsUnrealBone(child))
+      {
+        bone.NumChildren++;
+      }
+    }
+
+    bone.Transform.Position.X = static_cast<float>(localLinkT.mData[0]);
+    bone.Transform.Position.Y = static_cast<float>(-localLinkT.mData[1]);
+    bone.Transform.Position.Z = static_cast<float>(localLinkT.mData[2]);
+
+    bone.Transform.Orientation.X = static_cast<float>(localLinkQ.mData[0]);
+    bone.Transform.Orientation.Y = static_cast<float>(-localLinkQ.mData[1]);
+    bone.Transform.Orientation.Z = static_cast<float>(localLinkQ.mData[2]);
+    bone.Transform.Orientation.W = static_cast<float>(-localLinkQ.mData[3]);
+  }
+  if (nonIdentityScaleFound)
+  {
+    LogW("Warning! Found non-identity scale of a skeleton!");
+  }
+  return true;
+}
+
 #define GetManager() ((FbxManager*)SdkManager)
 #define GetScene() ((FbxScene*)Scene)
 
@@ -1027,26 +1170,14 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   }
   
   FbxSkeleton* skel = nullptr;
-  FbxNode* meshNode = nullptr;
-  FbxMesh* mesh = nullptr;
-
-  for (int nodeIndex = 0; nodeIndex < GetScene()->GetNodeCount(); nodeIndex++)
   {
-    FbxNode* node = GetScene()->GetNode(nodeIndex);
-    if (node->GetSkeleton())
+    bool foundMultipleSkeletons = false;
+    for (int nodeIndex = 0; nodeIndex < GetScene()->GetNodeCount(); nodeIndex++)
     {
-      skel = node->GetSkeleton();
-      if (mesh && meshNode)
+      FbxNode* node = GetScene()->GetNode(nodeIndex);
+      if (FbxSkeleton* nodeSkel = node->GetSkeleton())
       {
-        break;
-      }
-    }
-    if (node->GetMesh() && node->GetMesh()->GetDeformerCount(FbxDeformer::eSkin))
-    {
-      meshNode = node;
-      mesh = meshNode->GetMesh();
-      if (skel)
-      {
+        skel = node->GetSkeleton();
         break;
       }
     }
@@ -1054,619 +1185,47 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
 
   if (!skel)
   {
-    ctx.Error = "The model has no skeleton/rig.\n\n Skeletal mesh must be rigged to a skeleton, exported by Real Editor.";
-    return false;
-  }
-  if (!mesh)
-  {
-    ctx.Error = "Missing geometry!\n\nThe imported FBX scene has no geometry rigged to the skeleton!";
+    ctx.Error = "Your 3D model has no skeleton/rig.\n\nSkeletal mesh must be rigged to a skeleton, exported by Real Editor.";
     return false;
   }
 
-  if (!mesh->IsTriangleMesh())
+  std::vector<FbxNode*> meshNodes;
+  for (int nodeIndex = 0; nodeIndex < GetScene()->GetNodeCount(); ++nodeIndex)
   {
-    ctx.Error = "Malformed 3D model!\n\nThe FBX 3D model contains polygons with more than 3 vertices. Tera supports only triangular polygons.";
-    return false;
-  }
-
-  std::vector<FbxCluster*> clusters;
-  for (int deformerIndex = 0; deformerIndex < mesh->GetDeformerCount(FbxDeformer::eSkin); deformerIndex++)
-  {
-    FbxSkin* skin = (FbxSkin*)mesh->GetDeformer(deformerIndex);
-    if (skin->GetSkinningType() != fbxsdk::FbxSkin::eLinear && skin->GetSkinningType() != fbxsdk::FbxSkin::eRigid)
+    FbxNode* node = GetScene()->GetNode(nodeIndex);
+    if (node->GetMesh() && node->GetMesh()->GetDeformerCount(FbxDeformer::eSkin))
     {
-      ctx.Error = "The FBX 3D model uses unsupported skin type!\n\nTera supports only classic linear skin with up to 4 weights/bones per vertex.";
-      return false;
-    }
-
-    clusters.reserve(skin->GetClusterCount());
-    for (int32 clusterIndex = 0; clusterIndex < skin->GetClusterCount(); ++clusterIndex)
-    {
-      clusters.emplace_back(skin->GetCluster(clusterIndex));
+      meshNodes.emplace_back(node);
+      if (!node->GetMesh()->IsTriangleMesh())
+      {
+        FbxGeometryConverter* converter = new FbxGeometryConverter(GetManager());
+        converter->Triangulate(GetScene(), true);
+        delete converter;
+      }
     }
   }
 
-  std::vector<FString> mats;
-  std::vector<VMaterial> materials;
-  std::vector<FbxSurfaceMaterial*> fbxMaterials;
-  for (int32 materialIndex = 0; materialIndex < meshNode->GetMaterialCount(); ++materialIndex)
+  if (meshNodes.empty())
   {
-    FbxSurfaceMaterial* mat = meshNode->GetMaterial(materialIndex);
-    if (std::find(fbxMaterials.begin(), fbxMaterials.end(), mat) == fbxMaterials.end())
-    {
-      fbxMaterials.emplace_back(mat);
-      VMaterial vmat;
-      vmat.MaterialImportName = mat->GetName();
-      vmat.MaterialIndex = (int)fbxMaterials.size() - 1;
-      mats.emplace_back(mat->GetName());
-      materials.emplace_back(vmat);
-    }
-  }
-
-  if (!clusters.size())
-  {
-    ctx.Error = "Malformed skeletal mesh!\n\nThe FBX 3D model has no skin. Make sure you've rigged it correctly.";
+    ctx.Error = "Skeleton has no geometry bind to it!\n\nBind your geometry to the skeleton. Use classic linear skin with 4 bones per vertex.";
     return false;
   }
 
-  if (!materials.size())
+
+  std::vector<VBone> refBones;
+  std::vector<FbxNode*> sortedLinks;
+  if (!ImportBones(meshNodes, ctx, sortedLinks, refBones, GetScene()))
   {
-    ctx.Error = "The imported 3D model has no materials.";
+    ctx.Error = "Failed to import skeleton!\n\n" + ctx.Error;
     return false;
   }
-
-  std::vector<FbxNode*>sortedLinks;
-  BuildSortedLinks(clusters, sortedLinks, GetScene());
 
   if (sortedLinks.size() > 256)
   {
-    ctx.Error = "Too many bones!\n\nThe imported skeleton has " + std::to_string(sortedLinks.size()) + " bones. Tera supports only up to 256 bones. You should rig your model to a skeleton exported by Real Editor.";
+    ctx.Error = "Tera does not support this skeleton!\n\nThe imported skeleton has " + std::to_string(sortedLinks.size()) + " bones. Tera supports only up to 256 bones. You should rig your model to a skeleton exported by Real Editor.";
     return false;
   }
 
-  std::vector<FbxAMatrix>globalsPerLink;
-  globalsPerLink.resize(sortedLinks.size());
-  globalsPerLink[0].SetIdentity();
-
-  bool globalLinkFoundFlag = false;
-  bool nonIdentityScaleFound = false;
-  FbxVector4 localLinkT;
-  FbxQuaternion localLinkQ;
-  FbxNode* link = nullptr;
-  std::vector<VBone> refBones;
-  refBones.resize(sortedLinks.size());
-  for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
-  {
-    link = sortedLinks[linkIndex];
-    int32 parentIndex = 0;
-    FbxNode* parent = link->GetParent();
-    if (linkIndex)
-    {
-      for (int32 parentLinkIndex = 0; parentLinkIndex < linkIndex; ++parentLinkIndex)
-      {
-        FbxNode* otherLink = sortedLinks[parentLinkIndex];
-        if (otherLink == parent)
-        {
-          parentIndex = parentLinkIndex;
-          break;
-        }
-      }
-    }
-
-    globalLinkFoundFlag = false;
-    for (FbxCluster* cluster : clusters)
-    {
-      if (link == cluster->GetLink())
-      {
-        cluster->GetTransformLinkMatrix(globalsPerLink[linkIndex]);
-        globalLinkFoundFlag = true;
-        break;
-      }
-    }
-    if (!globalLinkFoundFlag)
-    {
-      // if root bone is not in bind pose and cluster, it is correct to use the local matrix as global matrix
-      FbxAMatrix localMatrix;
-      localMatrix.SetR(link->LclRotation.Get());
-      FbxAMatrix postRotationMatrix, preRotationMatrix;
-      FbxVector4 postRotation, preRotation;
-      preRotation = link->GetPreRotation(FbxNode::eSourcePivot);
-      postRotation = link->GetPostRotation(FbxNode::eSourcePivot);
-      preRotationMatrix.SetR(preRotation);
-      postRotationMatrix.SetR(postRotation);
-
-      localMatrix = preRotationMatrix * localMatrix * postRotationMatrix;
-
-      localLinkT = link->LclTranslation.Get();
-      // bake the rotate pivot to translation
-      FbxVector4 rotatePivot = link->GetRotationPivot(FbxNode::eSourcePivot);
-      localLinkT[0] += rotatePivot[0];
-      localLinkT[1] += rotatePivot[1];
-      localLinkT[2] += rotatePivot[2];
-      localLinkQ = localMatrix.GetQ();
-
-      // if this skeleton has no cluster, its children may have cluster, so still need to set the Globals matrix
-      localMatrix.SetT(localLinkT);
-      localMatrix.SetS(link->LclScaling.Get());
-      globalsPerLink[linkIndex] = globalsPerLink[parentIndex] * localMatrix;
-    }
-    if (linkIndex)
-    {
-      FbxAMatrix	matrix;
-      matrix = globalsPerLink[parentIndex].Inverse() * globalsPerLink[linkIndex];
-      localLinkT = matrix.GetT();
-      localLinkQ = matrix.GetQ();
-    }
-    else	// skeleton root
-    {
-      // for root, this is global coordinate
-      localLinkT = globalsPerLink[linkIndex].GetT();
-      localLinkQ = globalsPerLink[linkIndex].GetQ();
-    }
-    {
-      static float SCALE_TOLERANCE = .1f;
-      FbxVector4 gs = globalsPerLink[linkIndex].GetS();
-      if ((gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
-          (gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
-          (gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE))
-      {
-        nonIdentityScaleFound = true;
-      }
-    }
-    
-
-    VBone& bone = refBones[linkIndex];
-    bone.Name = FString(link->GetName()).Split(':').back();
-    bone.ParentIndex = parentIndex;
-    bone.NumChildren = 0;
-
-    for (int32 childIndex = 0; childIndex < link->GetChildCount(); ++childIndex)
-    {
-      FbxNode* child = link->GetChild(childIndex);
-      if (IsUnrealBone(child))
-      {
-        bone.NumChildren++;
-      }
-    }
-
-    bone.Transform.Position.X = static_cast<float>(localLinkT.mData[0]);
-    bone.Transform.Position.Y = static_cast<float>(-localLinkT.mData[1]);
-    bone.Transform.Position.Z = static_cast<float>(localLinkT.mData[2]);
-    bone.Transform.Orientation.X = static_cast<float>(localLinkQ.mData[0]);
-    bone.Transform.Orientation.Y = static_cast<float>(-localLinkQ.mData[1]);
-    bone.Transform.Orientation.Z = static_cast<float>(localLinkQ.mData[2]);
-    bone.Transform.Orientation.W = static_cast<float>(-localLinkQ.mData[3]);
-  }
-
-  std::vector<FString> uvSets;
-  if (mesh->GetLayerCount() > 0)
-  {
-    for (int32 layerIndex = 0; layerIndex < mesh->GetLayerCount(); layerIndex++)
-    {
-      FbxLayer* layer = mesh->GetLayer(layerIndex);
-      FbxArray<FbxLayerElementUV const*> elementUVs = layer->GetUVSets();
-      for (int uvSetIndex = 0; uvSetIndex < layer->GetUVSetCount(); uvSetIndex++)
-      {
-        FbxLayerElementUV const* element = elementUVs[uvSetIndex];
-        if (element)
-        {
-          FbxString localuv = FbxString(element->GetName());
-          if (std::find(uvSets.begin(), uvSets.end(), element->GetName()) == uvSets.end())
-          {
-            uvSets.emplace_back(element->GetName());
-          }
-        }
-      }
-    }
-  }
-
-  int32 controlPointsCount = mesh->GetControlPointsCount();
-  int32 uniqueUVCount = static_cast<int32>(uvSets.size());
-  FbxLayerElementUV** LayerElementUV = nullptr;
-  FbxLayerElement::EReferenceMode* UVReferenceMode = nullptr;
-  FbxLayerElement::EMappingMode* UVMappingMode = nullptr;
-  if (uniqueUVCount > 0)
-  {
-    LayerElementUV = new FbxLayerElementUV * [uniqueUVCount];
-    UVReferenceMode = new FbxLayerElement::EReferenceMode[uniqueUVCount];
-    UVMappingMode = new FbxLayerElement::EMappingMode[uniqueUVCount];
-  }
-
-  for (uint32 uniqueUVIndex = 0; uniqueUVIndex < uniqueUVCount; uniqueUVIndex++)
-  {
-    LayerElementUV[uniqueUVIndex] = nullptr;
-    for (int32 layerIndex = 0; layerIndex < mesh->GetLayerCount(); ++layerIndex)
-    {
-      FbxLayer* layer = mesh->GetLayer(layerIndex);
-      FbxArray<const FbxLayerElementUV*> elements = layer->GetUVSets();
-      for (int32 uvSetIndex = 0; uvSetIndex < layer->GetUVSetCount(); ++uvSetIndex)
-      {
-        const FbxLayerElementUV* element = elements[uvSetIndex];
-        if (!element)
-        {
-          continue;
-        }
-
-        if (uvSets[uniqueUVIndex] == element->GetName())
-        {
-          LayerElementUV[uniqueUVIndex] = const_cast<FbxLayerElementUV*>(element);
-          UVReferenceMode[uniqueUVIndex] = LayerElementUV[uvSetIndex]->GetReferenceMode();
-          UVMappingMode[uniqueUVIndex] = LayerElementUV[uvSetIndex]->GetMappingMode();
-          break;
-        }
-      }
-    }
-  }
-
-  FbxLayer* baseLayer = mesh->GetLayer(0);
-  FbxLayerElementMaterial* LayerElementMaterial = baseLayer->GetMaterials();
-  FbxLayerElement::EMappingMode MaterialMappingMode = LayerElementMaterial ? LayerElementMaterial->GetMappingMode() : FbxLayerElement::eByPolygon;
-
-  uniqueUVCount = std::min(uniqueUVCount, 4);
-
-  FbxAMatrix totalMatrix;
-  FbxAMatrix totalMatrixForNormal;
-  totalMatrix = ComputeTotalMatrix(meshNode, GetScene());
-  totalMatrixForNormal = totalMatrix.Inverse();
-  totalMatrixForNormal = totalMatrixForNormal.Transpose();
-
-  FbxLayerElementNormal* layerElementNormal = baseLayer->GetNormals();
-  FbxLayerElementTangent* layerElementTangent = baseLayer->GetTangents();
-  FbxLayerElementBinormal* layerElementBinormal = baseLayer->GetBinormals();
-  FbxLayerElement::EReferenceMode normalReferenceMode(FbxLayerElement::eDirect);
-  FbxLayerElement::EMappingMode normalMappingMode(FbxLayerElement::eByControlPoint);
-  FbxLayerElement::EReferenceMode tangentReferenceMode(FbxLayerElement::eDirect);
-  FbxLayerElement::EMappingMode tangentMappingMode(FbxLayerElement::eByControlPoint);
-  FbxLayerElement::EReferenceMode binormalReferenceMode(FbxLayerElement::eDirect);
-  FbxLayerElement::EMappingMode binormalMappingMode(FbxLayerElement::eByControlPoint);
-
-  if (layerElementNormal)
-  {
-    normalReferenceMode = layerElementNormal->GetReferenceMode();
-    normalMappingMode = layerElementNormal->GetMappingMode();
-  }
-
-  if (layerElementTangent)
-  {
-    tangentReferenceMode = layerElementTangent->GetReferenceMode();
-    tangentMappingMode = layerElementTangent->GetMappingMode();
-  }
-
-  if (layerElementBinormal)
-  {
-    binormalReferenceMode = layerElementBinormal->GetReferenceMode();
-    binormalMappingMode = layerElementBinormal->GetMappingMode();
-  }
-
-  bool bHasNormalInformation = layerElementNormal != nullptr;
-  bool bHasTangentInformation = layerElementTangent != nullptr && layerElementBinormal != nullptr;
-  if (!bHasNormalInformation)
-  {
-    ctx.ImportData.MissingNormals = true;
-  }
-  if (!bHasTangentInformation)
-  {
-    ctx.ImportData.MissingTangents = true;
-  }
-  std::vector<FbxVector4> points;
-  points.reserve(controlPointsCount);
-  for (int32 controlPointIndex = 0; controlPointIndex < controlPointsCount; ++controlPointIndex)
-  {
-    FbxVector4 pos = mesh->GetControlPoints()[controlPointIndex];
-    pos = totalMatrix.MultT(pos);
-    pos.mData[1] = static_cast<float>(pos.mData[1]) * -1.f;
-    points.emplace_back(pos);
-  }
-
-  bool oddNegativeScale = IsOddNegativeScale(totalMatrix);
-
-  int32 maxMaterialIndex = 0;
-  int32 triangleCount = mesh->GetPolygonCount();
-  std::vector<VTriangle> faces;
-  faces.resize(triangleCount);
-  std::vector<VVertex> wedges;
-  std::map<VVertex, int32> wedgeToIndexMap;
-  VVertex tmpWedges[3];
-  for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
-  {
-    VTriangle& triangle = faces[triangleIndex];
-
-    for (int32 vertexIndex = 0; vertexIndex < 3; vertexIndex++)
-    {
-      int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
-      int32 controlPointIndex = mesh->GetPolygonVertex(triangleIndex, vertexIndex);
-
-      if (bHasNormalInformation)
-      {
-        int32 tmpIndex = triangleIndex * 3 + vertexIndex;
-
-        int32 normalMapIndex = (normalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
-        int32 normalValueIndex = (normalReferenceMode == FbxLayerElement::eDirect) ? normalMapIndex : layerElementNormal->GetIndexArray().GetAt(normalMapIndex);
-        int32 tangentMapIndex = (tangentMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
-        int32 tangentValueIndex = (tangentReferenceMode == FbxLayerElement::eDirect) ? tangentMapIndex : layerElementTangent->GetIndexArray().GetAt(tangentMapIndex);
-        int32 binormalMapIndex = (binormalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
-        int32 binormalValueIndex = (binormalReferenceMode == FbxLayerElement::eDirect) ? binormalMapIndex : layerElementBinormal->GetIndexArray().GetAt(binormalMapIndex);
-
-        // Normal
-
-        FbxVector4 tempValue;
-        tempValue = layerElementNormal->GetDirectArray().GetAt(normalValueIndex);
-        tempValue = totalMatrixForNormal.MultT(tempValue);
-
-        triangle.TangentZ[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
-        triangle.TangentZ[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
-        triangle.TangentZ[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
-        triangle.TangentZ[unrealVertexIndex].Normalize();
-
-        if (bHasTangentInformation && ctx.ImportData.ImportTangents)
-        {
-          tempValue = layerElementTangent->GetDirectArray().GetAt(tangentMapIndex);
-          tempValue = totalMatrixForNormal.MultT(tempValue);
-
-          triangle.TangentX[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
-          triangle.TangentX[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
-          triangle.TangentX[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
-
-          if (layerElementBinormal)
-          {
-            tempValue = layerElementBinormal->GetDirectArray().GetAt(binormalMapIndex);
-            tempValue = totalMatrixForNormal.MultT(tempValue);
-
-            triangle.TangentY[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
-            triangle.TangentY[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
-            triangle.TangentY[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
-          }
-          else
-          {
-            triangle.TangentY[unrealVertexIndex] = triangle.TangentX[unrealVertexIndex] ^ triangle.TangentZ[unrealVertexIndex];
-            triangle.TangentY[unrealVertexIndex] = -triangle.TangentY[unrealVertexIndex].Z;
-            triangle.TangentY[unrealVertexIndex].Normalize();
-          }
-        }
-      }
-      else
-      {
-        triangle.TangentZ[unrealVertexIndex] = FVector(0);
-        triangle.TangentY[unrealVertexIndex] = FVector(0);
-        triangle.TangentX[unrealVertexIndex] = FVector(0);
-      }
-    }
-
-    triangle.MatIndex = 0;
-    for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
-    {
-      if (LayerElementMaterial)
-      {
-        switch (MaterialMappingMode)
-        {
-        case FbxLayerElement::eAllSame:
-          triangle.MatIndex = materials[LayerElementMaterial->GetIndexArray().GetAt(0)].MaterialIndex;
-          break;
-        case FbxLayerElement::eByPolygon:
-          triangle.MatIndex = materials[LayerElementMaterial->GetIndexArray().GetAt(triangleIndex)].MaterialIndex;
-          break;
-        default:
-          break;
-        }
-      }
-    }
-    maxMaterialIndex = std::max<int32>(maxMaterialIndex, triangle.MatIndex);
-
-    for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
-    {
-      int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
-      tmpWedges[unrealVertexIndex].MatIndex = triangle.MatIndex;
-      tmpWedges[unrealVertexIndex].VertexIndex = mesh->GetPolygonVertex(triangleIndex, vertexIndex);
-    }
-
-    bool hasUVs = false;
-    for (uint32 layerIndex = 0; layerIndex < uniqueUVCount; ++layerIndex)
-    {
-      if (LayerElementUV[layerIndex] != nullptr)
-      {
-        // Get each UV from the layer
-        for (int vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
-        {
-          // If there are odd number negative scale, invert the vertex order for triangles
-          int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
-          int32 controlPointIndex = mesh->GetPolygonVertex(triangleIndex, vertexIndex);
-          int32 mapIndex = (UVMappingMode[layerIndex] == FbxLayerElement::eByControlPoint) ? controlPointIndex : triangleIndex * 3 + vertexIndex;
-          int32 index = (UVReferenceMode[layerIndex] == FbxLayerElement::eDirect) ? mapIndex : LayerElementUV[layerIndex]->GetIndexArray().GetAt(mapIndex);
-
-          FbxVector2 uv = LayerElementUV[layerIndex]->GetDirectArray().GetAt(index);
-          tmpWedges[unrealVertexIndex].UVs[layerIndex].X = static_cast<float>(uv.mData[0]);
-          tmpWedges[unrealVertexIndex].UVs[layerIndex].Y = 1.f - static_cast<float>(uv.mData[1]);
-          if (!hasUVs && (uv.mData[0] || uv.mData[1]))
-          {
-            hasUVs = true;
-          }
-        }
-      }
-      else if (layerIndex == 0)
-      {
-        // Set all UV's to zero.  If we are here the mesh had no UV sets so we only need to do this for the
-        // first UV set which always exists.
-        for (auto & tmpWedge : tmpWedges)
-        {
-          tmpWedge.UVs[layerIndex].X = 0.0f;
-          tmpWedge.UVs[layerIndex].Y = 0.0f;
-        }
-      }
-    }
-
-    if (!hasUVs)
-    {
-      ctx.ImportData.MissingUVs = true;
-    }
-
-    for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
-    {
-      int32 w = 0;
-      if (wedgeToIndexMap.count(tmpWedges[vertexIndex]))
-      {
-        w = wedgeToIndexMap[tmpWedges[vertexIndex]];
-      }
-      else
-      {
-        w = (int32)wedges.size();
-        VVertex& wedge = wedges.emplace_back();
-        wedge.VertexIndex = tmpWedges[vertexIndex].VertexIndex;
-        wedge.MatIndex = tmpWedges[vertexIndex].MatIndex;
-        wedge.UVs[0] = tmpWedges[vertexIndex].UVs[0];
-        wedge.UVs[1] = tmpWedges[vertexIndex].UVs[1];
-        wedge.UVs[2] = tmpWedges[vertexIndex].UVs[2];
-        wedge.UVs[3] = tmpWedges[vertexIndex].UVs[3];
-        wedgeToIndexMap[wedge] = w;
-      }
-      triangle.WedgeIndex[vertexIndex] = w;
-    }
-  }
-
-  // weights
-  std::vector<FVertInfluence> influences;
-  if (FbxSkin* skin = (FbxSkin*)static_cast<FbxGeometry*>(mesh)->GetDeformer(0, FbxDeformer::eSkin))
-  {
-    for (int32 clusterIndex = 0; clusterIndex < skin->GetClusterCount(); ++clusterIndex)
-    {
-      FbxCluster* cluster = skin->GetCluster(clusterIndex);
-
-      // When Maya plug-in exports rigid binding, it will generate "CompensationCluster" for each ancestor links.
-      // FBX writes these "CompensationCluster" out. The CompensationCluster also has weight 1 for vertices.
-      // Unreal importer should skip these clusters.
-      if (strcmp(cluster->GetUserDataID(), "Maya_ClusterHint") == 0 || strcmp(cluster->GetUserDataID(), "CompensationCluster") == 0)
-      {
-        continue;
-      }
-
-      FbxNode* link = cluster->GetLink();
-      int32 boneIndex = -1;
-      for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
-      {
-        if (link == sortedLinks[linkIndex])
-        {
-          boneIndex = linkIndex;
-          break;
-        }
-      }
-      int32 controlPointIndicesCount = cluster->GetControlPointIndicesCount();
-      int* controlPointIndices = cluster->GetControlPointIndices();
-      double* weights = cluster->GetControlPointWeights();
-
-      for (int32 controlPointIndex = 0; controlPointIndex < controlPointIndicesCount; ++controlPointIndex)
-      {
-        FVertInfluence influence;
-        influence.BoneIndex = boneIndex;
-        influence.Weight = static_cast<float>(weights[controlPointIndex]);
-        influence.VertIndex = controlPointIndices[controlPointIndex];
-        influences.emplace_back(influence);
-      }
-    }
-  }
-  else
-  {
-    // Rigid mesh
-    int32 boneIndex = -1;
-    for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
-    {
-      if (meshNode == sortedLinks[linkIndex])
-      {
-        boneIndex = linkIndex;
-        break;
-      }
-    }
-    for (int32 controlPointIndex = 0; controlPointIndex < controlPointsCount; ++controlPointIndex)
-    {
-      FVertInfluence influence;
-      influence.BoneIndex = boneIndex;
-      influence.Weight = 1.0;
-      influence.VertIndex = controlPointIndex;
-      influences.emplace_back(influence);
-    }
-
-  }
-
-  ctx.ImportData.Points.clear();
-  ctx.ImportData.Points.reserve(points.size());
-  for (const auto& p : points)
-  {
-    ctx.ImportData.Points.emplace_back(p.mData[0], p.mData[1], p.mData[2]);
-  }
-  ctx.ImportData.Wedges.resize(wedges.size());
-  for (int i = 0; i < (int)wedges.size(); i++)
-  {
-    ctx.ImportData.Wedges[i].pointIndex = wedges[i].VertexIndex;
-    ctx.ImportData.Wedges[i].materialIndex = wedges[i].MatIndex;
-    for (int j = 0; j < 4; j++)
-    {
-      ctx.ImportData.Wedges[i].UV[j] = wedges[i].UVs[j];
-    }
-  }
-
-  ctx.ImportData.Faces.resize(triangleCount);
-  for (int32 faceIndex = 0; faceIndex < triangleCount; ++faceIndex)
-  {
-    ctx.ImportData.Faces[faceIndex].materialIndex = faces[faceIndex].MatIndex;
-    for (int32 wedgeIndex = 0; wedgeIndex < 3; ++wedgeIndex)
-    {
-      ctx.ImportData.Faces[faceIndex].wedgeIndices[wedgeIndex] = faces[faceIndex].WedgeIndex[wedgeIndex];
-      ctx.ImportData.Faces[faceIndex].tangentX[wedgeIndex] = faces[faceIndex].TangentX[wedgeIndex];
-      ctx.ImportData.Faces[faceIndex].tangentY[wedgeIndex] = faces[faceIndex].TangentY[wedgeIndex];
-      ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex] = faces[faceIndex].TangentZ[wedgeIndex];
-    }
-  }
-
-  if (ctx.ImportData.AverageNormals && bHasNormalInformation)
-  {
-    for (int32 faceIndex = 0; faceIndex < triangleCount; ++faceIndex)
-    {
-      for (int32 wedgeIndex = 0; wedgeIndex < 3; ++wedgeIndex)
-      {
-        FVector currentPoint = ctx.ImportData.Points[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex].wedgeIndices[wedgeIndex]].pointIndex];
-        for (int32 faceIndex2 = faceIndex + 1; faceIndex2 < triangleCount; ++faceIndex2)
-        {
-          for (int32 wedgeIndex2 = 0; wedgeIndex2 < 3; ++wedgeIndex2)
-          {
-            FVector testPoint = ctx.ImportData.Points[ctx.ImportData.Wedges[ctx.ImportData.Faces[faceIndex2].wedgeIndices[wedgeIndex2]].pointIndex];
-            if (testPoint == currentPoint)
-            {
-              FVector currentNormal = ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex];
-              FVector testNormal = ctx.ImportData.Faces[faceIndex2].tangentZ[wedgeIndex2];
-              if (currentNormal != testNormal)
-              {
-                FVector result = ((currentNormal + testNormal) / 2.).SafeNormal();
-                ctx.ImportData.Faces[faceIndex].tangentZ[wedgeIndex] = result;
-                ctx.ImportData.Faces[faceIndex2].tangentZ[wedgeIndex2] = result;
-              }
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  ctx.ImportData.Influences.resize(influences.size());
-  for (int32 influenceIndex = 0; influenceIndex < (int)influences.size(); ++influenceIndex)
-  {
-    ctx.ImportData.Influences[influenceIndex].weight = (float)influences[influenceIndex].Weight;
-    ctx.ImportData.Influences[influenceIndex].boneIndex = (int)influences[influenceIndex].BoneIndex;
-    ctx.ImportData.Influences[influenceIndex].vertexIndex = (int)influences[influenceIndex].VertIndex;
-  }
-
-  std::qsort(ctx.ImportData.Influences.data(), ctx.ImportData.Influences.size(), sizeof(decltype(ctx.ImportData.Influences)::value_type), [](const void* a, const void* b)
-  {
-    const RawInfluence* A = (const RawInfluence*)a;
-    const RawInfluence* B = (const RawInfluence*)b;
-    if (A->vertexIndex > B->vertexIndex) return  1;
-    if (A->vertexIndex < B->vertexIndex) return -1;
-    if (A->weight < B->weight) return  1;
-    if (A->weight > B->weight) return -1;
-    if (A->boneIndex > B->boneIndex) return  1;
-    if (A->boneIndex < B->boneIndex) return -1;
-    return  0;
-  });
-
-  ctx.ImportData.Materials = mats;
   ctx.ImportData.Bones.resize(refBones.size());
   for (int32 boneIndex = 0; boneIndex < refBones.size(); ++boneIndex)
   {
@@ -1678,13 +1237,441 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
     bone.position = refBone.Transform.Position;
     bone.numChildren = refBone.NumChildren;
   }
-  ctx.ImportData.UVSetCount = uniqueUVCount;
-  if (uniqueUVCount > 0)
+
+  std::vector<FString> materialNames;
+  for (FbxNode* meshNode : meshNodes)
   {
-    delete[] LayerElementUV;
-    delete[] UVReferenceMode;
-    delete[] UVMappingMode;
+    FbxMesh* mesh = meshNode->GetMesh();
+    if (!mesh->IsTriangleMesh())
+    {
+      ctx.Error = "Malformed 3D model!\n\n";
+      ctx.Error += FString(mesh->GetName()).String() + "contains polygons with more than 3 vertices. Tera supports only triangular polygons.";
+      return false;
+    }
+
+    const int32 controlPointsCount = mesh->GetControlPointsCount();
+
+    const size_t controlPointsOffset = ctx.ImportData.Points.size();
+    const size_t wedgesOffset = ctx.ImportData.Wedges.size();
+    const size_t pointsOffset = ctx.ImportData.Points.size();
+    const size_t facesOffset = ctx.ImportData.Faces.size();
+    const size_t influencesOffset = ctx.ImportData.Influences.size();
+
+    std::vector<FVertInfluence> influences;
+    if (FbxSkin* skin = (FbxSkin*)static_cast<FbxGeometry*>(mesh)->GetDeformer(0, FbxDeformer::eSkin))
+    {
+      for (int32 clusterIndex = 0; clusterIndex < skin->GetClusterCount(); ++clusterIndex)
+      {
+        FbxCluster* cluster = skin->GetCluster(clusterIndex);
+        if (cluster->GetControlPointIndicesCount() == 0 ||
+            strcmp(cluster->GetUserDataID(), "Maya_ClusterHint") == 0 ||
+            strcmp(cluster->GetUserDataID(), "CompensationCluster") == 0)
+        {
+          continue;
+        }
+
+        int32 boneIndex = -1;
+        for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
+        {
+          if (cluster->GetLink() == sortedLinks[linkIndex])
+          {
+            boneIndex = linkIndex;
+            break;
+          }
+        }
+        if (boneIndex == -1)
+        {
+          continue;
+        }
+
+        double* weights = cluster->GetControlPointWeights();
+        int* controlPointIndices = cluster->GetControlPointIndices();
+        for (int32 controlPointIndex = 0; controlPointIndex < cluster->GetControlPointIndicesCount(); ++controlPointIndex)
+        {
+          FVertInfluence& influence = influences.emplace_back();
+          influence.BoneIndex = boneIndex;
+          influence.Weight = static_cast<float>(weights[controlPointIndex]);
+          influence.VertIndex = controlPointsOffset + controlPointIndices[controlPointIndex];
+        }
+      }
+    }
+    else
+    {
+      DBreak();
+      int32 boneIndex = -1;
+      for (int32 linkIndex = 0; linkIndex < sortedLinks.size(); ++linkIndex)
+      {
+        if (meshNode == sortedLinks[linkIndex])
+        {
+          boneIndex = linkIndex;
+          break;
+        }
+      }
+      if (boneIndex == -1)
+      {
+        continue;
+      }
+      for (int32 controlPointIndex = 0; controlPointIndex < controlPointsCount; ++controlPointIndex)
+      {
+        FVertInfluence& influence = influences.emplace_back();
+        influence.BoneIndex = boneIndex;
+        influence.Weight = 1.0;
+        influence.VertIndex = controlPointsOffset + controlPointIndex;
+      }
+    }
+
+    std::vector<int32> materialMap(meshNode->GetMaterialCount());
+    for (int32 materialIndex = 0; materialIndex < meshNode->GetMaterialCount(); ++materialIndex)
+    {
+      FString name = meshNode->GetMaterial(materialIndex)->GetName();
+      auto it = std::find(materialNames.begin(), materialNames.end(), name);
+      if (it == materialNames.end())
+      {
+        materialMap[materialIndex] = (int32)materialNames.size();
+        materialNames.emplace_back(name);
+      }
+      else
+      {
+        materialMap[materialIndex] = (int32)(it - materialNames.begin());
+      }
+    }
+
+    std::vector<FString> uvSets;
+    if (mesh->GetLayerCount() > 0)
+    {
+      for (int32 layerIndex = 0; layerIndex < mesh->GetLayerCount(); layerIndex++)
+      {
+        FbxLayer* layer = mesh->GetLayer(layerIndex);
+        FbxArray<FbxLayerElementUV const*> elementUVs = layer->GetUVSets();
+        for (int uvSetIndex = 0; uvSetIndex < layer->GetUVSetCount(); uvSetIndex++)
+        {
+          FbxLayerElementUV const* element = elementUVs[uvSetIndex];
+          if (element)
+          {
+            FbxString localuv = FbxString(element->GetName());
+            if (std::find(uvSets.begin(), uvSets.end(), element->GetName()) == uvSets.end())
+            {
+              uvSets.emplace_back(element->GetName());
+            }
+          }
+        }
+      }
+    }
+
+    int32 uniqueUVCount = static_cast<int32>(uvSets.size());
+    FbxLayerElementUV** layerElementUV = nullptr;
+    FbxLayerElement::EReferenceMode* UVReferenceMode = nullptr;
+    FbxLayerElement::EMappingMode* UVMappingMode = nullptr;
+    if (uniqueUVCount > 0)
+    {
+      layerElementUV = new FbxLayerElementUV * [uniqueUVCount];
+      UVReferenceMode = new FbxLayerElement::EReferenceMode[uniqueUVCount];
+      UVMappingMode = new FbxLayerElement::EMappingMode[uniqueUVCount];
+    }
+
+    for (uint32 uniqueUVIndex = 0; uniqueUVIndex < uniqueUVCount; uniqueUVIndex++)
+    {
+      layerElementUV[uniqueUVIndex] = nullptr;
+      for (int32 layerIndex = 0; layerIndex < mesh->GetLayerCount(); ++layerIndex)
+      {
+        FbxLayer* layer = mesh->GetLayer(layerIndex);
+        FbxArray<const FbxLayerElementUV*> elements = layer->GetUVSets();
+        for (int32 uvSetIndex = 0; uvSetIndex < layer->GetUVSetCount(); ++uvSetIndex)
+        {
+          const FbxLayerElementUV* element = elements[uvSetIndex];
+          if (!element)
+          {
+            continue;
+          }
+
+          if (uvSets[uniqueUVIndex] == element->GetName())
+          {
+            layerElementUV[uniqueUVIndex] = const_cast<FbxLayerElementUV*>(element);
+            UVReferenceMode[uniqueUVIndex] = layerElementUV[uvSetIndex]->GetReferenceMode();
+            UVMappingMode[uniqueUVIndex] = layerElementUV[uvSetIndex]->GetMappingMode();
+            break;
+          }
+        }
+      }
+    }
+
+    FbxLayer* baseLayer = mesh->GetLayer(0);
+    FbxLayerElementMaterial* layerElementMaterial = baseLayer->GetMaterials();
+    FbxLayerElement::EMappingMode materialMappingMode = layerElementMaterial ? layerElementMaterial->GetMappingMode() : FbxLayerElement::eByPolygon;
+
+    uniqueUVCount = std::min<int32>(uniqueUVCount, MAX_TEXCOORDS);
+
+    FbxAMatrix totalMatrix;
+    FbxAMatrix totalMatrixForNormal;
+    totalMatrix = ComputeTotalMatrix(meshNode, GetScene());
+    totalMatrixForNormal = totalMatrix.Inverse();
+    totalMatrixForNormal = totalMatrixForNormal.Transpose();
+
+    FbxLayerElementNormal* layerElementNormal = baseLayer->GetNormals();
+    FbxLayerElementTangent* layerElementTangent = baseLayer->GetTangents();
+    FbxLayerElementBinormal* layerElementBinormal = baseLayer->GetBinormals();
+    FbxLayerElement::EReferenceMode normalReferenceMode(FbxLayerElement::eDirect);
+    FbxLayerElement::EMappingMode normalMappingMode(FbxLayerElement::eByControlPoint);
+    FbxLayerElement::EReferenceMode tangentReferenceMode(FbxLayerElement::eDirect);
+    FbxLayerElement::EMappingMode tangentMappingMode(FbxLayerElement::eByControlPoint);
+    FbxLayerElement::EReferenceMode binormalReferenceMode(FbxLayerElement::eDirect);
+    FbxLayerElement::EMappingMode binormalMappingMode(FbxLayerElement::eByControlPoint);
+
+    if (layerElementNormal)
+    {
+      normalReferenceMode = layerElementNormal->GetReferenceMode();
+      normalMappingMode = layerElementNormal->GetMappingMode();
+    }
+    else
+    {
+      ctx.ImportData.MissingNormals = true;
+    }
+
+    if (layerElementTangent)
+    {
+      tangentReferenceMode = layerElementTangent->GetReferenceMode();
+      tangentMappingMode = layerElementTangent->GetMappingMode();
+    }
+    else
+    {
+      ctx.ImportData.MissingTangents = true;
+    }
+
+    if (layerElementBinormal)
+    {
+      binormalReferenceMode = layerElementBinormal->GetReferenceMode();
+      binormalMappingMode = layerElementBinormal->GetMappingMode();
+    }
+    
+    std::vector<FbxVector4> points;
+    points.reserve(controlPointsCount);
+    for (int32 controlPointIndex = 0; controlPointIndex < controlPointsCount; ++controlPointIndex)
+    {
+      FbxVector4 pos = mesh->GetControlPoints()[controlPointIndex];
+      pos = totalMatrix.MultT(pos);
+      pos.mData[1] = static_cast<float>(pos.mData[1]) * -1.f;
+      points.emplace_back(pos);
+    }
+
+    bool oddNegativeScale = IsOddNegativeScale(totalMatrix);
+
+    int32 triangleCount = mesh->GetPolygonCount();
+    std::vector<VTriangle> faces;
+    faces.resize(triangleCount);
+    std::vector<VVertex> wedges;
+    std::map<VVertex, int32> wedgeToIndexMap;
+    VVertex tmpWedges[3];
+    for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+    {
+      VTriangle& triangle = faces[triangleIndex];
+
+      for (int32 vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+      {
+        int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
+        int32 controlPointIndex = mesh->GetPolygonVertex(triangleIndex, vertexIndex);
+
+        if (layerElementNormal)
+        {
+          int32 tmpIndex = triangleIndex * 3 + vertexIndex;
+
+          int32 normalMapIndex = (normalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
+          int32 normalValueIndex = (normalReferenceMode == FbxLayerElement::eDirect) ? normalMapIndex : layerElementNormal->GetIndexArray().GetAt(normalMapIndex);
+          int32 tangentMapIndex = (tangentMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
+          int32 tangentValueIndex = (tangentReferenceMode == FbxLayerElement::eDirect) ? tangentMapIndex : layerElementTangent->GetIndexArray().GetAt(tangentMapIndex);
+          int32 binormalMapIndex = (binormalMappingMode == FbxLayerElement::eByControlPoint) ? controlPointIndex : tmpIndex;
+          int32 binormalValueIndex = (binormalReferenceMode == FbxLayerElement::eDirect) ? binormalMapIndex : layerElementBinormal->GetIndexArray().GetAt(binormalMapIndex);
+
+          // Normal
+
+          FbxVector4 tempValue;
+          tempValue = layerElementNormal->GetDirectArray().GetAt(normalValueIndex);
+          tempValue = totalMatrixForNormal.MultT(tempValue);
+
+          triangle.TangentZ[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
+          triangle.TangentZ[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
+          triangle.TangentZ[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
+          triangle.TangentZ[unrealVertexIndex].Normalize();
+
+          if (layerElementTangent && ctx.ImportData.ImportTangents)
+          {
+            tempValue = layerElementTangent->GetDirectArray().GetAt(tangentMapIndex);
+            tempValue = totalMatrixForNormal.MultT(tempValue);
+
+            triangle.TangentX[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
+            triangle.TangentX[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
+            triangle.TangentX[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
+
+            if (layerElementBinormal)
+            {
+              tempValue = layerElementBinormal->GetDirectArray().GetAt(binormalMapIndex);
+              tempValue = totalMatrixForNormal.MultT(tempValue);
+
+              triangle.TangentY[unrealVertexIndex].X = static_cast<float>(tempValue.mData[0]);
+              triangle.TangentY[unrealVertexIndex].Y = static_cast<float>(-tempValue.mData[1]);
+              triangle.TangentY[unrealVertexIndex].Z = static_cast<float>(tempValue.mData[2]);
+            }
+            else
+            {
+              triangle.TangentY[unrealVertexIndex] = triangle.TangentX[unrealVertexIndex] ^ triangle.TangentZ[unrealVertexIndex];
+              triangle.TangentY[unrealVertexIndex] = -triangle.TangentY[unrealVertexIndex].Z;
+              triangle.TangentY[unrealVertexIndex].Normalize();
+            }
+          }
+        }
+        else
+        {
+          triangle.TangentZ[unrealVertexIndex] = FVector(0);
+          triangle.TangentY[unrealVertexIndex] = FVector(0);
+          triangle.TangentX[unrealVertexIndex] = FVector(0);
+        }
+      }
+
+      triangle.MatIndex = 0;
+      if (layerElementMaterial)
+      {
+        switch (materialMappingMode)
+        {
+        case FbxLayerElement::eAllSame:
+          triangle.MatIndex = materialMap[layerElementMaterial->GetIndexArray().GetAt(0)];
+          break;
+        case FbxLayerElement::eByPolygon:
+          triangle.MatIndex = materialMap[layerElementMaterial->GetIndexArray().GetAt(triangleIndex)];
+          break;
+        default:
+          DBreak();
+          break;
+        }
+      }
+
+      for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
+      {
+        int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
+        tmpWedges[unrealVertexIndex].MatIndex = triangle.MatIndex;
+        tmpWedges[unrealVertexIndex].VertexIndex = controlPointsOffset + mesh->GetPolygonVertex(triangleIndex, vertexIndex);
+      }
+
+      bool hasUVs = false;
+      for (uint32 layerIndex = 0; layerIndex < uniqueUVCount; ++layerIndex)
+      {
+        if (layerElementUV[layerIndex] != nullptr)
+        {
+          for (int vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
+          {
+            int32 unrealVertexIndex = oddNegativeScale ? 2 - vertexIndex : vertexIndex;
+            int32 controlPointIndex = mesh->GetPolygonVertex(triangleIndex, vertexIndex);
+            int32 mapIndex = (UVMappingMode[layerIndex] == FbxLayerElement::eByControlPoint) ? controlPointIndex : triangleIndex * 3 + vertexIndex;
+            int32 index = (UVReferenceMode[layerIndex] == FbxLayerElement::eDirect) ? mapIndex : layerElementUV[layerIndex]->GetIndexArray().GetAt(mapIndex);
+
+            FbxVector2 uv = layerElementUV[layerIndex]->GetDirectArray().GetAt(index);
+            tmpWedges[unrealVertexIndex].UVs[layerIndex].X = static_cast<float>(uv.mData[0]);
+            tmpWedges[unrealVertexIndex].UVs[layerIndex].Y = 1.f - static_cast<float>(uv.mData[1]);
+            if (!hasUVs && (uv.mData[0] || uv.mData[1]))
+            {
+              hasUVs = true;
+            }
+          }
+        }
+        else if (layerIndex == 0)
+        {
+          for (auto& tmpWedge : tmpWedges)
+          {
+            tmpWedge.UVs[layerIndex].X = 0.0f;
+            tmpWedge.UVs[layerIndex].Y = 0.0f;
+          }
+        }
+      }
+
+      if (!hasUVs)
+      {
+        ctx.ImportData.MissingUVs = true;
+      }
+
+      for (int32 vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
+      {
+        int32 w = 0;
+        if (wedgeToIndexMap.count(tmpWedges[vertexIndex]))
+        {
+          w = wedgeToIndexMap[tmpWedges[vertexIndex]];
+        }
+        else
+        {
+          w = (int32)wedges.size();
+          VVertex& wedge = wedges.emplace_back();
+          wedge.VertexIndex = tmpWedges[vertexIndex].VertexIndex;
+          wedge.MatIndex = tmpWedges[vertexIndex].MatIndex;
+          wedge.UVs[0] = tmpWedges[vertexIndex].UVs[0];
+          wedge.UVs[1] = tmpWedges[vertexIndex].UVs[1];
+          wedge.UVs[2] = tmpWedges[vertexIndex].UVs[2];
+          wedge.UVs[3] = tmpWedges[vertexIndex].UVs[3];
+          wedgeToIndexMap[wedge] = w;
+        }
+        triangle.WedgeIndex[vertexIndex] = wedgesOffset + w;
+      }
+    }
+
+    ctx.ImportData.Points.reserve(points.size());
+    
+    for (const auto& p : points)
+    {
+      ctx.ImportData.Points.emplace_back(p.mData[0], p.mData[1], p.mData[2]);
+    }
+    
+    ctx.ImportData.Wedges.resize(wedgesOffset + wedges.size());
+    for (int i = 0; i < (int)wedges.size(); i++)
+    {
+      ctx.ImportData.Wedges[wedgesOffset+ i].pointIndex = wedges[i].VertexIndex;
+      ctx.ImportData.Wedges[wedgesOffset+ i].materialIndex = wedges[i].MatIndex;
+      for (int j = 0; j < 4; j++)
+      {
+        ctx.ImportData.Wedges[wedgesOffset + i].UV[j] = wedges[i].UVs[j];
+      }
+    }
+
+    ctx.ImportData.Faces.resize(facesOffset + triangleCount);
+    for (int32 faceIndex = 0; faceIndex < triangleCount; ++faceIndex)
+    {
+      ctx.ImportData.Faces[facesOffset + faceIndex].materialIndex = faces[faceIndex].MatIndex;
+      for (int32 wedgeIndex = 0; wedgeIndex < 3; ++wedgeIndex)
+      {
+        ctx.ImportData.Faces[facesOffset + faceIndex].wedgeIndices[wedgeIndex] = faces[faceIndex].WedgeIndex[wedgeIndex];
+        ctx.ImportData.Faces[facesOffset + faceIndex].tangentX[wedgeIndex] = faces[faceIndex].TangentX[wedgeIndex];
+        ctx.ImportData.Faces[facesOffset + faceIndex].tangentY[wedgeIndex] = faces[faceIndex].TangentY[wedgeIndex];
+        ctx.ImportData.Faces[facesOffset + faceIndex].tangentZ[wedgeIndex] = faces[faceIndex].TangentZ[wedgeIndex];
+      }
+    }
+
+    ctx.ImportData.Influences.resize(influencesOffset + influences.size());
+    for (size_t influenceIndex = 0; influenceIndex < influences.size(); ++influenceIndex)
+    {
+      ctx.ImportData.Influences[influencesOffset + influenceIndex].weight = (float)influences[influenceIndex].Weight;
+      ctx.ImportData.Influences[influencesOffset + influenceIndex].boneIndex = (int)influences[influenceIndex].BoneIndex;
+      ctx.ImportData.Influences[influencesOffset + influenceIndex].vertexIndex = (int)influences[influenceIndex].VertIndex;
+    }
+    
+    ctx.ImportData.UVSetCount = uniqueUVCount;
+    if (uniqueUVCount > 0)
+    {
+      delete[] layerElementUV;
+      delete[] UVReferenceMode;
+      delete[] UVMappingMode;
+    }
   }
+
+  std::qsort(ctx.ImportData.Influences.data(), ctx.ImportData.Influences.size(), sizeof(decltype(ctx.ImportData.Influences)::value_type), [](const void* inA, const void* inB)
+  {
+    const RawInfluence* a = (const RawInfluence*)inA;
+    const RawInfluence* b = (const RawInfluence*)inB;
+    if (a->vertexIndex > b->vertexIndex) return  1;
+    if (a->vertexIndex < b->vertexIndex) return -1;
+    if (a->weight < b->weight) return  1;
+    if (a->weight > b->weight) return -1;
+    if (a->boneIndex > b->boneIndex) return  1;
+    if (a->boneIndex < b->boneIndex) return -1;
+    return  0;
+  });
+  
+  ctx.ImportData.Materials = materialNames;
+
   return true;
 }
 
