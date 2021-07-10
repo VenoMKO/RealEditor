@@ -209,59 +209,143 @@ protected:
 class SkelMeshImportOptions : public wxDialog {
 public:
   SkelMeshImportOptions(wxWindow* parent)
-    : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(263, 274), wxDEFAULT_DIALOG_STYLE)
+    : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(395, 527), wxDEFAULT_DIALOG_STYLE)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer1;
     bSizer1 = new wxBoxSizer(wxVERTICAL);
 
+    wxPanel* m_panel1;
+    m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
     wxBoxSizer* bSizer2;
     bSizer2 = new wxBoxSizer(wxVERTICAL);
 
-    ImportSkeleton = new wxCheckBox(this, wxID_ANY, wxT("Import skeleton"), wxDefaultPosition, wxDefaultSize, 0);
-    ImportSkeleton->SetToolTip(wxT("Overwrite an existing skeleton with the new in the FBX file."));
-
+    ImportSkeleton = new wxCheckBox(m_panel1, wxID_ANY, wxT("Import skeleton"), wxDefaultPosition, wxDefaultSize, 0);
     bSizer2->Add(ImportSkeleton, 0, wxALL, 5);
 
-    ImportTangents = new wxCheckBox(this, wxID_ANY, wxT("Import normals"), wxDefaultPosition, wxDefaultSize, 0);
-    ImportTangents->SetToolTip(wxT("Import vertex normals from the FBX. RE will calculate smooth normals if the options is disabled."));
+    wxStaticText* m_StaticText1;
+    m_StaticText1 = new wxStaticText(m_panel1, wxID_ANY, wxT("This option allows to import 3D models with any suitable skeleton. Disabling it results in strict FBX to GPK bone mapping."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText1->Wrap(350);
+    bSizer2->Add(m_StaticText1, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    bSizer2->Add(ImportTangents, 0, wxALL, 5);
 
-    FlipBinormals = new wxCheckBox(this, wxID_ANY, wxT("Flip binormals"), wxDefaultPosition, wxDefaultSize, 0);
-    FlipBinormals->SetToolTip(wxT("Invert binormals. May help with texture seams."));
+    m_panel1->SetSizer(bSizer2);
+    m_panel1->Layout();
+    bSizer2->Fit(m_panel1);
+    bSizer1->Add(m_panel1, 0, wxALL | wxEXPAND, 5);
 
-    bSizer2->Add(FlipBinormals, 0, wxALL, 5);
+    wxPanel* m_panel2;
+    m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+    wxBoxSizer* bSizer21;
+    bSizer21 = new wxBoxSizer(wxVERTICAL);
 
-    BinormalsUV = new wxCheckBox(this, wxID_ANY, wxT("Binormal direction by UV"), wxDefaultPosition, wxDefaultSize, 0);
-    BinormalsUV->SetToolTip(wxT("Calculate binormals direction by vertex UV range. May help with texture seams."));
+    ImportTangents = new wxCheckBox(m_panel2, wxID_ANY, wxT("Import normals"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer21->Add(ImportTangents, 0, wxALL, 5);
 
-    bSizer2->Add(BinormalsUV, 0, wxALL, 5);
+    wxStaticText* m_StaticText11;
+    m_StaticText11 = new wxStaticText(m_panel2, wxID_ANY, wxT("Import normals, binormals, and tangents from the FBX file."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText11->Wrap(350);
+    bSizer21->Add(m_StaticText11, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    AverageNormals = new wxCheckBox(this, wxID_ANY, wxT("Average overlapping vertex normals"), wxDefaultPosition, wxDefaultSize, 0);
-    AverageNormals->SetToolTip(wxT("Calculates an average normal for overlapping vertices. Fixes normals between mesh parts."));
 
-    bSizer2->Add(AverageNormals, 0, wxALL, 5);
+    m_panel2->SetSizer(bSizer21);
+    m_panel2->Layout();
+    bSizer21->Fit(m_panel2);
+    bSizer1->Add(m_panel2, 0, wxALL | wxEXPAND, 5);
 
-    IndexBuffer = new wxCheckBox(this, wxID_ANY, wxT("Optimize index buffer"), wxDefaultPosition, wxDefaultSize, 0);
-    IndexBuffer->SetToolTip(wxT("Sort the index buffer. May improve in-game perfomance."));
+    wxPanel* m_panel3;
+    m_panel3 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+    wxBoxSizer* bSizer211;
+    bSizer211 = new wxBoxSizer(wxVERTICAL);
 
-    bSizer2->Add(IndexBuffer, 0, wxALL, 5);
-    bSizer1->Add(bSizer2, 1, wxEXPAND | wxTOP | wxRIGHT | wxLEFT, 7);
-    bSizer1->Add(0, 0, 1, wxEXPAND, 5);
+    FlipBinormals = new wxCheckBox(m_panel3, wxID_ANY, wxT("Flip binormals"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer211->Add(FlipBinormals, 0, wxALL, 5);
 
-    wxStdDialogButtonSizer* m_sdbSizer1;
-    wxButton* m_sdbSizer1OK;
-    wxButton* m_sdbSizer1Cancel;
-    m_sdbSizer1 = new wxStdDialogButtonSizer();
-    m_sdbSizer1OK = new wxButton(this, wxID_OK);
-    m_sdbSizer1->AddButton(m_sdbSizer1OK);
-    m_sdbSizer1Cancel = new wxButton(this, wxID_CANCEL);
-    m_sdbSizer1->AddButton(m_sdbSizer1Cancel);
-    m_sdbSizer1->Realize();
+    wxStaticText* m_StaticText111;
+    m_StaticText111 = new wxStaticText(m_panel3, wxID_ANY, wxT("Inverse binormal direction. This may help if you have seams between symmetrical parts."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText111->Wrap(350);
+    bSizer211->Add(m_StaticText111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    bSizer1->Add(m_sdbSizer1, 0, wxEXPAND | wxTOP | wxBOTTOM, 15);
+
+    m_panel3->SetSizer(bSizer211);
+    m_panel3->Layout();
+    bSizer211->Fit(m_panel3);
+    bSizer1->Add(m_panel3, 0, wxEXPAND | wxALL, 5);
+
+    wxPanel* m_panel4;
+    m_panel4 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+    wxBoxSizer* bSizer2111;
+    bSizer2111 = new wxBoxSizer(wxVERTICAL);
+
+    BinormalsUV = new wxCheckBox(m_panel4, wxID_ANY, wxT("Binormals by UV"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer2111->Add(BinormalsUV, 0, wxALL, 5);
+
+    wxStaticText* m_StaticText1111;
+    m_StaticText1111 = new wxStaticText(m_panel4, wxID_ANY, wxT("Compute binormal direction based on vertex UV space."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText1111->Wrap(350);
+    bSizer2111->Add(m_StaticText1111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+
+
+    m_panel4->SetSizer(bSizer2111);
+    m_panel4->Layout();
+    bSizer2111->Fit(m_panel4);
+    bSizer1->Add(m_panel4, 0, wxEXPAND | wxALL, 5);
+
+    wxPanel* m_panel5;
+    m_panel5 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+    wxBoxSizer* bSizer21111;
+    bSizer21111 = new wxBoxSizer(wxVERTICAL);
+
+    UpdateBounds = new wxCheckBox(m_panel5, wxID_ANY, wxT("Update bounds"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer21111->Add(UpdateBounds, 0, wxALL, 5);
+
+    wxStaticText* m_StaticText11111;
+    m_StaticText11111 = new wxStaticText(m_panel5, wxID_ANY, wxT("Calculate new mesh bounds for the 3D model. Tera uses these bounds to cull off objects obscured by the model."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText11111->Wrap(350);
+    bSizer21111->Add(m_StaticText11111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+
+
+    m_panel5->SetSizer(bSizer21111);
+    m_panel5->Layout();
+    bSizer21111->Fit(m_panel5);
+    bSizer1->Add(m_panel5, 0, wxEXPAND | wxALL, 5);
+
+    wxPanel* m_panel6;
+    m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
+    wxBoxSizer* bSizer211111;
+    bSizer211111 = new wxBoxSizer(wxVERTICAL);
+
+    IndexBuffer = new wxCheckBox(m_panel6, wxID_ANY, wxT("Optimize index buffer"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer211111->Add(IndexBuffer, 0, wxALL, 5);
+
+    wxStaticText* m_StaticText111111;
+    m_StaticText111111 = new wxStaticText(m_panel6, wxID_ANY, wxT("Optimize 3D model's index buffer. May slightly increase in-game performance."), wxDefaultPosition, wxDefaultSize, 0);
+    m_StaticText111111->Wrap(350);
+    bSizer211111->Add(m_StaticText111111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+
+
+    m_panel6->SetSizer(bSizer211111);
+    m_panel6->Layout();
+    bSizer211111->Fit(m_panel6);
+    bSizer1->Add(m_panel6, 0, wxEXPAND | wxALL, 5);
+
+    wxBoxSizer* bSizer14;
+    bSizer14 = new wxBoxSizer(wxHORIZONTAL);
+
+
+    bSizer14->Add(0, 0, 1, wxEXPAND, 5);
+
+    wxButton* okButton;
+    okButton = new wxButton(this, wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer14->Add(okButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+    wxButton* cancelButton;
+    cancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer14->Add(cancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+    bSizer1->Add(bSizer14, 1, wxEXPAND, 5);
 
 
     SetSizer(bSizer1);
@@ -270,9 +354,8 @@ public:
     Centre(wxBOTH);
 
     // Connect Events
-    ImportTangents->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnImportNormalsChanged), NULL, this);
-    m_sdbSizer1Cancel->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnCancelClicked), NULL, this);
-    m_sdbSizer1OK->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnOkClicked), NULL, this);
+    cancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnCancelClicked), NULL, this);
+    okButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshImportOptions::OnOkClicked), NULL, this);
 
     FAppConfig cfg = App::GetSharedApp()->GetConfig();
 
@@ -281,8 +364,7 @@ public:
     FlipBinormals->SetValue(cfg.SkelMeshImportConfig.FlipTangentY);
     BinormalsUV->SetValue(cfg.SkelMeshImportConfig.TangentYBasisByUV);
     IndexBuffer->SetValue(cfg.SkelMeshImportConfig.OptimizeIndexBuffer);
-    AverageNormals->Enable(ImportTangents->GetValue());
-    AverageNormals->SetValue(cfg.SkelMeshImportConfig.AverageTangentZ);
+    UpdateBounds->SetValue(cfg.SkelMeshImportConfig.UpdateBounds);
   }
 
   bool GetImportSkeleton() const
@@ -305,14 +387,14 @@ public:
     return BinormalsUV->GetValue();
   }
 
-  bool GetAverageTangentZ() const
-  {
-    return AverageNormals->GetValue();
-  }
-
   bool GetOptimizeIndexBuffer() const
   {
     return IndexBuffer->GetValue();
+  }
+
+  bool GetUpdateBounds() const
+  {
+    return UpdateBounds->GetValue();
   }
 
 protected:
@@ -323,7 +405,7 @@ protected:
     cfg.SkelMeshImportConfig.ImportTangents = ImportTangents->GetValue();
     cfg.SkelMeshImportConfig.FlipTangentY = FlipBinormals->GetValue();
     cfg.SkelMeshImportConfig.TangentYBasisByUV = BinormalsUV->GetValue();
-    cfg.SkelMeshImportConfig.AverageTangentZ = AverageNormals->GetValue();
+    cfg.SkelMeshImportConfig.UpdateBounds = UpdateBounds->GetValue();
     cfg.SkelMeshImportConfig.OptimizeIndexBuffer = IndexBuffer->GetValue();
     App::GetSharedApp()->SaveConfig();
     EndModal(wxID_OK);
@@ -334,18 +416,13 @@ protected:
     EndModal(wxID_CANCEL);
   }
 
-  void OnImportNormalsChanged(wxCommandEvent&)
-  {
-    AverageNormals->Enable(ImportTangents->GetValue());
-  }
-
 protected:
   wxCheckBox* ImportSkeleton = nullptr;
   wxCheckBox* ImportTangents = nullptr;
   wxCheckBox* FlipBinormals = nullptr;
   wxCheckBox* BinormalsUV = nullptr;
-  wxCheckBox* AverageNormals = nullptr;
   wxCheckBox* IndexBuffer = nullptr;
+  wxCheckBox* UpdateBounds = nullptr;
 };
 
 SkelMeshEditor::SkelMeshEditor(wxPanel* parent, PackageWindow* window)
@@ -715,7 +792,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
     return;
   }
   ctx.ImportData.ImportSkeleton = opts.GetImportSkeleton();
-  ctx.ImportData.AverageNormals = opts.GetAverageTangentZ();
+  ctx.ImportData.CalculateBounds = opts.GetUpdateBounds();
   ctx.ImportData.BinormalsByUV = opts.GetTangentYByUVs();
   ctx.ImportData.FlipBinormals = opts.GetFlipTangents();
   ctx.ImportData.ImportTangents = opts.GetImportTangents();
@@ -727,6 +804,15 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   {
     REDialog::Error(ctx.Error);
     return;
+  }
+
+  if (ctx.ImportData.MissingNormals)
+  {
+    REDialog::Warning(wxT("This may result in incorrect light calculations and seams betwean model parts.\nTo fix the issue enable normals export feature in your 3D editor."), wxT("The 3D model has no normals!"), this);
+  }
+  if (ctx.ImportData.MissingTangents)
+  {
+    REDialog::Warning(wxT("The model may look too light/dark or have incorrect shadows.\nTo fix the issue enable tangents & binormals export feature in your 3D editor."), wxT("The 3D model has no tangents!"), this);
   }
 
   {
