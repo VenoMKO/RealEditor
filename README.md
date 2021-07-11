@@ -27,6 +27,7 @@
 ### **Create mods**
 * [Create a texture mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
 * [Create a 3D model mod](https://github.com/VenoMKO/RealEditor/wiki/Edit-3D-models)
+* [Swap 3D models(e.g., costumes)](https://github.com/VenoMKO/RealEditor/wiki/Swap-3D-models)
 * [Create a sound mod](https://github.com/VenoMKO/RealEditor/wiki/Export-and-Import-music-and-sounds)
 
 ### **Export assets**
