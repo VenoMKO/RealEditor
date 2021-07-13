@@ -21,7 +21,7 @@ public:
 };
 
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
-  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 115), wxCAPTION | wxTAB_TRAVERSAL)
+  : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 115), wxCAPTION | wxTAB_TRAVERSAL)
 {
   SetIcon(wxICON(#114));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -118,7 +118,7 @@ int ProgressWindow::ShowModal()
   SetFocus();
   Raise();
   ActionLabel->SetFocus();
-  return wxDialog::ShowModal();
+  return WXDialog::ShowModal();
 }
 
 void ProgressWindow::OnCancelClicked(wxCommandEvent&)
@@ -163,7 +163,7 @@ void ProgressWindow::OnUpdateProgressFinish(wxCommandEvent& e)
   }
 }
 
-wxBEGIN_EVENT_TABLE(ProgressWindow, wxDialog)
+wxBEGIN_EVENT_TABLE(ProgressWindow, WXDialog)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS, OnUpdateProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_PROGRESS_ADV, OnAdvanceProgress)
 EVT_COMMAND(wxID_ANY, UPDATE_MAX_PROGRESS, OnUpdateMaxProgress)

@@ -2,10 +2,11 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 #include <map>
+#include "../Misc/WXDialog.h"
 
 #include <Tera/UObject.h>
 
-class DependsResolveDialog : public wxDialog{
+class DependsResolveDialog : public WXDialog{
 public:
   DependsResolveDialog(wxWindow* parent, const std::map<class UObject*, UObject*>& objects, class FPackage* destPackage);
 

@@ -27,10 +27,10 @@ enum MaterialsMenuID {
   FirstMaterial,
 };
 
-class StaticMeshExportOptions : public wxDialog {
+class StaticMeshExportOptions : public WXDialog {
 public:
   StaticMeshExportOptions(wxWindow* parent, const FStaticMeshExportConfig& cfg)
-    : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 194), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 194), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 

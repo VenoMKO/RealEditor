@@ -9,6 +9,7 @@
 #include <wx/snglinst.h>
 #include <vector>
 #include "Misc/RpcCom.h"
+#include "Misc/WXDialog.h"
 #include "Windows/PackageWindow.h"
 
 #include <Tera/Core.h>
@@ -53,7 +54,9 @@ wxDECLARE_EVENT(SHOW_FINAL_INIT, wxCommandEvent);
 
 class ProgressWindow;
 class BulkImportWindow;
-class App : public wxApp {
+class App 
+  : public wxApp
+  , public WXDialogObserver {
 public:
   static App* GetSharedApp()
   {
@@ -166,6 +169,12 @@ public:
 
   void DumpCompositeObjects();
 
+  void OnDialogWillOpen(WXDialog* dialog) override;
+
+  void OnDialogDidClose(WXDialog* dialog) override;
+
+  void OnActivateApp(wxActivateEvent& e);
+
 private:
   bool OnInit() override;
   int OnRun() override;
@@ -194,6 +203,7 @@ private:
   bool ShowedStartupCfg = false;
   std::vector<PackageWindow*> PackageWindows;
   std::vector<wxString> OpenList;
+  std::vector<WXDialog*> Dialogs;
 
   wxArrayString CompositePackageNames;
   wxArrayString FilePackageNames;

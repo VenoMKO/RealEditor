@@ -366,7 +366,7 @@ void CreateProperty(wxPropertyGridManager* mgr, wxPropertyCategory* cat, FProper
   }
 }
 
-class ObjPropEditDialog : public wxDialog {
+class ObjPropEditDialog : public WXDialog {
 public:
   ObjPropEditDialog(wxWindow* parent, 
     wxWindowID id = wxID_ANY, 
@@ -374,7 +374,7 @@ public:
     const wxPoint& pos = wxDefaultPosition, 
     const wxSize& size = wxSize(193, 149), 
     long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
-    : wxDialog(parent, id, title, pos, size, style)
+    : WXDialog(parent, id, title, pos, size, style)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -433,7 +433,7 @@ protected:
   }
 };
 
-class BArrayPropEditDialog : public wxDialog {
+class BArrayPropEditDialog : public WXDialog {
 public:
 
   enum ButtonID {
@@ -448,7 +448,7 @@ public:
     const wxPoint& pos = wxDefaultPosition,
     const wxSize& size = wxSize(193, 149),
     long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
-    : wxDialog(parent, id, title, pos, size, style)
+    : WXDialog(parent, id, title, pos, size, style)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 

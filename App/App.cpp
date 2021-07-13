@@ -1524,12 +1524,57 @@ void App::DumpCompositeObjects()
   }
 }
 
+void App::OnDialogWillOpen(WXDialog* dialog)
+{
+  if (dialog)
+  {
+    Dialogs.push_back(dialog);
+  }
+}
+
+void App::OnDialogDidClose(WXDialog* dialog)
+{
+  if (dialog)
+  {
+    auto it = std::find(Dialogs.begin(), Dialogs.end(), dialog);
+    if (it != Dialogs.end())
+    {
+      Dialogs.erase(it);
+    }
+  }
+}
+
+void App::OnActivateApp(wxActivateEvent& e)
+{
+  if (e.GetActive() && Dialogs.size())
+  {
+    if (WXDialog* dialog = Dialogs.back())
+    {
+      std::vector<wxWindow*> parents;
+      wxWindow* parent = dialog->GetParent();
+      while (parent)
+      {
+        parents.emplace_back(parent);
+        parent = parent->GetParent();
+      }
+      for (auto rit = parents.rbegin(); rit != parents.rend(); ++rit)
+      {
+        (*rit)->Raise();
+      }
+      dialog->SetFocus();
+      dialog->Raise();
+    }
+  }
+  e.Skip();
+}
+
 void App::OnFatalException()
 {
   wxMessageBox("An unknown error occurred. The program will close!", "Error!", wxICON_ERROR);
 }
 
 wxBEGIN_EVENT_TABLE(App, wxApp)
+EVT_ACTIVATE_APP(App::OnActivateApp)
 EVT_COMMAND(wxID_ANY, DELAY_LOAD, App::DelayLoad)
 EVT_COMMAND(wxID_ANY, OPEN_PACKAGE, App::OnOpenPackage)
 EVT_COMMAND(wxID_ANY, LOAD_CORE_ERROR, App::OnLoadError)

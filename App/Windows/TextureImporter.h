@@ -1,8 +1,9 @@
 #pragma once
 #include <wx/wx.h>
+#include "../Misc/WXDialog.h"
 #include <Tera/UTexture.h>
 
-class TextureImporterOptions : public wxDialog {
+class TextureImporterOptions : public WXDialog {
 public:
 
   static wxString LoadImageDialog(wxWindow* parent);

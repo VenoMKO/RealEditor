@@ -29,7 +29,7 @@
 #include <Tera/DC.h>
 
 DcToolDialog::DcToolDialog(wxWindow* parent)
-  : wxDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 465))
+  : WXDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 465))
 {
   FAppConfig cfg = App::GetSharedApp()->GetConfig();
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);

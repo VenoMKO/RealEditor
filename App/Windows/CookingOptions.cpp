@@ -1,7 +1,7 @@
 #include "CookingOptions.h"
 
 CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
-  : wxDialog(parent, id, title, pos, size, style)
+  : WXDialog(parent, id, title, pos, size, style)
   , Package(package)
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -149,7 +149,7 @@ int CookingOptionsWindow::ShowModal()
     return wxID_OK;
   }
   SaveButton->SetFocus();
-  return wxDialog::ShowModal();
+  return WXDialog::ShowModal();
 }
 
 void CookingOptionsWindow::OnSaveClicked(wxCommandEvent& event)

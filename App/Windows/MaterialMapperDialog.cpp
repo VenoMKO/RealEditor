@@ -177,7 +177,7 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
 }
 
 MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)
-  : wxDialog(parent, wxID_ANY, wxT("Material mapping"), wxDefaultPosition, wxSize(462, 333), wxDEFAULT_DIALOG_STYLE)
+  : WXDialog(parent, wxID_ANY, wxT("Material mapping"), wxDefaultPosition, wxSize(462, 333), wxDEFAULT_DIALOG_STYLE)
 {
   Object = object;
   ObjectMaterials = objectMaterials;

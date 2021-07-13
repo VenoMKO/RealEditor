@@ -1,11 +1,12 @@
 #pragma once
 #include <wx/wx.h>
 #include <wx/dataview.h>
+#include "../Misc/WXDialog.h"
 
 #include <Tera/Core.h>
 #include <Tera/FPackage.h>
 
-class ObjectPicker : public wxDialog {
+class ObjectPicker : public WXDialog {
 public:
   ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection = 0, const std::vector<FString>& allowedClasses = {});
   ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection = 0, const std::vector<FString>& allowedClasses = {});
@@ -57,7 +58,7 @@ protected:
   wxButton* CancelButton = nullptr;
 };
 
-class ObjectNameDialog : public wxDialog {
+class ObjectNameDialog : public WXDialog {
 public:
   typedef std::function<bool(const wxString&)> Validator;
 

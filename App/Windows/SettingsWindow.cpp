@@ -31,7 +31,7 @@ bool IsValidDir(const wxString& path)
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)
-  : wxDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 375), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 375), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
   , CurrentConfig(currentConfig)
   , NewConfig(output)
   , AllowRebuild(allowRebuild)
@@ -475,7 +475,7 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
   }
 }
 
-wxBEGIN_EVENT_TABLE(SettingsWindow, wxDialog)
+wxBEGIN_EVENT_TABLE(SettingsWindow, WXDialog)
 EVT_BUTTON(ControlElementId::Browse, SettingsWindow::OnBrowseClicked)
 EVT_BUTTON(wxID_OK, SettingsWindow::OnOkClicked)
 EVT_BUTTON(wxID_CANCEL, SettingsWindow::OnCancelClicked)

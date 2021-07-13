@@ -9,7 +9,7 @@ enum ControlElementId {
 };
 
 CreateModWindow::CreateModWindow(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
-	: wxDialog(parent, id, title, pos, size, style)
+	: WXDialog(parent, id, title, pos, size, style)
 {
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -88,7 +88,7 @@ void CreateModWindow::OnTextEvent(wxCommandEvent&)
 	CreateButton->Enable(ok);
 }
 
-wxBEGIN_EVENT_TABLE(CreateModWindow, wxDialog)
+wxBEGIN_EVENT_TABLE(CreateModWindow, WXDialog)
 EVT_TEXT(ControlElementId::Author, CreateModWindow::OnTextEvent)
 EVT_TEXT(ControlElementId::Name, CreateModWindow::OnTextEvent)
 wxEND_EVENT_TABLE()

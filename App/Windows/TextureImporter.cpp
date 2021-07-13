@@ -116,7 +116,7 @@ EPixelFormat TextureImporterOptions::GetDDSPixelFormat(const wxString& ddsPath)
 }
 
 TextureImporterOptions::TextureImporterOptions(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
-  : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
+  : WXDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -412,7 +412,7 @@ void TextureImporterOptions::OnSRGBClick(wxCommandEvent&)
   Normal->Enable(!SRGB->GetValue());
 }
 
-wxBEGIN_EVENT_TABLE(TextureImporterOptions, wxDialog)
+wxBEGIN_EVENT_TABLE(TextureImporterOptions, WXDialog)
 EVT_CHECKBOX(ControlElementId::Normal, TextureImporterOptions::OnNormalClick)
 EVT_CHECKBOX(ControlElementId::MipGen, TextureImporterOptions::OnGenMipsClicked)
 EVT_CHECKBOX(ControlElementId::SRGB, TextureImporterOptions::OnSRGBClick)

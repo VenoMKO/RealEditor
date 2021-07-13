@@ -101,7 +101,7 @@ private:
 };
 
 LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx)
-  : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(597, 592), wxDEFAULT_DIALOG_STYLE)
+  : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(597, 592), wxDEFAULT_DIALOG_STYLE)
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 

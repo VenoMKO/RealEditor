@@ -10,7 +10,7 @@ enum ControlElementId {
 };
 
 CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString& title, bool filePackages)
-  : wxDialog(parent, wxID_ANY, title)
+  : WXDialog(parent, wxID_ANY, title)
 {
   FilePackages = filePackages;
   SetSize(445, 144);

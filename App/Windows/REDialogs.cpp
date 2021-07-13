@@ -2,6 +2,7 @@
 #include <wx/statline.h>
 #include <wx/statbmp.h>
 #include "../App.h"
+#include "../Misc/WXDialog.h"
 
 #include <Utils/AConfiguration.h>
 
@@ -85,10 +86,10 @@ namespace
     return isOK;
   }
 
-  class AuthDialog : public wxDialog {
+  class AuthDialog : public WXDialog {
   public:
     AuthDialog(wxWindow* parent = nullptr, const wxString& title = wxEmptyString)
-      : wxDialog(parent, wxID_ANY, wxTheApp->GetVendorDisplayName(), wxDefaultPosition, wxSize(526, 201))
+      : WXDialog(parent, wxID_ANY, wxTheApp->GetVendorDisplayName(), wxDefaultPosition, wxSize(526, 201))
     {
       SetIcon(wxICON(#114));
       SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -479,7 +480,7 @@ namespace REDialog
   }
 }
 
-wxBEGIN_EVENT_TABLE(AuthDialog, wxDialog)
+wxBEGIN_EVENT_TABLE(AuthDialog, WXDialog)
 EVT_MENU(wxID_OK, AuthDialog::OnOkClicked)
 EVT_MENU(wxID_CANCEL, AuthDialog::OnCancelClicked)
 wxEND_EVENT_TABLE()

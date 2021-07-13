@@ -2,8 +2,9 @@
 #include <wx/wx.h>
 #include <wx/filepicker.h>
 #include <wx/radiobox.h>
+#include "../Misc/WXDialog.h"
 
-class DcToolDialog : public wxDialog {
+class DcToolDialog : public WXDialog {
 public:
   DcToolDialog(wxWindow* parent);
   ~DcToolDialog();

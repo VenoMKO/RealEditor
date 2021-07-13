@@ -31,6 +31,7 @@
     <ClCompile Include="App\Misc\ArchiveInfo.cpp" />
     <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
+    <ClCompile Include="App\Misc\WXDialog.cpp" />
     <ClCompile Include="App\Misc\wxModalWindow.cpp" />
     <ClCompile Include="App\Windows\DcToolDialog.cpp" />
     <ClCompile Include="App\Windows\DependsResolveDialog.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
+    <ClInclude Include="App\Misc\WXDialog.h" />
     <ClInclude Include="App\Misc\wxModalWindow.h" />
     <ClInclude Include="App\Windows\DcToolDialog.h" />
     <ClInclude Include="App\Windows\DependsResolveDialog.h" />

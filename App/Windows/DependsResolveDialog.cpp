@@ -182,7 +182,7 @@ protected:
 };
 
 DependsResolveDialog::DependsResolveDialog(wxWindow* parent, const std::map<UObject*, UObject*>& objects, FPackage* destPackage)
-  : wxDialog(parent, wxID_ANY, wxT("Copy Dependencies"), wxDefaultPosition, wxSize(630, 403))
+  : WXDialog(parent, wxID_ANY, wxT("Copy Dependencies"), wxDefaultPosition, wxSize(630, 403))
   , DestinationPackage(destPackage)
 {
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);

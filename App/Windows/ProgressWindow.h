@@ -2,13 +2,15 @@
 #include <wx/wx.h>
 #include <atomic>
 
+#include "../Misc/WXDialog.h"
+
 wxDECLARE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_ADV, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_DESC, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS_FINISH, wxCommandEvent);
 
-class ProgressWindow : public wxDialog {
+class ProgressWindow : public WXDialog {
 public:
   ProgressWindow(wxWindow* parent, const wxString& title = wxT("Loading"), const wxString& cancel = wxT("Cancel"));
 

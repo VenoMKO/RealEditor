@@ -16,7 +16,7 @@ enum ControlElementId {
 };
 
 CompositePatcherWindow::CompositePatcherWindow(wxWindow* parent, const wxString& sourceName)
-  : wxDialog(parent, wxID_ANY, wxT("Patch composite package map"), wxDefaultPosition, wxSize(540, 300))
+  : WXDialog(parent, wxID_ANY, wxT("Patch composite package map"), wxDefaultPosition, wxSize(540, 300))
   , Patcher(FPackage::GetCompositePackageMapPath().WString())
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -265,7 +265,7 @@ void CompositePatcherWindow::OnSizeClicked(wxCommandEvent&)
   SizeField->SetValue(wxString::Format("%d", (int)package->GetSourceSize()));
 }
 
-wxBEGIN_EVENT_TABLE(CompositePatcherWindow, wxDialog)
+wxBEGIN_EVENT_TABLE(CompositePatcherWindow, WXDialog)
 EVT_BUTTON(ControlElementId::Select, CompositePatcherWindow::OnSelectClicked)
 EVT_TEXT(ControlElementId::Source, CompositePatcherWindow::OnSourceFieldText)
 EVT_TEXT_ENTER(ControlElementId::Source, CompositePatcherWindow::OnSourceFieldEnter)

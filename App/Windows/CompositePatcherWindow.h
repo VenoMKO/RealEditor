@@ -1,8 +1,9 @@
 #pragma once
 #include <wx/wx.h>
 #include <Utils/CompositePatcher.h>
+#include "../Misc/WXDialog.h"
 
-class CompositePatcherWindow : public wxDialog {
+class CompositePatcherWindow : public WXDialog {
 public:
 	CompositePatcherWindow(wxWindow* parent, const wxString& sourceName = wxEmptyString);
 

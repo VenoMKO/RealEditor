@@ -1,8 +1,9 @@
 #pragma once
 #include <wx/wx.h>
+#include "../Misc/WXDialog.h"
 #include <Utils/AConfiguration.h>
 
-class SettingsWindow : public wxDialog {
+class SettingsWindow : public WXDialog {
 public:
   SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos = wxDefaultPosition);
 

@@ -1,7 +1,8 @@
 #pragma once
 #include <wx/wx.h>
+#include "../Misc/WXDialog.h"
 
-class CompositePackagePicker : public wxDialog {
+class CompositePackagePicker : public WXDialog {
 public:
   CompositePackagePicker(wxWindow* parent, const wxString& title, bool filePackages = false);
 

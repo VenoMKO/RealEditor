@@ -1,7 +1,8 @@
 #pragma once
 #include <wx/wx.h>
+#include "../Misc/WXDialog.h"
 
-class CreateModWindow : public wxDialog
+class CreateModWindow : public WXDialog
 {
 public:
 	CreateModWindow(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Create a mod"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(455, 133), long style = wxDEFAULT_DIALOG_STYLE);

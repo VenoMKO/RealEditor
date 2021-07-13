@@ -164,11 +164,11 @@ private:
 };
 
 
-class AddImportOperationDialog : public wxDialog {
+class AddImportOperationDialog : public WXDialog {
 public:
 
   AddImportOperationDialog(wxWindow* parent, const std::string& objectDumpBuffer, const wxString& confirmTitle = wxT("Add"), const wxString& objectClass = wxT("Texture2D"), const wxString& objectName = wxEmptyString)
-    : wxDialog(parent, wxID_ANY, wxT("Add bulk action"), wxDefaultPosition, wxSize(605, 619))
+    : WXDialog(parent, wxID_ANY, wxT("Add bulk action"), wxDefaultPosition, wxSize(605, 619))
     , ObjectDumpBuffer(objectDumpBuffer)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);

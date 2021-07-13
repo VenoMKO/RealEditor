@@ -9,7 +9,7 @@
 #include <Tera/UObject.h>
 
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
-  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
+  : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
   , AllowDifferentPackage(allowDifferentPackage)
   , TableTitle(title)
 {
@@ -106,7 +106,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 }
 
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
-  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
+  : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
 {
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -422,7 +422,7 @@ ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(FObjectExport*
 }
 
 ObjectNameDialog::ObjectNameDialog(wxWindow* parent, const wxString& objectName)
-  : wxDialog(parent, wxID_ANY, wxT("Enter object name"), wxDefaultPosition, wxSize(418, 143), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+  : WXDialog(parent, wxID_ANY, wxT("Enter object name"), wxDefaultPosition, wxSize(418, 143), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
   SetSizeHints(wxDefaultSize, wxDefaultSize);
   wxBoxSizer* bSizer20;

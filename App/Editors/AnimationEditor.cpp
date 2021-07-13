@@ -1,5 +1,6 @@
 #include "AnimationEditor.h"
 #include "../App.h"
+#include "../Misc/WXDialog.h"
 #include "../Windows/ObjectPicker.h"
 #include "../Windows/REDialogs.h"
 #include "../Windows/ProgressWindow.h"
@@ -19,10 +20,10 @@
 
 #include <filesystem>
 
-class AnimExportOptions : public wxDialog {
+class AnimExportOptions : public WXDialog {
 public:
   AnimExportOptions(wxWindow* parent, UAnimSet* anim, USkeletalMesh* mesh)
-    : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(562, 198))
+    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(562, 198))
     , AnimationSet(anim)
     , Mesh(mesh)
     , DefaultMesh(anim->GetPreviewSkeletalMesh())

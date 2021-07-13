@@ -284,10 +284,10 @@
     <ClCompile Include="Core\Utils\ALDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Editors\AnimSetEditor.cpp">
+    <ClCompile Include="App\Editors\AnimationEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Editors\AnimationEditor.cpp">
+    <ClCompile Include="App\Misc\WXDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -439,8 +439,8 @@
     <ClInclude Include="App\Misc\wxModalWindow.h" />
     <ClInclude Include="Core\Utils\ALDevice.h" />
     <ClInclude Include="Core\Utils\FPackageObserver.h" />
-    <ClInclude Include="App\Editors\AnimSetEditor.h" />
     <ClInclude Include="App\Editors\AnimationEditor.h" />
+    <ClInclude Include="App\Misc\WXDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

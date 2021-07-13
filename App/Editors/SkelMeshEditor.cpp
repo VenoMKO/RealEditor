@@ -39,10 +39,10 @@ enum MaterialsMenuID {
   FirstMaterial,
 };
 
-class SkelMeshExportOptions : public wxDialog {
+class SkelMeshExportOptions : public WXDialog {
 public:
   SkelMeshExportOptions(wxWindow* parent, const FSkelMeshExportConfig& cfg)
-    : wxDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 270), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 270), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -206,10 +206,10 @@ protected:
   float ScaleFactorValue = 1.;
 };
 
-class SkelMeshImportOptions : public wxDialog {
+class SkelMeshImportOptions : public WXDialog {
 public:
   SkelMeshImportOptions(wxWindow* parent)
-    : wxDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(395, 527), wxDEFAULT_DIALOG_STYLE)
+    : WXDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(395, 527), wxDEFAULT_DIALOG_STYLE)
   {
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 

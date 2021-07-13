@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 #include <wx/filepicker.h>
+#include "../Misc/WXDialog.h"
 
 #include <filesystem>
 
@@ -144,7 +145,7 @@ struct LevelExportContext {
   int UntypedActorsCount = 0;
 };
 
-class LevelExportOptionsWindow : public wxDialog {
+class LevelExportOptionsWindow : public WXDialog {
 public:
   LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx = LevelExportContext());
   ~LevelExportOptionsWindow();
