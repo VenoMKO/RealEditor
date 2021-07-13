@@ -102,6 +102,9 @@ IDB_ICO_ANIMSET         RCDATA                  "Resources\\Classes\\icon_animse
 
 IDB_ICO_ANIMSEQ         RCDATA                  "Resources\\Classes\\icon_animseq.png"
 
+IDB_SKEL                RCDATA                  "Resources\\Btn_Skeleton.png"
+
+IDB_SKEL_OFF            RCDATA                  "Resources\\Btn_Skeleton_Off.png"
 
 /////////////////////////////////////////////////////////////////////////////
 //

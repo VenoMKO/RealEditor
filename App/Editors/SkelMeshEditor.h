@@ -28,8 +28,10 @@ protected:
 
 protected:
   USkeletalMesh* Mesh = nullptr;
+  wxToolBarToolBase* SkeletonTool = nullptr;
   osg::ref_ptr<osg::Geode> Root = nullptr;
   OSGCanvas* Canvas = nullptr;
   OSGWindow* OSGProxy = nullptr;
   osgViewer::Viewer* Renderer = nullptr;
+  bool ShowSkeleton = true;
 };

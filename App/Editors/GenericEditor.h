@@ -19,6 +19,7 @@ enum ToolEventID : int {
   eID_SoundPlay,
   eID_SoundStop,
   eID_SoundPause,
+  eID_Skeleton,
 };
 
 class UObject;

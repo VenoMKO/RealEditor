@@ -13,6 +13,14 @@
 #include <osg/BlendFunc>
 #include <osg/Depth>
 
+#include <osg/LineWidth>
+#include <osgAnimation/Bone>
+#include <osgAnimation/Skeleton>
+#include <osgAnimation/UpdateBone>
+#include <osgAnimation/StackedTranslateElement>
+#include <osgAnimation/StackedQuaternionElement>
+#include <osgAnimation/BasicAnimationManager>
+
 #include <Tera/Cast.h>
 #include <Tera/UMaterial.h>
 
@@ -27,6 +35,85 @@
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
+
+static const osg::Vec4 BoneColor(1., 1., 1., 1.);
+static const float BoneWidth = 2.f;
+
+osg::Geode* CreateBoneShape(const FVector& pos)
+{
+  osg::Vec3 trans(pos.X, -pos.Y, pos.Z);
+  osg::ref_ptr<osg::Vec3Array> va = new osg::Vec3Array;
+  va->push_back(osg::Vec3());
+  va->push_back(trans);
+  osg::ref_ptr<osg::Vec4Array> ca = new osg::Vec4Array;
+  ca->push_back(BoneColor);
+  osg::ref_ptr<osg::Geometry> line = new osg::Geometry;
+  line->setVertexArray(va.get());
+  line->setColorArray(ca.get());
+  line->setColorBinding(osg::Geometry::BIND_OVERALL);
+  line->addPrimitiveSet(new osg::DrawArrays(GL_LINES, 0, 2));
+  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+  geode->addDrawable(line.get());
+  geode->getOrCreateStateSet()->setAttributeAndModes(new osg::LineWidth(BoneWidth));
+  geode->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+  return geode.release();
+}
+
+osgAnimation::Bone* CreateBone(const FMeshBone& refBone, osg::Group* parent)
+{
+  osg::Vec3 trans(refBone.BonePos.Position.X, -refBone.BonePos.Position.Y, refBone.BonePos.Position.Z);
+  osg::Quat orient(refBone.BonePos.Orientation.X, -refBone.BonePos.Orientation.Y, refBone.BonePos.Orientation.Z, -refBone.BonePos.Orientation.W);
+  osg::ref_ptr<osgAnimation::Bone> bone = new osgAnimation::Bone;
+  parent->insertChild(0, bone.get());
+  parent->addChild(CreateBoneShape(refBone.BonePos.Position));
+  osg::ref_ptr<osgAnimation::UpdateBone> updater = new osgAnimation::UpdateBone(refBone.Name.String().C_str());
+  updater->getStackedTransforms().push_back(new osgAnimation::StackedTranslateElement("translate", trans));
+  updater->getStackedTransforms().push_back(new osgAnimation::StackedQuaternionElement("quaternion", orient));
+  bone->setUpdateCallback(updater.get());
+  bone->setMatrixInSkeletonSpace(osg::Matrix::translate(trans) * bone->getMatrixInSkeletonSpace());
+  bone->setName(refBone.Name.String().C_str());
+  return bone.get();
+}
+
+osgAnimation::Bone* CreateEndBone(const FMeshBone& refBone, osg::Group* parent)
+{
+  osgAnimation::Bone* bone = CreateBone(refBone, parent);
+  bone->addChild(CreateBoneShape(FVector(.1)));
+  return bone;
+}
+
+osgAnimation::Channel* CreateChannel(const char* name, const osg::Vec3& axis, float rad)
+{
+  osg::ref_ptr<osgAnimation::QuatSphericalLinearChannel> ch = new osgAnimation::QuatSphericalLinearChannel;
+  ch->setName("quaternion");
+  ch->setTargetName(name);
+  osgAnimation::QuatKeyframeContainer* kfs = ch->getOrCreateSampler()->getOrCreateKeyframeContainer();
+  kfs->push_back(osgAnimation::QuatKeyframe(0.0, osg::Quat(0.0, axis)));
+  kfs->push_back(osgAnimation::QuatKeyframe(8.0, osg::Quat(rad, axis)));
+  return ch.release();
+}
+
+osg::ref_ptr<osgAnimation::Skeleton> CreateSkeleton(const std::vector<FMeshBone>& refBones)
+{
+  osg::ref_ptr<osgAnimation::Skeleton> skeleton = new osgAnimation::Skeleton;
+  std::vector<osgAnimation::Bone*> bones;
+  bones.emplace_back(CreateBone(refBones.front(), skeleton));
+  for (int32 idx = 1; idx < refBones.size(); ++idx)
+  {
+    osgAnimation::Bone* bone = nullptr;
+    const FMeshBone& refBone = refBones[idx];
+    if (!refBone.NumChildren)
+    {
+      bone = CreateEndBone(refBone, bones[refBone.ParentIndex]);
+    }
+    else
+    {
+      bone = CreateBone(refBone, bones[refBone.ParentIndex]);
+    }
+    bones.emplace_back(bone);
+  }
+  return skeleton;
+}
 
 enum ExportMode {
   ExportGeometry = wxID_HIGHEST + 1,
@@ -466,6 +553,13 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
     item->Enable(true);
   }
   toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
+  if ((SkeletonTool = toolbar->AddCheckTool(eID_Skeleton, wxT("Skeleton"), wxBitmap("#136", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#137", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle skeleton")))
+  {
+    if (ShowSkeleton)
+    {
+      SkeletonTool->Toggle();
+    }
+  }
   toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
@@ -487,6 +581,23 @@ void SkelMeshEditor::OnToolBarEvent(wxCommandEvent& e)
   else if (eId == eID_Materials)
   {
     OnMaterialsClicked();
+  }
+  else if (eId == eID_Skeleton)
+  {
+    ShowSkeleton = SkeletonTool->IsToggled();
+    osg::Vec3d center;
+    osg::Vec3d eye;
+    osg::Vec3d up;
+    osgGA::TrackballManipulator* manipulator = (osgGA::TrackballManipulator*)Renderer->getCameraManipulator();
+    if (manipulator)
+    {
+      manipulator->getTransformation(eye, center, up);
+    }
+    OnRefreshClicked();
+    if (manipulator)
+    {
+      manipulator->setTransformation(eye, center, up);
+    }
   }
 }
 
@@ -925,6 +1036,7 @@ void SkelMeshEditor::CreateRenderModel()
   }
 
   osg::ref_ptr<osg::Geode> root = new osg::Geode;
+  osg::ref_ptr<osgAnimation::Skeleton> skeleton = CreateSkeleton(Mesh->GetReferenceSkeleton());
   const FStaticLODModel* model = Mesh->GetLod(0);
 
   osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
@@ -1030,16 +1142,23 @@ void SkelMeshEditor::CreateRenderModel()
     Root = new osg::Geode;
     Root->addChild(root);
   }
+  if (ShowSkeleton)
+  {
+    Root->addChild(skeleton);
+  }
 
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
 
   if (customRotation.IsZero())
   {
-    float distance = Root->getBoundingBox().radius() * 1.25;
-    osg::Vec3d center = Root->getBoundingBox().center();
-    center[0] = Mesh->GetBounds().Origin.X;
-    center[1] = Mesh->GetBounds().Origin.Y;
+    const FBoxSphereBounds& bounds = Mesh->GetBounds();
+    float distance = bounds.SphereRadius * 1.25;
+    if (!distance)
+    {
+      distance = 10.;
+    }
+    osg::Vec3d center(bounds.Origin.X, bounds.Origin.Y, bounds.Origin.Z);
     osg::Vec3d eye = { center[0] + distance, center[1] + distance, center[2] * 1.75 };
     osg::Vec3d up = { -.18, -.14, .97 };
     osgGA::TrackballManipulator* manipulator = (osgGA::TrackballManipulator*)Renderer->getCameraManipulator();
