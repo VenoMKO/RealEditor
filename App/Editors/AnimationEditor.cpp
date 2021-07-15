@@ -5,20 +5,179 @@
 #include "../Windows/REDialogs.h"
 #include "../Windows/ProgressWindow.h"
 
+#include <osgViewer/ViewerEventHandlers>
+#include <osgGA/TrackballManipulator>
+#include <osgUtil/SmoothingVisitor>
+#include <osg/MatrixTransform>
+#include <osg/BlendFunc>
+#include <osg/Depth>
+
+#include <osg/LineWidth>
+#include <osgAnimation/Bone>
+#include <osgAnimation/Skeleton>
+#include <osgAnimation/UpdateBone>
+#include <osgAnimation/StackedTranslateElement>
+#include <osgAnimation/StackedQuaternionElement>
+#include <osgAnimation/BasicAnimationManager>
+#include <osgAnimation/RigGeometry>
+
 #include <Tera/Cast.h>
 #include <Tera/FName.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/USkeletalMesh.h>
 #include <Tera/UAnimation.h>
 #include <Tera/USkeletalMesh.h>
+#include <Tera/UTexture.h>
 #include <Tera/FPackage.h>
 
 #include <Utils/AConfiguration.h>
 #include <Utils/FbxUtils.h>
 
 #include <wx/valnum.h>
+#include <wx/statline.h>
 
 #include <filesystem>
+
+static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
+static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
+static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
+
+static const osg::Vec4 BoneColor(1., 1., 1., 1.);
+static const float BoneWidth = 2.f;
+
+namespace
+{
+  osg::Geode* CreateBoneShape(const FVector& pos)
+  {
+    osg::Vec3 trans(pos.X, -pos.Y, pos.Z);
+    osg::ref_ptr<osg::Vec3Array> va = new osg::Vec3Array;
+    va->push_back(osg::Vec3());
+    va->push_back(trans);
+    osg::ref_ptr<osg::Vec4Array> ca = new osg::Vec4Array;
+    ca->push_back(BoneColor);
+    osg::ref_ptr<osg::Geometry> line = new osg::Geometry;
+    line->setVertexArray(va.get());
+    line->setColorArray(ca.get());
+    line->setColorBinding(osg::Geometry::BIND_OVERALL);
+    line->addPrimitiveSet(new osg::DrawArrays(GL_LINES, 0, 2));
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+    geode->addDrawable(line.get());
+    geode->getOrCreateStateSet()->setAttributeAndModes(new osg::LineWidth(BoneWidth));
+    geode->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+    return geode.release();
+  }
+
+  osgAnimation::Bone* CreateBone(const FMeshBone& refBone, osg::Group* parent)
+  {
+    osg::Vec3 trans(refBone.BonePos.Position.X, -refBone.BonePos.Position.Y, refBone.BonePos.Position.Z);
+    osg::Quat orient(refBone.BonePos.Orientation.X, -refBone.BonePos.Orientation.Y, refBone.BonePos.Orientation.Z, -refBone.BonePos.Orientation.W);
+    osg::ref_ptr<osgAnimation::Bone> bone = new osgAnimation::Bone;
+    parent->insertChild(0, bone.get());
+    parent->addChild(CreateBoneShape(refBone.BonePos.Position));
+    osg::ref_ptr<osgAnimation::UpdateBone> updater = new osgAnimation::UpdateBone(refBone.Name.String().C_str());
+    updater->getStackedTransforms().push_back(new osgAnimation::StackedTranslateElement("translate", trans));
+    updater->getStackedTransforms().push_back(new osgAnimation::StackedQuaternionElement("quaternion", orient));
+    bone->setUpdateCallback(updater.get());
+    bone->setMatrixInSkeletonSpace(osg::Matrix::translate(trans) * bone->getMatrixInSkeletonSpace());
+    bone->setName(refBone.Name.String().C_str());
+    return bone.get();
+  }
+
+  osgAnimation::Bone* CreateEndBone(const FMeshBone& refBone, osg::Group* parent)
+  {
+    osgAnimation::Bone* bone = CreateBone(refBone, parent);
+    bone->addChild(CreateBoneShape(FVector(.1)));
+    return bone;
+  }
+
+  osgAnimation::Channel* CreateChannel(const char* name, const osg::Vec3& axis, float rad)
+  {
+    osg::ref_ptr<osgAnimation::QuatSphericalLinearChannel> ch = new osgAnimation::QuatSphericalLinearChannel;
+    ch->setName("quaternion");
+    ch->setTargetName(name);
+    osgAnimation::QuatKeyframeContainer* kfs = ch->getOrCreateSampler()->getOrCreateKeyframeContainer();
+    kfs->push_back(osgAnimation::QuatKeyframe(0.0, osg::Quat(0.0, axis)));
+    kfs->push_back(osgAnimation::QuatKeyframe(8.0, osg::Quat(rad, axis)));
+    return ch.release();
+  }
+
+  osg::ref_ptr<osgAnimation::Skeleton> CreateSkeleton(const std::vector<FMeshBone>& refBones)
+  {
+    osg::ref_ptr<osgAnimation::Skeleton> skeleton = new osgAnimation::Skeleton;
+    std::vector<osgAnimation::Bone*> bones;
+    bones.emplace_back(CreateBone(refBones.front(), skeleton));
+    for (int32 idx = 1; idx < refBones.size(); ++idx)
+    {
+      osgAnimation::Bone* bone = nullptr;
+      const FMeshBone& refBone = refBones[idx];
+      if (!refBone.NumChildren)
+      {
+        bone = CreateEndBone(refBone, bones[refBone.ParentIndex]);
+      }
+      else
+      {
+        bone = CreateBone(refBone, bones[refBone.ParentIndex]);
+      }
+      bones.emplace_back(bone);
+    }
+    return skeleton;
+  }
+
+  osg::ref_ptr<osgAnimation::Animation> CreateAnimation(UAnimSequence* sequence, USkeletalMesh* mesh)
+  {
+    osg::ref_ptr<osgAnimation::Animation> anim = new osgAnimation::Animation;
+
+    UAnimSet* set = sequence->GetTypedOuter<UAnimSet>();
+    int32 numRawFrames = sequence->GetRawFramesCount();
+
+    std::vector<FTranslationTrack> ttracks;
+    std::vector<FRotationTrack> rtracks;
+    sequence->GetTracks(ttracks, rtracks);
+
+    for (const FRotationTrack& track : rtracks)
+    {
+      osg::ref_ptr<osgAnimation::QuatSphericalLinearChannel> rotChannel = new osgAnimation::QuatSphericalLinearChannel;
+      rotChannel->setName("quaternion");
+      rotChannel->setTargetName(track.Name.String().C_str());
+      osgAnimation::QuatKeyframeContainer* kfs = rotChannel->getOrCreateSampler()->getOrCreateKeyframeContainer();
+
+      float step = sequence->SequenceLength;
+      if (track.RotKeys.size() > 1)
+      {
+        step /= track.RotKeys.size() - 1;
+      }
+      for (int32 keyIdx = 0; keyIdx < track.RotKeys.size(); ++keyIdx)
+      {
+        FQuat q = track.RotKeys[keyIdx];
+        kfs->push_back(osgAnimation::QuatKeyframe(step * float(keyIdx), osg::Quat(q.X, -q.Y, q.Z, q.W)));
+      }
+      anim->addChannel(rotChannel.release());
+    }
+
+    for (const FTranslationTrack& track : ttracks)
+    {
+      osg::ref_ptr<osgAnimation::Vec3LinearChannel> posChannel = new osgAnimation::Vec3LinearChannel;
+      posChannel->setName("translate");
+      posChannel->setTargetName(track.Name.String().C_str());
+      osgAnimation::Vec3KeyframeContainer* kfs = posChannel->getOrCreateSampler()->getOrCreateKeyframeContainer();
+
+      float step = sequence->SequenceLength;
+      if (track.PosKeys.size() > 1)
+      {
+        step /= track.PosKeys.size() - 1;
+      }
+      for (int32 keyIdx = 0; keyIdx < track.PosKeys.size(); ++keyIdx)
+      {
+        FVector p = track.PosKeys[keyIdx];
+        kfs->push_back(osgAnimation::Vec3Keyframe(step * float(keyIdx), osg::Vec3(p.X, -p.Y, p.Z)));
+      }
+      anim->addChannel(posChannel.release());
+    }
+
+    return anim;
+  }
+}
+
 
 class AnimExportOptions : public WXDialog {
 public:
@@ -298,9 +457,79 @@ protected:
   float RateValue = 1.;
 };
 
+AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
+  : GenericAnimEditor(parent, window)
+{
+  SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  wxBoxSizer* bSizer2;
+  bSizer2 = new wxBoxSizer(wxVERTICAL);
+
+  wxStaticLine* m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
+  bSizer2->Add(m_staticline1, 0, wxEXPAND | wxBOTTOM, 5);
+
+  wxPanel* m_panel1;
+  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 32), wxTAB_TRAVERSAL);
+  m_panel1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  wxBoxSizer* bSizer3;
+  bSizer3 = new wxBoxSizer(wxHORIZONTAL);
+
+  wxStaticText* m_staticText2;
+  m_staticText2 = new wxStaticText(m_panel1, wxID_ANY, wxT("Take:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText2->Wrap(-1);
+  bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+
+  TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(175, -1));
+  bSizer3->Add(TakePicker, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+
+  MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Mesh..."), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer3->Add(MeshButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+  ErrorLabel = new wxStaticText(m_panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+  ErrorLabel->Wrap(-1);
+  ErrorLabel->SetForegroundColour(wxColour(255, 13, 13));
+
+  bSizer3->Add(ErrorLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+  m_panel1->SetSizer(bSizer3);
+  m_panel1->Layout();
+  bSizer2->Add(m_panel1, 0, wxALL | wxEXPAND, 5);
+
+  ContainerPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  ContainerPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
+
+  bSizer2->Add(ContainerPanel, 1, wxEXPAND | wxTOP, 5);
+
+
+  this->SetSizer(bSizer2);
+  this->Layout();
+
+  CreateRenderer(ContainerPanel);
+  window->FixOSG();
+  Manager = new osgAnimation::BasicAnimationManager;
+
+  TakePicker->Connect(wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(AnimSetEditor::OnTakeChanged), NULL, this);
+  MeshButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AnimSetEditor::OnMeshClicked), NULL, this);
+  MeshButton->Enable(false);
+}
+
 void AnimSetEditor::PopulateToolBar(wxToolBar* toolbar)
 {
-  toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
+  if (wxToolBarToolBase* tool = toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data..."))
+  {
+    if (UAnimSet* set = Cast<UAnimSet>(Object))
+    {
+      tool->Enable(set->GetSequences().size());
+      if (set->GetSequences().empty())
+      {
+        tool->SetShortHelp(wxT("The animation has no takes! Nothing to show or export."));
+      }
+    }
+    else
+    {
+      tool->Enable(false);
+    }
+  }
   GenericEditor::PopulateToolBar(toolbar);
 }
 
@@ -415,6 +644,107 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
   }
 }
 
+void AnimSetEditor::OnObjectLoaded()
+{
+  if (!Mesh)
+  {
+    if (UAnimSet* set = Cast<UAnimSet>(Object))
+    {
+      TakePicker->Freeze();
+      std::vector<UAnimSequence*> sequences = set->GetSequences();
+      MeshButton->Enable(sequences.size());
+      TakePicker->Clear();
+      for (UAnimSequence* sequence : sequences)
+      {
+        TakePicker->Append(sequence->SequenceName.String().WString());
+      }
+      TakePicker->SetSelection(0);
+      TakePicker->Thaw();
+    }
+  }
+  GenericAnimEditor::OnObjectLoaded();
+  ShowMissingMesh(!Mesh);
+}
+
+USkeletalMesh* AnimSetEditor::GetMesh()
+{
+  if (Mesh)
+  {
+    return Mesh;
+  }
+  UAnimSet* set = Cast<UAnimSet>(Object);
+  USkeletalMesh* source = nullptr;
+  std::vector<FObjectExport*> allExports = Object->GetPackage()->GetAllExports();
+  for (FObjectExport* exp : allExports)
+  {
+    if (exp->GetClassName() == USkeletalMesh::StaticClassName())
+    {
+      USkeletalMesh* skelMesh = Cast<USkeletalMesh>(Object->GetPackage()->GetObject(exp));
+      if (set->GetSkeletalMeshMatchRatio(skelMesh))
+      {
+        source = skelMesh;
+        break;
+      }
+    }
+  }
+  if (!source)
+  {
+    source = set->GetPreviewSkeletalMesh();
+  }
+  Mesh = source;
+  return Mesh;
+}
+
+UAnimSequence* AnimSetEditor::GetActiveSequence()
+{
+  int sel = TakePicker->GetSelection();
+  return sel >= 0 ? Cast<UAnimSet>(Object)->GetSequences()[sel] : nullptr;
+}
+
+void AnimSetEditor::ShowMissingMesh(bool show)
+{
+  wxString text = show ? Cast<UAnimSet>(Object)->GetSequences().size() ? wxT("Preview is unavailable! Missing skeletal mesh.") : wxT("The animation set has no takes! Nothing to show or export.") : wxEmptyString;
+  ErrorLabel->SetLabelText(text);
+  ErrorLabel->SetToolTip(text);
+  TakePicker->Enable(!show);
+}
+
+void AnimSetEditor::OnTakeChanged(wxCommandEvent&)
+{
+  if (ActiveAnimation)
+  {
+    Manager->stopAll();
+    Manager->unregisterAnimation(ActiveAnimation);
+    ActiveAnimation = nullptr;
+  }
+  if ((ActiveAnimation = CreateAnimation(GetActiveSequence(), Mesh)))
+  {
+    Manager->registerAnimation(ActiveAnimation);
+    Manager->playAnimation(ActiveAnimation);
+  }
+}
+
+void AnimSetEditor::OnMeshClicked(wxCommandEvent&)
+{
+  ObjectPicker picker(this, wxT("Select a skeletal mesh..."), true, Mesh ? Mesh->GetPackage()->Ref() : Object->GetPackage()->Ref(), Mesh ? Mesh->GetPackage()->GetObjectIndex(Mesh) : 0, { USkeletalMesh::StaticClassName() });
+  picker.SetCanChangePackage(true);
+  if (picker.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  Mesh = Cast<USkeletalMesh>(picker.GetSelectedObject());
+  ShowMissingMesh(!Mesh);
+  CreateRenderModel();
+}
+
+AnimSequenceEditor::AnimSequenceEditor(wxPanel* parent, PackageWindow* window)
+  : GenericAnimEditor(parent, window)
+{
+  CreateRenderer(this);
+  window->FixOSG();
+  Manager = new osgAnimation::BasicAnimationManager;
+}
+
 void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
 {
   UAnimSet* set = Object->GetTypedOuter<UAnimSet>();
@@ -473,5 +803,199 @@ void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
   if (!progress.ShowModal())
   {
     REDialog::Error(ctx.Error, wxS("Failed to export ") + Object->GetObjectNameString().WString(), this);
+  }
+}
+
+USkeletalMesh* AnimSequenceEditor::GetMesh()
+{
+  if (Mesh)
+  {
+    return Mesh;
+  }
+  UAnimSet* set = Object->GetTypedOuter<UAnimSet>();
+  set->Load();
+  USkeletalMesh* source = nullptr;
+  std::vector<FObjectExport*> allExports = Object->GetPackage()->GetAllExports();
+  for (FObjectExport* exp : allExports)
+  {
+    if (exp->GetClassName() == USkeletalMesh::StaticClassName())
+    {
+      USkeletalMesh* skelMesh = Cast<USkeletalMesh>(Object->GetPackage()->GetObject(exp));
+      if (set->GetSkeletalMeshMatchRatio(skelMesh))
+      {
+        source = skelMesh;
+        break;
+      }
+    }
+  }
+  if (!source)
+  {
+    source = set->GetPreviewSkeletalMesh();
+  }
+  Mesh = source;
+  return Mesh;
+}
+
+UAnimSequence* AnimSequenceEditor::GetActiveSequence()
+{
+  return Cast<UAnimSequence>(Object);
+}
+
+GenericAnimEditor::~GenericAnimEditor()
+{
+  if (Renderer)
+  {
+    delete Renderer;
+  }
+}
+
+void GenericAnimEditor::OnTick()
+{
+  if (Renderer && Renderer->isRealized() && Renderer->checkNeedToDoFrame())
+  {
+    Renderer->frame();
+  }
+}
+
+void GenericAnimEditor::OnObjectLoaded()
+{
+  if (!Mesh)
+  {
+    Mesh = GetMesh();
+    CreateRenderModel();
+  }
+  else if (Mesh && ActiveAnimation)
+  {
+    Manager->playAnimation(ActiveAnimation);
+  }
+  GenericEditor::OnObjectLoaded();
+}
+
+void GenericAnimEditor::ClearToolbar()
+{
+  Manager->stopAll();
+  GenericEditor::ClearToolbar();
+}
+
+void GenericAnimEditor::CreateRenderer(wxPanel* parent)
+{
+  int attrs[] = { int(WX_GL_DOUBLEBUFFER), WX_GL_RGBA, WX_GL_DEPTH_SIZE, 8, WX_GL_STENCIL_SIZE, 8, 0 };
+
+  Canvas = new OSGCanvas(Window, parent, wxID_ANY, wxDefaultPosition, GetSize(), wxNO_BORDER, wxT("OSGCanvas"), attrs);
+
+  wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
+  sizer->Add(Canvas, 1, wxALL | wxEXPAND);
+  parent->SetSizer(sizer);
+  sizer->Fit(parent);
+  sizer->SetSizeHints(parent);
+
+  OSGProxy = new OSGWindow(Canvas);
+  Canvas->SetGraphicsWindow(OSGProxy);
+  Renderer = new osgViewer::Viewer;
+  Renderer->setRunFrameScheme(osgViewer::ViewerBase::FrameScheme::ON_DEMAND);
+  Renderer->getCamera()->setClearColor({ .3, .3, .3, 1 });
+  Renderer->getCamera()->setGraphicsContext(OSGProxy);
+  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+  Renderer->getCamera()->setProjectionMatrixAsPerspective(60, GetSize().x / GetSize().y, 0.1, 500);
+  Renderer->getCamera()->setDrawBuffer(GL_BACK);
+  Renderer->getCamera()->setReadBuffer(GL_BACK);
+
+#if _DEBUG
+  Renderer->addEventHandler(new osgViewer::StatsHandler);
+#endif
+
+  osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
+  manipulator->setAllowThrow(false);
+  manipulator->setVerticalAxisFixed(true);
+  Renderer->setCameraManipulator(manipulator);
+  Renderer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
+}
+
+void GenericAnimEditor::CreateRenderModel()
+{
+  if (!Mesh || !Renderer)
+  {
+    return;
+  }
+  osg::ref_ptr<osg::Geode> root = new osg::Geode;
+  osg::ref_ptr<osgAnimation::Skeleton> skeleton = CreateSkeleton(Mesh->GetReferenceSkeleton());
+
+  FVector customRotation;
+  FString objName = Mesh->GetObjectNameString().ToUpper();
+  if (objName.Find("_FACE") != std::string::npos)
+  {
+    customRotation.X = 90;
+    customRotation.Z = 180 + 90;
+  }
+  else if (objName.Find("_TAIL") != std::string::npos)
+  {
+    customRotation.Y = 90;
+  }
+  else if (objName.Find("_HAIR") != std::string::npos)
+  {
+    customRotation.X = 90;
+    customRotation.Z = 180 + 90;
+  }
+  else if (objName.StartWith("ATTACH_"))
+  {
+    customRotation.Z = -90;
+  }
+  else if (objName.StartWith("SWITCH_"))
+  {
+    customRotation.Z = 180;
+    customRotation.X = 90;
+  }
+
+  if (!customRotation.IsZero())
+  {
+    osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform;
+    osg::Matrix m;
+    m.makeIdentity();
+    osg::Quat quat;
+    quat.makeRotate(
+      customRotation.X * M_PI / 180., RollAxis,
+      customRotation.Y * M_PI / 180., PitchAxis,
+      customRotation.Z * M_PI / 180., YawAxis
+    );
+    m.preMultRotate(quat);
+    mt->setMatrix(m);
+    mt->addChild(root);
+    Root = new osg::Geode;
+    Root->addChild(mt);
+  }
+  else
+  {
+    Root = new osg::Geode;
+    Root->addChild(root);
+  }
+  root->addChild(skeleton);
+  root->setUpdateCallback(Manager.get());
+
+  Renderer->setSceneData(Root.get());
+  Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
+
+  if (customRotation.IsZero())
+  {
+    const FBoxSphereBounds& bounds = Mesh->GetBounds();
+    float distance = bounds.SphereRadius * 1.25;
+    if (!distance)
+    {
+      distance = 10.;
+    }
+    osg::Vec3d center(bounds.Origin.X, bounds.Origin.Y, bounds.Origin.Z);
+    osg::Vec3d eye = { center[0] + distance, center[1] + distance, center[2] * 1.75 };
+    osg::Vec3d up = { -.18, -.14, .97 };
+    osgGA::TrackballManipulator* manipulator = (osgGA::TrackballManipulator*)Renderer->getCameraManipulator();
+    manipulator->setTransformation(eye, center, up);
+  }
+
+  if (!ActiveAnimation)
+  {
+    ActiveAnimation = CreateAnimation(GetActiveSequence(), Mesh);
+  }
+  if (ActiveAnimation)
+  {
+    Manager->registerAnimation(ActiveAnimation.get());
+    Manager->playAnimation(ActiveAnimation.get());
   }
 }

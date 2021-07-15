@@ -92,6 +92,12 @@ enum ObjTreeMenuId {
 };
 
 #define MAX_SELECTION_HISTORY 50
+#define TARGET_HEARBEAT 60
+#ifdef _DEBUG
+#define HEARTBEAT (1000. / float(TARGET_HEARBEAT + 15))
+#else
+#define HEARTBEAT (1000. / float(TARGET_HEARBEAT))
+#endif
 
 wxDEFINE_EVENT(PACKAGE_READY, wxCommandEvent); 
 wxDEFINE_EVENT(PACKAGE_ERROR, wxCommandEvent);
@@ -187,7 +193,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   PropertiesCtrl->Bind(wxEVT_SIZE, &PackageWindow::OnSize, this);
   SearchField->Connect(wxEVT_COMMAND_SEARCHCTRL_SEARCH_BTN, wxCommandEventHandler(PackageWindow::OnSearchEnter), nullptr, this);
   HeartBeat.Bind(wxEVT_TIMER, &PackageWindow::OnTick, this);
-  HeartBeat.Start(1);
+  HeartBeat.Start(HEARTBEAT);
   UpdateAccelerators();
 }
 

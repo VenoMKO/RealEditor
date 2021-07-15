@@ -333,18 +333,13 @@ void PackageWindow::InitLayout()
 
   bSizer13->Add(bSizer47, 0, wxEXPAND, 5);
 
-  wxStaticLine* m_staticline4;
-  m_staticline4 = new wxStaticLine(ObjectInfoPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-  bSizer13->Add(m_staticline4, 0, wxEXPAND | wxALL, 1);
-
 
   ObjectInfoPanel->SetSizer(bSizer13);
   ObjectInfoPanel->Layout();
   bSizer13->Fit(ObjectInfoPanel);
   bSizer27->Add(ObjectInfoPanel, 0, wxALL | wxEXPAND, 0);
 
-  Toolbar = new wxToolBar(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORZ_TEXT | wxBORDER_NONE | wxTB_NODIVIDER | wxTB_TEXT);
-  Toolbar->SetMinSize(wxSize(-1, 32));
+  Toolbar = new wxToolBar(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORZ_TEXT);
   Toolbar->Realize();
 
   bSizer27->Add(Toolbar, 0, wxEXPAND, 5);
