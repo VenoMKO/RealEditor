@@ -536,17 +536,20 @@ void AnimSetEditor::PopulateToolBar(wxToolBar* toolbar)
 void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
 {
   UAnimSet* set = Cast<UAnimSet>(Object);
-  USkeletalMesh* source = nullptr;
-  std::vector<FObjectExport*> allExports = Object->GetPackage()->GetAllExports();
-  for (FObjectExport* exp : allExports)
+  USkeletalMesh* source = Mesh;
+  if (!source)
   {
-    if (exp->GetClassName() == USkeletalMesh::StaticClassName())
+    std::vector<FObjectExport*> allExports = Object->GetPackage()->GetAllExports();
+    for (FObjectExport* exp : allExports)
     {
-      USkeletalMesh* skelMesh = Cast<USkeletalMesh>(Object->GetPackage()->GetObject(exp));
-      if (set->GetSkeletalMeshMatchRatio(skelMesh))
+      if (exp->GetClassName() == USkeletalMesh::StaticClassName())
       {
-        source = skelMesh;
-        break;
+        USkeletalMesh* skelMesh = Cast<USkeletalMesh>(Object->GetPackage()->GetObject(exp));
+        if (set->GetSkeletalMeshMatchRatio(skelMesh))
+        {
+          source = skelMesh;
+          break;
+        }
       }
     }
   }
