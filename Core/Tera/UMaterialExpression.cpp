@@ -65,6 +65,24 @@ FString FExpressionInput::GetDescription() const
   return Title.Empty() ? FString("In") : Title;
 }
 
+int32 UMaterialExpression::GetPosX() const
+{
+  if (MaterialExpressionEditorXProperty)
+  {
+    return MaterialExpressionEditorX;
+  }
+  return EditorX;
+}
+
+int32 UMaterialExpression::GetPosY() const
+{
+  if (MaterialExpressionEditorYProperty)
+  {
+    return MaterialExpressionEditorY;
+  }
+  return EditorY;
+}
+
 UMaterialExpression* UMaterialExpression::StaticFactory(FObjectExport* exp)
 {
   UMaterialExpression* result = nullptr;
@@ -502,6 +520,8 @@ bool UMaterialExpression::RegisterProperty(FPropertyTag* property)
   SUPER_REGISTER_PROP();
   REGISTER_INT_PROP(MaterialExpressionEditorX);
   REGISTER_INT_PROP(MaterialExpressionEditorY);
+  REGISTER_INT_PROP(EditorX);
+  REGISTER_INT_PROP(EditorY);
   REGISTER_STR_PROP(Desc);
   return false;
 }
@@ -528,7 +548,14 @@ void UMaterialExpression::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
   }
   
   visitor->SetTitle(GetTitle());
-  visitor->SetEditorPosition(MaterialExpressionEditorX, MaterialExpressionEditorY);
+  if (MaterialExpressionEditorXProperty || MaterialExpressionEditorYProperty)
+  {
+    visitor->SetEditorPosition(MaterialExpressionEditorX, MaterialExpressionEditorY);
+  }
+  else if (EditorXProperty || EditorYProperty)
+  {
+    visitor->SetEditorPosition(EditorX, EditorY);
+  }
   visitor->SetDescription(Desc);
 }
 

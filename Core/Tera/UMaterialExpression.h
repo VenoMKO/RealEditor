@@ -42,7 +42,12 @@ public:
   DECL_UOBJ(UMaterialExpression, UObject);
   UPROP(int32, MaterialExpressionEditorX, 0);
   UPROP(int32, MaterialExpressionEditorY, 0);
+  UPROP(int32, EditorX, 0);
+  UPROP(int32, EditorY, 0);
   UPROP_NOINIT(FString, Desc);
+
+  int32 GetPosX() const;
+  int32 GetPosY() const;
 
   static UMaterialExpression* StaticFactory(FObjectExport* exp);
 
