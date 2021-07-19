@@ -153,17 +153,20 @@ FStream& operator<<(FStream& s, FStaticMeshComponentLODInfo& i)
 
   SERIALIZE_UREF(s, i.Unk1);
 
-  uint8 bHasVertexColorOverride = i.OverrideVertexColors != nullptr;
-  s << bHasVertexColorOverride;
-  if (s.IsReading() && bHasVertexColorOverride)
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    i.OverrideVertexColors = new FStaticMeshVertexColorBuffer;
+    uint8 bHasVertexColorOverride = i.OverrideVertexColors != nullptr;
+    s << bHasVertexColorOverride;
+    if (s.IsReading() && bHasVertexColorOverride)
+    {
+      i.OverrideVertexColors = new FStaticMeshVertexColorBuffer;
+    }
+    if (bHasVertexColorOverride)
+    {
+      s << *i.OverrideVertexColors;
+    }
+    s << i.VertexColorPositions;
   }
-  if (bHasVertexColorOverride)
-  {
-    s << *i.OverrideVertexColors;
-  }
-  s << i.VertexColorPositions;
   return s;
 }
 
@@ -173,9 +176,9 @@ FStream& operator<<(FStream& s, FStaticMeshLegacyVertexBuffer& b)
   switch(numUVs) \
   { \
     case 1: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<1>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
-    case 2: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<2>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
-    case 3: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<3>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
-    case 4: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<4>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
+    case 2: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<2>[elementCount]; DBreakIf(sizeof(VertexDataType<2>) != elementSize); break; \
+    case 3: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<3>[elementCount]; DBreakIf(sizeof(VertexDataType<3>) != elementSize); break; \
+    case 4: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<4>[elementCount]; DBreakIf(sizeof(VertexDataType<4>) != elementSize); break; \
   }
 #define SERIALIZE_LEGACY_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, idx ) \
   switch(numUVs) \
