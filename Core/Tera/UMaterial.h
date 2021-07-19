@@ -16,6 +16,49 @@ struct FTextureLookup
   friend FStream& operator<<(FStream& s, FTextureLookup& l);
 };
 
+class FMaterialUniformExpression {
+public:
+  virtual ~FMaterialUniformExpression()
+  {}
+
+  static FMaterialUniformExpression* ReadFromStream(FStream& s);
+
+  virtual void Serialize(FStream& s);
+
+  FName TypeName;
+  FName ParamterName;
+};
+
+class FShaderFrequencyUniformExpressions {
+public:
+  ~FShaderFrequencyUniformExpressions();
+
+  void Serialize(FStream& s);
+
+  std::vector<FMaterialUniformExpression*> VectorExpressions;
+  std::vector<FMaterialUniformExpression*> ScalarExpressions;
+  std::vector<FMaterialUniformExpression*> TextureExpressions;
+};
+
+class FUniformExpressionSet {
+public:
+  FUniformExpressionSet()
+  {
+    PixelExpressions = new FShaderFrequencyUniformExpressions;
+    CubeExpressions = new std::vector<FMaterialUniformExpression*>;
+  }
+  ~FUniformExpressionSet()
+  {
+    delete PixelExpressions;
+    delete CubeExpressions;
+  }
+
+  void Serialize(FStream& s);
+
+  FShaderFrequencyUniformExpressions* PixelExpressions;
+  std::vector<FMaterialUniformExpression*>* CubeExpressions;
+};
+
 class FMaterial {
 public:
   void Serialize(FStream& s, UObject* owner);
@@ -26,6 +69,7 @@ public:
   FGuid Id;
   uint32 NumUserTexCoords = 0;
   FObjectArray<UObject*> UniformExpressionTextures;
+  FUniformExpressionSet LegacyUniformExpressions;
   bool bUsesSceneColor = false;
   bool bUsesSceneDepth = false;
   bool bUsesDynamicParameter = false;

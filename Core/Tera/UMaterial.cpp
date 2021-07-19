@@ -4,6 +4,451 @@
 #include "UTexture.h"
 #include "FPackage.h"
 #include "Cast.h"
+#include "FStructs.h"
+
+#include <Utils/ALog.h>
+
+void FMaterialUniformExpression::Serialize(FStream& s)
+{
+  if (!s.IsReading())
+  {
+    // Serialize this only when writing. Reading implemented in the FMaterialUniformExpression::ReadFromStream.
+    s << TypeName;
+  }
+}
+
+class FMaterialUniformExpressionScalarParameter : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << ParamterName;
+    s << DefaultValue;
+  }
+
+  float DefaultValue = 0.;
+};
+
+class FMaterialUniformExpressionVectorParameter : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << ParamterName;
+    s << DefaultValue;
+  }
+
+  FLinearColor DefaultValue;
+};
+
+class FMaterialUniformExpressionTexture : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << TextureIndex;
+  }
+
+  int32 TextureIndex = 0;
+};
+
+class FMaterialUniformExpressionTextureParameter : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << ParamterName;
+    s << TextureIndex;
+  }
+
+  int32 TextureIndex = 0;
+};
+
+class FMaterialUniformExpressionTime : public FMaterialUniformExpression {
+public:
+};
+
+class FMaterialUniformExpressionAppendVector : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      A = FMaterialUniformExpression::ReadFromStream(s);
+      B = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      A->Serialize(s);
+      B->Serialize(s);
+    }
+    s << NumComponents;
+  }
+
+  ~FMaterialUniformExpressionAppendVector()
+  {
+    delete A;
+    delete B;
+  }
+
+  FMaterialUniformExpression* A = nullptr;
+  FMaterialUniformExpression* B = nullptr;
+  int32 NumComponents = 0;
+};
+
+class FMaterialUniformExpressionPeriodic : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionPeriodic()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+};
+
+class FMaterialUniformExpressionFoldedMath : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      A = FMaterialUniformExpression::ReadFromStream(s);
+      B = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      A->Serialize(s);
+      B->Serialize(s);
+    }
+    s << OpCode;
+  }
+
+  ~FMaterialUniformExpressionFoldedMath()
+  {
+    delete A;
+    delete B;
+  }
+
+  FMaterialUniformExpression* A = nullptr;
+  FMaterialUniformExpression* B = nullptr;
+  uint8 OpCode = 0;
+};
+
+class FMaterialUniformExpressionConstant : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << DefaultValue;
+    s << Type;
+  }
+
+  FLinearColor DefaultValue;
+  uint8 Type = 0;
+};
+
+class FMaterialUniformExpressionSine : public FMaterialUniformExpression {
+public:
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+    s << IsCosine;
+  }
+
+  ~FMaterialUniformExpressionSine()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+  bool IsCosine = false;
+};
+
+class FMaterialUniformExpressionClamp : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      Input = FMaterialUniformExpression::ReadFromStream(s);
+      Min = FMaterialUniformExpression::ReadFromStream(s);
+      Max = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      Input->Serialize(s);
+      Min->Serialize(s);
+      Max->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionClamp()
+  {
+    delete Input;
+    delete Min;
+    delete Max;
+  }
+
+  FMaterialUniformExpression* Input = nullptr;
+  FMaterialUniformExpression* Min = nullptr;
+  FMaterialUniformExpression* Max = nullptr;
+};
+
+class FMaterialUniformExpressionRealTime : public FMaterialUniformExpression {
+public:
+};
+
+class FMaterialUniformExpressionFrac : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionFrac()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+};
+
+class FMaterialUniformExpressionFlipBookTextureParameter : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    s << DefaultValue;
+  }
+
+  int32 DefaultValue = 0;
+};
+
+class FMaterialUniformExpressionFloor : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionFloor()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+};
+
+class FMaterialUniformExpressionCeil : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionCeil()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+};
+
+class FMaterialUniformExpressionMax : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      A = FMaterialUniformExpression::ReadFromStream(s);
+      B = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      A->Serialize(s);
+      B->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionMax()
+  {
+    delete A;
+    delete B;
+  }
+
+  FMaterialUniformExpression* A = nullptr;
+  FMaterialUniformExpression* B = nullptr;
+};
+
+class FMaterialUniformExpressionAbs : public FMaterialUniformExpression {
+public:
+
+  void Serialize(FStream& s) override
+  {
+    FMaterialUniformExpression::Serialize(s);
+    if (s.IsReading())
+    {
+      X = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    else
+    {
+      X->Serialize(s);
+    }
+  }
+
+  ~FMaterialUniformExpressionAbs()
+  {
+    delete X;
+  }
+
+  FMaterialUniformExpression* X = nullptr;
+};
+
+FMaterialUniformExpression* FMaterialUniformExpression::ReadFromStream(FStream& s)
+{
+  DBreakIf(!s.IsReading());
+  FName typeName;
+  s << typeName;
+  FMaterialUniformExpression* exp = nullptr;
+  if (typeName == "FMaterialUniformExpressionScalarParameter")
+  {
+    exp = new FMaterialUniformExpressionScalarParameter;
+  }
+  else if (typeName == "FMaterialUniformExpressionVectorParameter")
+  {
+    exp = new FMaterialUniformExpressionVectorParameter;
+  }
+  else if (typeName == "FMaterialUniformExpressionTexture")
+  {
+    exp = new FMaterialUniformExpressionTexture;
+  }
+  else if (typeName == "FMaterialUniformExpressionTextureParameter")
+  {
+    exp = new FMaterialUniformExpressionTextureParameter;
+  }
+  else if (typeName == "FMaterialUniformExpressionTime")
+  {
+    exp = new FMaterialUniformExpressionTime;
+  }
+  else if (typeName == "FMaterialUniformExpressionAppendVector")
+  {
+    exp = new FMaterialUniformExpressionAppendVector;
+  }
+  else if (typeName == "FMaterialUniformExpressionPeriodic")
+  {
+    exp = new FMaterialUniformExpressionPeriodic;
+  }
+  else if (typeName == "FMaterialUniformExpressionFoldedMath")
+  {
+    exp = new FMaterialUniformExpressionFoldedMath;
+  }
+  else if (typeName == "FMaterialUniformExpressionConstant")
+  {
+    exp = new FMaterialUniformExpressionConstant;
+  }
+  else if (typeName == "FMaterialUniformExpressionSine")
+  {
+    exp = new FMaterialUniformExpressionSine;
+  }
+  else if (typeName == "FMaterialUniformExpressionClamp")
+  {
+    exp = new FMaterialUniformExpressionClamp;
+  }
+  else if (typeName == "FMaterialUniformExpressionRealTime")
+  {
+    exp = new FMaterialUniformExpressionRealTime;
+  }
+  else if (typeName == "FMaterialUniformExpressionFrac")
+  {
+    exp = new FMaterialUniformExpressionFrac;
+  }
+  else if (typeName == "FMaterialUniformExpressionFlipBookTextureParameter")
+  {
+    exp = new FMaterialUniformExpressionFlipBookTextureParameter;
+  }
+  else if (typeName == "FMaterialUniformExpressionFloor")
+  {
+    exp = new FMaterialUniformExpressionFloor;
+  }
+  else if (typeName == "FMaterialUniformExpressionCeil")
+  {
+    exp = new FMaterialUniformExpressionCeil;
+  }
+  else if (typeName == "FMaterialUniformExpressionMax")
+  {
+    exp = new FMaterialUniformExpressionMax;
+  }
+  else if (typeName == "FMaterialUniformExpressionAbs")
+  {
+    exp = new FMaterialUniformExpressionAbs;
+  }
+  else
+  {
+    DBreak();
+    LogE("Error! Unknown material uniform expression: %s", typeName.String().C_str());
+    exp = new FMaterialUniformExpression;
+  }
+  exp->TypeName = typeName;
+  exp->Serialize(s);
+  return exp;
+}
 
 class MaterialExpressionNormalAlphaVisitor : public UMaterialExpressionViewVisitor {
 public:
@@ -70,14 +515,20 @@ FStream& operator<<(FStream& s, FStaticParameterSet& ps)
   s << ps.BaseMaterialId;
   s << ps.StaticSwitchParameters;
   s << ps.StaticComponentMaskParameters;
-  s << ps.NormalParameters;
-  s << ps.TerrainLayerWeightParameters;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << ps.NormalParameters;
+    s << ps.TerrainLayerWeightParameters;
+  }
   return s;
 }
 
 void FMaterial::Serialize(FStream& s, UObject* owner)
 {
-  s << Unk1;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << Unk1;
+  }
   s << CompoilerErrors;
   if (!owner || !owner->IsTransacting())
   {
@@ -89,18 +540,31 @@ void FMaterial::Serialize(FStream& s, UObject* owner)
   s << MaxTextureDependencyLength;
   s << Id;
   s << NumUserTexCoords;
-  s << UniformExpressionTextures;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << UniformExpressionTextures;
+  }
+  else
+  {
+    LegacyUniformExpressions.Serialize(s);
+  }
   s << bUsesSceneColor;
   s << bUsesSceneDepth;
   s << bUsesDynamicParameter;
-  s << bUsesLightmapUVs;
-  s << bUsesMaterialVertexPositionOffset;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << bUsesLightmapUVs;
+    s << bUsesMaterialVertexPositionOffset;
+  }
   s << UsingTransforms;
   s << TextureLookups;
   s << FallbackComponents;
-  s << Unk2;
-  s << Unk3;
-  s << Unk4;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << Unk2;
+    s << Unk3;
+    s << Unk4;
+  }
 }
 
 bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
@@ -581,4 +1045,89 @@ bool UMaterialInstance::RegisterProperty(FPropertyTag* property)
     return true;
   }
   return false;
+}
+
+FShaderFrequencyUniformExpressions::~FShaderFrequencyUniformExpressions()
+{
+  for (FMaterialUniformExpression* exp : VectorExpressions)
+  {
+    delete exp;
+  }
+  for (FMaterialUniformExpression* exp : ScalarExpressions)
+  {
+    delete exp;
+  }
+  for (FMaterialUniformExpression* exp : TextureExpressions)
+  {
+    delete exp;
+  }
+}
+
+void FShaderFrequencyUniformExpressions::Serialize(FStream& s)
+{
+  int32 cnt = 0;
+  if (s.IsReading())
+  {
+    s << cnt;
+    VectorExpressions.resize(cnt);
+    for (FMaterialUniformExpression*& exp : VectorExpressions)
+    {
+      exp = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    s << cnt;
+    ScalarExpressions.resize(cnt);
+    for (FMaterialUniformExpression*& exp : ScalarExpressions)
+    {
+      exp = FMaterialUniformExpression::ReadFromStream(s);
+    }
+    s << cnt;
+    TextureExpressions.resize(cnt);
+    for (FMaterialUniformExpression*& exp : TextureExpressions)
+    {
+      exp = FMaterialUniformExpression::ReadFromStream(s);
+    }
+  }
+  else
+  {
+    cnt = (int32)VectorExpressions.size();
+    s << cnt;
+    for (FMaterialUniformExpression* exp : VectorExpressions)
+    {
+      exp->Serialize(s);
+    }
+    cnt = (int32)ScalarExpressions.size();
+    s << cnt;
+    for (FMaterialUniformExpression* exp : ScalarExpressions)
+    {
+      exp->Serialize(s);
+    }
+    cnt = (int32)TextureExpressions.size();
+    s << cnt;
+    for (FMaterialUniformExpression* exp : TextureExpressions)
+    {
+      exp->Serialize(s);
+    }
+  }
+}
+
+void FUniformExpressionSet::Serialize(FStream& s)
+{
+  PixelExpressions->Serialize(s);
+  int32 cnt = (int32)CubeExpressions->size();
+  s << cnt;
+  if (s.IsReading())
+  {
+    CubeExpressions->resize(cnt);
+    for (FMaterialUniformExpression*& exp : *CubeExpressions)
+    {
+      exp = FMaterialUniformExpression::ReadFromStream(s);
+    }
+  }
+  else
+  {
+    for (FMaterialUniformExpression*& exp : *CubeExpressions)
+    {
+      exp->Serialize(s);
+    }
+  }
 }

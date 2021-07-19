@@ -135,7 +135,16 @@ void UStruct::Serialize(FStream& s)
 void UState::Serialize(FStream& s)
 {
   Super::Serialize(s);
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    int32 unk = 0;
+    s << unk;
+  }
   s << ProbeMask;
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    s << IgnoreMask;
+  }
   s << LabelTableOffset;
   s << StateFlags;
   s << FuncMap;
@@ -180,6 +189,8 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       {
         break;
       }
+
+      DBreakIf(object->GetClassName() == NAME_Package);
 
       if (advance && --remainingDim <= 0)
       {
@@ -255,7 +266,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       else if (tag.Type == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
       {
         LogE("Property coversion required in %s of %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8().c_str());
-        DBreak();
+        // DBreak();
       }
       else
       {
@@ -432,19 +443,26 @@ void UClass::Serialize(FStream& s)
   s << ClassFlags;
   SERIALIZE_UREF(s, ClassWithin);
   s << ClassConfigName;
-  s << ComponentNameToDefaultObjectMap;
-  s << Interfaces;
-  s << DontSortCategories;
-  s << HideCategories;
-  s << AutoExpandCategories;
-  s << AutoCollapseCategories;
-  if (s.GetFV() > VER_TERA_CLASSIC)
+  if (s.GetFV() == VER_TERA_CLASSIC)
   {
+    s << HideCategories;
+    s << ComponentNameToDefaultObjectMap;
+    s << Interfaces;
+    s << AutoExpandCategories;
+  }
+  else
+  {
+    s << ComponentNameToDefaultObjectMap;
+    s << Interfaces;
+    s << DontSortCategories;
+    s << HideCategories;
+    s << AutoExpandCategories;
+    s << AutoCollapseCategories;
     s << bForceScriptOrder;
     s << ClassGroupNames;
+    s << ClassHeaderFilename;
+    s << DLLBindName;
   }
-  s << ClassHeaderFilename;
-  s << DLLBindName;
   SERIALIZE_UREF(s, ClassDefaultObject);
 }
 

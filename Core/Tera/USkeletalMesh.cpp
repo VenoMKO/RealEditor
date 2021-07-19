@@ -271,11 +271,18 @@ FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s << b.NumTexCoords;
+    s << b.bUseFullPrecisionUVs;
+    s << b.bUsePackedPosition;
   }
-
-  s << b.bUseFullPrecisionUVs;
-  s << b.bUsePackedPosition;
-  
+  else
+  {
+    uint16 tmp = (uint16)b.bUseFullPrecisionUVs;
+    s << tmp;
+    b.bUseFullPrecisionUVs = (bool)tmp;
+    tmp = (uint16)b.bUsePackedPosition;
+    s << tmp;
+    b.bUsePackedPosition = (bool)tmp;
+  }
 
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
@@ -482,7 +489,10 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
     s << ColorBuffer;
   }
   s << VertexInfluences;
-  s << Unk;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << Unk;
+  }
 }
 
 std::vector<FSoftSkinVertex> FStaticLODModel::GetVertices() const

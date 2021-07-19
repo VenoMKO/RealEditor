@@ -37,6 +37,68 @@ struct FStaticVertex
   FColor Color;
 };
 
+struct FLegacyStaticMeshVertexBase
+{
+  FPackedNormal TangentX;
+  FPackedNormal TangentZ;
+  FColor Color;
+
+  void Serialize(FStream& s)
+  {
+    s << TangentX;
+    s << TangentZ;
+    s << Color;
+  }
+};
+
+template <uint32 NumTexCoords = 1>
+struct FLegacyStaticMeshVertexA : public FLegacyStaticMeshVertexBase {
+  FLegacyStaticMeshVertexA()
+  {
+    for (uint32 idx = 0; idx < NumTexCoords; ++idx)
+    {
+      UV[idx].X = 0;
+      UV[idx].Y = 0;
+    }
+  }
+
+  friend FStream& operator<<(FStream& s, FLegacyStaticMeshVertexA& v)
+  {
+    v.Serialize(s);
+    for (uint32 idx = 0; idx < NumTexCoords; ++idx)
+    {
+      s << v.UV[idx];
+    }
+    return s;
+  }
+
+  FVector2DHalf UV[NumTexCoords];
+};
+
+template <uint32 NumTexCoords = 1>
+struct FLegacyStaticMeshVertexAA : public FLegacyStaticMeshVertexBase {
+  FLegacyStaticMeshVertexAA()
+  {
+    for (uint32 idx = 0; idx < NumTexCoords; ++idx)
+    {
+      UV[idx].X = 0;
+      UV[idx].Y = 0;
+    }
+  }
+
+  friend FStream& operator<<(FStream& s, FLegacyStaticMeshVertexAA& v)
+  {
+    v.Serialize(s);
+    for (uint32 idx = 0; idx < NumTexCoords; ++idx)
+    {
+      s << v.UV[idx];
+    }
+    return s;
+  }
+
+  FVector2D UV[NumTexCoords];
+};
+
 struct FStaticMeshVertexBase {
   FPackedNormal TangentX; // Tangent
   FPackedNormal TangentZ; // Normal
@@ -68,7 +130,7 @@ struct FStaticMeshVertexBase {
   virtual FVector2D GetUVs(int32 idx) const = 0;
 };
 
-template<uint32 NumTexCoords = 1>
+template <uint32 NumTexCoords = 1>
 struct FStaticMeshVertexA : public FStaticMeshVertexBase {
 
   FStaticMeshVertexA()
@@ -128,6 +190,57 @@ struct FStaticMeshVertexAA : public FStaticMeshVertexBase {
   FVector2D UV[NumTexCoords];
 };
 
+struct FStaticMeshLegacyUnkBuffer {
+  uint32 Stride = 0;
+  uint32 VertexCount = 0;
+  uint32 ElementSize = 0;
+  uint32 ElementCount = 0;
+
+  friend FStream& operator<<(FStream& s, FStaticMeshLegacyUnkBuffer& b);
+
+  ~FStaticMeshLegacyUnkBuffer()
+  {
+    free(Data);
+  }
+  void* Data = nullptr;
+};
+
+struct FStaticMeshLegacyVertexBuffer {
+  uint32 NumTexCoords = 1;
+  uint32 Stride = 0;
+  uint32 NumVertices = 0;
+  bool bUseFullPrecisionUVs = false;
+  uint32 ElementSize = 0;
+  uint32 ElementCount = 0;
+  FLegacyStaticMeshVertexBase* Data = nullptr;
+
+  FPackedNormal& GetTangentX(int32 idx);
+  FPackedNormal& GetTangentZ(int32 idx);
+  FPackedNormal GetTangentX(int32 idx) const;
+  FPackedNormal GetTangentZ(int32 idx) const;
+
+  FVector2D GetUVs(int32 vertexIndex, int32 uvIndex) const;
+
+  ~FStaticMeshLegacyVertexBuffer();
+
+  const FLegacyStaticMeshVertexBase* GetVertex(int32 idx) const;
+
+  friend FStream& operator<<(FStream& s, FStaticMeshLegacyVertexBuffer& b);
+};
+
+struct FLegacyShadowVolumeBuffer {
+  uint32 ElementSize = 0;
+  uint32 ElementCount = 0;
+
+  ~FLegacyShadowVolumeBuffer()
+  {
+    delete[] Data;
+  }
+
+  friend FStream& operator<<(FStream& s, FLegacyShadowVolumeBuffer& b);
+
+  FEdge* Data = nullptr;
+};
 
 struct FStaticMeshVertexBuffer {
   uint32 NumTexCoords = 1;
@@ -137,6 +250,15 @@ struct FStaticMeshVertexBuffer {
   uint32 ElementSize = 0;
   uint32 ElementCount = 0;
   FStaticMeshVertexBase* Data = nullptr;
+
+  FPackedNormal& GetTangentX(int32 idx);
+  FPackedNormal& GetTangentZ(int32 idx);
+
+  void SetUVs(int32 vertexIndex, int32 uvIndex, const FVector2D& uvs);
+  FVector2D GetUVs(int32 vertexIndex, int32 uvIndex) const;
+
+  FStaticMeshVertexBuffer() = default;
+  void InitFromLegacy(const FStaticMeshLegacyVertexBuffer& lb);
 
   ~FStaticMeshVertexBuffer();
 
@@ -221,7 +343,7 @@ public:
     s << e.MaterialIndex;
     s << e.Fragments;
 
-    if (s.GetFV() >= VER_TERA_CLASSIC)
+    if (s.GetFV() > VER_TERA_CLASSIC)
     {
       uint8 loadPS3Data = 0;
       s << loadPS3Data;
@@ -255,13 +377,17 @@ public:
   UStaticMesh* Owner = nullptr;
 
   FStaticMeshVertexBuffer VertexBuffer;
+  FStaticMeshLegacyVertexBuffer LegacyVertexBuffer;
+  FStaticMeshLegacyUnkBuffer LegacyUnkBuffer;
   FStaticMeshPositionBuffer PositionBuffer;
   FStaticMeshVertexColorBuffer ColorBuffer;
   FStaticMeshTriangleBulkData RawTriangles;
   std::vector<FStaticMeshElement> Elements;
+  FLegacyShadowVolumeBuffer LegacyShadowVolumeEdges;
   FRawIndexBuffer IndexBuffer;
   FRawIndexBuffer WireframeIndexBuffer;
   FRawIndexBuffer Unk;
+  uint32 LegacyUnk = 0;
 
   uint32 NumVertices = 0;
 };
@@ -309,6 +435,7 @@ protected:
   FBoxSphereBounds Bounds;
   
   FkDOPTreeCompact kDOPTree;
+  FkDOPTree kDOPTreeLegacy;
   
   int32 SMDataVersion = 0;
   int32 VertexPositionVersionNumber = 0;
@@ -324,11 +451,14 @@ protected:
   FGuid LightingGuid;
   
   bool bRemoveDegenerates = true;
+  std::vector<FString> ContentTags;
   std::vector<float> CachedStreamingTextureFactors;
   std::vector<FStaticMeshRenderData> LODModels;
+  std::vector<FVector> PhysMeshScale3D;
 
   FILE_OFFSET UnkSize = 8;
   void* Unk = nullptr;
+  uint32 Unk2 = 0;
 };
 
 struct FStaticMeshComponentLODInfo {

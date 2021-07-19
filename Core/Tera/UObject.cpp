@@ -491,7 +491,7 @@ void UObject::Load(FStream& s)
 
   if (s.IsReading())
   {
-    //DBreakIf(s.GetPosition() != Export->SerialOffset + Export->SerialSize);
+    //DBreakIf(!IsTransacting() && s.GetPosition() != Export->SerialOffset + Export->SerialSize);
     PostLoad();
   }
 }

@@ -375,6 +375,10 @@ int WelcomeDialog::ShowModal()
     pkgList = FPackage::GetCachedDirCache(App::GetSharedApp()->GetConfig().RootDir);
     for (FString& path : pkgList)
     {
+      if (path.Empty())
+      {
+        continue;
+      }
       path = path.Filename(false);
     }
     if (pkgList.empty())

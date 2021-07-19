@@ -9,13 +9,13 @@
 
 FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b)
 {
-#define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs ) \
+#define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, data, elementCount ) \
   switch(numUVs) \
   { \
-    case 1: b.Data = (FStaticMeshVertexBase*)new VertexDataType<1>[b.ElementCount]; break; \
-    case 2: b.Data = (FStaticMeshVertexBase*)new VertexDataType<2>[b.ElementCount]; break; \
-    case 3: b.Data = (FStaticMeshVertexBase*)new VertexDataType<3>[b.ElementCount]; break; \
-    case 4: b.Data = (FStaticMeshVertexBase*)new VertexDataType<4>[b.ElementCount]; break; \
+    case 1: data = (FStaticMeshVertexBase*)new VertexDataType<1>[elementCount]; break; \
+    case 2: data = (FStaticMeshVertexBase*)new VertexDataType<2>[elementCount]; break; \
+    case 3: data = (FStaticMeshVertexBase*)new VertexDataType<3>[elementCount]; break; \
+    case 4: data = (FStaticMeshVertexBase*)new VertexDataType<4>[elementCount]; break; \
   }
 #define SERIALIZE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, idx ) \
   switch(numUVs) \
@@ -42,11 +42,11 @@ FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b)
     {
       if (!b.bUseFullPrecisionUVs)
       {
-        ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexA, b.NumTexCoords);
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexA, b.NumTexCoords, b.Data, b.ElementCount);
       }
       else
       {
-        ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexAA, b.NumTexCoords);
+        ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexAA, b.NumTexCoords, b.Data, b.ElementCount);
       }
     }
 
@@ -167,6 +167,94 @@ FStream& operator<<(FStream& s, FStaticMeshComponentLODInfo& i)
   return s;
 }
 
+FStream& operator<<(FStream& s, FStaticMeshLegacyVertexBuffer& b)
+{
+#define ALLOCATE_LEGACY_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, data, elementCount, elementSize ) \
+  switch(numUVs) \
+  { \
+    case 1: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<1>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
+    case 2: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<2>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
+    case 3: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<3>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
+    case 4: data = (FLegacyStaticMeshVertexBase*)new VertexDataType<4>[elementCount]; DBreakIf(sizeof(VertexDataType<1>) != elementSize); break; \
+  }
+#define SERIALIZE_LEGACY_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, idx ) \
+  switch(numUVs) \
+  { \
+    case 1: s << ((VertexDataType<1>*)b.Data)[idx]; break; \
+    case 2: s << ((VertexDataType<2>*)b.Data)[idx]; break; \
+    case 3: s << ((VertexDataType<3>*)b.Data)[idx]; break; \
+    case 4: s << ((VertexDataType<4>*)b.Data)[idx]; break; \
+   }
+
+  s << b.NumTexCoords;
+  s << b.Stride;
+  s << b.NumVertices;
+  s << b.bUseFullPrecisionUVs;
+
+  if (b.Stride && b.NumVertices)
+  {
+    s << b.ElementSize;
+    s << b.ElementCount;
+
+    DBreakIf(b.Stride != b.ElementSize || b.NumVertices != b.ElementCount);
+
+    if (s.IsReading())
+    {
+      if (!b.bUseFullPrecisionUVs)
+      {
+        ALLOCATE_LEGACY_VERTEX_DATA_TEMPLATE(FLegacyStaticMeshVertexA, b.NumTexCoords, b.Data, b.ElementCount, b.ElementSize);
+      }
+      else
+      {
+        ALLOCATE_LEGACY_VERTEX_DATA_TEMPLATE(FLegacyStaticMeshVertexAA, b.NumTexCoords, b.Data, b.ElementCount, b.ElementSize);
+      }
+    }
+
+    if (!b.bUseFullPrecisionUVs)
+    {
+      for (int32 idx = 0; idx < b.ElementCount; ++idx)
+      {
+        SERIALIZE_LEGACY_VERTEX_DATA_TEMPLATE(FLegacyStaticMeshVertexA, b.NumTexCoords, idx);
+      }
+    }
+    else
+    {
+      for (int32 idx = 0; idx < b.ElementCount; ++idx)
+      {
+        SERIALIZE_LEGACY_VERTEX_DATA_TEMPLATE(FLegacyStaticMeshVertexAA, b.NumTexCoords, idx);
+      }
+    }
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FStaticMeshLegacyUnkBuffer& b)
+{
+  s << b.Stride;
+  s << b.VertexCount;
+  s << b.ElementSize;
+  s << b.ElementCount;
+  if (s.IsReading() && b.Stride && b.VertexCount)
+  {
+    b.Data = malloc(b.Stride * b.VertexCount);
+  }
+  s.SerializeBytes(b.Data, b.ElementCount * b.Stride);
+  return s;
+}
+
+FStream& operator<<(FStream& s, FLegacyShadowVolumeBuffer& b)
+{
+  s << b.ElementSize;
+  s << b.ElementCount;
+  if (b.ElementCount * b.ElementSize)
+  {
+    DBreakIf(b.ElementSize != sizeof(FEdge));
+    b.Data = new FEdge[b.ElementCount];
+  }
+  s.SerializeBytes(b.Data, b.ElementCount * b.ElementSize);
+  return s;
+}
+
 void UStaticMesh::ConfigureClassObject(UClass* object)
 {
   CreateClassProperty("UseSimpleLineCollision", UBoolProperty::StaticClassName(), object);
@@ -217,8 +305,9 @@ void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
   }
   else
   {
-    // TODO
-    UThrow("x86 Tera unsupported yet!");
+    s << LegacyVertexBuffer;
+    s << LegacyUnkBuffer;
+    VertexBuffer.InitFromLegacy(LegacyVertexBuffer);
   }
   s << NumVertices;
   s << IndexBuffer;
@@ -226,11 +315,13 @@ void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
 
   if (s.GetFV() == VER_TERA_CLASSIC)
   {
-    // TODO: legacy shadow volume edges
-    UThrow("x86 Tera unsupported yet!");
+    s << LegacyShadowVolumeEdges;
+    s << LegacyUnk;
   }
-
-  s << Unk;
+  else
+  {
+    s << Unk;
+  }
 }
 
 std::vector<FStaticVertex> FStaticMeshRenderData::GetVertices() const
@@ -249,7 +340,7 @@ std::vector<FStaticVertex> FStaticMeshRenderData::GetVertices() const
     
     for (int32 uvIdx = 0; uvIdx < VertexBuffer.NumTexCoords; ++uvIdx)
     {
-      result[idx].UVs[uvIdx] = v->GetUVs(uvIdx);
+      result[idx].UVs[uvIdx] = VertexBuffer.GetUVs(idx, uvIdx);
     }
   }
   return result;
@@ -320,16 +411,31 @@ void UStaticMesh::Serialize(FStream& s)
   }
   else
   {
-    UThrow("x86 Tera unsupported yet!");
+    s << kDOPTreeLegacy;
   }
   
   s << SMDataVersion;
 
-  for (int32 idx = 0; idx < 4; ++idx)
+  if (s.GetFV() == VER_TERA_CLASSIC)
   {
-    int32 unk = 0;
-    s << unk;
+    s << ContentTags;
   }
+  else
+  {
+    for (int32 idx = 0; idx < 4; ++idx)
+    {
+      int32 unk = 0;
+      s << unk;
+    }
+  }
+
+  static int tcnt = 0;
+  tcnt++;
+  if (tcnt < 29)
+  {
+    return;
+  }
+  
   
   int32 cnt = (int32)LODModels.size();
   s << cnt;
@@ -346,57 +452,63 @@ void UStaticMesh::Serialize(FStream& s)
   s << ThumbnailAngle;
   s << ThumbnailDistance;
 
-  if (SMDataVersion >= 18)
-  {
-    s << HighResSourceMeshName;
-    s << HighResSourceMeshCRC;
-  }
-
-  s << LightingGuid;
-
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
+    if (SMDataVersion >= 18)
+    {
+      s << HighResSourceMeshName;
+      s << HighResSourceMeshCRC;
+    }
+    s << LightingGuid;
     s << VertexPositionVersionNumber;
     s << CachedStreamingTextureFactors;
     s << bRemoveDegenerates;
   }
-
-  if (s.IsReading())
+  else
   {
-    free(Unk);
-    Unk = nullptr;
-    UnkSize = Export->SerialOffset + Export->SerialSize - s.GetPosition();
-    DBreakIf(UnkSize != 8);
-#if _DEBUG
-    if (UnkSize < 0)
-    {
-      UThrow("Out of bounds!");
-    }
-    else if (UnkSize)
-    {
-      Unk = malloc(UnkSize);
-      s.SerializeBytes(Unk, UnkSize);
-      uint8* test = (uint8*)Unk;
-      for (int32 idx = 0; idx < UnkSize; ++idx)
-      {
-        DBreakIf(test[idx]);
-      }
-    }
-#else
-    if (UnkSize < 0)
-    {
-      return;
-    }
-    else if (UnkSize)
-    {
-      Unk = malloc(UnkSize);
-      s.SerializeBytes(Unk, UnkSize);
-    }
-#endif
+    s << PhysMeshScale3D;
+    s << Unk2;
   }
-  else if (Unk)
+
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    s.SerializeBytes(Unk, UnkSize);
+    if (s.IsReading())
+    {
+      free(Unk);
+      Unk = nullptr;
+      UnkSize = Export->SerialOffset + Export->SerialSize - s.GetPosition();
+      DBreakIf(UnkSize != 8);
+#if _DEBUG
+      if (UnkSize < 0)
+      {
+        UThrow("Out of bounds!");
+      }
+      else if (UnkSize)
+      {
+        Unk = malloc(UnkSize);
+        s.SerializeBytes(Unk, UnkSize);
+        uint8* test = (uint8*)Unk;
+        for (int32 idx = 0; idx < UnkSize; ++idx)
+        {
+          DBreakIf(test[idx]);
+        }
+      }
+#else
+      if (UnkSize < 0)
+      {
+        return;
+      }
+      else if (UnkSize)
+      {
+        Unk = malloc(UnkSize);
+        s.SerializeBytes(Unk, UnkSize);
+      }
+#endif
+    }
+    else if (Unk)
+    {
+      s.SerializeBytes(Unk, UnkSize);
+    }
   }
 }
 
@@ -450,6 +562,89 @@ std::vector<UObject*> UStaticMesh::GetMaterials(int32 lodIdx) const
   return result;
 }
 
+FPackedNormal& FStaticMeshVertexBuffer::GetTangentX(int32 idx)
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentX;
+  }
+  return ((FStaticMeshVertexAA<MAX_TEXCOORDS>*)((char*)Data + idx * Stride))->TangentX;
+}
+
+FPackedNormal& FStaticMeshVertexBuffer::GetTangentZ(int32 idx)
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentZ;
+  }
+  return ((FStaticMeshVertexAA<MAX_TEXCOORDS>*)((char*)Data + idx * Stride))->TangentZ;
+}
+
+void FStaticMeshVertexBuffer::SetUVs(int32 vertexIndex, int32 uvIndex, const FVector2D& uvs)
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    ((FStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + vertexIndex * Stride))->UV[uvIndex] = uvs;
+  }
+  else
+  {
+    ((FStaticMeshVertexAA<MAX_TEXCOORDS>*)((char*)Data + vertexIndex * Stride))->UV[uvIndex] = uvs;
+  }
+}
+
+FVector2D FStaticMeshVertexBuffer::GetUVs(int32 vertexIndex, int32 uvIndex) const
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FStaticMeshVertexA<MAX_TEXCOORDS>*)((char*)Data + vertexIndex * Stride))->UV[uvIndex];
+  }
+  return ((FStaticMeshVertexAA<MAX_TEXCOORDS>*)((char*)Data + vertexIndex * Stride))->UV[uvIndex];
+}
+
+void FStaticMeshVertexBuffer::InitFromLegacy(const FStaticMeshLegacyVertexBuffer& lb)
+{
+  NumTexCoords = lb.NumTexCoords;
+  NumVertices = lb.NumVertices;
+  bUseFullPrecisionUVs = lb.bUseFullPrecisionUVs;
+  ElementCount = lb.ElementCount;
+
+  if (!bUseFullPrecisionUVs)
+  {
+    ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexA, NumTexCoords, Data, ElementCount);
+    switch (NumTexCoords)
+    {
+    case 1: Stride = sizeof(FStaticMeshVertexA<1>); break;
+    case 2: Stride = sizeof(FStaticMeshVertexA<2>); break;
+    case 3: Stride = sizeof(FStaticMeshVertexA<3>); break;
+    case 4: Stride = sizeof(FStaticMeshVertexA<4>); break;
+    }
+  }
+  else
+  {
+    ALLOCATE_VERTEX_DATA_TEMPLATE(FStaticMeshVertexAA, NumTexCoords, Data, ElementCount);
+    switch (NumTexCoords)
+    {
+    case 1: Stride = sizeof(FStaticMeshVertexAA<1>); break;
+    case 2: Stride = sizeof(FStaticMeshVertexAA<2>); break;
+    case 3: Stride = sizeof(FStaticMeshVertexAA<3>); break;
+    case 4: Stride = sizeof(FStaticMeshVertexAA<4>); break;
+    }
+  }
+
+  for (int32 idx = 0; idx < NumVertices; ++idx)
+  {
+    if (!bUseFullPrecisionUVs)
+    {
+      GetTangentX(idx) = lb.GetTangentX(idx);
+      GetTangentZ(idx) = lb.GetTangentZ(idx);
+      for (int32 uvIdx = 0; uvIdx < NumTexCoords; ++uvIdx)
+      {
+        SetUVs(idx, uvIdx, lb.GetUVs(idx, uvIdx));
+      }
+    }
+  }
+}
+
 FStaticMeshVertexBuffer::~FStaticMeshVertexBuffer()
 {
   delete[] Data;
@@ -488,6 +683,81 @@ FStaticMeshPositionBuffer::~FStaticMeshPositionBuffer()
 FStaticMeshVertexColorBuffer::~FStaticMeshVertexColorBuffer()
 {
   delete[] Data;
+}
+
+FPackedNormal& FStaticMeshLegacyVertexBuffer::GetTangentX(int32 idx)
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FLegacyStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentX;
+  }
+  return ((FLegacyStaticMeshVertexAA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentX;
+}
+
+FPackedNormal FStaticMeshLegacyVertexBuffer::GetTangentX(int32 idx) const
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FLegacyStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentX;
+  }
+  return ((FLegacyStaticMeshVertexAA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentX;
+}
+
+FPackedNormal& FStaticMeshLegacyVertexBuffer::GetTangentZ(int32 idx)
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FLegacyStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentZ;
+  }
+  return ((FLegacyStaticMeshVertexAA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentZ;
+}
+
+FPackedNormal FStaticMeshLegacyVertexBuffer::GetTangentZ(int32 idx) const
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FLegacyStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentZ;
+  }
+  return ((FLegacyStaticMeshVertexAA<MAX_TEXCOORDS>*)((uint8*)Data + idx * Stride))->TangentZ;
+}
+
+FVector2D FStaticMeshLegacyVertexBuffer::GetUVs(int32 vertexIndex, int32 uvIndex) const
+{
+  if (!bUseFullPrecisionUVs)
+  {
+    return ((FLegacyStaticMeshVertexA<MAX_TEXCOORDS>*)((uint8*)Data + vertexIndex * Stride))->UV[uvIndex];
+  }
+  return ((FLegacyStaticMeshVertexAA<MAX_TEXCOORDS>*)((uint8*)Data + vertexIndex * Stride))->UV[uvIndex];
+}
+
+FStaticMeshLegacyVertexBuffer::~FStaticMeshLegacyVertexBuffer()
+{
+  delete[] Data;
+}
+
+const FLegacyStaticMeshVertexBase* FStaticMeshLegacyVertexBuffer::GetVertex(int32 idx) const
+{
+  if (bUseFullPrecisionUVs)
+  {
+    switch (NumTexCoords)
+    {
+    case 1: return &((FLegacyStaticMeshVertexAA<1>*)Data)[idx];
+    case 2: return &((FLegacyStaticMeshVertexAA<2>*)Data)[idx];
+    case 3: return &((FLegacyStaticMeshVertexAA<3>*)Data)[idx];
+    case 4: return &((FLegacyStaticMeshVertexAA<4>*)Data)[idx];
+    }
+  }
+  else
+  {
+    switch (NumTexCoords)
+    {
+    case 1: return &((FLegacyStaticMeshVertexA<1>*)Data)[idx];
+    case 2: return &((FLegacyStaticMeshVertexA<2>*)Data)[idx];
+    case 3: return &((FLegacyStaticMeshVertexA<3>*)Data)[idx];
+    case 4: return &((FLegacyStaticMeshVertexA<4>*)Data)[idx];
+    }
+  }
+  return nullptr;
 }
 
 bool UStaticMeshComponent::RegisterProperty(FPropertyTag* property)

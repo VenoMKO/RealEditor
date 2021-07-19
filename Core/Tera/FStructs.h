@@ -859,6 +859,8 @@ public:
     return R != v.R || G != v.G || B != v.B || A != v.A;
   }
 
+  friend FStream& operator<<(FStream& s, FLinearColor& c);
+
   FLinearColor operator*(float s) const
   {
     return FLinearColor(
@@ -2059,6 +2061,13 @@ struct FPrecomputedVolumeDistanceField {
   std::vector<FColor> Data;
 
   friend FStream& operator<<(FStream& s, FPrecomputedVolumeDistanceField& f);
+};
+
+struct FEdge {
+  int32 Vertex[2] = { 0, 0 };
+  int32 Face[2] = { 0, 0 };
+
+  friend FStream& operator<<(FStream& s, FEdge& f);
 };
 
 struct FQuatFixed48NoW {

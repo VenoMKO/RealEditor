@@ -237,6 +237,7 @@ public:
 
 protected:
   int32 ProbeMask = 0;
+  int64 IgnoreMask = 0;
   int32 StateFlags = 0;
   int16 LabelTableOffset = 0;
   std::map<FName, UObject*> FuncMap;

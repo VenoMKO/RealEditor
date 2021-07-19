@@ -351,6 +351,7 @@ public:
     if (ptr && size)
     {
       Stream.read((char*)ptr, size);
+      DBreakIf(!IsGood());
     }
   }
 
@@ -524,6 +525,7 @@ public:
     }
     if (!Good || Position + size > Offset + Size)
     {
+      DBreak();
       Good = false;
       return;
     }
@@ -535,6 +537,7 @@ public:
   {
     if (!Good || offset < Offset || (Offset && Offset > offset) || offset + size > Offset + Size)
     {
+      DBreak();
       Good = false;
       return;
     }
@@ -545,6 +548,7 @@ public:
   {
     if (!Good || (Offset && offset < Offset) || (offset - Offset) > Offset + Size)
     {
+      DBreak();
       Good = false;
       return;
     }

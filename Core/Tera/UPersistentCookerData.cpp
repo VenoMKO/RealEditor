@@ -116,6 +116,10 @@ void UPersistentCookerData::GetPersistentData(std::unordered_map<FString, FBulkD
 void UPersistentCookerData::Serialize(FStream& s)
 {
   Super::Serialize(s);
+  if (s.GetFV() == VER_TERA_CLASSIC)
+  {
+    return;
+  }
   s << ClassMap;
   s << LocalizationMap;
   s << Unk1 << Unk2;

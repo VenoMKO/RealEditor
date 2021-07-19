@@ -77,8 +77,12 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
     {
       continue;
     }
+    if (FString(itemPath.parent_path().wstring()).EndsWith("S1Game\\Script"))
+    {
+      continue;
+    }
     std::string ext = itemPath.extension().string();
-    if (ext[1] == 'g' || ext[1] == 'G' || ext[1] == 'u' || ext[1] == 'U')
+    if (((ext[1] == 'g' || ext[1] == 'G') && ((ext[2] == 'p' || ext[2] == 'P') || (ext[2] == 'm' || ext[2] == 'M'))) || ext[1] == 'u' || ext[1] == 'U')
     {
       size_t pos = path.Size();
       if (path[pos - 1] != '\\')
@@ -587,7 +591,7 @@ FPackage::S1DirError FPackage::ValidateRootDirCandidate(const FString& s1game)
     LogE("Error! Folder name \"%s\" does not match the \"S1Game\"", s1game.Filename(false).UTF8());
     return S1DirError::NAME_MISSMATCH;
   }
-  const char* classPackages[] = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
+  const char* classPackages[] = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "IpDrv.u", "UnrealEd.u", "GFxUIEditor.u" };
   std::filesystem::path root = s1game.WString();
   for (const char* name : classPackages)
   {
@@ -664,15 +668,11 @@ void FPackage::LoadClassPackage(const FString& name)
     {
       InitCRCTable();
       CoreVersion = package->GetFileVersion();
-      if (CoreVersion == VER_TERA_CLASSIC)
-      {
-        UThrow("Real Editor does not support 32-bit Tera!");
-      }
       LogI("Core version: %u/%u", package->GetFileVersion(), package->GetLicenseeVersion());
     }
     else if (package->GetFileVersion() != CoreVersion)
     {
-      UThrow("Package %s has different version %d/%d ", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
+      UThrow("Package %s has different version %d/%d (32-bit/64-bit mixed files?)", name.C_str(), package->GetFileVersion(), package->GetLicenseeVersion());
     }
 
     package->AllowEdit = false;
@@ -1185,9 +1185,16 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   {
     if (sum.GetFileVersion() == VER_TERA_CLASSIC)
     {
-      UThrow("Real Editor can't open 32-bit packages!");
+      UThrow("Your S1Game folder contains 64-bit client, but the %s is a 32-bit file.\nChange your S1Game folder to a 32-bit client and try again.", path.FilenameString(true).c_str());
     }
-    UThrow("%s version (%d/%d) differs from your game version(%d)", sum.PackageName.C_str(), sum.GetFileVersion(), sum.GetLicenseeVersion(), CoreVersion);
+    else if (sum.GetFileVersion() == VER_TERA_MODERN)
+    {
+      UThrow("Your S1Game folder contains 32-bit client, but the %s is a 64-bit file.\nChange your S1Game folder to a 64-bit client and try again.", path.FilenameString(true).c_str());
+    }
+    else
+    {
+      UThrow("%s version %d(L: %d) differs from your S1Game version %d", sum.PackageName.C_str(), sum.GetFileVersion(), sum.GetLicenseeVersion(), CoreVersion);
+    }
   }
   if (sum.CompressedChunks.size())
   {

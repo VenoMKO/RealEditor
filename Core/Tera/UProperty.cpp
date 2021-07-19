@@ -74,7 +74,17 @@ void UDelegateProperty::Serialize(FStream& s)
 
 void UInterfaceProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  DBreak();
+  UObject* tmp = nullptr;
+  if (s.IsReading())
+  {
+    valuePtr->Type = FPropertyValue::VID::Object;
+    valuePtr->Data = new PACKAGE_INDEX;
+  }
+  else
+  {
+    tmp = valuePtr->Property->Owner->GetPackage()->GetObject(valuePtr->GetObjectIndex());
+  }
+  s.SerializeObjectRef((void*&)tmp, valuePtr->GetObjectIndex());
 }
 
 void UMapProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
@@ -185,16 +195,9 @@ void UBoolProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject*
     valuePtr->Type = FPropertyValue::VID::Bool;
     valuePtr->Data = new bool;
   }
-  if (s.GetFV() > VER_TERA_CLASSIC)
-  {
-    uint8 tmp = valuePtr->GetBool();
-    s << tmp;
-    valuePtr->GetBool() = tmp;
-  }
-  else
-  {
-    s << valuePtr->GetBool();
-  }
+  uint8 tmp = valuePtr->GetBool();
+  s << tmp;
+  valuePtr->GetBool() = tmp;
 }
 
 FPropertyTag* UBoolProperty::CreatePropertyTag(UObject* object)
@@ -337,7 +340,7 @@ void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObjec
     valuePtr->Data = new std::vector<FPropertyValue*>;
     valuePtr->Struct = Struct;
   }
-  
+
   if (bUseBinarySerialization)
   {
     Struct->SerializeBin(s, valuePtr, object);

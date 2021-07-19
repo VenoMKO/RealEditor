@@ -22,7 +22,8 @@
 #include <Utils/ALDevice.h>
 
 const char* APP_NAME = "Real Editor";
-const char* VENDOR_NAME = "Real Editor x64";
+const char* VENDOR_NAME_32 = "Real Editor x32";
+const char* VENDOR_NAME_64 = "Real Editor x64";
 
 wxIMPLEMENT_APP(App);
 
@@ -704,8 +705,6 @@ bool App::OnInit()
   // If the executable name changes our AppData storage path will change too. We don't want that.
   // So we set AppName manually. This will keep paths consistent.
   SetAppName(APP_NAME);
-  SetAppDisplayName(VENDOR_NAME);
-  SetVendorDisplayName(VENDOR_NAME);
 
   // Update executable path if MIME is registered
   if (CheckMimeTypes(false))
@@ -825,55 +824,91 @@ void App::LoadCore(ProgressWindow* pWindow)
     return;
   }
 
+  {
+
+    wxString desc = wxS("Loading Core.u...");
+    SendEvent(pWindow, UPDATE_PROGRESS_DESC, desc);
+    try
+    {
+      FPackage::LoadClassPackage("Core.u");
+    }
+    catch (const std::exception& e)
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, e.what());
+      return;
+    }
+    if (pWindow->IsCanceled())
+    {
+      ExitMainLoop();
+      return;
+    }
+  }
+
   std::mutex mapperErrorMutex;
   FString mapperError;
-  std::thread compositMapper([&mapperErrorMutex, &mapperError] {
-    try
-    {
-      FPackage::LoadCompositePackageMapper();
-    }
-    catch (const std::exception& e)
-    {
-      std::scoped_lock<std::mutex> l(mapperErrorMutex);
-      if (mapperError.Empty())
-      {
-        mapperError = e.what();
-      }
-    }
-  });
+  std::thread compositMapper;
+  std::thread pkgMapper;
+  std::thread objectRedirectorMapper;
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  {
+    SetAppDisplayName(VENDOR_NAME_64);
+    SetVendorDisplayName(VENDOR_NAME_64);
 
-  std::thread pkgMapper([&mapperErrorMutex, &mapperError] {
-    try
-    {
-      FPackage::LoadPkgMapper();
-    }
-    catch (const std::exception& e)
-    {
-      std::scoped_lock<std::mutex> l(mapperErrorMutex);
-      if (mapperError.Empty())
+    compositMapper = std::thread([&mapperErrorMutex, &mapperError] {
+      try
       {
-        mapperError = e.what();
+        FPackage::LoadCompositePackageMapper();
       }
-    }
-  });
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(mapperErrorMutex);
+        if (mapperError.Empty())
+        {
+          mapperError = e.what();
+        }
+      }
+    });
 
-  std::thread objectRedirectorMapper([&mapperErrorMutex, &mapperError] {
-    try
-    {
-      FPackage::LoadObjectRedirectorMapper();
-    }
-    catch (const std::exception& e)
-    {
-      std::scoped_lock<std::mutex> l(mapperErrorMutex);
-      if (mapperError.Empty())
+    pkgMapper = std::thread([&mapperErrorMutex, &mapperError] {
+      try
       {
-        mapperError = e.what();
+        FPackage::LoadPkgMapper();
       }
-    }
-  });
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(mapperErrorMutex);
+        if (mapperError.Empty())
+        {
+          mapperError = e.what();
+        }
+      }
+    });
+
+    objectRedirectorMapper = std::thread([&mapperErrorMutex, &mapperError] {
+      try
+      {
+        FPackage::LoadObjectRedirectorMapper();
+      }
+      catch (const std::exception& e)
+      {
+        std::scoped_lock<std::mutex> l(mapperErrorMutex);
+        if (mapperError.Empty())
+        {
+          mapperError = e.what();
+        }
+      }
+    });
+  }
+  else
+  {
+    SetAppDisplayName(VENDOR_NAME_32);
+    SetVendorDisplayName(VENDOR_NAME_32);
+  }
 
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading stripped meta data...");
 #ifndef _DEBUG
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
     std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>> meta;
     try
@@ -892,7 +927,8 @@ void App::LoadCore(ProgressWindow* pWindow)
   }
 #endif
 
-  const std::vector<FString> classPackageNames = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "WinDrv.u", "IpDrv.u", "OnlineSubsystemPC.u", "UnrealEd.u", "GFxUIEditor.u" };
+  const std::vector<FString> classPackageNames = { "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "IpDrv.u", "UnrealEd.u", "GFxUIEditor.u" };
+  const std::vector<FString> extraClassPackageNames = { "WinDrv.u", "OnlineSubsystemPC.u" };
   PERF_START(ClassPackagesLoad);
   for (const FString& name : classPackageNames)
   {
@@ -913,6 +949,28 @@ void App::LoadCore(ProgressWindow* pWindow)
     {
       ExitMainLoop();
       return;
+    }
+  }
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  {
+    for (const FString& name : extraClassPackageNames)
+    {
+      wxString desc = wxS("Loading ");
+      desc += name.String() + "...";
+      SendEvent(pWindow, UPDATE_PROGRESS_DESC, desc);
+      try
+      {
+        FPackage::LoadClassPackage(name);
+      }
+      catch (...)
+      {
+        // Don't care if we failed to load extra packages. They contain only runtime classes anyway.
+      }
+      if (pWindow->IsCanceled())
+      {
+        ExitMainLoop();
+        return;
+      }
     }
   }
   FPackage::BuildClassInheritance();
@@ -941,17 +999,20 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
 
-  pkgMapper.join();
-  compositMapper.join();
-  objectRedirectorMapper.join();
-
-  if (mapperError.Size())
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
-    SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-    SendEvent(this, LOAD_CORE_ERROR, mapperError.String());
-    pWindow->Destroy();
-    ExitMainLoop();
-    return;
+    pkgMapper.join();
+    compositMapper.join();
+    objectRedirectorMapper.join();
+
+    if (mapperError.Size())
+    {
+      SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
+      SendEvent(this, LOAD_CORE_ERROR, mapperError.String());
+      pWindow->Destroy();
+      ExitMainLoop();
+      return;
+    }
   }
 
   if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)

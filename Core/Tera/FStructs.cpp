@@ -691,13 +691,22 @@ FStream& operator<<(FStream& s, FMultiSizeIndexContainer& c)
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s << c.NeedsCPUAccess;
+    s << c.ElementSize;
   }
-  s << c.ElementSize;
-  s << c.BulkElementSize;
-
-  if (c.ElementSize != c.BulkElementSize)
+  else
   {
-    UThrow("Elements size mismatch: %u != %u", c.ElementSize, c.BulkElementSize);
+    uint32 elementSize = c.ElementSize;
+    s << elementSize;
+    c.ElementSize = elementSize;
+  }
+
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << c.BulkElementSize;
+    if (c.ElementSize != c.BulkElementSize)
+    {
+      UThrow("Elements size mismatch: %u != %u", c.ElementSize, c.BulkElementSize);
+    }
   }
 
   s << c.ElementCount;
@@ -1102,6 +1111,18 @@ FVector::FVector(const FVector4& v)
   , Y(v.Y)
   , Z(v.Z)
 {}
+
+FStream& operator<<(FStream& s, FLinearColor& c)
+{
+  return s << c.R << c.G << c.B << c.A;
+}
+
+FStream& operator<<(FStream& s, FEdge& f)
+{
+  s << f.Vertex[0] << f.Vertex[1];
+  s << f.Face[0] << f.Face[1];
+  return s;
+}
 
 FColor FLinearColor::ToFColor(bool sRGB) const
 {
