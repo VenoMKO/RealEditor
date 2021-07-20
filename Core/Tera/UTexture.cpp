@@ -395,7 +395,7 @@ void UTexture2D::PostLoad()
     FTexture2DMipMap* mip = Mips[idx];
     if (mip->Data->IsStoredInSeparateFile())
     {
-      bool serializedFromCache = false;
+      bool loaded = false;
       if (TextureFileCacheName)
       {
         if (TextureFileCacheName->String() != cacheName)
@@ -421,7 +421,7 @@ void UTexture2D::PostLoad()
           try
           {
             mip->Data->SerializeSeparate(s, this, idx);
-            serializedFromCache = true;
+            loaded = true;
           }
           catch (...)
           {
@@ -432,12 +432,72 @@ void UTexture2D::PostLoad()
         }
       }
 
-      if (serializedFromCache)
+      if (loaded)
       {
         continue;
       }
 
-      // Maybe the texture is not cached. Search by bulkdata name
+      if (FPackage::GetCoreVersion() == VER_TERA_CLASSIC && (GetExportFlags() & EF_ForcedExport))
+      {
+        FString objectPath = GetObjectPath();
+        FString packageName;
+        {
+          std::vector<FString> comps = objectPath.Split('.');
+          if (comps.size() > 2)
+          {
+            packageName = comps[1];
+          }
+        }
+        
+        for (int32 number = 1; packageName.Size() && number < 6; ++number)
+        {
+          std::shared_ptr<FPackage> package = nullptr;
+          try
+          {
+            FString pkgToOpen = packageName;
+            if (number > 1)
+            {
+              pkgToOpen += "_" + std::to_string(number);
+            }
+            if (package = FPackage::GetPackageNamed(pkgToOpen))
+            {
+              if (package.get() == GetPackage())
+              {
+                FPackage::UnloadPackage(package);
+                continue;
+              }
+              package->Load();
+              if (UTexture2D* tex = Cast<UTexture2D>(package->GetObject(objectPath)))
+              {
+                FStream& s = package->GetStream();
+                s.SetPosition(mip->Data->GetBulkDataOffsetInFile());
+                try
+                {
+                  mip->Data->SerializeSeparate(s, this, idx);
+                  loaded = true;
+                }
+                catch (...)
+                {
+                  LogE("Failed to serialize a fexp separate mip: %s.MipLevel_%d", objectPath.C_str(), idx);
+                }
+              }
+              FPackage::UnloadPackage(package);
+            }
+          }
+          catch (...)
+          {
+          }
+          if (loaded)
+          {
+            break;
+          }
+        }
+      }
+
+      if (loaded)
+      {
+        continue;
+      }
 
       FString bulkDataName = GetObjectPath() + ".MipLevel_" + std::to_string(idx);
       bulkDataName = bulkDataName.ToUpper();
