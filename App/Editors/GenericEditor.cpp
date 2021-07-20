@@ -44,7 +44,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   {
     editor = new AnimSequenceEditor(parent, window);
   }
-  else if (c == UTexture2D::StaticClassName() || c == UTerrainWeightMapTexture::StaticClassName() || c == UTextureFlipBook::StaticClassName())
+  else if (c == UTexture2D::StaticClassName() || 
+           c == UTerrainWeightMapTexture::StaticClassName() ||
+           c == UTextureFlipBook::StaticClassName() ||
+           c == UShadowMapTexture2D::StaticClassName())
   {
     editor = new TextureEditor(parent, window);
   }

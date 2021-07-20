@@ -110,3 +110,8 @@ class UTextureFlipBook : public UTexture2D {
 public:
   DECL_UOBJ(UTextureFlipBook, UTexture2D);
 };
+
+class UShadowMapTexture2D : public UTexture2D {
+public:
+  DECL_UOBJ(UShadowMapTexture2D, UTexture2D);
+};

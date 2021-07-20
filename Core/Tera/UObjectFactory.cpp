@@ -54,6 +54,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UTextureFlipBook(exp);
   }
+  else if (c == UShadowMapTexture2D::StaticClassName())
+  {
+    result = new UShadowMapTexture2D(exp);
+  }
   else if (c == USkeletalMesh::StaticClassName())
   {
     result = new USkeletalMesh(exp);
