@@ -24,6 +24,26 @@ struct FObjectArray {
     }
   }
 
+  T& front()
+  {
+    return Objects.front();
+  }
+
+  T& back()
+  {
+    return Objects.back();
+  }
+
+  const T& front() const
+  {
+    return Objects.front();
+  }
+
+  const T& back() const
+  {
+    return Objects.back();
+  }
+
   typename std::vector<T>::iterator begin()
   {
     return Objects.begin();

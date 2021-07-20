@@ -130,8 +130,7 @@ protected:
   std::vector<FTerrainInfoData> InfoData;
   int32 Unk1 = 0;
   std::vector<FAlphaMap> AlphaMaps;
-  std::vector<PACKAGE_INDEX> WeightMapTextureIndices;
-  std::vector<UTerrainWeightMapTexture*> WeightMapTextures;
+  FObjectArray<UTerrainWeightMapTexture*> WeightMapTextures;
   void* MaterialData = nullptr;
   FILE_OFFSET MaterialDataSize = 0;
   bool HasTransparency = false;

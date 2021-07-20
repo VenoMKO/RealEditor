@@ -67,7 +67,7 @@ void UTerrain::Serialize(FStream& s)
   s << InfoData;
   s << Unk1;
   s << AlphaMaps;
-  s << WeightMapTextureIndices;
+  s << WeightMapTextures;
   // Cached materials and compiled shaders
   // TODO: serialize
   SerializeTrailingData(s);
@@ -76,10 +76,6 @@ void UTerrain::Serialize(FStream& s)
 void UTerrain::PostLoad()
 {
   Super::PostLoad();
-  for (PACKAGE_INDEX idx : WeightMapTextureIndices)
-  {
-    WeightMapTextures.push_back(Cast<UTerrainWeightMapTexture>(GetPackage()->GetObject(idx)));
-  }
   for (int32 idx = 0; idx < InfoData.size(); ++idx)
   {
     if (!InfoData[idx].IsVisible())
@@ -224,7 +220,7 @@ bool UTerrain::GetWeightMapChannel(int32 idx, void*& data, int32& width, int32& 
 
 std::vector<UTerrainWeightMapTexture*> UTerrain::GetWeightMaps()
 {
-  return WeightMapTextures;
+  return WeightMapTextures.GetObjects();
 }
 
 bool UTerrainMaterial::RegisterProperty(FPropertyTag* property)
