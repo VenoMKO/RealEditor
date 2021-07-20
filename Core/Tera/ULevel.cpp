@@ -51,14 +51,16 @@ void ULevel::Serialize(FStream& s)
   s << LevelSequences;
   
   s << TextureToInstancesMap;
-  s << DynamicTextureInstances;
-
-  s << ApexDestructionDataSize;
-  if (s.IsReading() && ApexDestructionDataSize)
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    ApexDestructionData = malloc(ApexDestructionDataSize);
+    s << DynamicTextureInstances;
+    s << ApexDestructionDataSize;
+    if (s.IsReading() && ApexDestructionDataSize)
+    {
+      ApexDestructionData = malloc(ApexDestructionDataSize);
+    }
+    s.SerializeBytes(ApexDestructionData, ApexDestructionDataSize);
   }
-  s.SerializeBytes(ApexDestructionData, ApexDestructionDataSize);
   
   s << CachedPhysBSPDataElementSize;
   s << CachedPhysBSPData;
@@ -74,8 +76,11 @@ void ULevel::Serialize(FStream& s)
 
   s << ForceStreamTextures;
 
-  s << CachedPhysConvexBSPData;
-  s << CachedPhysConvexBSPVersion;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << CachedPhysConvexBSPData;
+    s << CachedPhysConvexBSPVersion;
+  }
   
   SERIALIZE_UREF(s, NavListStart);
   SERIALIZE_UREF(s, NavListEnd);
@@ -83,18 +88,25 @@ void ULevel::Serialize(FStream& s)
   SERIALIZE_UREF(s, CoverListStart);
   SERIALIZE_UREF(s, CoverListEnd);
 
-  SERIALIZE_UREF(s, PylonListStart);
-  SERIALIZE_UREF(s, PylonListEnd);
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    SERIALIZE_UREF(s, PylonListStart);
+    SERIALIZE_UREF(s, PylonListEnd);
 
-  s << CrossLevelCoverGuidRefs;
+    s << CrossLevelCoverGuidRefs;
 
-  s << CoverLinkRefs;
-  s << CoverIndexPairs;
+    s << CoverLinkRefs;
+    s << CoverIndexPairs;
+  }
+
   s << CrossLevelActors;
 
-  s << PrecomputedLightVolume;
-  s << PrecomputedVisibilityHandler;
-  s << PrecomputedVolumeDistanceField;
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << PrecomputedLightVolume;
+    s << PrecomputedVisibilityHandler;
+    s << PrecomputedVolumeDistanceField;
+  }
 
   s << Unk1;
 }
