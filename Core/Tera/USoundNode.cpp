@@ -34,11 +34,14 @@ void USoundNodeWave::Serialize(FStream& s)
   PCData.Serialize(s, this);
   XBoxData.Serialize(s, this);
   PS3Data.Serialize(s, this);
-  UnkData1.Serialize(s, this);
-  UnkData2.Serialize(s, this);
-  UnkData3.Serialize(s, this);
-  UnkData4.Serialize(s, this);
-  UnkData5.Serialize(s, this);
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    UnkData1.Serialize(s, this);
+    UnkData2.Serialize(s, this);
+    UnkData3.Serialize(s, this);
+    UnkData4.Serialize(s, this);
+    UnkData5.Serialize(s, this);
+  }
 }
 
 void USoundNodeWave::PostLoad()
