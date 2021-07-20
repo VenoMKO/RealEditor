@@ -431,14 +431,6 @@ void UStaticMesh::Serialize(FStream& s)
       s << unk;
     }
   }
-
-  static int tcnt = 0;
-  tcnt++;
-  if (tcnt < 29)
-  {
-    return;
-  }
-  
   
   int32 cnt = (int32)LODModels.size();
   s << cnt;

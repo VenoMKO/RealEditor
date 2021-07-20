@@ -51,20 +51,43 @@ void FLightMap1D::Serialize(FStream& s)
 {
   FLightMap::Serialize(s);
   SERIALIZE_UREF(s, Owner);
+
   if (s.IsReading())
   {
-    DirectionalSamples = new FQuantizedLightSampleBulkData<FQuantizedDirectionalLightSample>();
-    DirectionalSamples->Package = s.GetPackage();
+    if (s.GetFV() > VER_TERA_CLASSIC)
+    {
+      DirectionalSamples = new FQuantizedLightSampleBulkData<FQuantizedDirectionalLightSample>();
+      DirectionalSamples->Package = s.GetPackage();
+    }
+    else
+    {
+      LegacyDirectionalSamples = new FQuantizedLightSampleBulkData<FLegacyQuantizedDirectionalLightSample>();
+      LegacyDirectionalSamples->Package = s.GetPackage();
+    }
+  }
+
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    LegacyDirectionalSamples->Serialize(s, Owner);
+    for (auto& v : LegacyScaleVectors)
+    {
+      s << v;
+    }
+  }
+  else
+  {
+    DirectionalSamples->Serialize(s, Owner);
+    for (auto& v : ScaleVectors)
+    {
+      s << v;
+    }
+  }
+
+  if (s.IsReading())
+  {
     SimpleSamples = new FQuantizedLightSampleBulkData<FQuantizedSimpleLightSample>();
     SimpleSamples->Package = s.GetPackage();
   }
-  DirectionalSamples->Serialize(s, Owner);
-
-  for (auto& ScaleVector : ScaleVectors)
-  {
-    s << ScaleVector;
-  }
-
   SimpleSamples->Serialize(s, Owner);
 }
 

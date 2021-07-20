@@ -4,14 +4,19 @@
 
 #define NUM_STORED_LIGHTMAP_COEF 3
 #define NUM_DIRECTIONAL_LIGHTMAP_COEF 2
+#define NUM_LEGACY_DIRECTIONAL_LIGHTMAP_COEF 3
 #define NUM_SIMPLE_LIGHTMAP_COEF 1
 
 struct FQuantizedDirectionalLightSample {
-  FColor	Coefficients[NUM_DIRECTIONAL_LIGHTMAP_COEF];
+  FColor Coefficients[NUM_DIRECTIONAL_LIGHTMAP_COEF];
+};
+
+struct FLegacyQuantizedDirectionalLightSample {
+  FColor Coefficients[NUM_LEGACY_DIRECTIONAL_LIGHTMAP_COEF];
 };
 
 struct FQuantizedSimpleLightSample {
-  FColor	Coefficients[NUM_SIMPLE_LIGHTMAP_COEF];
+  FColor Coefficients[NUM_SIMPLE_LIGHTMAP_COEF];
 };
 
 template<class QuantizedLightSampleType>
@@ -57,7 +62,9 @@ public:
 protected:
   DECL_UREF(UObject, Owner);
   FQuantizedLightSampleBulkData<FQuantizedDirectionalLightSample>* DirectionalSamples = nullptr;
+  FQuantizedLightSampleBulkData<FLegacyQuantizedDirectionalLightSample>* LegacyDirectionalSamples = nullptr;
   FVector ScaleVectors[NUM_STORED_LIGHTMAP_COEF];
+  FVector LegacyScaleVectors[4];
   FQuantizedLightSampleBulkData<FQuantizedSimpleLightSample>* SimpleSamples = nullptr;
 };
 
