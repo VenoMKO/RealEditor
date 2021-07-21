@@ -801,7 +801,7 @@ int App::OnRun()
       }
     }
     
-    ProgressWindow* progressWindow = new ProgressWindow(nullptr);
+    ProgressWindow* progressWindow = new ProgressWindow(nullptr, APP_NAME);
     progressWindow->SetActionText(wxS("Loading..."));
     progressWindow->SetCurrentProgress(-1);
     progressWindow->SetCanCancel(false);
