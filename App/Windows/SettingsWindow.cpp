@@ -31,7 +31,7 @@ bool IsValidDir(const wxString& path)
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)
-  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 375), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 448), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
   , CurrentConfig(currentConfig)
   , NewConfig(output)
   , AllowRebuild(allowRebuild)
@@ -56,11 +56,6 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   wxBoxSizer* bSizer4;
   bSizer4 = new wxBoxSizer(wxVERTICAL);
 
-  wxStaticText* m_staticText6;
-  m_staticText6 = new wxStaticText(m_panel2, wxID_ANY, wxT("Select the S1Game folder of your Tera client. This path will be used to find and load packages and resources. The path may look like this: \"D:\\Games\\Gameforge\\Tera\\Client\\S1Game\\\"."), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText6->Wrap(600);
-  bSizer4->Add(m_staticText6, 0, wxALL, 5);
-
   wxBoxSizer* bSizer5;
   bSizer5 = new wxBoxSizer(wxHORIZONTAL);
 
@@ -69,15 +64,34 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText7->Wrap(-1);
   bSizer5->Add(m_staticText7, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, CurrentConfig.RootDir.WString(), wxDefaultPosition, wxSize(500, -1), wxTE_PROCESS_ENTER);
+  wxString root = CurrentConfig.UseBuiltInS1Game32 ? wxString("N/A") : wxString(CurrentConfig.RootDir.WString());
+  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, root, wxDefaultPosition, wxSize(500, -1), wxTE_PROCESS_ENTER);
   bSizer5->Add(PathField, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  PathField->Enable(!CurrentConfig.UseBuiltInS1Game32);
 
   BrowseButton = new wxButton(m_panel2, ControlElementId::Browse, wxT("Browse..."), wxDefaultPosition, wxDefaultSize, 0);
   bSizer5->Add(BrowseButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  BrowseButton->Enable(!CurrentConfig.UseBuiltInS1Game32);
 
 
   bSizer4->Add(bSizer5, 1, wxEXPAND, 5);
 
+  wxStaticText* m_staticText6;
+  m_staticText6 = new wxStaticText(m_panel2, wxID_ANY, wxT("Select the S1Game folder of your Tera client. This path will be used to find and load packages and resources. The path may look like this: \"D:\\Games\\Gameforge\\Tera\\Client\\S1Game\\\"."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText6->Wrap(600);
+  bSizer4->Add(m_staticText6, 0, wxBOTTOM | wxLEFT | wxRIGHT, 5);
+
+  wxStaticLine* m_staticline2;
+  m_staticline2 = new wxStaticLine(m_panel2, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
+  bSizer4->Add(m_staticline2, 0, wxEXPAND | wxTOP | wxBOTTOM, 7);
+
+  UseBuiltInS1Game32 = new wxCheckBox(m_panel2, wxID_ANY, wxT("Use built-in 32-bit S1Game folder"), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer4->Add(UseBuiltInS1Game32, 0, wxALL, 5);
+
+  wxStaticText* m_staticText81;
+  m_staticText81 = new wxStaticText(m_panel2, wxID_ANY, wxT("Enable this option if you want to open a 32-bit GPK file, but you don't have a full 32-bit client."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText81->Wrap(-1);
+  bSizer4->Add(m_staticText81, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   m_panel2->SetSizer(bSizer4);
   m_panel2->Layout();
@@ -229,7 +243,10 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
   this->Centre(wxBOTH);
 
-  if (!IsValidDir(PathField->GetValue()))
+  UseBuiltInS1Game32->SetValue(CurrentConfig.UseBuiltInS1Game32);
+  UseBuiltInS1Game32->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(SettingsWindow::OnUseBuiltInS1Game32), NULL, this);
+
+  if (!IsValidDir(PathField->GetValue()) && !UseBuiltInS1Game32->GetValue())
   {
     ApplyButton->Enable(false);
     ApplyButton->SetToolTip(wxT("You must specify the \"" + RootDir + "\". Press \"Browse\" and select the folder."));
@@ -269,7 +286,7 @@ void SettingsWindow::OnPathChanged(wxCommandEvent&)
 {
   if (!IsValidDir(PathField->GetValue()))
   {
-    ApplyButton->Enable(false);
+    ApplyButton->Enable(UseBuiltInS1Game32->GetValue());
     ApplyButton->SetToolTip(wxT("You must specify the \"" + RootDir + "\". Press \"Browse\" and select the folder."));
   }
   else
@@ -441,7 +458,8 @@ void SettingsWindow::OnCancelClicked(wxCommandEvent&)
 void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
   NewConfig.FastObjectDump = FastObjDump->GetValue();
-  FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(PathField->GetValue().ToStdWstring());
+  std::wstring path = NewConfig.UseBuiltInS1Game32 ? NewConfig.RootDir.WString() : PathField->GetValue().ToStdWstring();
+  FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(path);
   if (err == FPackage::S1DirError::OK)
   {
     EndModal(wxID_OK);
@@ -472,6 +490,24 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
     {
       EndModal(wxID_OK);
     }
+  }
+}
+
+void SettingsWindow::OnUseBuiltInS1Game32(wxCommandEvent&)
+{
+  NewConfig.UseBuiltInS1Game32 = UseBuiltInS1Game32->GetValue();
+  PathField->Enable(!NewConfig.UseBuiltInS1Game32);
+  BrowseButton->Enable(!NewConfig.UseBuiltInS1Game32);
+  if (NewConfig.UseBuiltInS1Game32)
+  {
+    NewConfig.TempS1GameDir = NewConfig.RootDir;
+    PathField->SetValue("N/A");
+    NewConfig.RootDir = GetS1Game32Path().ToStdWstring();
+  }
+  else
+  {
+    NewConfig.RootDir = NewConfig.TempS1GameDir;
+    PathField->SetValue(NewConfig.RootDir.WString());
   }
 }
 

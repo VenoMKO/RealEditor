@@ -232,6 +232,8 @@ struct FAppConfig
     CFG_LastDcSavePath,
     CFG_FastObjectDump,
     CFG_ShowWelcomeOnClose,
+    CFG_UseBuiltInS1Game32,
+    CFG_TempS1GameDir,
 
     // Log
     CFG_LogBegin = 100,
@@ -321,6 +323,10 @@ struct FAppConfig
   bool FastObjectDump = true;
   // CFG_ShowWelcomeOnClose
   bool ShowWelcomeOnClose = true;
+  // CFG_UseBuiltInS1Game32
+  bool UseBuiltInS1Game32 = false;
+  // CFG_TempS1GameDir
+  FString TempS1GameDir;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const

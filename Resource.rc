@@ -106,6 +106,30 @@ IDB_SKEL                RCDATA                  "Resources\\Btn_Skeleton.png"
 
 IDB_SKEL_OFF            RCDATA                  "Resources\\Btn_Skeleton_Off.png"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Script packages for the 32-bit client files.
+//
+
+IDB_RES_CORE            RCDATA                  "Resources\\S1Game_32\\Core.u"
+
+IDB_RES_ENGINE          RCDATA                  "Resources\\S1Game_32\\Engine.u"
+
+IDB_RES_S1GAME          RCDATA                  "Resources\\S1Game_32\\S1Game.u"
+
+IDB_RES_GAMEFRAMEWORK   RCDATA                  "Resources\\S1Game_32\\GameFramework.u"
+
+IDB_RES_EDITOR          RCDATA                  "Resources\\S1Game_32\\Editor.u"
+
+IDB_RES_GFX             RCDATA                  "Resources\\S1Game_32\\GFxUI.u"
+
+IDB_RES_GFX_EDITOR      RCDATA                  "Resources\\S1Game_32\\GFxUIEditor.u"
+
+IDB_RES_IPDRV           RCDATA                  "Resources\\S1Game_32\\IpDrv.u"
+
+IDB_RES_UNREALED        RCDATA                  "Resources\\S1Game_32\\UnrealEd.u"
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Icon

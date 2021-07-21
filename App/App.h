@@ -44,6 +44,8 @@ inline void SendEvent(wxEvtHandler* obj, wxEventType type, const wxString& msg, 
   wxQueueEvent(obj, e);
 }
 
+extern wxString GetS1Game32Path();
+
 wxDECLARE_EVENT(DELAY_LOAD, wxCommandEvent);
 wxDECLARE_EVENT(OPEN_PACKAGE, wxCommandEvent);
 wxDECLARE_EVENT(LOAD_CORE_ERROR, wxCommandEvent);
@@ -107,6 +109,8 @@ public:
     GetSharedApp()->GetConfig().LastPkgSavePath = path.ToStdWstring();
     GetSharedApp()->SaveConfig();
   }
+
+  static void InstallS1Game32();
 
   ~App();
   bool OpenPackage(const wxString& path, const wxString selection = wxEmptyString);

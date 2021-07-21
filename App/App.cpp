@@ -16,6 +16,8 @@
 #include <filesystem>
 #include <execution>
 
+#include <sys/stat.h>
+
 #include <Utils/ALog.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
@@ -43,6 +45,26 @@ wxString GetConfigPath()
     wxMkDir(path);
   }
   path += wxS("RE.cfg");
+  return path;
+}
+
+wxString GetS1Game32Path()
+{
+  wxString path = wxStandardPaths::Get().GetUserLocalDataDir() + wxFILE_SEP_PATH + wxS("x86") + wxFILE_SEP_PATH;
+  if (!wxDirExists(path))
+  {
+    wxMkdir(path);
+  }
+  path += wxS("S1Game");
+  if (!wxDirExists(path))
+  {
+    wxMkdir(path);
+  }
+  wxString cookedPc = path + wxFILE_SEP_PATH + wxS("CookedPC");
+  if (!wxDirExists(cookedPc))
+  {
+    wxMkdir(cookedPc);
+  }
   return path;
 }
 
@@ -329,6 +351,39 @@ void App::AddRecentFile(const wxString& path)
   {
     window->UpdateRecent(cleanPath);
   }
+}
+
+void App::InstallS1Game32()
+{
+  wxString path = GetS1Game32Path() + wxFILE_SEP_PATH;
+
+  auto InstallResource = [&](int resId, const char* name) {
+    HRSRC hRes = FindResource(0, MAKEINTRESOURCE(resId), RT_RCDATA);
+    HGLOBAL hMem = LoadResource(0, hRes);
+    void* pMem = LockResource(hMem);
+    DWORD size = SizeofResource(0, hRes);
+
+    std::wstring item = path + L"CookedPC\\" + A2W(name);
+    struct _stat64 stat;
+    if (_wstat64(item.c_str(), &stat) || stat.st_size != size)
+    {
+      std::ofstream s(item.c_str(), std::ios::out | std::ios::binary);
+      s.write((const char*)pMem, size);
+    }
+
+    UnlockResource(hMem);
+    FreeResource(hMem);
+  };
+
+  InstallResource(500, "Core.u");
+  InstallResource(501, "Engine.u");
+  InstallResource(502, "S1Game.u");
+  InstallResource(503, "GameFramework.u");
+  InstallResource(504, "Editor.u");
+  InstallResource(505, "GFxUI.u");
+  InstallResource(506, "GFxUIEditor.u");
+  InstallResource(507, "IpDrv.u");
+  InstallResource(508, "UnrealEd.u");
 }
 
 App::~App()
@@ -702,6 +757,8 @@ bool App::OnInit()
     }
   }
 
+  InstallS1Game32();
+
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   if (cfg.Load())
   {
@@ -819,7 +876,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     catch (const std::exception& e)
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, e.what());
+      SendEvent(this, LOAD_CORE_ERROR, "Failed to load Core.u file!\n\nThe file may be corrupted or does not exist.");
       return;
     }
     if (pWindow->IsCanceled())
@@ -923,10 +980,11 @@ void App::LoadCore(ProgressWindow* pWindow)
     {
       FPackage::LoadClassPackage(name);
     }
-    catch (const std::exception& e)
+    catch (...)
     {
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
-      SendEvent(this, LOAD_CORE_ERROR, e.what());
+      wxString errDesc = wxString::Format("Failed to load %s file!\n\nThe file may be corrupted or does not exist.", name.C_str());
+      SendEvent(this, LOAD_CORE_ERROR, errDesc);
       return;
     }
     if (pWindow->IsCanceled())

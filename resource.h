@@ -33,6 +33,16 @@
 #define IDB_SKEL                        136
 #define IDB_SKEL_OFF                    137
 
+#define IDB_RES_CORE                    500
+#define IDB_RES_ENGINE                  501
+#define IDB_RES_S1GAME                  502
+#define IDB_RES_GAMEFRAMEWORK           503
+#define IDB_RES_EDITOR                  504
+#define IDB_RES_GFX                     505
+#define IDB_RES_GFX_EDITOR              506
+#define IDB_RES_IPDRV                   507
+#define IDB_RES_UNREALED                508
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

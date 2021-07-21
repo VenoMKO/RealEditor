@@ -26,6 +26,8 @@ private:
   void OnCancelClicked(wxCommandEvent&);
   void OnOkClicked(wxCommandEvent&);
 
+  void OnUseBuiltInS1Game32(wxCommandEvent&);
+
 private:
   FAppConfig CurrentConfig;
   FAppConfig& NewConfig;
@@ -42,6 +44,7 @@ private:
   wxButton* CancelButton;
   wxButton* ApplyButton;
   wxCheckBox* FastObjDump;
+  wxCheckBox* UseBuiltInS1Game32;
 
   bool AllowRebuild = true;
   bool WasRegistered = false;

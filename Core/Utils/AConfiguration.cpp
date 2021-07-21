@@ -364,6 +364,12 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_ShowWelcomeOnClose:
         s << c.ShowWelcomeOnClose;
         break;
+      case FAppConfig::CFG_UseBuiltInS1Game32:
+        s << c.UseBuiltInS1Game32;
+        break;
+      case FAppConfig::CFG_TempS1GameDir:
+        s << c.TempS1GameDir;
+        break;
       case FAppConfig::CFG_End:
         return s;
       default:
@@ -407,6 +413,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
     SerializeKeyValue(FAppConfig::CFG_FastObjectDump, c.FastObjectDump);
 
     SerializeKeyValue(FAppConfig::CFG_ShowWelcomeOnClose, c.ShowWelcomeOnClose);
+
+    SerializeKeyValue(FAppConfig::CFG_UseBuiltInS1Game32, c.UseBuiltInS1Game32);
+    SerializeKeyValue(FAppConfig::CFG_TempS1GameDir, c.TempS1GameDir);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

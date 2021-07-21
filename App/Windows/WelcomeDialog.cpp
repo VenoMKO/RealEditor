@@ -316,6 +316,8 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   this->Centre(wxBOTH);
 
   ShowWelcome->SetValue(App::GetSharedApp()->GetConfig().ShowWelcomeOnClose);
+  OpenByNameField->Enable(!App::GetSharedApp()->GetConfig().UseBuiltInS1Game32);
+  ObjectDumpButton->Enable(!App::GetSharedApp()->GetConfig().UseBuiltInS1Game32);
 
   RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(WelcomeDialog::OnRecentActivated), NULL, this);
   RecentCtrl->Connect(wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler(WelcomeDialog::OnRecentSelected), NULL, this);

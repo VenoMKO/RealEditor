@@ -356,3 +356,6 @@ MigrationBackup/
 # Build number
 build_num.txt
 build_num_total.txt
+
+# Build-in 32-bit S1Game
+*.[Uu]
