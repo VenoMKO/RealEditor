@@ -29,4 +29,5 @@ private:
   std::unordered_map<FString, FForceCookedInfo> PMapForcedObjectsMap;
   std::unordered_map<FString, FSHA> FilenameToScriptSHA;
   uint64 TextureFileCacheWaste = 0;
+  double Unk4 = 0;
 };

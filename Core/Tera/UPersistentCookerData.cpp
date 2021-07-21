@@ -116,21 +116,28 @@ void UPersistentCookerData::GetPersistentData(std::unordered_map<FString, FBulkD
 void UPersistentCookerData::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() > VER_TERA_CLASSIC)
   {
-    return;
+    s << ClassMap;
+    s << LocalizationMap;
+    s << Unk1 << Unk2;
+    DBreakIf(Unk1 || Unk2);
   }
-  s << ClassMap;
-  s << LocalizationMap;
-  s << Unk1 << Unk2;
-  DBreakIf(Unk1 || Unk2);
-  // TODO: CookedBulkDataInfoMap and CookedTextureFileCacheInfoMap are serialized at the app load time. Don't dup these maps
+  
   s << CookedBulkDataInfoMap;
   s << FilenameToTimeMap;
   s << TextureFileCacheWaste;
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    s << Unk4;
+  }
   s << FilenameToCookedVersion;
   s << Unk3;
   DBreakIf(Unk3);
+  if (s.GetFV() < VER_TERA_MODERN)
+  {
+    return;
+  }
   s << CookedTextureFileCacheInfoMap;
   s << TextureUsageInfos;
   s << CookedPrefixCommonInfoMap;
