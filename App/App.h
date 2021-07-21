@@ -138,6 +138,7 @@ public:
 
   void OnRegisterMime(wxCommandEvent&);
   void OnUnregisterMime(wxCommandEvent&);
+  void Restart(bool keepOpenList = false);
   void RestartElevated(bool keepWindows = true);
 
   void OnFatalException() override;

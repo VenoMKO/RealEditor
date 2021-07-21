@@ -494,11 +494,27 @@ void WelcomeDialog::OnDataCenterClicked(wxCommandEvent& event)
 void WelcomeDialog::OnSettingsClicked(wxCommandEvent& event)
 {
   ModalRunning = true;
-  FAppConfig cfg;
-  SettingsWindow dlg(App::GetSharedApp()->GetConfig(), cfg, FPackage::GetCoreVersion());
+  FAppConfig newConfig;
+  FAppConfig currentConfig = App::GetSharedApp()->GetConfig();
+  SettingsWindow dlg(currentConfig, newConfig, FPackage::GetCoreVersion());
   if (dlg.ShowModal() == wxID_OK)
   {
-    App::GetSharedApp()->GetConfig() = cfg;
+    if (currentConfig.RootDir.Size() && currentConfig.RootDir != newConfig.RootDir)
+    {
+      wxMessageDialog dialog(nullptr, wxT("Application must restart to apply changes.\nClick \"OK\" to restart."), wxT("Restart ") + wxTheApp->GetAppDisplayName() + wxT("?"), wxOK | wxCANCEL | wxICON_EXCLAMATION);
+      if (dialog.ShowModal() != wxID_OK)
+      {
+        return;
+      }
+      newConfig.LastFilePackages.clear();
+      newConfig.LastPkgOpenPath.Clear();
+      App::GetSharedApp()->GetConfig() = newConfig;
+      App::GetSharedApp()->SaveConfig();
+      App::GetSharedApp()->Restart();
+      return;
+    }
+    App::GetSharedApp()->GetConfig() = newConfig;
+    App::GetSharedApp()->SaveConfig();
   }
   ModalRunning = false;
   if (QueuedOpenList.size())

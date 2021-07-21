@@ -282,27 +282,21 @@ void App::OnShowSettings(wxCommandEvent& e)
   {
     if (Config.RootDir.Size() && Config.RootDir != newConfig.RootDir)
     {
-      wxMessageDialog dialog(nullptr, wxT("Application must be restarted to apply changes. If you click \"OK\" the app will restart!"), wxT("Restart ") + GetAppDisplayName() + wxT("?"), wxOK | wxCANCEL | wxICON_EXCLAMATION);
+      wxMessageDialog dialog(nullptr, wxT("Application must restart to apply changes.\nClick \"OK\" to restart!"), wxT("Restart ") + GetAppDisplayName() + wxT("?"), wxOK | wxCANCEL | wxICON_EXCLAMATION);
       if (dialog.ShowModal() != wxID_OK)
       {
         return;
       }
 
       Config = newConfig;
-
+      Config.LastPkgOpenPath.Clear();
+      Config.LastFilePackages.clear();
       AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
       cfg.SetConfig(Config);
       cfg.Save();
 
-      NeedsRestart = true;
-
-      OpenList.clear();
-      for (auto window : PackageWindows)
-      {
-        OpenList.push_back(window->GetPackagePath());
-      }
-
-      ExitMainLoop();
+      Restart();
+      return;
     }
     Config = newConfig;
   }
@@ -342,16 +336,6 @@ App::~App()
   delete AudioDevice;
   delete InstanceChecker;
   delete Server;
-
-  if (NeedsRestart)
-  {
-    wxString cmd = argv[0];
-    for (const wxString& path: OpenList)
-    {
-      cmd += wxT(" \"") + path + wxT("\"");
-    }
-    wxExecute(cmd);
-  }
 }
 
 wxString App::ShowOpenDialog(const wxString& rootDir)
@@ -1237,6 +1221,24 @@ void App::OnUnregisterMime(wxCommandEvent&)
   UnregisterFileType(".u", man);
   UnregisterFileType(".upk", man);
   UnregisterFileType(".umap", man);
+}
+
+void App::Restart(bool keepOpenList)
+{
+  wxString cmd = argv[0];
+  if (keepOpenList)
+  {
+    for (const wxString& path : OpenList)
+    {
+      cmd += wxT(" \"") + path + wxT("\"");
+    }
+  }
+  wxExecute(cmd);
+  delete Server;
+  Server = nullptr;
+  delete InstanceChecker;
+  InstanceChecker = nullptr;
+  exit(0);
 }
 
 void App::RestartElevated(bool keepWindows)
