@@ -437,7 +437,7 @@ void UTexture2D::PostLoad()
         continue;
       }
 
-      if (FPackage::GetCoreVersion() == VER_TERA_CLASSIC && (GetExportFlags() & EF_ForcedExport))
+      if (FPackage::GetCoreVersion() == VER_TERA_CLASSIC && (GetExportFlags() & EF_ForcedExport) && mip->Data->GetBulkDataOffsetInFile() >= 0)
       {
         FString objectPath = GetObjectPath();
         FString packageName;
@@ -446,6 +446,7 @@ void UTexture2D::PostLoad()
           if (comps.size() > 2)
           {
             packageName = comps[1];
+            objectPath = objectPath.Substr(comps[0].Size() + comps[1].Size() + 2);
           }
         }
         
@@ -469,19 +470,24 @@ void UTexture2D::PostLoad()
               package->Load();
               if (UTexture2D* tex = Cast<UTexture2D>(package->GetObject(objectPath)))
               {
-                FStream& s = package->GetStream();
+                FReadStream s = FReadStream(A2W(package->GetDataPath()));
+                s.SetPackage(package.get());
+                s.SetLoadSerializedObjects(package->GetStream().GetLoadSerializedObjects());
                 s.SetPosition(mip->Data->GetBulkDataOffsetInFile());
                 try
                 {
                   mip->Data->SerializeSeparate(s, this, idx);
                   loaded = true;
+                  GetPackage()->RetainPackage(package);
                 }
                 catch (...)
                 {
-                  LogE("Failed to serialize a fexp separate mip: %s.MipLevel_%d", objectPath.C_str(), idx);
                 }
               }
-              FPackage::UnloadPackage(package);
+              if (!loaded)
+              {
+                FPackage::UnloadPackage(package);
+              }
             }
           }
           catch (...)
