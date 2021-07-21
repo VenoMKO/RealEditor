@@ -466,14 +466,10 @@ private:
   void Load(FStream& s);
 
   UObject* GetCachedExportObject(PACKAGE_INDEX index) const;
-  UObject* GetCachedForcedObject(PACKAGE_INDEX index) const;
   UObject* GetCachedImportObject(PACKAGE_INDEX index) const;
 
   UObject* SetCachedExportObject(PACKAGE_INDEX index, UObject* obj);
-  UObject* SetCachedForcedObject(PACKAGE_INDEX index, UObject* obj);
   UObject* SetCachedImportObject(PACKAGE_INDEX index, UObject* obj);
-
-  UObject* GetForcedExport(FObjectExport* exp);
 
   FObjectExport* DuplicateExportRecursivly(FObjectExport* source, FObjectExport* dest, const FString& objectName);
 
@@ -493,7 +489,6 @@ private:
   bool Composite = false;
   // Temp fix: prevent disabling texture cache on save if a package contains cloned textures
   bool NoTexturePullOnSave = false;
-  bool AllowForcedExportResolving = true;
 
   std::vector<FNameEntry> Names;
   std::vector<FObjectExport*> Exports;
@@ -503,8 +498,6 @@ private:
   
   mutable std::mutex ExportObjectsMutex;
   std::unordered_map<PACKAGE_INDEX, UObject*> ExportObjects;
-  mutable std::mutex ForcedObjectsMutex;
-  std::unordered_map<PACKAGE_INDEX, UObject*> ForcedObjects;
   mutable std::mutex ImportObjectsMutex;
   std::unordered_map<PACKAGE_INDEX, UObject*> ImportObjects;
 

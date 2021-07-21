@@ -676,7 +676,6 @@ void FPackage::LoadClassPackage(const FString& name)
     }
 
     package->AllowEdit = false;
-    package->AllowForcedExportResolving = false;
     package->Load();
     DefaultClassPackages.push_back(package);
 
@@ -1373,7 +1372,6 @@ std::shared_ptr<FPackage> FPackage::GetPackageNamed(const FString& name, FGuid g
       package->CompositeSourcePath = packagePath.WString();
       package->Summary.PackageName = name;
       package->Composite = true;
-      package->AllowForcedExportResolving = false;
       return package;
     }
   }
@@ -1583,7 +1581,6 @@ void FPackage::Load(FStream& s)
   {
     s.SetPosition(Summary.NamesOffset);
   }
-  AllowForcedExportResolving = false;
   Names.clear();
   Summary.NamesSize = s.GetPosition();
   for (uint32 idx = 0; idx < Summary.NamesCount; ++idx)
@@ -2471,33 +2468,6 @@ UObject* FPackage::GetObject(FObjectExport* exp, bool load)
   {
     obj->Load();
   }
-  if (obj && exp->ExportFlags & EF_ForcedExport && AllowForcedExportResolving)
-  {
-    // Don't load packages or inner objects
-    if (obj->GetClassName() != NAME_Package && obj->GetOuter() && obj->GetOuter()->GetClassName() == NAME_Package)
-    {
-      if (UObject* ext = GetCachedForcedObject(exp->ObjectIndex))
-      {
-        if (load)
-        {
-          ext->Load();
-        }
-        return ext;
-      }
-      else if (ext = SetCachedForcedObject(exp->ObjectIndex, GetForcedExport(exp)))
-      {
-        if (load)
-        {
-          ext->Load();
-        }
-        return ext;
-      }
-      else
-      {
-        LogW("Failed to find external: \"%s\"", obj->GetFullObjectName().C_str());
-      }
-    }
-  }
   return obj;
 }
 
@@ -2569,7 +2539,8 @@ UObject* FPackage::GetObject(const FString& path)
     // 99% of calls land in the previous loop. This loop can be slow without affecting overall performance.
     FString component = components.back();
     FString componentUpper = component.ToUpper();
-    for (FObjectExport* e : Exports)
+    auto exports = Exports;
+    for (FObjectExport* e : exports)
     {
       if (e->ObjectName.String(true).ToUpper() == componentUpper || e->ObjectName.String(false).ToUpper() == componentUpper)
       {
@@ -2599,123 +2570,6 @@ UObject* FPackage::GetObject(const FString& path)
     }
   }
   return GetObject(exp, false);
-}
-
-UObject* FPackage::GetForcedExport(FObjectExport* exp)
-{
-  if (!AllowForcedExportResolving)
-  {
-    return nullptr;
-  }
-  FObjectExport* outer = nullptr;
-  for (outer = exp->Outer; outer && outer->Outer; outer = outer->Outer);
-  if (!outer)
-  {
-    return nullptr;
-  }
-  FString outerName = outer->GetObjectNameString();
-  {
-    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
-    if (std::find(MissingPackages.begin(), MissingPackages.end(), outerName) != MissingPackages.end())
-    {
-      return nullptr;
-    }
-  }
-
-  UObject* incomplete = GetCachedExportObject(exp->ObjectIndex);
-  incomplete->Load();
-
-  UObject* result = nullptr;
-  {
-    std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
-    for (auto& p : ExternalPackages)
-    {
-      if (outer->PackageGuid.IsValid())
-      {
-        if (outer->PackageGuid == p->GetGuid())
-        {
-          result = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString());
-          break;
-        }
-      }
-      else
-      {
-        FString fname = p->GetPackageName().Filename(false);
-        if (fname.StartWith(outerName))
-        {
-          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
-          {
-            result = object;
-            break;
-          }
-        }
-      }
-    }
-  }
-  if (result)
-  {
-    return result;
-  }
-
-  bool packageNotFound = true;
-  std::vector<FString> incompleteMatch;
-  for (const FString& path : DirCache)
-  {
-    if (path.Filename(false).StartWith(outerName))
-    {
-      packageNotFound = false;
-      std::shared_ptr<FPackage> p = nullptr;
-      FString completePath(RootDir);
-      completePath = completePath.FStringByAppendingPath(path);
-      if ((p = FPackage::GetPackage(completePath)))
-      {
-        if (!outer->PackageGuid.IsValid() || outer->PackageGuid == p->GetGuid())
-        {
-          p->Load();
-          if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
-          {
-            {
-              std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
-              ExternalPackages.push_back(p);
-            }
-            return object;
-          }
-        }
-        else
-        {
-          incompleteMatch.push_back(completePath);
-        }
-      }
-      FPackage::UnloadPackage(p);
-    }
-  }
-
-  // We failed to find the package with matching GUIDs. Lets check packages with the same name but ignor GUID this time
-  for (const FString& completePath : incompleteMatch)
-  {
-    std::shared_ptr<FPackage> p = nullptr;
-    if ((p = FPackage::GetPackage(completePath)))
-    {
-      p->Load();
-      if (UObject* object = p->GetObject(incomplete->GetNetIndex(), incomplete->GetObjectNameString(), incomplete->GetClassNameString()))
-      {
-        {
-          std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
-          ExternalPackages.push_back(p);
-        }
-        return object;
-      }
-    }
-    FPackage::UnloadPackage(p);
-  }
-
-  if (packageNotFound)
-  {
-    std::scoped_lock<std::mutex> l(MissingPackagesMutex);
-    MissingPackages.push_back(outer->GetObjectNameString());
-  }
-
-  return nullptr;
 }
 
 FObjectExport* FPackage::DuplicateExportRecursivly(FObjectExport* source, FObjectExport* dest, const FString& objectName)
@@ -3041,7 +2895,8 @@ std::vector<FObjectExport*> FPackage::GetExportObject(const FString& name)
 std::vector<FObjectExport*> FPackage::GetExportObject(const FName& name)
 {
   std::vector<FObjectExport*> result;
-  for (FObjectExport* exp : Exports)
+  std::vector<FObjectExport*> exports = Exports;
+  for (FObjectExport* exp : exports)
   {
     if (exp->GetObjectName() == name)
     {
@@ -3354,6 +3209,13 @@ void FPackage::ObjectChanged(UObject* object)
 void FPackage::RetainPackage(std::shared_ptr<FPackage> package)
 {
   std::scoped_lock<std::mutex> l(ExternalPackagesMutex);
+  for (const auto& test : ExternalPackages)
+  {
+    if (test.get() == package.get())
+    {
+      return;
+    }
+  }
   ExternalPackages.push_back(package);
 }
 
@@ -3479,16 +3341,6 @@ UObject* FPackage::GetCachedExportObject(PACKAGE_INDEX index) const
   return nullptr;
 }
 
-UObject* FPackage::GetCachedForcedObject(PACKAGE_INDEX index) const
-{
-  std::scoped_lock<std::mutex> l(ForcedObjectsMutex);
-  if (ForcedObjects.count(index))
-  {
-    return ForcedObjects.at(index);
-  }
-  return nullptr;
-}
-
 UObject* FPackage::GetCachedImportObject(PACKAGE_INDEX index) const
 {
   std::scoped_lock<std::mutex> l(ImportObjectsMutex);
@@ -3503,13 +3355,6 @@ UObject* FPackage::SetCachedExportObject(PACKAGE_INDEX index, UObject* obj)
 {
   std::scoped_lock<std::mutex> l(ExportObjectsMutex);
   ExportObjects[index] = obj;
-  return obj;
-}
-
-UObject* FPackage::SetCachedForcedObject(PACKAGE_INDEX index, UObject* obj)
-{
-  std::scoped_lock<std::mutex> l(ForcedObjectsMutex);
-  ForcedObjects[index] = obj;
   return obj;
 }
 
