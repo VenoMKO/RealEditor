@@ -197,6 +197,11 @@ public:
     return PropertyLink;
   }
 
+  inline void SetPropertyLink(UProperty* property)
+  {
+    PropertyLink = property;
+  }
+
   UProperty* GetProperty(const FString& name) const;
 
   virtual void Link();

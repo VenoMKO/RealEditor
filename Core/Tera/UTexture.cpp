@@ -1,6 +1,7 @@
 #include "UTexture.h"
 #include "Cast.h"
 #include "FPackage.h"
+#include "UClass.h"
 
 #include "Utils/ALog.h"
 #include "Utils/TextureProcessor.h"
@@ -703,4 +704,23 @@ void UTextureCube::PostLoad()
   LoadObject(FaceNegY);
   LoadObject(FacePosZ);
   LoadObject(FaceNegZ);
+}
+
+void ULightMapTexture2D::ConfigureClassObject(UClass* obj)
+{
+  obj->SetSuperStruct(obj->GetPackage()->GetClass(UTexture2D::StaticClassName()));
+  obj->SetPropertyLink(obj->GetSuperStruct()->GetPropertyLink());
+}
+
+void ULightMapTexture2D::Serialize(FStream& s)
+{
+  if (s.IsReading())
+  {
+    LODGroup = TEXTUREGROUP_Lightmap;
+  }
+  Super::Serialize(s);
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    s << LightmapFlags;
+  }
 }

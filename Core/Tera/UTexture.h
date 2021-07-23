@@ -115,3 +115,15 @@ class UShadowMapTexture2D : public UTexture2D {
 public:
   DECL_UOBJ(UShadowMapTexture2D, UTexture2D);
 };
+
+class ULightMapTexture2D : public UTexture2D {
+public:
+  DECL_UOBJ(ULightMapTexture2D, UTexture2D);
+
+  static void ConfigureClassObject(class UClass* obj);
+
+  void Serialize(FStream& s) override;
+
+protected:
+  uint32 LightmapFlags = 0;
+};

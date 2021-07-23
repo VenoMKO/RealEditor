@@ -6,6 +6,7 @@
 
 #include "UStaticMesh.h"
 #include "ULevel.h"
+#include "UTexture.h"
 
 #include "Cast.h"
 
@@ -425,6 +426,8 @@ void UClass::CreateBuiltInClasses(FPackage* package)
     UStaticMesh::ConfigureClassObject(obj);
     MAKE_CLASS(NAME_Level);
     ULevel::ConfigureClassObject(obj);
+    MAKE_CLASS(NAME_LightMapTexture2D);
+    ULightMapTexture2D::ConfigureClassObject(obj);
   }
   else if (pkgName == "UnrealEd")
   {

@@ -58,6 +58,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UShadowMapTexture2D(exp);
   }
+  else if (c == ULightMapTexture2D::StaticClassName())
+  {
+    result = new ULightMapTexture2D(exp);
+  }
   else if (c == USkeletalMesh::StaticClassName())
   {
     result = new USkeletalMesh(exp);

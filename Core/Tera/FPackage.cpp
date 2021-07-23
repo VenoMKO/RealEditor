@@ -679,8 +679,6 @@ void FPackage::LoadClassPackage(const FString& name)
     package->Load();
     DefaultClassPackages.push_back(package);
 
-    UClass::CreateBuiltInClasses(package.get());
-
     // Load package in memory and create a stream
     FILE_OFFSET packageSize = package->Stream->GetSize();
     void* rawPackageData = malloc(packageSize);
@@ -791,6 +789,8 @@ void FPackage::LoadClassPackage(const FString& name)
         root->Load(s);
       }
     }
+
+    UClass::CreateBuiltInClasses(package.get());
 
     // It's safe to load references now
     package->Stream->SetLoadSerializedObjects(true);

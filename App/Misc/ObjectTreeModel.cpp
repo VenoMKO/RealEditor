@@ -115,6 +115,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   {
     return IcoTexture;
   }
+  if (className == wxT("LightMapTexture2D"))
+  {
+    return IcoTexture;
+  }
   if (className == wxT("ObjectRedirector"))
   {
     return IcoRedirector;

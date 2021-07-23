@@ -71,5 +71,6 @@ DEF_NAME(StaticMesh);
 DEF_NAME(Level);
 DEF_NAME(PersistentCookerData);
 DEF_NAME(Class);
+DEF_NAME(LightMapTexture2D);
 
 DEF_NAME(WorldTextures);
