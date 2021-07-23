@@ -5,6 +5,7 @@
 
 void PackageWindow::InitLayout()
 {
+  bool IsModernClient = FPackage::GetCoreVersion() == VER_TERA_MODERN;
   wxMenuBar* menuBar;
   menuBar = new wxMenuBar(0);
   menuBar->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
@@ -30,6 +31,7 @@ void PackageWindow::InitLayout()
   openMenu->Append(m_menuItem41);
   wxMenuItem* m_menuItem5;
   m_menuItem5 = new wxMenuItem(openMenu, ControlElementId::OpenComposite, wxString(wxT("Composite package...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
+  m_menuItem5->Enable(IsModernClient);
   openMenu->Append(m_menuItem5);
   fileMenu->AppendSubMenu(openMenu, "Open");
 
@@ -83,22 +85,26 @@ void PackageWindow::InitLayout()
   wxMenu* mapperTools = new wxMenu();
 
   wxMenuItem* m_menuItem65 = new wxMenuItem(mapperTools, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
+  m_menuItem65->Enable(IsModernClient);
   mapperTools->Append(m_menuItem65);
   mapperTools->AppendSeparator();
 
   wxMenuItem* m_menuItem66 = new wxMenuItem(mapperTools, ControlElementId::DecryptMapper, wxString(wxT("Decrypt a mapper file...")), wxS("Decrypt a *Mapper.dat file and save it as a text file at a location of your choice."), wxITEM_NORMAL);
+  m_menuItem66->Enable(IsModernClient);
   mapperTools->Append(m_menuItem66);
   wxMenuItem* m_menuItem67 = new wxMenuItem(mapperTools, ControlElementId::EncryptMapper, wxString(wxT("Encrypt a mapper file...")), wxS("Encrypt a text file and save it at a location of your choise"), wxITEM_NORMAL);
+  m_menuItem67->Enable(IsModernClient);
   mapperTools->Append(m_menuItem67);
 
   m_menu4->AppendSubMenu(mapperTools, wxT("Mapper tools"));
-
   m_menu4->AppendSeparator();
 
   wxMenuItem* m_menuItem69 = new wxMenuItem(m_menu4, ControlElementId::DumpObjectsMap, wxString(wxT("Dump all composite objects")), wxS("Build a list of all objects stored in all composite packages"), wxITEM_NORMAL);
+  m_menuItem69->Enable(IsModernClient);
   m_menu4->Append(m_menuItem69);
 
   wxMenuItem* m_menuItem70 = new wxMenuItem(m_menu4, ControlElementId::BulkCompositeExtract, wxString(wxT("Bulk import...")), wxS("Bulk import to composite packages"), wxITEM_NORMAL);
+  m_menuItem70->Enable(IsModernClient);
   m_menu4->Append(m_menuItem70);
 
   menuBar->Append(m_menu4, wxT("Edit"));

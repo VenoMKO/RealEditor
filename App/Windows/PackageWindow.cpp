@@ -404,6 +404,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
   menu.SetClientData((void*)node);
   bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript);
   bool isRootExp = false;
+  bool isModernClient = FPackage::GetCoreVersion() == VER_TERA_MODERN;
   if (node->GetObjectIndex() >= 0)
   {
     isRootExp = node->GetObjectIndex() == FAKE_EXPORT_ROOT;
@@ -429,6 +430,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     else
     {
       menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
+      menu.Enable(ObjTreeMenuId::BulkImport, isModernClient);
       menu.AppendSeparator();
       menu.Append(ObjTreeMenuId::CopyObject, wxT("Copy"))->Enable(!node->GetParent() || node->GetParent()->GetClassName() == NAME_Package);
       menu.Append(ObjTreeMenuId::PasteObject, wxT("Paste"))->Enable(false);

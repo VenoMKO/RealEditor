@@ -172,10 +172,13 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
 
   if (Object)
   {
-    CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
-    if (CompositeObjectPath.size())
+    if (Object->GetPackage()->GetFileVersion() == VER_TERA_MODERN)
     {
-      toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
+      CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
+      if (CompositeObjectPath.size())
+      {
+        toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
+      }
     }
     if (Object->GetClass() && !Object->GetClass()->IsBuiltIn())
     {
