@@ -523,6 +523,30 @@ FStream& operator<<(FStream& s, FStaticParameterSet& ps)
   return s;
 }
 
+FStream& operator<<(FStream& s, FShaderCacheEntry& e)
+{
+  s << e.Name;
+  s << e.Id;
+  if (s.GetFV() == VER_TERA_MODERN)
+  {
+    s << e.Hash;
+  }
+  FILE_OFFSET next = s.GetPosition() + sizeof(FILE_OFFSET) + e.ShaderSize;
+  s << next;
+  if (s.IsReading())
+  {
+    e.ShaderSize = next - s.GetPosition();
+    e.Shader = (uint8*)malloc(e.ShaderSize);
+  }
+  s.SerializeBytes(e.Shader, e.ShaderSize);
+  return s;
+}
+
+FStream& operator<<(FStream& s, FShaderCacheEntry2& e)
+{
+  return s << e.Name << e.Id << e.Parameter;
+}
+
 void FMaterial::Serialize(FStream& s, UObject* owner)
 {
   if (s.GetFV() > VER_TERA_CLASSIC)

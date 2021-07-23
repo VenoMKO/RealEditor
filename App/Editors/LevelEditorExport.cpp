@@ -2487,9 +2487,17 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
     for (int32 idx = 0; idx < actor->Layers.size(); ++idx)
     {
       const FTerrainLayer& layer = actor->Layers[idx];
-      if (layer.AlphaMapIndex == INDEX_NONE)
+      int32 layerMapIndex = layer.AlphaMapIndex;
+      if (actor->GetAlphaMapsCount())
       {
-        continue;
+        if (layerMapIndex == INDEX_NONE)
+        {
+          continue;
+        }
+      }
+      else
+      {
+        layerMapIndex = idx;
       }
       std::filesystem::path texPath = dst / (std::to_string(idx + 1) + '_' + layer.Name.UTF8());
       texPath.replace_extension(HasAVX2() ? "png" : "dds");
@@ -2498,7 +2506,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
         void* data = nullptr;
         int32 width = 0;
         int32 height = 0;
-        if (!actor->GetWeightMapChannel(layer.AlphaMapIndex, data, width, height))
+        if (!actor->GetWeightMapChannel(layerMapIndex, data, width, height))
         {
           continue;
         }
@@ -2666,8 +2674,8 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
           auto vectors = tm->Material->GetVectorParameters();
           for (const auto& p : vectors)
           {
-            s << padding << padding << padding << p.first.UTF8() << ": " << p.second.R << ' ' << p.second.G;
-            s << ' ' << p.second.B << p.second.A << '\n';
+            s << padding << padding << padding << p.first.UTF8();
+            s << FString::Sprintf(": (R=%06f,G=%06f,B=%06f,A=%06f)\n", p.second.R, p.second.G, p.second.B, p.second.A).UTF8();
           }
           auto scalars = tm->Material->GetScalarParameters();
           for (const auto& p : scalars)

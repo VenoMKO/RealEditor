@@ -133,6 +133,29 @@ struct FStaticParameterSet {
   friend FStream& operator<<(FStream& s, FStaticParameterSet& ps);
 };
 
+struct FShaderCacheEntry {
+  FName Name;
+  FGuid Id;
+  uint8* Shader = nullptr;
+  FILE_OFFSET ShaderSize = 0;
+  FSHA Hash;
+
+  ~FShaderCacheEntry()
+  {
+    free(Shader);
+  }
+
+  friend FStream& operator<<(FStream& s, FShaderCacheEntry& e);
+};
+
+struct FShaderCacheEntry2 {
+  FName Name;
+  FGuid Id;
+  FName Parameter;
+
+  friend FStream& operator<<(FStream& s, FShaderCacheEntry2& e);
+};
+
 struct FTextureParameter {
   UTexture* Texture = nullptr;
   bool AlphaChannelUsed = false;

@@ -55,6 +55,79 @@ struct FAlphaMap {
   }
 };
 
+struct FTerrainMaterialMask {
+  uint64 BitMask = 0;
+  uint32 NumBits = 0;
+
+  FTerrainMaterialMask() = default;
+
+  FTerrainMaterialMask(uint32 numBits)
+    :	BitMask(0)
+    ,	NumBits(numBits)
+  {}
+
+  bool Get(uint32 index) const 
+  { 
+    return BitMask & (((uint64)1) << (index & 63));
+  }
+  
+  void Set(uint32 index, bool v)
+  { 
+    if(v) 
+    {
+      BitMask |= ((uint64)1) << (index & 63);
+    }
+    else
+    {
+      BitMask &= ~(((uint64)1) << (index & 63));
+    }
+  }
+  
+  int32 Num() const
+  {
+    return NumBits;
+  }
+
+  bool operator==(const FTerrainMaterialMask& a) const
+  {
+    return (NumBits == a.NumBits) && (BitMask == a.BitMask);
+  }
+
+  friend FStream& operator<<(FStream& s, FTerrainMaterialMask& m);
+};
+
+class FTerrainMaterialResource : public FMaterial {
+public:
+  ~FTerrainMaterialResource()
+  {
+    for (auto* entry : ShaderCache)
+    {
+      delete entry;
+    }
+    for (auto* entry : ShaderCache2)
+    {
+      delete entry;
+    }
+  }
+
+  friend FStream& operator<<(FStream& s, FTerrainMaterialResource& r);
+  
+  std::vector<FShaderCacheEntry*> ShaderCache;
+  std::vector<FShaderCacheEntry2*> ShaderCache2;
+  DECL_UREF(class UTerrain, Terrain);
+  FTerrainMaterialMask Mask;
+  std::vector<FGuid> MaterialIds;
+  FStaticParameterSet StaticParameters;
+  uint32 Unk1 = 0;
+  uint32 Unk2 = 1;
+  FName Unk3;
+  FGuid Unk4;
+  FString Unk5;
+  FGuid Unk6;
+  uint32 Unk7[3] = { 0, 0, 0 };
+  FGuid LightmassGuid;
+};
+
 class UTerrainMaterial : public UObject {
 public:
   DECL_UOBJ(UTerrainMaterial, UObject);
@@ -125,6 +198,11 @@ public:
     return HasTransparency;
   }
 
+  inline int32 GetAlphaMapsCount() const
+  {
+    return (int32)AlphaMaps.size();
+  }
+
 protected:
   std::vector<FTerrainHeight> Heights;
   std::vector<FTerrainInfoData> InfoData;
@@ -134,4 +212,8 @@ protected:
   void* MaterialData = nullptr;
   FILE_OFFSET MaterialDataSize = 0;
   bool HasTransparency = false;
+  std::vector<FTerrainMaterialResource*> CachedTerrainMaterials;
+  uint8* DisplacementMap = nullptr;
+  FILE_OFFSET DisplacementMapSize = 0;
+  float MaxCollisionDisplacement = 0.;
 };

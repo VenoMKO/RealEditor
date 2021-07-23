@@ -35,6 +35,74 @@ T* ResampleData(const T* input, int32 width, int32 height, int32 newWidth, int32
   return result;
 }
 
+FStream& operator<<(FStream& s, FTerrainMaterialMask& m)
+{
+  s << m.NumBits;
+  s << m.BitMask;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FTerrainMaterialResource& r)
+{
+  r.Serialize(s, nullptr);
+
+  int32 cnt = (int32)r.ShaderCache.size();
+  s << cnt;
+  for (int32 idx = 0; idx < cnt; ++idx)
+  {
+    FShaderCacheEntry* e = nullptr;
+    if (s.IsReading())
+    {
+      e = r.ShaderCache.emplace_back(new FShaderCacheEntry);
+    }
+    else
+    {
+      e = r.ShaderCache[idx];
+    }
+    s << *e;
+  }
+
+  s << r.StaticParameters;
+  DBreakIf(r.StaticParameters.StaticSwitchParameters.size());
+  DBreakIf(r.StaticParameters.StaticComponentMaskParameters.size());
+
+  s << r.Unk1;
+  DBreakIf(r.Unk1);
+
+  s << r.Unk2;
+  DBreakIf(r.Unk2 != 1);
+
+  cnt = (int32)r.ShaderCache2.size();
+  s << cnt;
+  for (int32 idx = 0; idx < cnt; ++idx)
+  {
+    FShaderCacheEntry2* e = nullptr;
+    if (s.IsReading())
+    {
+      e = r.ShaderCache2.emplace_back(new FShaderCacheEntry2);
+    }
+    else
+    {
+      e = r.ShaderCache2[idx];
+    }
+    s << *e;
+  }
+
+  // Vertex Factory?
+  s << r.Unk3;
+  s << r.Unk4;
+  s << r.Unk5;
+  s << r.Unk6;
+
+  s.SerializeBytes(r.Unk7, sizeof(r.Unk7));
+
+  SERIALIZE_UREF(s, r.Terrain);
+  s << r.Mask;
+  s << r.MaterialIds;
+  //s << r.LightmassGuid;
+  return s;
+}
+
 UTerrain::UTerrain(FObjectExport* exp)
   : Super(exp)
 {
@@ -68,8 +136,32 @@ void UTerrain::Serialize(FStream& s)
   s << Unk1;
   s << AlphaMaps;
   s << WeightMapTextures;
-  // Cached materials and compiled shaders
-  // TODO: serialize
+#if ADVANCED_TERRAIN_SERIALIZATION 
+  if (s.GetFV() == VER_TERA_CLASSIC)
+  {
+    int32 numCachedMaterials = (int32)CachedTerrainMaterials.size();
+    s << numCachedMaterials;
+    if (s.IsReading())
+    {
+      CachedTerrainMaterials.resize(numCachedMaterials);
+    }
+    for (int32 idx = 0; idx < numCachedMaterials; ++idx)
+    {
+      if (s.IsReading())
+      {
+        CachedTerrainMaterials[idx] = new FTerrainMaterialResource;
+      }
+      s << *CachedTerrainMaterials[idx];
+    }
+    s << DisplacementMapSize;
+    if (s.IsReading())
+    {
+      DisplacementMap = (uint8*)malloc(DisplacementMapSize);
+    }
+    s.SerializeBytes(DisplacementMap, DisplacementMapSize);
+    s << MaxCollisionDisplacement;
+  }
+#endif
   SerializeTrailingData(s);
 }
 
@@ -210,10 +302,32 @@ bool UTerrain::GetWeightMapChannel(int32 idx, void*& data, int32& width, int32& 
   uint32 len = WeightMapTextures.front()->SizeX * WeightMapTextures.front()->SizeY;
   if (uint8* channel = (uint8*)malloc(len))
   {
-    memcpy(channel, &AlphaMaps[idx].Data[0], len);
-    data = (void*)channel;
     width = WeightMapTextures.front()->SizeX;
     height = WeightMapTextures.front()->SizeY;
+    if (AlphaMaps.size() > idx)
+    {
+      memcpy(channel, &AlphaMaps[idx].Data[0], len);
+    }
+    else
+    {
+      if (idx == INDEX_NONE)
+      {
+        idx = Layers.size() - 1;
+      }
+      idx = Layers.size() - idx;
+      int32 weightMapIdx = std::min<int32>(floorf(fabs(float(idx) - .1f) / 4.f), WeightMapTextures.size() - 1);
+      UTerrainWeightMapTexture* map = WeightMapTextures[weightMapIdx];
+      map->Load();
+      auto& mip = map->Mips.front();
+      int32 chOffset = weightMapIdx * 4;
+      for (int32 pxIdx = 0; pxIdx < width * height; ++pxIdx)
+      {
+        int32 chIdx = idx - chOffset - 1;
+        const uint32 px = ((uint32*)mip->Data->GetAllocation())[pxIdx];
+        channel[pxIdx] = ((uint8*)&px)[chIdx];
+      }
+    }
+    data = (void*)channel;
   }
   return data != nullptr;
 }

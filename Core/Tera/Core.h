@@ -32,6 +32,8 @@ static const unsigned int BUILD_NUMBER = (
 #define CACHE_COMPOSITE_MAP 0
 // Cache contents of the S1Game folder
 #define CACHE_S1GAME_CONTENTS 0
+// Currently gives no benefits. May be used in the future. 
+#define ADVANCED_TERRAIN_SERIALIZATION 0
 
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,
