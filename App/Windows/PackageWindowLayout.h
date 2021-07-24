@@ -19,6 +19,7 @@ void PackageWindow::InitLayout()
   fileMenu->Append(m_menuItem3);*/
 
   wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create mod..."), wxS("Create a mod from existing modded GPKs"));
+  m_menuItem68->Enable(IsModernClient);
   fileMenu->Append(m_menuItem68);
 
   fileMenu->AppendSeparator();

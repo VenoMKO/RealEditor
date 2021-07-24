@@ -36,8 +36,8 @@ CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, 
   bSizer13 = new wxBoxSizer(wxVERTICAL);
 
   DisableTextureCachingButton = new wxCheckBox(m_panel6, wxID_ANY, wxT("Disable texture caching"), wxDefaultPosition, wxDefaultSize, 0);
-  DisableTextureCachingButton->SetValue(!package->GetNoTexturePullOnSave());
-  DisableTextureCachingButton->Enable(!package->GetNoTexturePullOnSave());
+  DisableTextureCachingButton->SetValue(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN);
+  DisableTextureCachingButton->Enable(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN);
   bSizer13->Add(DisableTextureCachingButton, 0, wxALL, 5);
 
   wxStaticText* m_staticText31;

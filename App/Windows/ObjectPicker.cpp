@@ -239,7 +239,7 @@ void ObjectPicker::OnPackageClicked(wxCommandEvent& event)
 {
   wxMenu menu;
   menu.Append(1, wxT("Open a GPK file..."));
-  menu.Append(2, wxT("Open a composite package..."));
+  menu.Append(2, wxT("Open a composite package..."))->Enable(FPackage::GetCoreVersion() == VER_TERA_MODERN);
 
   const int selectedMenuId = GetPopupMenuSelectionFromUser(menu);
 
