@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "FStream.h"
+#include "FStructs.h"
 #include "FObjectArray.h"
 #include "UActorComponent.h"
 #include "UMaterial.h"
@@ -212,14 +213,6 @@ struct FSkelMeshChunk {
   void CalcMaxBoneInfluences();
 
   friend FStream& operator<<(FStream& s, FSkelMeshChunk& c);
-};
-
-struct FMeshEdge
-{
-  int32	Vertices[2];
-  int32	Faces[2];
-
-  friend FStream& operator<<(FStream& s, FMeshEdge& e);
 };
 
 struct FGPUSkinVertexBase {

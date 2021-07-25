@@ -247,6 +247,17 @@ void SerializeVersion(FStream& s, FAppConfig& c)
   }
 }
 
+void UpdateConfigValues(FAppConfig& c)
+{
+  if (c.VerMajor < 2 || (c.VerMajor == 2 && c.VerMinor < 20))
+  {
+    if (c.MapExportConfig.ActorClasses && c.MapExportConfig.ActorClasses != (uint32)FMapExportConfig::ActorClass::All)
+    {
+      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::BlockVolumes;
+    }
+  }
+}
+
 FStream& operator<<(FStream& s, FAppConfig& c)
 {
   FAppConfig d;
@@ -377,6 +388,7 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         return s;
       }
     }
+    UpdateConfigValues(c);
   }
   else
   {

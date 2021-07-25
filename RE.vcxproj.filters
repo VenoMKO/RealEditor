@@ -290,6 +290,12 @@
     <ClCompile Include="App\Misc\WXDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\UModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\UVolumes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -441,6 +447,8 @@
     <ClInclude Include="Core\Utils\FPackageObserver.h" />
     <ClInclude Include="App\Editors\AnimationEditor.h" />
     <ClInclude Include="App\Misc\WXDialog.h" />
+    <ClInclude Include="Core\Tera\UModel.h" />
+    <ClInclude Include="Core\Tera\UVolumes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

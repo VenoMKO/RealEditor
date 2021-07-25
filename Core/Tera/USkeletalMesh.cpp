@@ -243,11 +243,6 @@ FStream& operator<<(FStream& s, FSkelMeshChunk& c)
   return s;
 }
 
-FStream& operator<<(FStream& s, FMeshEdge& e)
-{
-  return s << e.Vertices[0] << e.Vertices[1] << e.Faces[0] << e.Faces[1];
-}
-
 FStream& operator<<(FStream& s, FSkeletalMeshVertexBuffer& b)
 {
 #define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs ) \

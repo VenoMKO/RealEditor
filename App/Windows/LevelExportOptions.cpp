@@ -535,6 +535,7 @@ void LevelExportOptionsWindow::FillActorsTable(const FMapExportConfig& cfg)
   list.emplace_back("Static Meshes", FMapExportConfig::ActorClass::StaticMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes));
   list.emplace_back("Skeletal Meshes", FMapExportConfig::ActorClass::SkeletalMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkeletalMeshes));
   list.emplace_back("Interp Actors", FMapExportConfig::ActorClass::Interps, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Interps));
+  list.emplace_back("Blocking Volumes", FMapExportConfig::ActorClass::BlockVolumes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::BlockVolumes));
   list.emplace_back("SpeedTrees", FMapExportConfig::ActorClass::SpeedTrees, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpeedTrees));
   list.emplace_back("Prefabs", FMapExportConfig::ActorClass::Prefabs, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Prefabs));
   list.emplace_back("Terrains", FMapExportConfig::ActorClass::Terrains, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Terrains));

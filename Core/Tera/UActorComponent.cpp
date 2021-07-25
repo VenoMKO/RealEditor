@@ -71,3 +71,23 @@ bool UHeightFogComponent::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(ExtinctionDistance);
   return false;
 }
+
+bool UBrushComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(Brush, UModel*);
+  return false;
+}
+
+void UBrushComponent::PostLoad()
+{
+  Super::PostLoad();
+  for (FPropertyTag* tag : Properties)
+  {
+    if (tag->Name == "BrushAggGeom")
+    {
+      LoadAggGeom(tag->GetArray(), GetPackage());
+      break;
+    }
+  }
+}

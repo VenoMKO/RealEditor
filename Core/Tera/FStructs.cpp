@@ -1124,6 +1124,11 @@ FStream& operator<<(FStream& s, FEdge& f)
   return s;
 }
 
+FStream& operator<<(FStream& s, FMeshEdge& e)
+{
+  return s << e.Vertices[0] << e.Vertices[1] << e.Faces[0] << e.Faces[1];
+}
+
 FColor FLinearColor::ToFColor(bool sRGB) const
 {
   float r = std::clamp(R, 0.0f, 1.0f);

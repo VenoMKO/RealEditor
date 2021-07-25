@@ -223,6 +223,14 @@ struct FPackageSummary {
   friend FStream& operator<<(FStream& s, FPackageSummary& sum);
 };
 
+struct FMeshEdge
+{
+  int32	Vertices[2];
+  int32	Faces[2];
+
+  friend FStream& operator<<(FStream& s, FMeshEdge& e);
+};
+
 struct FVector2D {
   FVector2D()
   {}

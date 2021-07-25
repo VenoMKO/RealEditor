@@ -1,5 +1,6 @@
 #pragma once
 #include "UObject.h"
+#include "UVolumes.h"
 #include "ULevel.h"
 
 class ULevelStreaming : public UObject {
@@ -62,16 +63,6 @@ public:
 class US1LevelStreamingVOID : public ULevelStreaming {
 public:
   DECL_UOBJ(US1LevelStreamingVOID, ULevelStreaming);
-};
-
-class UBrush : public UActor {
-public:
-  DECL_UOBJ(UBrush, UActor);
-};
-
-class UVolume : public UBrush {
-public:
-  DECL_UOBJ(UVolume, UBrush);
 };
 
 class ULevelStreamingVolume : public UVolume {

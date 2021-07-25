@@ -120,6 +120,7 @@ struct FMapExportConfig {
     HeightFog = 0x00000400,
     Emitters = 0x00000800,
     Sounds = 0x00001000,
+    BlockVolumes = 0x00002000,
     All = 0xFFFFFFFF
   };
 

@@ -16,6 +16,7 @@
 #include <Tera/ULight.h>
 #include <Tera/UTerrain.h>
 #include <Tera/UPrefab.h>
+#include <Tera/UModel.h>
 
 #include <Utils/ALog.h>
 #include <Utils/T3DUtils.h>
@@ -573,6 +574,77 @@ ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportConte
   f.AddLinearColor("FogInscatteringColor", component->LightColor);
 };
 
+ComponentDataFunc ExportBlockingVolumeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UBrushComponent* component = Cast<UBrushComponent>(acomp);
+  if (!component)
+  {
+    if (acomp)
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(acomp));
+    }
+    return;
+  }
+  
+  f.Begin("Object", nullptr, "BodySetup_0");
+  FKAggregateGeom geom = component->GetAggregateGeometry();
+  FString convexElements = "(ConvexElems=(";
+  for (int32 convexIdx = 0; convexIdx < geom.ConvexElems.size(); ++convexIdx)
+  {
+    FString vertexData = "(VertexData=(";
+    for (int32 idx = 0; idx < geom.ConvexElems[convexIdx].VertexData.size(); ++idx)
+    {
+      FVector vertex = geom.ConvexElems[convexIdx].VertexData[idx] * ctx.Config.GlobalScale;
+      vertexData += FString::Sprintf("(X=%.6f,Y=%.6f,Z=%.6f)", vertex.X, vertex.Y, vertex.Z);
+      if (idx + 1 < geom.ConvexElems[convexIdx].VertexData.size())
+      {
+        vertexData += ",";
+      }
+    }
+    vertexData += ")";
+    convexElements += vertexData;
+    FString indexData = "IndexData=(";
+    for (int32 idx = 0; idx < geom.ConvexElems[convexIdx].FaceTriData.size(); ++idx)
+    {
+      indexData += std::to_string(geom.ConvexElems[convexIdx].FaceTriData[idx]);
+      if (idx + 1 < geom.ConvexElems[convexIdx].FaceTriData.size())
+      {
+        indexData += ",";
+      }
+    }
+    indexData += ")";
+    if (geom.ConvexElems[convexIdx].FaceTriData.size())
+    {
+      convexElements += ",";
+      convexElements += indexData;
+    }
+    if (geom.ConvexElems[convexIdx].BoxData.IsValid)
+    {
+      FVector vec = geom.ConvexElems[convexIdx].BoxData.Min * ctx.Config.GlobalScale;
+      FString boxData = ",ElemBox=(";
+      boxData += FString::Sprintf("Min=(X=%.6f,Y=%.6f,Z=%.6f),", vec.X, vec.Y, vec.Z);
+      vec = geom.ConvexElems[convexIdx].BoxData.Max * ctx.Config.GlobalScale;
+      boxData += FString::Sprintf("Max=(X=%.6f,Y=%.6f,Z=%.6f),", vec.X, vec.Y, vec.Z);
+      boxData += "IsValid=1)";
+      convexElements += boxData;
+    }
+    convexElements += ")";
+    if (convexIdx + 1 < geom.ConvexElems.size())
+    {
+      convexElements += ",";
+    }
+  }
+  convexElements += "))";
+  f.AddCustom("AggGeom", convexElements.C_str());
+  f.AddBool("bGenerateMirroredCollision", false);
+  f.AddCustom("CollisionTraceFlag", "CTF_UseSimpleAsComplex");
+  f.End();
+  if (component->Brush)
+  {
+    f.AddCustom("Brush", FString::Sprintf("Model'\"%s\"'", component->Brush->GetObjectNameString().C_str()).UTF8().c_str());
+    f.AddCustom("BrushBodySetup", "BodySetup'\"BodySetup_0\"'");
+  }
+};
+
 struct T3DComponent {
   enum class ComponentMobility {
     Static = 0,
@@ -587,6 +659,8 @@ struct T3DComponent {
   FRotator Rotation;
   FVector Scale3D = FVector::One;
   float Scale = 1.f;
+  // Class, Name
+  std::vector<std::pair<FString, FString>> ChildComponents;
 
   // This flag is set inside of the Define() and indicates that the component's actor must set bHidden flag
   mutable bool NeedsToBeHiddenInGame = false;
@@ -634,6 +708,11 @@ struct T3DComponent {
   void Declare(T3DFile& f) const
   {
     f.Begin("Object", Class.UTF8().c_str(), Name.UTF8().c_str());
+    for (const auto& p : ChildComponents)
+    {
+      f.Begin("Object", p.first.UTF8().c_str(), p.second.UTF8().c_str());
+      f.End();
+    }
     f.End();
   }
 
@@ -767,6 +846,20 @@ struct T3DActor {
   std::list<T3DComponent> Components;
   T3DComponent* RootComponent = nullptr;
   std::map<FString, T3DComponent*> Properties;
+  std::vector<FString> CustomLines;
+  struct AdditionalForward {
+    AdditionalForward() = default;
+    AdditionalForward(const FString& name, const FString& cls, const FString& tp)
+      : Name(name)
+      , Class(cls)
+      , Type(tp)
+    {}
+
+    FString Name;
+    FString Class;
+    FString Type;
+  };
+  std::vector<AdditionalForward> AdditionalForwards;
 
   bool ConfigureStaticMeshActor(UStaticMeshActor* actor)
   {
@@ -918,6 +1011,68 @@ struct T3DActor {
       component.Mobility = T3DComponent::ComponentMobility::Stationary;
     }
     RootComponent->TakeActorTransform(actor);
+    return true;
+  }
+
+  bool ConfigureBlockingVolumeActor(UBlockingVolume* actor, const LevelExportContext& ctx)
+  {
+    if (!actor || !actor->Brush || !actor->Brush->GetPolys())
+    {
+      return false;
+    }
+    AdditionalForwards.emplace_back(AdditionalForward(actor->Brush->GetObjectNameString(), "", "Brush"));
+    AdditionalForwards.emplace_back(AdditionalForward("Polys_0", "Polys", "Object"));
+    
+    Name = actor->GetObjectNameString();
+    T3DComponent& component = Components.emplace_back(actor->BrushComponent, ExportBlockingVolumeComponentData);
+    component.ChildComponents.emplace_back(std::make_pair("BodySetup", "BodySetup_0"));
+    component.Name = "BrushComponent0";
+    if (component.NeedsParent())
+    {
+      Class = "Actor";
+      RootComponent = &*Components.emplace(Components.begin(), T3DComponent(actor));
+      component.Parent = RootComponent;
+      RootComponent->IsInstance = true;
+      component.IsInstance = true;
+    }
+    else
+    {
+      Class = "BlockingVolume";
+      RootComponent = &component;
+      Properties["BrushComponent"] = &component;
+    }
+    RootComponent->Mobility = T3DComponent::ComponentMobility::Stationary;
+    component.Mobility = T3DComponent::ComponentMobility::Stationary;
+    RootComponent->TakeActorTransform(actor);
+
+    if (UModel* model = actor->Brush)
+    {
+      model->Load();
+      CustomLines.emplace_back("BrushType=Brush_Add");
+      CustomLines.emplace_back(FString::Sprintf("Begin Brush Name=%s", model->GetObjectNameString().UTF8().c_str()));
+      CustomLines.emplace_back("   Begin PolyList");
+      UPolys* polys = model->GetPolys();
+      polys->Load();
+      for (const FPoly& polygon : polys->Elements)
+      {
+        CustomLines.emplace_back("      Begin Polygon");
+        
+        FVector origin = polygon.Base * ctx.Config.GlobalScale;
+        CustomLines.emplace_back(FString::Sprintf("         Origin   %+013.6f,%+013.6f,%+013.6f", origin.X, origin.Y, origin.Z).C_str());
+        CustomLines.emplace_back(FString::Sprintf("         Normal   %+013.6f,%+013.6f,%+013.6f", polygon.Normal.X, polygon.Normal.Y, polygon.Normal.Z).C_str());
+        CustomLines.emplace_back(FString::Sprintf("         TextureU %+013.6f,%+013.6f,%+013.6f", polygon.TextureU.X, polygon.TextureU.Y, polygon.TextureU.Z).C_str());
+        CustomLines.emplace_back(FString::Sprintf("         TextureV %+013.6f,%+013.6f,%+013.6f", polygon.TextureV.X, polygon.TextureV.Y, polygon.TextureV.Z).C_str());
+        for (const FVector polyVec : polygon.Vertices)
+        {
+          FVector vec = polyVec * ctx.Config.GlobalScale;
+          CustomLines.emplace_back(FString::Sprintf("         Vertex   %+013.6f,%+013.6f,%+013.6f", vec.X, vec.Y, vec.Z).C_str());
+        }
+        CustomLines.emplace_back("      End Polygon");
+      }
+      CustomLines.emplace_back("   End PolyList");
+      CustomLines.emplace_back("End Brush");
+      CustomLines.emplace_back(FString::Sprintf("Brush=Model'\"%s\"'", model->GetObjectNameString().UTF8().c_str()));
+    }
     return true;
   }
 
@@ -2337,6 +2492,17 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
       return;
     }
   }
+  else if (UBlockingVolume* actor = Cast<UBlockingVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::BlockVolumes))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureBlockingVolumeActor(actor, ctx))
+    {
+      return;
+    }
+  }
   else
   {
     return;
@@ -2347,6 +2513,39 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     for (const T3DComponent& component : exportItem.Components)
     {
       component.Declare(f);
+    }
+
+    for (const T3DActor::AdditionalForward& fwd : exportItem.AdditionalForwards)
+    {
+      FString start = "Begin";
+      FString end = "End";
+      if (fwd.Type.Size())
+      {
+        start += " ";
+        start += fwd.Type;
+        end += " ";
+        end += fwd.Type;
+      }
+      else
+      {
+        start += " Object";
+        end += " Object";
+      }
+      if (fwd.Class.Size())
+      {
+        start += " ";
+        start += "Class=/Script/Engine.";
+        start += fwd.Class;
+      }
+      if (fwd.Name.Size())
+      {
+        start += " ";
+        start += "Name=\"";
+        start += fwd.Name;
+        start += "\"";
+      }
+      f.AddCustomLine(start.UTF8().c_str());
+      f.AddCustomLine(end.UTF8().c_str());
     }
 
     bool needsHiddenInGameFlag = false;
@@ -2361,6 +2560,11 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     if (needsHiddenInGameFlag)
     {
       f.AddBool("bHidden", true);
+    }
+
+    for (const FString& customLine : exportItem.CustomLines)
+    {
+      f.AddCustomLine(customLine.C_str());
     }
 
     f.AddCustom("RootComponent", FString::Sprintf("%s'\"%s\"'", exportItem.RootComponent->Class.UTF8().c_str(), exportItem.RootComponent->Name.UTF8().c_str()).UTF8().c_str());

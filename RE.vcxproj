@@ -57,8 +57,10 @@
     <ClCompile Include="Core\Tera\DC.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Tera\ULightMap.cpp" />
+    <ClCompile Include="Core\Tera\UModel.cpp" />
     <ClCompile Include="Core\Tera\UObjectReferencer.cpp" />
     <ClCompile Include="Core\Tera\UPrefab.cpp" />
+    <ClCompile Include="Core\Tera\UVolumes.cpp" />
     <ClCompile Include="Core\Utils\ALDevice.cpp" />
     <ClCompile Include="Core\Utils\ALog.cpp" />
     <ClCompile Include="App\App.cpp" />
@@ -158,6 +160,7 @@
     <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="Core\Tera\ULightMap.h" />
     <ClInclude Include="Core\Tera\UMaterialExpression.h" />
+    <ClInclude Include="Core\Tera\UModel.h" />
     <ClInclude Include="Core\Tera\UObjectReferencer.h" />
     <ClInclude Include="Core\Tera\UPhysAsset.h" />
     <ClInclude Include="Core\Tera\UPrefab.h" />
@@ -165,6 +168,7 @@
     <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="Core\Tera\USpeedTree.h" />
     <ClInclude Include="Core\Tera\UTerrain.h" />
+    <ClInclude Include="Core\Tera\UVolumes.h" />
     <ClInclude Include="Core\Utils\ALDevice.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DCKeyTool.h" />

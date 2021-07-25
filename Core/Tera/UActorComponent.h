@@ -1,5 +1,6 @@
 #pragma once
 #include "UComponent.h"
+#include "UPhysAsset.h"
 
 class UActorComponent : public UComponent {
 public:
@@ -54,4 +55,17 @@ public:
   UPROP(float, ExtinctionDistance, 100000000.f);
 
   bool RegisterProperty(FPropertyTag* property) override;
+};
+
+class UBrushComponent 
+  : public UPrimitiveComponent
+  , public AggGeomOwner {
+public:
+  DECL_UOBJ(UBrushComponent, UPrimitiveComponent);
+
+  UPROP(class UModel*, Brush, nullptr);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  void PostLoad() override;
 };

@@ -5,6 +5,7 @@
 struct FKConvexElem {
   std::vector<FVector> VertexData;
   std::vector<int32> FaceTriData;
+  FBox BoxData;
   void SetupFromPropertyValue(FPropertyValue* value);
 };
 
@@ -41,7 +42,24 @@ public:
   friend FStream& operator<<(FStream& s, FKCachedConvexData& e);
 };
 
-class URB_BodySetup : public UObject {
+class AggGeomOwner {
+public:
+  virtual ~AggGeomOwner() = default;
+
+  virtual FKAggregateGeom GetAggregateGeometry() const
+  {
+    return Geomtry;
+  }
+
+  virtual void LoadAggGeom(const std::vector<FPropertyValue*>& root, class FPackage* package);
+
+protected:
+  FKAggregateGeom Geomtry;
+};
+
+class URB_BodySetup 
+  : public UObject
+  , public AggGeomOwner {
 public:
   DECL_UOBJ(URB_BodySetup, UObject);
 
@@ -49,17 +67,8 @@ public:
 
   void PostLoad() override;
 
-  FKAggregateGeom GetAggregateGeometry() const
-  {
-    return Geomtry;
-  }
-
-protected:
-  void LoadAggGeom(const std::vector<FPropertyValue*>& root);
-
 protected:
   std::vector<FKCachedConvexData> CachedPhysData;
-  FKAggregateGeom Geomtry;
 };
 
 class UPhysicsAssetInstance : public UObject {

@@ -1,5 +1,6 @@
 #include "UPhysAsset.h"
 #include "FPackage.h"
+#include "UClass.h"
 
 FRigidBodyIndexPair::FRigidBodyIndexPair(int32 idx1, int32 idx2)
 {
@@ -47,13 +48,13 @@ void URB_BodySetup::PostLoad()
   {
     if (tag->Name == "AggGeom")
     {
-      LoadAggGeom(tag->GetArray());
+      LoadAggGeom(tag->GetArray(), GetPackage());
       break;
     }
   }
 }
 
-void URB_BodySetup::LoadAggGeom(const std::vector<FPropertyValue*>& root)
+void AggGeomOwner::LoadAggGeom(const std::vector<FPropertyValue*>& root, FPackage* package)
 {
   for (FPropertyValue* rootVal : root)
   {
@@ -67,7 +68,7 @@ void URB_BodySetup::LoadAggGeom(const std::vector<FPropertyValue*>& root)
         Geomtry.ConvexElems[idx].SetupFromPropertyValue(tag->GetArray()[idx]);
       }
     }
-    else if (!GetPackage()->GetPackageFlag(PKG_ContainsScript) && (name == "BoxElems" || name == "SphylElems" || name == "SphereElems"))
+    else if (!package->GetPackageFlag(PKG_ContainsScript) && (name == "BoxElems" || name == "SphylElems" || name == "SphereElems"))
     {
       // TODO: implement if necessary
     }
@@ -97,6 +98,24 @@ void FKConvexElem::SetupFromPropertyValue(FPropertyValue* value)
       for (FPropertyValue* index : v->GetPropertyTagPtr()->GetArray())
       {
         FaceTriData.push_back(index->GetInt());
+      }
+    }
+    else if (v->GetPropertyTagPtr()->Name == "ElemBox")
+    {
+      for (FPropertyValue* tmp : v->GetPropertyTagPtr()->GetArray())
+      {
+        if (tmp->Field && tmp->Field->GetObjectName() == "Min")
+        {
+          tmp->GetArray()[0]->GetVector(BoxData.Min);
+        }
+        else if (tmp->Field && tmp->Field->GetObjectName() == "Max")
+        {
+          tmp->GetArray()[0]->GetVector(BoxData.Max);
+        }
+        else if (tmp->Field && tmp->Field->GetObjectName() == "IsValid")
+        {
+          BoxData.IsValid = tmp->GetArray()[0]->GetBool();
+        }
       }
     }
   }

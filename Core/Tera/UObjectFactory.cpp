@@ -24,6 +24,7 @@
 #include "USpeedTree.h"
 #include "UPrefab.h"
 #include "UObjectReferencer.h"
+#include "UModel.h"
 
 #include "UActor.h"
 #include "ULevel.h"
@@ -98,6 +99,14 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UPrefab(exp);
   }
+  else if (c == UModel::StaticClassName())
+  {
+    result = new UModel(exp);
+  }
+  else if (c == UPolys::StaticClassName())
+  {
+    result = new UPolys(exp);
+  }
   else if (c == UActor::StaticClassName())
   {
     result = new UActor(exp);
@@ -121,6 +130,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UBrush::StaticClassName())
   {
     result = new UBrush(exp);
+  }
+  else if (c == UBrushComponent::StaticClassName())
+  {
+    result = new UBrushComponent(exp);
   }
   else if (c == ULevel::StaticClassName())
   {
@@ -165,6 +178,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == ULevelStreamingVolume::StaticClassName())
   {
     result = new ULevelStreamingVolume(exp);
+  }
+  else if (c == UBlockingVolume::StaticClassName())
+  {
+    result = new UBlockingVolume(exp);
   }
   else if (c == UStaticMeshActor::StaticClassName())
   {

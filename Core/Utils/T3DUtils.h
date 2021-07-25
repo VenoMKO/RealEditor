@@ -121,6 +121,11 @@ public:
     AddParameter(name, value);
   }
 
+  inline void AddCustomLine(const char* string)
+  {
+    Body += Padding() + string + "\n";
+  }
+
   inline void AddPosition(const FVector& value)
   {
     AddVector("RelativeLocation", value);
