@@ -107,6 +107,14 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UPolys(exp);
   }
+  else if (c == UAeroVolume::StaticClassName())
+  {
+    result = new UAeroVolume(exp);
+  }
+  else if (c == UAeroInnerVolume::StaticClassName())
+  {
+    result = new UAeroInnerVolume(exp);
+  }
   else if (c == UActor::StaticClassName())
   {
     result = new UActor(exp);
@@ -174,6 +182,10 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == US1LevelStreamingVOID::StaticClassName())
   {
     result = new US1LevelStreamingVOID(exp);
+  }
+  else if (c == US1WaterVolume::StaticClassName())
+  {
+    result = new US1WaterVolume(exp);
   }
   else if (c == ULevelStreamingVolume::StaticClassName())
   {

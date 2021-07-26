@@ -254,6 +254,8 @@ void UpdateConfigValues(FAppConfig& c)
     if (c.MapExportConfig.ActorClasses && c.MapExportConfig.ActorClasses != (uint32)FMapExportConfig::ActorClass::All)
     {
       c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::BlockVolumes;
+      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::AeroVolumes;
+      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::WaterVolumes;
     }
   }
 }

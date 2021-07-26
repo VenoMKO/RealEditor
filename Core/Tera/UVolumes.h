@@ -19,5 +19,19 @@ public:
 class UBlockingVolume : public UVolume {
 public:
   DECL_UOBJ(UBlockingVolume, UVolume);
+};
 
+class UAeroVolume : public UVolume {
+public:
+  DECL_UOBJ(UAeroVolume, UVolume);
+};
+
+class UAeroInnerVolume : public UVolume {
+public:
+  DECL_UOBJ(UAeroInnerVolume, UVolume);
+};
+
+class US1WaterVolume : public UVolume {
+public:
+  DECL_UOBJ(US1WaterVolume, UVolume);
 };

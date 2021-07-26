@@ -121,6 +121,8 @@ struct FMapExportConfig {
     Emitters = 0x00000800,
     Sounds = 0x00001000,
     BlockVolumes = 0x00002000,
+    AeroVolumes = 0x00004000,
+    WaterVolumes = 0x00008000,
     All = 0xFFFFFFFF
   };
 

@@ -574,7 +574,7 @@ ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportConte
   f.AddLinearColor("FogInscatteringColor", component->LightColor);
 };
 
-ComponentDataFunc ExportBlockingVolumeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+ComponentDataFunc ExportVolumeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UBrushComponent* component = Cast<UBrushComponent>(acomp);
   if (!component)
   {
@@ -1014,7 +1014,7 @@ struct T3DActor {
     return true;
   }
 
-  bool ConfigureBlockingVolumeActor(UBlockingVolume* actor, const LevelExportContext& ctx)
+  bool ConfigureVolumeActor(UVolume* actor, const char* className, const LevelExportContext& ctx)
   {
     if (!actor || !actor->Brush || !actor->Brush->GetPolys())
     {
@@ -1022,9 +1022,9 @@ struct T3DActor {
     }
     AdditionalForwards.emplace_back(AdditionalForward(actor->Brush->GetObjectNameString(), "", "Brush"));
     AdditionalForwards.emplace_back(AdditionalForward("Polys_0", "Polys", "Object"));
-    
+
     Name = actor->GetObjectNameString();
-    T3DComponent& component = Components.emplace_back(actor->BrushComponent, ExportBlockingVolumeComponentData);
+    T3DComponent& component = Components.emplace_back(actor->BrushComponent, ExportVolumeComponentData);
     component.ChildComponents.emplace_back(std::make_pair("BodySetup", "BodySetup_0"));
     component.Name = "BrushComponent0";
     if (component.NeedsParent())
@@ -1037,7 +1037,7 @@ struct T3DActor {
     }
     else
     {
-      Class = "BlockingVolume";
+      Class = className;
       RootComponent = &component;
       Properties["BrushComponent"] = &component;
     }
@@ -1056,7 +1056,7 @@ struct T3DActor {
       for (const FPoly& polygon : polys->Elements)
       {
         CustomLines.emplace_back("      Begin Polygon");
-        
+
         FVector origin = polygon.Base * ctx.Config.GlobalScale;
         CustomLines.emplace_back(FString::Sprintf("         Origin   %+013.6f,%+013.6f,%+013.6f", origin.X, origin.Y, origin.Z).C_str());
         CustomLines.emplace_back(FString::Sprintf("         Normal   %+013.6f,%+013.6f,%+013.6f", polygon.Normal.X, polygon.Normal.Y, polygon.Normal.Z).C_str());
@@ -2498,7 +2498,40 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
-    if (!exportItem.ConfigureBlockingVolumeActor(actor, ctx))
+    if (!exportItem.ConfigureVolumeActor(actor, "BlockingVolume", ctx))
+    {
+      return;
+    }
+  }
+  else if (UAeroVolume* actor = Cast<UAeroVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::AeroVolumes))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureVolumeActor(actor, "TriggerVolume", ctx))
+    {
+      return;
+    }
+  }
+  else if (UAeroInnerVolume* actor = Cast<UAeroInnerVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::AeroVolumes))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureVolumeActor(actor, "TriggerVolume", ctx))
+    {
+      return;
+    }
+  }
+  else if (US1WaterVolume* actor = Cast<US1WaterVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::WaterVolumes))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureVolumeActor(actor, "TriggerVolume", ctx))
     {
       return;
     }

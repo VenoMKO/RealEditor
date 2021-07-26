@@ -532,19 +532,22 @@ LevelExportContext LevelExportOptionsWindow::GetExportContext() const
 void LevelExportOptionsWindow::FillActorsTable(const FMapExportConfig& cfg)
 {
   std::vector<ActorExportEntry> list;
-  list.emplace_back("Static Meshes", FMapExportConfig::ActorClass::StaticMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes));
-  list.emplace_back("Skeletal Meshes", FMapExportConfig::ActorClass::SkeletalMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkeletalMeshes));
-  list.emplace_back("Interp Actors", FMapExportConfig::ActorClass::Interps, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Interps));
+  list.emplace_back("Aero Volumes", FMapExportConfig::ActorClass::AeroVolumes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::AeroVolumes));
   list.emplace_back("Blocking Volumes", FMapExportConfig::ActorClass::BlockVolumes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::BlockVolumes));
-  list.emplace_back("SpeedTrees", FMapExportConfig::ActorClass::SpeedTrees, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpeedTrees));
-  list.emplace_back("Prefabs", FMapExportConfig::ActorClass::Prefabs, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Prefabs));
-  list.emplace_back("Terrains", FMapExportConfig::ActorClass::Terrains, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Terrains));
-  list.emplace_back("Point Lights", FMapExportConfig::ActorClass::PointLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::PointLights));
-  list.emplace_back("Spot Lights", FMapExportConfig::ActorClass::SpotLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpotLights));
   list.emplace_back("Directional Lights", FMapExportConfig::ActorClass::DirectionalLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::DirectionalLights));
-  list.emplace_back("Sky Lights", FMapExportConfig::ActorClass::SkyLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkyLights));
   list.emplace_back("Emitter Nodes", FMapExportConfig::ActorClass::Emitters, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Emitters));
   list.emplace_back("Height Fog", FMapExportConfig::ActorClass::HeightFog, cfg.GetClassEnabled(FMapExportConfig::ActorClass::HeightFog));
+  list.emplace_back("Interp Actors", FMapExportConfig::ActorClass::Interps, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Interps));
+  list.emplace_back("Point Lights", FMapExportConfig::ActorClass::PointLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::PointLights));
+  list.emplace_back("Prefabs", FMapExportConfig::ActorClass::Prefabs, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Prefabs));
+  list.emplace_back("Skeletal Meshes", FMapExportConfig::ActorClass::SkeletalMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkeletalMeshes));
+  list.emplace_back("Sky Lights", FMapExportConfig::ActorClass::SkyLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkyLights));
+  list.emplace_back("SpeedTrees", FMapExportConfig::ActorClass::SpeedTrees, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpeedTrees));
+  list.emplace_back("Spot Lights", FMapExportConfig::ActorClass::SpotLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpotLights));
+  list.emplace_back("Static Meshes", FMapExportConfig::ActorClass::StaticMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes));
+  list.emplace_back("Terrains", FMapExportConfig::ActorClass::Terrains, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Terrains));
+  list.emplace_back("Water Volumes", FMapExportConfig::ActorClass::WaterVolumes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::WaterVolumes));
+  
   // TODO: implement
   // list.emplace_back("Sound Nodes", FMapExportConfig::ActorClass::Sounds, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Sounds));
 
