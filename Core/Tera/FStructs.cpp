@@ -191,12 +191,15 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
 
   if (fv == 610 && lv == 14)
   {
-    if (!s.IsReading())
+    if (!s.IsReading() && (sum.PackageFlags & PKG_Cooked))
     {
       sum.NamesCount += sum.NamesOffset;
     }
     s << sum.NamesCount << sum.NamesOffset;
-    sum.NamesCount -= sum.NamesOffset;
+    if (sum.PackageFlags & PKG_Cooked)
+    {
+      sum.NamesCount -= sum.NamesOffset;
+    }
   }
   else
   {
