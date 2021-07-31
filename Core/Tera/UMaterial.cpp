@@ -8,6 +8,27 @@
 
 #include <Utils/ALog.h>
 
+EBlendMode BlendMode32to64(EBlendMode32 value)
+{
+  uint32 untyped = (uint32)value;
+  if (untyped > (uint32)EBlendMode32::BLEND32_Modulate)
+  {
+    return (EBlendMode)(untyped + 1);
+  }
+  return (EBlendMode)untyped;
+}
+
+EBlendMode32 BlendMode64to32(EBlendMode value)
+{
+  uint32 untyped = (uint32)value;
+  if (untyped > (uint32)EBlendMode::BLEND_Modulate)
+  {
+    // Warning! Converts BLEND_ModulateAndAdd to BLEND_Modulate
+    return (EBlendMode32)(untyped - 1);
+  }
+  return (EBlendMode32)untyped;
+}
+
 void FMaterialUniformExpression::Serialize(FStream& s)
 {
   if (!s.IsReading())
@@ -618,6 +639,24 @@ bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
     BlendModeProperty = property;
     return true;
   }
+  if (PROP_IS(property, LightingModel))
+  {
+    LightingModel = (EMaterialLightingModel)property->Value->GetByte();
+    LightingModelProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, OpacityMaskClipValue))
+  {
+    OpacityMaskClipValue = property->GetFloat();
+    OpacityMaskClipValueProperty = property;
+    return true;
+  }
+  if (PROP_IS(property, TwoSided))
+  {
+    TwoSided = property->BoolVal;
+    TwoSidedProperty = property;
+    return true;
+  }
   if (PROP_IS(property, Parent))
   {
     Parent = property->Value->GetObjectIndex();
@@ -639,20 +678,40 @@ UTexture2D* UMaterialInterface::GetDiffuseTexture() const
 
 EBlendMode UMaterialInterface::GetBlendMode() const
 {
-  if (BlendModeProperty)
+  if (!BlendModeProperty)
   {
-    return BlendMode;
-  }
-  UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
-  while (parent)
-  {
-    if (parent->BlendModeProperty)
+    UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
+    while (parent)
     {
-      return parent->GetBlendMode();
+      if (parent->BlendModeProperty)
+      {
+        return parent->GetBlendMode();
+      }
+      parent = Cast<UMaterialInterface>(parent->GetParent());
     }
-    parent = Cast<UMaterialInterface>(parent->GetParent());
+  }
+  if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
+  {
+    return BlendMode32to64((EBlendMode32)BlendMode);
   }
   return BlendMode;
+}
+
+EMaterialLightingModel UMaterialInterface::GetLightingModel() const
+{
+  if (!LightingModelProperty)
+  {
+    UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
+    while (parent)
+    {
+      if (parent->LightingModelProperty)
+      {
+        return parent->GetLightingModel();
+      }
+      parent = Cast<UMaterialInterface>(parent->GetParent());
+    }
+  }
+  return LightingModel;
 }
 
 UObject* UMaterialInterface::GetParent() const
@@ -723,7 +782,7 @@ std::map<FString, FTextureParameter> UMaterialInterface::GetTextureParameters() 
           {
             continue;
           }
-          e->AcceptVisitor(&visitor);
+          e->AcceptVisitor(visitor);
           if (visitor.Found)
           {
             break;
@@ -759,7 +818,7 @@ std::map<FString, FTextureParameter> UMaterialInterface::GetTextureParameters() 
             {
               continue;
             }
-            e->AcceptVisitor(&visitor);
+            e->AcceptVisitor(visitor);
             if (visitor.Found)
             {
               break;
@@ -998,6 +1057,40 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
     }
   }
   return nullptr;
+}
+
+bool UMaterialInterface::IsTwoSided() const
+{
+  if (!TwoSidedProperty)
+  {
+    UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
+    while (parent)
+    {
+      if (parent->TwoSidedProperty)
+      {
+        return parent->IsTwoSided();
+      }
+      parent = Cast<UMaterialInterface>(parent->GetParent());
+    }
+  }
+  return TwoSided;
+}
+
+float UMaterialInterface::GetOpacityMaskClipValue() const
+{
+  if (!OpacityMaskClipValueProperty)
+  {
+    UMaterialInterface* parent = Cast<UMaterialInterface>(GetParent());
+    while (parent)
+    {
+      if (parent->OpacityMaskClipValueProperty)
+      {
+        return parent->OpacityMaskClipValue;
+      }
+      parent = Cast<UMaterialInterface>(parent->GetParent());
+    }
+  }
+  return OpacityMaskClipValue;
 }
 
 void UMaterial::Serialize(FStream& s)

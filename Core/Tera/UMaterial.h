@@ -175,8 +175,11 @@ public:
   std::map<FString, bool> GetStaticBoolParameters() const;
 
   UTexture2D* GetTextureParameterValue(const FString& name) const;
+  bool IsTwoSided() const;
+  float GetOpacityMaskClipValue() const;
   UTexture2D* GetDiffuseTexture() const;
   EBlendMode GetBlendMode() const;
+  EMaterialLightingModel GetLightingModel() const;
   UObject* GetParent() const;
 
 protected:
@@ -184,6 +187,9 @@ protected:
   UPROP_NOINIT(std::vector<FPropertyValue*>, TextureParameterValues);
   UPROP_NOINIT(std::vector<FPropertyValue*>, VectorParameterValues);
   UPROP(EBlendMode, BlendMode, EBlendMode::BLEND_Opaque);
+  UPROP(bool, TwoSided, true);
+  UPROP(float, OpacityMaskClipValue, 1.f / 3.f);
+  UPROP(EMaterialLightingModel, LightingModel, EMaterialLightingModel::MLM_Phong);
   UPROP(PACKAGE_INDEX, Parent, INDEX_NONE);
 };
 

@@ -348,14 +348,28 @@ enum class MipFilterType
 enum EBlendMode
 {
   BLEND_Opaque = 0,
-  BLEND_Masked = 1,
-  BLEND_Translucent = 2,
-  BLEND_Additive = 3,
-  BLEND_Modulate = 4,
-  BLEND_SoftMasked = 5,
-  BLEND_AlphaComposite = 6,
-  BLEND_DitheredTranslucent = 7,
-  BLEND_MAX = 8,
+  BLEND_Masked,
+  BLEND_Translucent,
+  BLEND_Additive,
+  BLEND_Modulate,
+  BLEND_ModulateAndAdd,
+  BLEND_SoftMasked,
+  BLEND_AlphaComposite,
+  BLEND_DitheredTranslucent,
+  BLEND_MAX,
+};
+
+enum EBlendMode32
+{
+  BLEND32_Opaque = 0,
+  BLEND32_Masked,
+  BLEND32_Translucent,
+  BLEND32_Additive,
+  BLEND32_Modulate,
+  BLEND32_SoftMasked,
+  BLEND32_AlphaComposite,
+  BLEND32_DitheredTranslucent,
+  BLEND32_MAX,
 };
 
 enum AnimationCompressionFormat : uint8
@@ -368,4 +382,15 @@ enum AnimationCompressionFormat : uint8
   ACF_Float32NoW = 5,
   ACF_Identity = 6,
   ACF_MAX = 7,
+};
+
+enum EMaterialLightingModel
+{
+  MLM_Phong,
+  MLM_NonDirectional,
+  MLM_Unlit,
+  MLM_SHPRT,
+  MLM_Custom,
+  MLM_S1Phong,
+  MLM_Anisotropic, // Unavailable on x86
 };
