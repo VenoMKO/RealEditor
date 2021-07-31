@@ -499,6 +499,10 @@ void FUntypedBulkData::Serialize(FStream& s, UObject* owner, int32 idx)
 
     if (!(BulkDataFlags & BULKDATA_StoreInSeparateFile))
     {
+      if (BulkData && OwnsMemory)
+      {
+        free(BulkData);
+      }
       OwnsMemory = true;
       BulkData = malloc(GetBulkDataSize());
       SerializeBulkData(s, BulkData);
@@ -550,6 +554,10 @@ void FUntypedBulkData::SerializeSeparate(FStream& s, UObject* owner, int32 idx)
   if (hasFlag)
   {
     BulkDataFlags &= ~BULKDATA_StoreInSeparateFile;
+  }
+  if (BulkData && OwnsMemory)
+  {
+    free(BulkData);
   }
   OwnsMemory = true;
   BulkData = malloc(GetBulkDataSize());
