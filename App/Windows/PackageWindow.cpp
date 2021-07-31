@@ -66,6 +66,7 @@ enum ControlElementId {
   DebugSplitMod,
   DebugDup,
   DebugDirty,
+  DebugIter,
   Back,
   Forward,
   ContentSplitter,
@@ -806,6 +807,48 @@ void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
 void PackageWindow::DebugMarkDirty(wxCommandEvent&)
 {
   Package->MarkDirty(true);
+}
+
+void PackageWindow::DebugIteratePackages(wxCommandEvent&)
+{
+  // Perform an action(DebugIteratePackage) for every GPK and GMP in the S1Game.
+  // For testing and debuging only.
+  std::vector<FString> contents = FPackage::GetCachedDirCache();
+  const FString root = FPackage::GetRootPath();
+  DebugIterContext ctx;
+  for (const FString& contentsItem : contents)
+  {
+    const FString path = root + "\\" + contentsItem;
+    if (path.FileExtension() != "gpk" && path.FileExtension() != "gmp")
+    {
+      continue;
+    }
+    std::shared_ptr<FPackage> package = nullptr;
+    try
+    {
+      if (package = FPackage::GetPackage(path))
+      {
+        package->Load();
+        DebugIteratePackage(package.get(), ctx);
+        FPackage::UnloadPackage(package);
+      }
+    }
+    catch (const std::exception& e)
+    {
+      const char* what = e.what();
+      DBreak();
+    }
+    catch (...)
+    {
+      DBreak();
+    }
+  }
+  // Save ctx if needed
+}
+
+void PackageWindow::DebugIteratePackage(FPackage* package, DebugIterContext& ctx)
+{
+  // Do per-package actions and save results to the ctx
 }
 
 void PackageWindow::UpdateAccelerators()
@@ -2020,4 +2063,5 @@ EVT_MENU(ControlElementId::DebugTestCookObj, PackageWindow::DebugOnTestCookObjec
 EVT_MENU(ControlElementId::DebugSplitMod, PackageWindow::DebugOnSplitMod)
 EVT_MENU(ControlElementId::DebugDup, PackageWindow::DebugOnDupSelection)
 EVT_MENU(ControlElementId::DebugDirty, PackageWindow::DebugMarkDirty)
+EVT_MENU(ControlElementId::DebugIter, PackageWindow::DebugIteratePackages)
 wxEND_EVENT_TABLE()

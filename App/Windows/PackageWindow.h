@@ -24,6 +24,10 @@ class ArchiveInfoView;
 class FPackage;
 class UObject;
 
+struct DebugIterContext {
+  std::map<FString, std::vector<FString>> map;
+};
+
 class PackageWindow 
   : public wxFrame
   , public FPackageObserver {
@@ -143,6 +147,8 @@ private:
   void DebugOnSplitMod(wxCommandEvent&);
   void DebugOnDupSelection(wxCommandEvent&);
   void DebugMarkDirty(wxCommandEvent&);
+  void DebugIteratePackages(wxCommandEvent&);
+  void DebugIteratePackage(FPackage* package, DebugIterContext& ctx);
 
   void UpdateAccelerators();
 

@@ -140,6 +140,9 @@ void PackageWindow::InitLayout()
   wxMenuItem* debugDirty = new wxMenuItem(m_menu3, ControlElementId::DebugDirty, wxT("Mark Dirty"), wxEmptyString, wxITEM_NORMAL);
   m_menu3->Append(debugDirty);
 
+  wxMenuItem* debugIter = new wxMenuItem(m_menu3, ControlElementId::DebugIter, wxT("Iterate GPKs"), wxEmptyString, wxITEM_NORMAL);
+  m_menu3->Append(debugIter);
+
   menuBar->Append(m_menu3, wxT("Debug"));
 
   
