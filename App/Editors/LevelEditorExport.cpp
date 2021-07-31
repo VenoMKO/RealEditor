@@ -12,6 +12,7 @@
 #include <Tera/USkeletalMesh.h>
 #include <Tera/USpeedTree.h>
 #include <Tera/UMaterial.h>
+#include <Tera/UMaterialExpression.h>
 #include <Tera/UTexture.h>
 #include <Tera/ULight.h>
 #include <Tera/UTerrain.h>
@@ -26,6 +27,8 @@
 #include <functional>
 
 const char* VSEP = "\t";
+
+#define TEST_MAT_EXPS_EXPORT 1
 
 typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
 
@@ -44,6 +47,511 @@ std::string GetActorName(UObject* actor)
     return {};
   }
   return actor->GetPackage()->GetPackageName().UTF8() + "_" + actor->GetObjectNameString().UTF8();
+}
+
+void ExportMaterialExpressions(UMaterial* material, FString& output)
+{
+  std::vector<FExpressionInput> matInputs;
+  for (FPropertyTag* tag : material->MaterialInputs)
+  {
+    FExpressionInput& in = matInputs.emplace_back(tag);
+    in.Title = tag->Name.String();
+  }
+  output = "BlendMode:";
+  output += VSEP;
+  FString lightModel;
+  FString softMask;
+  bool addOpacityMask = false;
+  switch (material->GetBlendMode())
+  {
+  case EBlendMode::BLEND_Additive:
+    output += "Additive";
+    break;
+  case EBlendMode::BLEND_Masked:
+    output += "Masked";
+    addOpacityMask = true;
+    break;
+  case EBlendMode::BLEND_Opaque:
+    output += "Opaque";
+    break;
+  case EBlendMode::BLEND_Translucent:
+    output += "Translucent";
+    lightModel += "Volumetric_NonDirectional";
+    break;
+  case EBlendMode::BLEND_DitheredTranslucent:
+    output += "DitheredTranslucent";
+    break;
+  case EBlendMode::BLEND_SoftMasked:
+    output += "Masked";
+    softMask = VSEP;
+    softMask += "DitherOpacityMask";
+    softMask += "\n";
+    addOpacityMask = true;
+    break;
+  case EBlendMode::BLEND_Modulate:
+    output += "Modulate";
+    break;
+  case EBlendMode::BLEND_AlphaComposite:
+    output += "AlphaComposite";
+    break;
+  default:
+    output += "Unknown";
+    break;
+  }
+  output += "\n";
+  if (addOpacityMask)
+  {
+    output += "OpacityMaskClipValue:";
+    output += VSEP;
+    output += std::to_string(material->GetOpacityMaskClipValue());
+    output += "\n";
+  }
+  if (softMask.Size())
+  {
+    output += softMask;
+  }
+  output += "TwoSided:";
+  output += VSEP;
+  output += material->IsTwoSided() ? "True" : "False";
+  output += "\n";
+  output += "ShadingModel:";
+  output += VSEP;
+  switch (material->GetLightingModel())
+  {
+  case MLM_Unlit:
+    output += "Unlit";
+    break;
+  default:
+    output += "DefaultLit";
+    break;
+  }
+  output += "\n";
+  if (lightModel.Size())
+  {
+    output += "LightingMode:";
+    output += VSEP;
+    output += lightModel;
+    output += "\n";
+  }
+
+  output += "Inputs:\n";
+
+  std::map<PACKAGE_INDEX, FString> orphans;
+  for (const FExpressionInput& matIn : matInputs)
+  {
+    if (!matIn.Expression)
+    {
+      continue;
+    }
+    FString title = matIn.Title.UTF8();
+    bool skipInput = true;
+    if (title == "DiffuseColor")
+    {
+      skipInput = false;
+      title = "BaseColor";
+    }
+    else if (title == "Normal")
+    {
+      skipInput = false;
+    }
+    else if (title == "SpecularColor")
+    {
+      title = "Specular";
+      skipInput = false;
+    }
+    else if (title == "EmissiveColor")
+    {
+      skipInput = false;
+    }
+    else if (title == "OpacityMask")
+    {
+      skipInput = false;
+    }
+
+    if (skipInput)
+    {
+      if (matIn.Mask && (matIn.MaskA || matIn.MaskR || matIn.MaskG || matIn.MaskB))
+      {
+        output += VSEP;
+        output += "Mask(";
+        if (matIn.MaskA)
+        {
+          output += "A";
+        }
+        if (matIn.MaskR)
+        {
+          output += "R";
+        }
+        if (matIn.MaskG)
+        {
+          output += "G";
+        }
+        if (matIn.MaskB)
+        {
+          output += "B";
+        }
+        output += ")\n";
+      }
+      
+      orphans[matIn.Expression->GetExportObject()->ObjectIndex] = FString("Material Input: ") + title;
+      continue;
+    }
+    output += VSEP;
+    output += title + VSEP;
+    output += std::to_string(matIn.Expression->GetExportObject()->ObjectIndex);
+    if (matIn.Mask && (matIn.MaskA || matIn.MaskR || matIn.MaskG || matIn.MaskB))
+    {
+      output += VSEP;
+      output += "Mask(";
+      if (matIn.MaskA)
+      {
+        output += "A";
+      }
+      if (matIn.MaskR)
+      {
+        output += "R";
+      }
+      if (matIn.MaskG)
+      {
+        output += "G";
+      }
+      if (matIn.MaskB)
+      {
+        output += "B";
+      }
+      output += ")";
+    }
+    output += "\n";
+  }
+
+  std::vector<UMaterialExpression*> expressions = material->GetExpressions();
+  std::vector<AMaterialExpression> rwExpressions;
+  PACKAGE_INDEX newItemsIndex = 1000000;
+  for (UMaterialExpression* exp : expressions)
+  {
+    exp->ExportExpression(rwExpressions.emplace_back());
+  }
+  newItemsIndex++;
+  std::vector<AMaterialExpression> newExpressions;
+  for (AMaterialExpression& exp : rwExpressions)
+  {
+    if (exp.Class == UMaterialExpressionDepthBiasedAlpha::StaticClassName())
+    {
+      exp.Description = exp.Class;
+      exp.Class == "MaterialExpressionDepthFade";
+      float biasScale = 1.;
+      if (AExpressionInput* input = exp.GetParameter("BiasScale"))
+      {
+        biasScale = input->FloatValue;
+      }
+      if (AExpressionInput* input = exp.GetParameter("Bias"))
+      {
+        if (input->Type == "expression" && biasScale != 1.)
+        {
+          if (PACKAGE_INDEX idx = input->Expression)
+          {
+            auto it = std::find_if(rwExpressions.begin(), rwExpressions.end(), [&](AMaterialExpression& i) {
+              return i.Index == idx;
+            });
+            if (it != rwExpressions.end())
+            {
+              if (it->Class == UMaterialExpressionConstant::StaticClassName())
+              {
+                if (AExpressionInput* r = it->GetParameter("R"))
+                {
+                  r->FloatValue *= biasScale;
+                }
+              }
+              else
+              {
+                AMaterialExpression& mul = newExpressions.emplace_back();
+                mul.Index = newItemsIndex++;
+                mul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", it->Index, false));
+                mul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", biasScale));
+                input->Expression = mul.Index;
+              }
+            }
+          }
+        }
+      }
+    }
+    else if (exp.Class == UMaterialExpressionDestColor::StaticClassName())
+    {
+      exp.Description = exp.Class;
+      exp.Class = "MaterialExpressionSceneColor";
+    }
+    else if (exp.Class == UMaterialExpressionDestDepth::StaticClassName())
+    {
+      exp.Description = exp.Class;
+      exp.Class = "MaterialExpressionPixelDepth";
+    }
+    else if (exp.Class == UMaterialExpressionLensFlareIntensity::StaticClassName() ||
+             exp.Class == UMaterialExpressionLensFlareOcclusion::StaticClassName() ||
+             exp.Class == UMaterialExpressionLensFlareRadialDistance::StaticClassName() ||
+             exp.Class == UMaterialExpressionLensFlareRayDistance::StaticClassName() ||
+             exp.Class == UMaterialExpressionLensFlareSourceDistance::StaticClassName())
+    {
+      exp.Skip = true;
+    }
+    else if (exp.Class == UMaterialExpressionMeshEmitterVertexColor::StaticClassName())
+    {
+      exp.Description = exp.Class;
+      exp.Class == "MaterialExpressionParticleColor";
+    }
+    else if (exp.Class == UMaterialExpressionMeshSubUV::StaticClassName())
+    {
+      exp.Description = exp.Class;
+      exp.Class == "MaterialExpressionParticleSubUV";
+    }
+    else if (exp.Class == UMaterialExpressionFlipBookSample::StaticClassName())
+    {
+      AMaterialExpression& time = newExpressions.emplace_back();
+      time.Index = newItemsIndex++;
+      time.Class = "MaterialExpressionTime";
+      time.Position.X = exp.Position.X - 320;
+      time.Position.Y = exp.Position.Y - 16;
+
+      AMaterialExpression& texture = newExpressions.emplace_back();
+      texture.Index = newItemsIndex++;
+      texture.Class = "MaterialExpressionTextureObject";
+      texture.Position.X = exp.Position.X - 144;
+      texture.Position.Y = exp.Position.Y - 96;
+      texture.Parameters.emplace_back(*exp.GetParameter("Texture"));
+
+      AMaterialExpression& cols = newExpressions.emplace_back();
+      cols.Index = newItemsIndex++;
+      cols.Class = "MaterialExpressionConstant";
+      cols.Position.X = exp.Position.X - 208;
+      cols.Position.Y = exp.Position.Y + 160;
+
+      AMaterialExpression& rows = newExpressions.emplace_back();
+      rows.Index = newItemsIndex++;
+      rows.Class = "MaterialExpressionConstant";
+      rows.Position.X = exp.Position.X - 208;
+      rows.Position.Y = exp.Position.Y + 96;
+
+      AMaterialExpression& mulFramesCount = newExpressions.emplace_back();
+      mulFramesCount.Index = newItemsIndex++;
+      mulFramesCount.Class = "MaterialExpressionMultiply";
+      mulFramesCount.Position.X = exp.Position.X - 304;
+      mulFramesCount.Position.Y = exp.Position.Y + 128;
+      mulFramesCount.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", cols.Index, false));
+      mulFramesCount.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", rows.Index, false));
+
+      AMaterialExpression& frameTime = newExpressions.emplace_back();
+      frameTime.Index = newItemsIndex++;
+      frameTime.Class = "MaterialExpressionConstant";
+      frameTime.Position.X = exp.Position.X - 304;
+      frameTime.Position.Y = exp.Position.Y + 64;
+
+      AMaterialExpression& durMul = newExpressions.emplace_back();
+      durMul.Index = newItemsIndex++;
+      durMul.Class = "MaterialExpressionMultiply";
+      durMul.Position.X = exp.Position.X - 208;
+      durMul.Position.Y = exp.Position.Y;
+      durMul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", frameTime.Index, false));
+      durMul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", mulFramesCount.Index, false));
+
+      AMaterialExpression& timeDiv = newExpressions.emplace_back();
+      timeDiv.Index = newItemsIndex++;
+      timeDiv.Class = "MaterialExpressionDivide";
+      timeDiv.Position.X = exp.Position.X - 96;
+      timeDiv.Position.Y = exp.Position.Y;
+      durMul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", time.Index, false));
+      durMul.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", durMul.Index, false));
+
+      // TODO: UMaterialExpressionFlipBookSample might have custom UVs. Need to pass those to the UMaterialExpressionMaterialFunctionCall
+      exp.Class = "UMaterialExpressionMaterialFunctionCall";
+      exp.Function = "/Engine/Functions/Engine_MaterialFunctions02/Texturing/FlipBook.FlipBook";
+      exp.Parameters.clear();
+      exp.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Phase", timeDiv.Index, false));
+      exp.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Columns", cols.Index, false));
+      exp.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Rows", rows.Index, false));
+      exp.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Texture", texture.Index, false));
+    }
+    if (orphans.count(exp.Index))
+    {
+      exp.Description = orphans[exp.Index];
+    }
+    for (AExpressionInput& param : exp.Parameters)
+    {
+      if (param.Type == "object")
+      {
+        if (param.ObjectValue)
+        {
+          if (UTexture2D* tex = Cast<UTexture2D>(param.ObjectValue))
+          {
+            tex->Load();
+            if (tex->CompressionSettingsProperty && tex->CompressionSettings == TC_NormalmapAlpha)
+            {
+              AMaterialExpression& tex = newExpressions.emplace_back();
+              tex.Index = newItemsIndex++;
+              tex.Class = UMaterialExpressionTextureSampleParameter2D::StaticClassName();
+              tex.Position.X = exp.Position.X;
+              tex.Position.Y = exp.Position.Y + 250;
+              tex.Parameters = exp.Parameters;
+              if (AExpressionInput* in = tex.GetParameter("ParameterName"))
+              {
+                in->StringValue += "_Alpha";
+              }
+              tex.Description = "NormalMap Alpha channel";
+              tex.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("RE_NormalAlpha", true));
+
+              for (AMaterialExpression& tmpExp : rwExpressions)
+              {
+                for (AExpressionInput& tmpIn : tmpExp.Parameters)
+                {
+                  if (tmpIn.MaskA && tmpIn.Expression == exp.Index)
+                  {
+                    tmpIn.Expression = tex.Index;
+                    tmpIn.MaskA = tmpIn.MaskB = tmpIn.MaskG = false;
+                    tmpIn.MaskR = true;
+                  }
+                }
+              }
+              for (AMaterialExpression& tmpExp : newExpressions)
+              {
+                for (AExpressionInput& tmpIn : tmpExp.Parameters)
+                {
+                  if (tmpIn.MaskA && tmpIn.Expression == exp.Index)
+                  {
+                    tmpIn.Expression = tex.Index;
+                    tmpIn.MaskA = tmpIn.MaskB = tmpIn.MaskG = false;
+                    tmpIn.MaskR = true;
+                  }
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          output += "NULL";
+        }
+      }
+    }
+  }
+  rwExpressions.insert(rwExpressions.end(), newExpressions.begin(), newExpressions.end());
+  output += "Expressions:\n";
+  for (const auto& exp : rwExpressions)
+  {
+    if (exp.Skip)
+    {
+      continue;
+    }
+    output += "Expression";
+    output += VSEP;
+    output += std::to_string(exp.Index) + VSEP;
+    output += exp.Class.UTF8() + "\n";
+    output += VSEP;
+    output += "EditorX";
+    output += VSEP;
+    output += std::to_string((int32)exp.Position.X) + "\n";
+    output += VSEP;
+    output += "EditorY";
+    output += VSEP;
+    output += std::to_string((int32)exp.Position.Y) + "\n";
+    if (exp.Description.Size())
+    {
+      output += VSEP;
+      output += "Desc";
+      output += VSEP;
+      output += exp.Description + "\n";
+    }
+    if (exp.Parameters.size())
+    {
+      output += VSEP;
+      output += "Parameters:\n";
+    }
+    if (exp.Function.Size())
+    {
+      output += VSEP;
+      output += "function";
+      output += VSEP;
+      output += exp.Function.UTF8();
+      output += "\n";
+    }
+    for (const auto& param : exp.Parameters)
+    {
+      if (param.Name.Empty() || (param.Type == "expression" && param.Expression == 0) || param.Name == "RE_NormalAlpha")
+      {
+        continue;
+      }
+      output += VSEP;
+      output += param.Name.UTF8() + VSEP;
+      output += param.Type.UTF8() + VSEP;
+      if (param.Type == "expression")
+      {
+        output += std::to_string(param.Expression);
+      }
+      else if (param.Type == "float")
+      {
+        output += std::to_string(param.FloatValue);
+      }
+      else if (param.Type == "bool")
+      {
+        output += param.BoolValue ? "True" : "False";
+      }
+      else if (param.Type == "int")
+      {
+        output += std::to_string(param.IntValue);
+      }
+      else if (param.Type == "object")
+      {
+        if (param.ObjectValue)
+        {
+          output += "Game/S1Game/";
+          output += GetLocalDirAndName(param.ObjectValue, "/");
+          if (exp.GetParameter("RE_NormalAlpha"))
+          {
+            output += "_Alpha";
+          }
+        }
+        else
+        {
+          output += "NULL";
+        }
+      }
+      else if (param.Type == "color")
+      {
+        output += std::to_string(param.ColorValue.R) + ",";
+        output += std::to_string(param.ColorValue.G) + ",";
+        output += std::to_string(param.ColorValue.B) + ",";
+        output += std::to_string(param.ColorValue.A) + ",";
+        if (output.Back() == ',')
+        {
+          output.Resize(output.Size() - 1);
+        }
+      }
+      else if (param.Type == "string")
+      {
+        output += param.StringValue.UTF8();
+      }
+      if (param.Mask && (param.MaskA || param.MaskR || param.MaskG || param.MaskB))
+      {
+        output += VSEP;
+        output += "Mask(";
+        if (param.MaskA)
+        {
+          output += "A";
+        }
+        if (param.MaskR)
+        {
+          output += "R";
+        }
+        if (param.MaskG)
+        {
+          output += "G";
+        }
+        if (param.MaskB)
+        {
+          output += "B";
+        }
+        output += ")";
+      }
+      output += "\n";
+    }
+  }
 }
 
 ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
@@ -1802,6 +2310,19 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           params.ScalarParameters = mat->GetScalarParameters();
           params.BoolParameters = mat->GetStaticBoolParameters();
           masterMaterials[e] = params;
+#if TEST_MAT_EXPS_EXPORT
+          FString out;
+          ExportMaterialExpressions(mat, out);
+          auto expPath = ctx.GetMaterialExpressionsPath();
+          expPath /= GetLocalDir(mat, "\\");
+          std::error_code err;
+          std::filesystem::create_directories(expPath, err);
+          expPath += mat->GetObjectNameString();
+          {
+            std::ofstream s(expPath);
+            s << out.WString();
+          }
+#endif
         }
       }
     }

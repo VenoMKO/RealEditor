@@ -77,6 +77,11 @@ struct LevelExportContext {
     return std::filesystem::path(Config.RootDir.WString()) / MaterialsListStorage;
   }
 
+  inline std::filesystem::path GetMaterialExpressionsPath() const
+  {
+    return GetMaterialDir() + "Expressions";
+  }
+
   // A list of default mesh materials before actor overrides for RE Helper plugin
   inline std::filesystem::path GetMeshDefaultMaterialsPath() const
   {

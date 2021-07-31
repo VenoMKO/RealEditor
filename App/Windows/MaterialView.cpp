@@ -84,7 +84,7 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
   {
     ExpressionMap[exp] = GraphNodes.size();
     MaterialExpressionInfo& i = GraphNodes.emplace_back();
-    exp->AcceptVisitor(&i);
+    exp->AcceptVisitor(i);
     i.Expression = exp;
     i.Position.x += CanvasOffsetX;
     i.Position.y += CanvasOffsetY;

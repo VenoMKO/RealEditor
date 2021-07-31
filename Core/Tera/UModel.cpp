@@ -40,7 +40,6 @@ FStream& operator<<(FStream& s, FBspSurf& surf)
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
     s << surf.Unk1;
-    DBreakIf(surf.Unk1);
   }
   return s;
 }

@@ -22,6 +22,97 @@ struct FExpressionInput {
   }
 };
 
+struct AExpressionInput {
+
+  AExpressionInput() = default;
+
+  AExpressionInput(const FExpressionInput& input);
+
+  static AExpressionInput MakeExpressionInput(const char* name, PACKAGE_INDEX input, bool mask, bool r = false, bool g = false, bool b = false, bool a = false)
+  {
+    AExpressionInput result;
+    result.Name = name;
+    result.Type = "expression";
+    result.Expression = input;
+    result.Mask = mask;
+    result.MaskA = a;
+    result.MaskR = r;
+    result.MaskG = g;
+    result.MaskB = b;
+    return result;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, float value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "float";
+    r.FloatValue = value;
+    return r;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, bool value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "bool";
+    r.BoolValue = value;
+    return r;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, const FLinearColor& value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "color";
+    r.ColorValue = value;
+    return r;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, const FString& value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "string";
+    r.StringValue = value;
+    return r;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, UObject* value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "object";
+    r.ObjectValue = value;
+    return r;
+  }
+
+  static AExpressionInput MakeExpressionInput(const char* name, int32 value)
+  {
+    AExpressionInput r;
+    r.Name = name;
+    r.Type = "int";
+    r.IntValue = value;
+    return r;
+  }
+
+  FString Name;
+  FString Type;
+  PACKAGE_INDEX Expression = INDEX_NONE;
+  bool Mask = false;
+  bool MaskR = false;
+  bool MaskG = false;
+  bool MaskB = false;
+  bool MaskA = false;
+
+  float FloatValue = 0.;
+  bool BoolValue = false;
+  int32 IntValue = 0;
+  UObject* ObjectValue = nullptr;
+  FLinearColor ColorValue;
+  FString StringValue;
+};
+
 class UMaterialExpressionViewVisitor {
 public:
   virtual ~UMaterialExpressionViewVisitor()
@@ -35,7 +126,70 @@ public:
   virtual void SetEditorSize(int32 x, int32 y) = 0;
 };
 
+struct AMaterialExpression {
+  FString Class;
+  PACKAGE_INDEX Index = INDEX_NONE;
+  FVector2D Position;
+  FString Description;
+  std::vector<AExpressionInput> Parameters;
+  FString Function;
+  bool Skip = false;
 
+  AExpressionInput* GetParameter(const char* name)
+  {
+    for (AExpressionInput& in : Parameters)
+    {
+      if (in.Name == name)
+      {
+        return &in;
+      }
+    }
+    return nullptr;
+  }
+
+  const AExpressionInput* GetParameter(const char* name) const
+  {
+    for (const AExpressionInput& in : Parameters)
+    {
+      if (in.Name == name)
+      {
+        return &in;
+      }
+    }
+    return nullptr;
+  }
+};
+
+class UMaterialExpressionExportVisitor {
+public:
+  virtual ~UMaterialExpressionExportVisitor() = default;
+
+  FString& GetOutput()
+  {
+    return Output;
+  }
+
+  FString GetOutput() const
+  {
+    return Output;
+  }
+
+  int32 ConvertPosX(int32 posX) const
+  {
+    return EditorBounds.Max.X - posX - 250;
+  }
+
+  int32 ConvertPosY(int32 posY) const
+  {
+    return EditorBounds.Max.Y - posY;
+  }
+
+  void UpdateBounds(std::vector<class UMaterialExpression*> expressions);
+
+protected:
+  FString Output;
+  FBox EditorBounds;
+};
 
 class UMaterialExpression : public UObject {
 public:
@@ -53,7 +207,8 @@ public:
 
   bool RegisterProperty(FPropertyTag* property) override;
   FString GetTitle() const;
-  virtual void AcceptVisitor(UMaterialExpressionViewVisitor* visitor);
+  virtual void AcceptVisitor(UMaterialExpressionViewVisitor& visitor);
+  virtual void ExportExpression(AMaterialExpression& output);
 };
 
 class UMaterialExpressionAbs : public UMaterialExpression {
@@ -61,7 +216,8 @@ public:
   DECL_UOBJ(UMaterialExpressionAbs, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionAdd : public UMaterialExpression {
@@ -70,7 +226,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionAppendVector : public UMaterialExpression {
@@ -79,7 +236,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionBumpOffset : public UMaterialExpression {
@@ -90,7 +248,8 @@ public:
   UPROP(float, HeightRatio, 0.);
   UPROP(float, ReferencePlane, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionCameraVector : public UMaterialExpression {
@@ -108,7 +267,8 @@ public:
   DECL_UOBJ(UMaterialExpressionCeil, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionClamp : public UMaterialExpression {
@@ -118,7 +278,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Min);
   UPROP_NOINIT(FExpressionInput, Max);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionComment : public UMaterialExpression {
@@ -130,7 +291,7 @@ public:
   UPROP(int32, SizeY, 0);
   UPROP_NOINIT(FString, Text);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
 };
 
 class UMaterialExpressionComponentMask : public UMaterialExpression {
@@ -142,7 +303,8 @@ public:
   UPROP(bool, B, false);
   UPROP(bool, A, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionCompound : public UMaterialExpression {
@@ -152,7 +314,7 @@ public:
   UPROP_NOINIT(FString, Caption);
   UPROP(bool, bExpanded, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
 };
 
 class UMaterialExpressionConstant : public UMaterialExpression {
@@ -160,7 +322,8 @@ public:
   DECL_UOBJ(UMaterialExpressionConstant, UMaterialExpression);
   UPROP(float, R, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionConstant2Vector : public UMaterialExpression {
@@ -169,7 +332,8 @@ public:
   UPROP(float, R, 0.);
   UPROP(float, G, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionConstant3Vector : public UMaterialExpression {
@@ -179,7 +343,8 @@ public:
   UPROP(float, G, 0.);
   UPROP(float, B, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionConstant4Vector : public UMaterialExpression {
@@ -190,7 +355,8 @@ public:
   UPROP(float, B, 0.);
   UPROP(float, A, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionConstantBiasScale : public UMaterialExpression {
@@ -200,7 +366,8 @@ public:
   UPROP(float, Bias, 1.);
   UPROP(float, Scale, .5);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionConstantClamp : public UMaterialExpression {
@@ -210,7 +377,8 @@ public:
   UPROP(float, Min, 0.);
   UPROP(float, Max, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionCosine : public UMaterialExpression {
@@ -219,7 +387,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Input);
   UPROP(float, Period, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionCrossProduct : public UMaterialExpression {
@@ -228,7 +397,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionCustomTexture : public UMaterialExpression {
@@ -236,7 +406,8 @@ public:
   DECL_UOBJ(UMaterialExpressionCustomTexture, UMaterialExpression);
   UPROP(UObject*, Texture, nullptr);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDepthBiasedAlpha : public UMaterialExpression {
@@ -247,7 +418,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Alpha);
   UPROP_NOINIT(FExpressionInput, Bias);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDepthBiasedBlend : public UMaterialExpression {
@@ -259,7 +431,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Alpha);
   UPROP_NOINIT(FExpressionInput, Bias);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDepthOfFieldFunction : public UMaterialExpression {
@@ -268,7 +441,7 @@ public:
   UPROP(uint8, FunctionValue, 0);
   UPROP_NOINIT(FExpressionInput, Depth);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
 };
 
 class UMaterialExpressionDeriveNormalZ : public UMaterialExpression {
@@ -276,7 +449,8 @@ public:
   DECL_UOBJ(UMaterialExpressionDeriveNormalZ, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, InXY);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDesaturation : public UMaterialExpression {
@@ -286,7 +460,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Percent);
   UPROP(FLinearColor, LuminanceFactors, FLinearColor(.3f, .59f, .11f, 1.f));
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDestColor : public UMaterialExpression {
@@ -299,7 +474,8 @@ public:
   DECL_UOBJ(UMaterialExpressionDestDepth, UMaterialExpression);
   UPROP(bool, bNormalize, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDistance : public UMaterialExpression {
@@ -308,7 +484,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDivide : public UMaterialExpression {
@@ -317,7 +494,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDotProduct : public UMaterialExpression {
@@ -326,7 +504,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDynamicParameter : public UMaterialExpression {
@@ -334,7 +513,7 @@ public:
   DECL_UOBJ(UMaterialExpressionDynamicParameter, UMaterialExpression);
   UPROP_NOINIT(std::vector<FString>, ParamNames);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
 };
 
 class UMaterialExpressionMeshEmitterDynamicParameter : public UMaterialExpressionDynamicParameter {
@@ -347,7 +526,8 @@ public:
   DECL_UOBJ(UMaterialExpressionFloor, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFluidNormal : public UMaterialExpression {
@@ -355,7 +535,8 @@ public:
   DECL_UOBJ(UMaterialExpressionFluidNormal, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Coordinates);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFmod : public UMaterialExpression {
@@ -364,7 +545,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFoliageImpulseDirection : public UMaterialExpression {
@@ -383,7 +565,8 @@ public:
   UPROP(UObject*, Font, nullptr);
   UPROP(int32, FontTexturePage, 0);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFontSampleParameter : public UMaterialExpressionFontSample {
@@ -392,7 +575,8 @@ public:
   UPROP_NOINIT(FName, ParameterName);
   UPROP_NOINIT(FGuid, ExpressionGUID);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFrac : public UMaterialExpression {
@@ -400,7 +584,8 @@ public:
   DECL_UOBJ(UMaterialExpressionFrac, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFresnel : public UMaterialExpression {
@@ -409,7 +594,8 @@ public:
   UPROP(float, Exponent, 3.);
   UPROP_NOINIT(FExpressionInput, Normal);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionIf : public UMaterialExpression {
@@ -421,7 +607,8 @@ public:
   UPROP_NOINIT(FExpressionInput, AEqualsB);
   UPROP_NOINIT(FExpressionInput, ALessThanB);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionLensFlareIntensity : public UMaterialExpression {
@@ -460,7 +647,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Realtime);
   UPROP_NOINIT(FExpressionInput, Lightmass);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionLightVector : public UMaterialExpression {
@@ -475,7 +663,8 @@ public:
   UPROP_NOINIT(FExpressionInput, B);
   UPROP_NOINIT(FExpressionInput, Alpha);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionMeshEmitterVertexColor : public UMaterialExpression {
@@ -489,7 +678,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionNormalize : public UMaterialExpression {
@@ -497,7 +687,8 @@ public:
   DECL_UOBJ(UMaterialExpressionNormalize, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, VectorInput);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionObjectOrientation : public UMaterialExpression {
@@ -525,7 +716,8 @@ public:
   DECL_UOBJ(UMaterialExpressionOneMinus, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionPanner : public UMaterialExpression {
@@ -536,7 +728,8 @@ public:
   UPROP(float, SpeedX, 0.);
   UPROP(float, SpeedY, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionParameter : public UMaterialExpression {
@@ -545,7 +738,8 @@ public:
   UPROP_NOINIT(FName, ParameterName);
   UPROP_NOINIT(FGuid, ExpressionGUID);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionScalarParameter : public UMaterialExpressionParameter {
@@ -553,7 +747,8 @@ public:
   DECL_UOBJ(UMaterialExpressionScalarParameter, UMaterialExpressionParameter);
   UPROP(float, DefaultValue, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionStaticComponentMaskParameter : public UMaterialExpressionParameter {
@@ -566,7 +761,8 @@ public:
   UPROP(bool, DefaultA, false);
   FStaticComponentMaskParameter* InstanceOverride = nullptr;
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionStaticSwitchParameter : public UMaterialExpressionParameter {
@@ -578,7 +774,8 @@ public:
   UPROP_NOINIT(FExpressionInput, B);
   FStaticSwitchParameter* InstanceOverride = nullptr;
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionVectorParameter : public UMaterialExpressionParameter {
@@ -586,7 +783,8 @@ public:
   DECL_UOBJ(UMaterialExpressionVectorParameter, UMaterialExpressionParameter);
   UPROP_NOINIT(FLinearColor, DefaultValue);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionParticleMacroUV : public UMaterialExpression {
@@ -594,7 +792,8 @@ public:
   DECL_UOBJ(UMaterialExpressionParticleMacroUV, UMaterialExpression);
   UPROP(bool, bUseViewSpace, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionPerInstanceRandom : public UMaterialExpression {
@@ -607,7 +806,8 @@ public:
   DECL_UOBJ(UMaterialExpressionPixelDepth, UMaterialExpression);
   UPROP(bool, bNormalize, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionPower : public UMaterialExpression {
@@ -616,7 +816,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Base);
   UPROP_NOINIT(FExpressionInput, Exponent);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionReflectionVector : public UMaterialExpression {
@@ -631,7 +832,8 @@ public:
   UPROP_NOINIT(FExpressionInput, PositionOnAxis);
   UPROP_NOINIT(FExpressionInput, Position);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionRotator : public UMaterialExpression {
@@ -643,7 +845,8 @@ public:
   UPROP(float, CenterY, 0.5);
   UPROP(float, Speed, 0.25);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionSceneDepth : public UMaterialExpression {
@@ -652,7 +855,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Coordinates);
   UPROP(bool, bNormalize, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionSceneTexture : public UMaterialExpression {
@@ -662,7 +866,8 @@ public:
   UPROP(uint8, SceneTextureType, 0);
   UPROP(bool, ScreenAlign, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionScreenPosition : public UMaterialExpression {
@@ -670,7 +875,7 @@ public:
   DECL_UOBJ(UMaterialExpressionScreenPosition, UMaterialExpression);
   UPROP(bool, ScreenAlign, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
 };
 
 class UMaterialExpressionSine : public UMaterialExpression {
@@ -679,7 +884,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Input);
   UPROP(float, Period, 1.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionSphereMask : public UMaterialExpression {
@@ -690,7 +896,8 @@ public:
   UPROP(float, AttenuationRadius, 256.);
   UPROP(float, HardnessPercent, 100.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionSquareRoot : public UMaterialExpression {
@@ -698,7 +905,8 @@ public:
   DECL_UOBJ(UMaterialExpressionSquareRoot, UMaterialExpression);
   UPROP_NOINIT(FExpressionInput, Input);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionSubtract : public UMaterialExpression {
@@ -707,7 +915,8 @@ public:
   UPROP_NOINIT(FExpressionInput, A);
   UPROP_NOINIT(FExpressionInput, B);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTerrainLayerCoords : public UMaterialExpression {
@@ -719,7 +928,8 @@ public:
   UPROP(float, MappingPanU, 0.);
   UPROP(float, MappingPanV, 0.);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTerrainLayerWeight : public UMaterialExpression {
@@ -732,7 +942,8 @@ public:
   UPROP(float, PreviewWeight, 0.);
   UPROP_NOINIT(FGuid, ExpressionGUID);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTextureCoordinate : public UMaterialExpression {
@@ -744,7 +955,8 @@ public:
   UPROP(bool, UnMirrorU, false);
   UPROP(bool, UnMirrorV, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTextureSample : public UMaterialExpression {
@@ -753,7 +965,8 @@ public:
   UPROP(UObject*, Texture, nullptr);
   UPROP_NOINIT(FExpressionInput, Coordinates);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionDepthBiasBlend : public UMaterialExpressionTextureSample {
@@ -763,7 +976,8 @@ public:
   UPROP(float, BiasScale, 1.);
   UPROP_NOINIT(FExpressionInput, Bias);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionFlipBookSample : public UMaterialExpressionTextureSample {
@@ -793,7 +1007,8 @@ public:
   UPROP_NOINIT(FName, ParameterName);
 
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTextureSampleParameter2D : public UMaterialExpressionTextureSampleParameter {
@@ -807,7 +1022,8 @@ public:
   UPROP(float, Threshold, .5);
   UPROP(FString, Channel, "Alpha");
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTextureSampleParameterMeshSubUV : public UMaterialExpressionTextureSampleParameter2D {
@@ -846,7 +1062,8 @@ public:
   DECL_UOBJ(UMaterialExpressionTime, UMaterialExpression);
   UPROP(bool, bIgnorePause, false);
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTransform : public UMaterialExpression {
@@ -856,7 +1073,8 @@ public:
   UPROP(FString, TransformSourceType, "Tangent");
   UPROP(FString, TransformType, "World");
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTransformPosition : public UMaterialExpression {
@@ -865,7 +1083,8 @@ public:
   UPROP_NOINIT(FExpressionInput, Input);
   UPROP(FString, TransformType, "World");
   bool RegisterProperty(FPropertyTag* property) override;
-  void AcceptVisitor(UMaterialExpressionViewVisitor* visitor) override;
+  void AcceptVisitor(UMaterialExpressionViewVisitor& visitor) override;
+  void ExportExpression(AMaterialExpression& output) override;
 };
 
 class UMaterialExpressionTwoSidedSign : public UMaterialExpression {

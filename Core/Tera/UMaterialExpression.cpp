@@ -3,6 +3,10 @@
 #include "UClass.h"
 #include "Cast.h"
 
+namespace {
+  const char* VSEP = "\t";
+}
+
 #define REGISTER_INPUT(TName)\
 if (PROP_IS(property, TName))\
 {\
@@ -14,14 +18,10 @@ if (PROP_IS(property, TName))\
 //
 
 #define SUPER_ACCEPT()\
-if (!visitor)\
-{\
-  return;\
-}\
 Super::AcceptVisitor(visitor)
 
 #define SET_INPUT(...)\
-visitor->SetInput({ __VA_ARGS__ });
+visitor.SetInput({ __VA_ARGS__ });
 
 FExpressionInput::FExpressionInput(FPropertyTag * property)
 {
@@ -540,23 +540,31 @@ FString UMaterialExpression::GetTitle() const
   return title;
 }
 
-void UMaterialExpression::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
-{
-  if (!visitor)
-  {
-    return;
-  }
-  
-  visitor->SetTitle(GetTitle());
+void UMaterialExpression::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
+{  
+  visitor.SetTitle(GetTitle());
   if (MaterialExpressionEditorXProperty || MaterialExpressionEditorYProperty)
   {
-    visitor->SetEditorPosition(MaterialExpressionEditorX, MaterialExpressionEditorY);
+    visitor.SetEditorPosition(MaterialExpressionEditorX, MaterialExpressionEditorY);
   }
   else if (EditorXProperty || EditorYProperty)
   {
-    visitor->SetEditorPosition(EditorX, EditorY);
+    visitor.SetEditorPosition(EditorX, EditorY);
   }
-  visitor->SetDescription(Desc);
+  visitor.SetDescription(Desc);
+}
+
+void UMaterialExpression::ExportExpression(AMaterialExpression& output)
+{
+  output.Parameters.clear();
+  output.Class = GetStaticClassName();
+  output.Index = Export->ObjectIndex;
+  output.Position.X = -GetPosX() - 250;
+  output.Position.Y = GetPosY();
+  if (DescProperty)
+  {
+    output.Description = Desc;
+  }
 }
 
 bool UMaterialExpressionAbs::RegisterProperty(FPropertyTag* property)
@@ -566,10 +574,16 @@ bool UMaterialExpressionAbs::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionAbs::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionAbs::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionAbs::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionAdd::RegisterProperty(FPropertyTag* property)
@@ -580,10 +594,17 @@ bool UMaterialExpressionAdd::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionAdd::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionAdd::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionAdd::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionAppendVector::RegisterProperty(FPropertyTag* property)
@@ -594,10 +615,17 @@ bool UMaterialExpressionAppendVector::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionAppendVector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionAppendVector::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionAppendVector::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionBumpOffset::RegisterProperty(FPropertyTag* property)
@@ -610,11 +638,26 @@ bool UMaterialExpressionBumpOffset::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionBumpOffset::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionBumpOffset::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Height);
-  visitor->SetValue(FString::Sprintf("HeightRatio:%f\nReferencePlane:%f", HeightRatio, ReferencePlane));
+  visitor.SetValue(FString::Sprintf("HeightRatio:%f\nReferencePlane:%f", HeightRatio, ReferencePlane));
+}
+
+void UMaterialExpressionBumpOffset::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinate);
+  output.Parameters.emplace_back(Height);
+  if (HeightRatioProperty)
+  {
+    output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("HeightRatio", HeightRatio));
+  }
+  if (ReferencePlaneProperty)
+  {
+    output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("ReferencePlane", ReferencePlane));
+  }
 }
 
 bool UMaterialExpressionCeil::RegisterProperty(FPropertyTag* property)
@@ -624,10 +667,16 @@ bool UMaterialExpressionCeil::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionCeil::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionCeil::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionCeil::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionClamp::RegisterProperty(FPropertyTag* property)
@@ -639,10 +688,18 @@ bool UMaterialExpressionClamp::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionClamp::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionClamp::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input, Min, Max);
+}
+
+void UMaterialExpressionClamp::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  output.Parameters.emplace_back(Min);
+  output.Parameters.emplace_back(Max);
 }
 
 bool UMaterialExpressionComment::RegisterProperty(FPropertyTag* property)
@@ -656,11 +713,11 @@ bool UMaterialExpressionComment::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionComment::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionComment::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetEditorSize(SizeX, SizeY);
-  visitor->SetValue(Text);
+  visitor.SetEditorSize(SizeX, SizeY);
+  visitor.SetValue(Text);
 }
 
 bool UMaterialExpressionComponentMask::RegisterProperty(FPropertyTag* property)
@@ -674,7 +731,7 @@ bool UMaterialExpressionComponentMask::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionComponentMask::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionComponentMask::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
@@ -700,7 +757,21 @@ void UMaterialExpressionComponentMask::AcceptVisitor(UMaterialExpressionViewVisi
   {
     mask.empty() ? mask += piece : mask += std::string(",") + piece;
   }
-  visitor->SetValue(mask);
+  visitor.SetValue(mask);
+}
+
+void UMaterialExpressionComponentMask::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (RProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("R", R));
+  if (GProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("G", G));
+  if (BProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", B));
+  if (AProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", A));
 }
 
 bool UMaterialExpressionCompound::RegisterProperty(FPropertyTag* property)
@@ -720,7 +791,7 @@ bool UMaterialExpressionCompound::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionCompound::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionCompound::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   FString expressions;
@@ -728,8 +799,8 @@ void UMaterialExpressionCompound::AcceptVisitor(UMaterialExpressionViewVisitor* 
   {
     expressions.Empty() ? expressions += exp->GetObjectNameString() : expressions += FString(":") + exp->GetObjectNameString();
   }
-  visitor->SetValue(expressions);
-  visitor->SetTitle(GetTitle() + ": " + Caption);
+  visitor.SetValue(expressions);
+  visitor.SetTitle(GetTitle() + ": " + Caption);
 }
 
 bool UMaterialExpressionConstant::RegisterProperty(FPropertyTag* property)
@@ -739,10 +810,17 @@ bool UMaterialExpressionConstant::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionConstant::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstant::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f", R));
+  visitor.SetValue(FString::Sprintf("%.2f", R));
+}
+
+void UMaterialExpressionConstant::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (RProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("R", R));
 }
 
 bool UMaterialExpressionConstant2Vector::RegisterProperty(FPropertyTag* property)
@@ -753,10 +831,19 @@ bool UMaterialExpressionConstant2Vector::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionConstant2Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstant2Vector::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f,%f", R, G));
+  visitor.SetValue(FString::Sprintf("%.2f,%f", R, G));
+}
+
+void UMaterialExpressionConstant2Vector::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (RProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("R", R));
+  if (GProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("G", G));
 }
 
 bool UMaterialExpressionConstant3Vector::RegisterProperty(FPropertyTag* property)
@@ -768,10 +855,21 @@ bool UMaterialExpressionConstant3Vector::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionConstant3Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstant3Vector::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f,%f,%f", R, G, B));
+  visitor.SetValue(FString::Sprintf("%.2f,%f,%f", R, G, B));
+}
+
+void UMaterialExpressionConstant3Vector::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (RProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("R", R));
+  if (GProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("G", G));
+  if (BProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", B));
 }
 
 bool UMaterialExpressionConstant4Vector::RegisterProperty(FPropertyTag* property)
@@ -784,10 +882,23 @@ bool UMaterialExpressionConstant4Vector::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionConstant4Vector::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstant4Vector::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("%.2f,%f,%f,%f", R, G, B, A));
+  visitor.SetValue(FString::Sprintf("%.2f,%f,%f,%f", R, G, B, A));
+}
+
+void UMaterialExpressionConstant4Vector::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (RProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("R", R));
+  if (GProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("G", G));
+  if (BProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("B", B));
+  if (AProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("A", A));
 }
 
 bool UMaterialExpressionConstantBiasScale::RegisterProperty(FPropertyTag* property)
@@ -799,11 +910,21 @@ bool UMaterialExpressionConstantBiasScale::RegisterProperty(FPropertyTag* proper
   return false;
 }
 
-void UMaterialExpressionConstantBiasScale::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstantBiasScale::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Bias:%f\nScale:%f", Bias, Scale));
+  visitor.SetValue(FString::Sprintf("Bias:%f\nScale:%f", Bias, Scale));
+}
+
+void UMaterialExpressionConstantBiasScale::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (Bias)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Bias", Bias));
+  if (Scale)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Scale", Scale));
 }
 
 bool UMaterialExpressionConstantClamp::RegisterProperty(FPropertyTag* property)
@@ -815,11 +936,21 @@ bool UMaterialExpressionConstantClamp::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionConstantClamp::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionConstantClamp::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Min:%f\nMax:%f", Min, Max));
+  visitor.SetValue(FString::Sprintf("Min:%f\nMax:%f", Min, Max));
+}
+
+void UMaterialExpressionConstantClamp::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (MinProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Min", Min));
+  if (MaxProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Max", Max));
 }
 
 bool UMaterialExpressionCosine::RegisterProperty(FPropertyTag* property)
@@ -830,11 +961,19 @@ bool UMaterialExpressionCosine::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionCosine::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionCosine::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Period:%f", Period));
+  visitor.SetValue(FString::Sprintf("Period:%f", Period));
+}
+
+void UMaterialExpressionCosine::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (PeriodProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Period", Period));
 }
 
 bool UMaterialExpressionCrossProduct::RegisterProperty(FPropertyTag* property)
@@ -845,10 +984,17 @@ bool UMaterialExpressionCrossProduct::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionCrossProduct::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionCrossProduct::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionCrossProduct::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionCustomTexture::RegisterProperty(FPropertyTag* property)
@@ -858,10 +1004,16 @@ bool UMaterialExpressionCustomTexture::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionCustomTexture::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionCustomTexture::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
+  visitor.SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
+}
+
+void UMaterialExpressionCustomTexture::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("Texture", Texture));
 }
 
 bool UMaterialExpressionDepthBiasedAlpha::RegisterProperty(FPropertyTag* property)
@@ -874,11 +1026,22 @@ bool UMaterialExpressionDepthBiasedAlpha::RegisterProperty(FPropertyTag* propert
   return false;
 }
 
-void UMaterialExpressionDepthBiasedAlpha::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDepthBiasedAlpha::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Alpha, Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+}
+
+void UMaterialExpressionDepthBiasedAlpha::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("bNormalize", bNormalize));
+  if (BiasScaleProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("BiasScale", BiasScale));
+  output.Parameters.emplace_back(Alpha);
+  output.Parameters.emplace_back(Bias);
 }
 
 bool UMaterialExpressionDepthBiasedBlend::RegisterProperty(FPropertyTag* property)
@@ -892,11 +1055,23 @@ bool UMaterialExpressionDepthBiasedBlend::RegisterProperty(FPropertyTag* propert
   return false;
 }
 
-void UMaterialExpressionDepthBiasedBlend::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDepthBiasedBlend::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(RGB, Alpha, Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+}
+
+void UMaterialExpressionDepthBiasedBlend::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("bNormalize", bNormalize));
+  if (BiasScaleProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("BiasScale", BiasScale));
+  output.Parameters.emplace_back(RGB);
+  output.Parameters.emplace_back(Alpha);
+  output.Parameters.emplace_back(Bias);
 }
 
 bool UMaterialExpressionDepthOfFieldFunction::RegisterProperty(FPropertyTag* property)
@@ -907,11 +1082,11 @@ bool UMaterialExpressionDepthOfFieldFunction::RegisterProperty(FPropertyTag* pro
   return false;
 }
 
-void UMaterialExpressionDepthOfFieldFunction::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDepthOfFieldFunction::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Depth);
-  visitor->SetValue(FString::Sprintf("FunctionValue: %d", int(FunctionValue)));
+  visitor.SetValue(FString::Sprintf("FunctionValue: %d", int(FunctionValue)));
 }
 
 bool UMaterialExpressionDeriveNormalZ::RegisterProperty(FPropertyTag* property)
@@ -921,10 +1096,16 @@ bool UMaterialExpressionDeriveNormalZ::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDeriveNormalZ::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDeriveNormalZ::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(InXY);
+}
+
+void UMaterialExpressionDeriveNormalZ::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(InXY);
 }
 
 bool UMaterialExpressionDesaturation::RegisterProperty(FPropertyTag* property)
@@ -936,11 +1117,20 @@ bool UMaterialExpressionDesaturation::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDesaturation::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDesaturation::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input, Percent);
-  visitor->SetValue(FString::Sprintf("LumFactors:\nR:%f G:%f\nB:%f A:%f", LuminanceFactors.R, LuminanceFactors.G, LuminanceFactors.B, LuminanceFactors.A));
+  visitor.SetValue(FString::Sprintf("LumFactors:\nR:%f G:%f\nB:%f A:%f", LuminanceFactors.R, LuminanceFactors.G, LuminanceFactors.B, LuminanceFactors.A));
+}
+
+void UMaterialExpressionDesaturation::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  output.Parameters.emplace_back(Percent);
+  if (LuminanceFactorsProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("LuminanceFactors", LuminanceFactors));
 }
 
 bool UMaterialExpressionDestDepth::RegisterProperty(FPropertyTag* property)
@@ -950,10 +1140,17 @@ bool UMaterialExpressionDestDepth::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDestDepth::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDestDepth::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+}
+
+void UMaterialExpressionDestDepth::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput("bNormalize", bNormalize));
 }
 
 bool UMaterialExpressionDistance::RegisterProperty(FPropertyTag* property)
@@ -964,10 +1161,17 @@ bool UMaterialExpressionDistance::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDistance::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDistance::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionDistance::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionDivide::RegisterProperty(FPropertyTag* property)
@@ -978,10 +1182,17 @@ bool UMaterialExpressionDivide::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDivide::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDivide::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionDivide::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionDotProduct::RegisterProperty(FPropertyTag* property)
@@ -992,10 +1203,17 @@ bool UMaterialExpressionDotProduct::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDotProduct::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDotProduct::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionDotProduct::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionDynamicParameter::RegisterProperty(FPropertyTag* property)
@@ -1013,7 +1231,7 @@ bool UMaterialExpressionDynamicParameter::RegisterProperty(FPropertyTag* propert
   return false;
 }
 
-void UMaterialExpressionDynamicParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDynamicParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   FString v;
@@ -1021,7 +1239,7 @@ void UMaterialExpressionDynamicParameter::AcceptVisitor(UMaterialExpressionViewV
   {
     v.Empty() ? v += name : v += FString(",") + name;
   }
-  visitor->SetValue(v);
+  visitor.SetValue(v);
 }
 
 bool UMaterialExpressionFloor::RegisterProperty(FPropertyTag* property)
@@ -1031,10 +1249,16 @@ bool UMaterialExpressionFloor::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFloor::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFloor::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionFloor::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionFluidNormal::RegisterProperty(FPropertyTag* property)
@@ -1044,10 +1268,16 @@ bool UMaterialExpressionFluidNormal::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFluidNormal::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFluidNormal::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinates);
+}
+
+void UMaterialExpressionFluidNormal::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinates);
 }
 
 bool UMaterialExpressionFmod::RegisterProperty(FPropertyTag* property)
@@ -1058,10 +1288,17 @@ bool UMaterialExpressionFmod::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFmod::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFmod::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionFmod::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionFontSample::RegisterProperty(FPropertyTag* property)
@@ -1072,10 +1309,19 @@ bool UMaterialExpressionFontSample::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFontSample::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFontSample::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Font: %s\nFontTexturePage: %d", (Font ? Font->GetObjectNameString().UTF8().c_str() : "NULL"), FontTexturePage));
+  visitor.SetValue(FString::Sprintf("Font: %s\nFontTexturePage: %d", (Font ? Font->GetObjectNameString().UTF8().c_str() : "NULL"), FontTexturePage));
+}
+
+void UMaterialExpressionFontSample::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (FontProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Font, Font));
+  if (FontTexturePageProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_FontTexturePage, FontTexturePage));
 }
 
 bool UMaterialExpressionFontSampleParameter::RegisterProperty(FPropertyTag* property)
@@ -1085,10 +1331,17 @@ bool UMaterialExpressionFontSampleParameter::RegisterProperty(FPropertyTag* prop
   return false;
 }
 
-void UMaterialExpressionFontSampleParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFontSampleParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String());
+  visitor.SetValue(ParameterName.String());
+}
+
+void UMaterialExpressionFontSampleParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (ParameterNameProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ParameterName, ParameterName.String()));
 }
 
 bool UMaterialExpressionFrac::RegisterProperty(FPropertyTag* property)
@@ -1098,10 +1351,16 @@ bool UMaterialExpressionFrac::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFrac::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFrac::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionFrac::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionFresnel::RegisterProperty(FPropertyTag* property)
@@ -1112,11 +1371,19 @@ bool UMaterialExpressionFresnel::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionFresnel::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionFresnel::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Normal);
-  visitor->SetValue(FString::Sprintf("Exp:%f", Exponent));
+  visitor.SetValue(FString::Sprintf("Exp:%f", Exponent));
+}
+
+void UMaterialExpressionFresnel::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Normal);
+  if (ExponentProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Exponent, Exponent));
 }
 
 bool UMaterialExpressionIf::RegisterProperty(FPropertyTag* property)
@@ -1130,10 +1397,20 @@ bool UMaterialExpressionIf::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionIf::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionIf::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B, AGreaterThanB, AEqualsB, ALessThanB);
+}
+
+void UMaterialExpressionIf::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
+  output.Parameters.emplace_back(AGreaterThanB);
+  output.Parameters.emplace_back(AEqualsB);
+  output.Parameters.emplace_back(ALessThanB);
 }
 
 bool UMaterialExpressionLightmassReplace::RegisterProperty(FPropertyTag* property)
@@ -1144,10 +1421,17 @@ bool UMaterialExpressionLightmassReplace::RegisterProperty(FPropertyTag* propert
   return false;
 }
 
-void UMaterialExpressionLightmassReplace::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionLightmassReplace::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Realtime, Lightmass);
+}
+
+void UMaterialExpressionLightmassReplace::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Realtime);
+  output.Parameters.emplace_back(Lightmass);
 }
 
 bool UMaterialExpressionLinearInterpolate::RegisterProperty(FPropertyTag* property)
@@ -1159,10 +1443,18 @@ bool UMaterialExpressionLinearInterpolate::RegisterProperty(FPropertyTag* proper
   return false;
 }
 
-void UMaterialExpressionLinearInterpolate::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionLinearInterpolate::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B, Alpha);
+}
+
+void UMaterialExpressionLinearInterpolate::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
+  output.Parameters.emplace_back(Alpha);
 }
 
 bool UMaterialExpressionMultiply::RegisterProperty(FPropertyTag* property)
@@ -1173,10 +1465,17 @@ bool UMaterialExpressionMultiply::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionMultiply::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionMultiply::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionMultiply::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionNormalize::RegisterProperty(FPropertyTag* property)
@@ -1186,10 +1485,16 @@ bool UMaterialExpressionNormalize::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionNormalize::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionNormalize::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(VectorInput);
+}
+
+void UMaterialExpressionNormalize::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(VectorInput);
 }
 
 bool UMaterialExpressionOneMinus::RegisterProperty(FPropertyTag* property)
@@ -1199,10 +1504,16 @@ bool UMaterialExpressionOneMinus::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionOneMinus::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionOneMinus::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionOneMinus::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionPanner::RegisterProperty(FPropertyTag* property)
@@ -1215,11 +1526,22 @@ bool UMaterialExpressionPanner::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionPanner::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionPanner::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Time);
-  visitor->SetValue(FString::Sprintf("SpdX:%f\nSpdY:%f", SpeedX, SpeedY));
+  visitor.SetValue(FString::Sprintf("SpdX:%f\nSpdY:%f", SpeedX, SpeedY));
+}
+
+void UMaterialExpressionPanner::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinate);
+  output.Parameters.emplace_back(Time);
+  if (SpeedXProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_SpeedX, SpeedX));
+  if (SpeedYProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_SpeedY, SpeedY));
 }
 
 bool UMaterialExpressionParameter::RegisterProperty(FPropertyTag* property)
@@ -1229,10 +1551,17 @@ bool UMaterialExpressionParameter::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String());
+  visitor.SetValue(ParameterName.String());
+}
+
+void UMaterialExpressionParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (ParameterNameProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ParameterName, ParameterName.String()));
 }
 
 bool UMaterialExpressionScalarParameter::RegisterProperty(FPropertyTag* property)
@@ -1242,10 +1571,17 @@ bool UMaterialExpressionScalarParameter::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionScalarParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionScalarParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String() + FString(":") + FString::Sprintf("%.2f", DefaultValue));
+  visitor.SetValue(ParameterName.String() + FString(":") + FString::Sprintf("%.2f", DefaultValue));
+}
+
+void UMaterialExpressionScalarParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (DefaultValueProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultValue, DefaultValue));
 }
 
 bool UMaterialExpressionStaticComponentMaskParameter::RegisterProperty(FPropertyTag* property)
@@ -1259,7 +1595,7 @@ bool UMaterialExpressionStaticComponentMaskParameter::RegisterProperty(FProperty
   return false;
 }
 
-void UMaterialExpressionStaticComponentMaskParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionStaticComponentMaskParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
@@ -1280,7 +1616,21 @@ void UMaterialExpressionStaticComponentMaskParameter::AcceptVisitor(UMaterialExp
   {
     mask += "A";
   }
-  visitor->SetValue(mask);
+  visitor.SetValue(mask);
+}
+
+void UMaterialExpressionStaticComponentMaskParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (DefaultRProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultR, DefaultR));
+  if (DefaultGProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultG, DefaultG));
+  if (DefaultBProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultB, DefaultB));
+  if (DefaultAProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultA, DefaultA));
 }
 
 bool UMaterialExpressionStaticSwitchParameter::RegisterProperty(FPropertyTag* property)
@@ -1293,11 +1643,22 @@ bool UMaterialExpressionStaticSwitchParameter::RegisterProperty(FPropertyTag* pr
   return false;
 }
 
-void UMaterialExpressionStaticSwitchParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionStaticSwitchParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
-  visitor->SetValue(ParameterName.String() + FString(":") + (DefaultValue ? "true" : "false"));
+  visitor.SetValue(ParameterName.String() + FString(":") + (DefaultValue ? "true" : "false"));
+}
+
+void UMaterialExpressionStaticSwitchParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
+  if (DefaultValueProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultValue, DefaultValue));
+  if (ExtendedCaptionDisplayProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ExtendedCaptionDisplay, ExtendedCaptionDisplay));
 }
 
 bool UMaterialExpressionVectorParameter::RegisterProperty(FPropertyTag* property)
@@ -1307,10 +1668,16 @@ bool UMaterialExpressionVectorParameter::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionVectorParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionVectorParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String() + FString::Sprintf("\n%.2f,%f,%f,%f", DefaultValue.R, DefaultValue.G, DefaultValue.B, DefaultValue.A));
+  visitor.SetValue(ParameterName.String() + FString::Sprintf("\n%.2f,%f,%f,%f", DefaultValue.R, DefaultValue.G, DefaultValue.B, DefaultValue.A));
+}
+
+void UMaterialExpressionVectorParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_DefaultValue, DefaultValue));
 }
 
 bool UMaterialExpressionParticleMacroUV::RegisterProperty(FPropertyTag* property)
@@ -1320,10 +1687,17 @@ bool UMaterialExpressionParticleMacroUV::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionParticleMacroUV::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionParticleMacroUV::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("bUseViewSpace: %s", bUseViewSpace ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("bUseViewSpace: %s", bUseViewSpace ? "true" : "false"));
+}
+
+void UMaterialExpressionParticleMacroUV::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bUseViewSpaceProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_bUseViewSpace, bUseViewSpace));
 }
 
 bool UMaterialExpressionPixelDepth::RegisterProperty(FPropertyTag* property)
@@ -1333,10 +1707,17 @@ bool UMaterialExpressionPixelDepth::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionPixelDepth::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionPixelDepth::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+}
+
+void UMaterialExpressionPixelDepth::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_bNormalize, bNormalize));
 }
 
 bool UMaterialExpressionPower::RegisterProperty(FPropertyTag* property)
@@ -1347,10 +1728,17 @@ bool UMaterialExpressionPower::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionPower::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionPower::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Base, Exponent);
+}
+
+void UMaterialExpressionPower::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Base);
+  output.Parameters.emplace_back(Exponent);
 }
 
 bool UMaterialExpressionRotateAboutAxis::RegisterProperty(FPropertyTag* property)
@@ -1362,10 +1750,18 @@ bool UMaterialExpressionRotateAboutAxis::RegisterProperty(FPropertyTag* property
   return false;
 }
 
-void UMaterialExpressionRotateAboutAxis::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionRotateAboutAxis::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(NormalizedRotationAxisAndAngle, PositionOnAxis, Position);
+}
+
+void UMaterialExpressionRotateAboutAxis::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(NormalizedRotationAxisAndAngle);
+  output.Parameters.emplace_back(PositionOnAxis);
+  output.Parameters.emplace_back(Position);
 }
 
 bool UMaterialExpressionRotator::RegisterProperty(FPropertyTag* property)
@@ -1379,11 +1775,24 @@ bool UMaterialExpressionRotator::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionRotator::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionRotator::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinate, Time);
-  visitor->SetValue(FString::Sprintf("Center:%f,%f\nSpeed:%f", CenterX, CenterY, Speed));
+  visitor.SetValue(FString::Sprintf("Center:%f,%f\nSpeed:%f", CenterX, CenterY, Speed));
+}
+
+void UMaterialExpressionRotator::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinate);
+  output.Parameters.emplace_back(Time);
+  if (CenterXProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_CenterX, CenterX));
+  if (CenterYProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_CenterY, CenterY));
+  if (SpeedProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Speed, Speed));
 }
 
 bool UMaterialExpressionSceneDepth::RegisterProperty(FPropertyTag* property)
@@ -1394,10 +1803,18 @@ bool UMaterialExpressionSceneDepth::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSceneDepth::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSceneDepth::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s", bNormalize ? "true" : "false"));
+}
+
+void UMaterialExpressionSceneDepth::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinates);
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_bNormalize, bNormalize));
 }
 
 bool UMaterialExpressionSceneTexture::RegisterProperty(FPropertyTag* property)
@@ -1409,11 +1826,17 @@ bool UMaterialExpressionSceneTexture::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSceneTexture::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSceneTexture::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinates);
-  visitor->SetValue(FString::Sprintf("SceneTextureType: %d\nScreenAlign: %s", int(SceneTextureType), ScreenAlign ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("SceneTextureType: %d\nScreenAlign: %s", int(SceneTextureType), ScreenAlign ? "true" : "false"));
+}
+
+void UMaterialExpressionSceneTexture::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinates);
 }
 
 bool UMaterialExpressionScreenPosition::RegisterProperty(FPropertyTag* property)
@@ -1423,10 +1846,10 @@ bool UMaterialExpressionScreenPosition::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionScreenPosition::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionScreenPosition::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("ScreenAlign: %s", ScreenAlign ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("ScreenAlign: %s", ScreenAlign ? "true" : "false"));
 }
 
 bool UMaterialExpressionSine::RegisterProperty(FPropertyTag* property)
@@ -1437,11 +1860,19 @@ bool UMaterialExpressionSine::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSine::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSine::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Period:%f", Period));
+  visitor.SetValue(FString::Sprintf("Period:%f", Period));
+}
+
+void UMaterialExpressionSine::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (PeriodProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Period, Period));
 }
 
 bool UMaterialExpressionSphereMask::RegisterProperty(FPropertyTag* property)
@@ -1454,11 +1885,22 @@ bool UMaterialExpressionSphereMask::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSphereMask::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSphereMask::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
-  visitor->SetValue(FString::Sprintf("AttRadius:%f\nHrdsPercent:%f", AttenuationRadius, HardnessPercent));
+  visitor.SetValue(FString::Sprintf("AttRadius:%f\nHrdsPercent:%f", AttenuationRadius, HardnessPercent));
+}
+
+void UMaterialExpressionSphereMask::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
+  if (AttenuationRadiusProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_AttenuationRadius, AttenuationRadius));
+  if (HardnessPercentProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_HardnessPercent, HardnessPercent));
 }
 
 bool UMaterialExpressionSquareRoot::RegisterProperty(FPropertyTag* property)
@@ -1468,10 +1910,16 @@ bool UMaterialExpressionSquareRoot::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSquareRoot::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSquareRoot::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
+}
+
+void UMaterialExpressionSquareRoot::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
 }
 
 bool UMaterialExpressionSubtract::RegisterProperty(FPropertyTag* property)
@@ -1482,10 +1930,17 @@ bool UMaterialExpressionSubtract::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionSubtract::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionSubtract::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(A, B);
+}
+
+void UMaterialExpressionSubtract::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(A);
+  output.Parameters.emplace_back(B);
 }
 
 bool UMaterialExpressionTerrainLayerCoords::RegisterProperty(FPropertyTag* property)
@@ -1499,10 +1954,25 @@ bool UMaterialExpressionTerrainLayerCoords::RegisterProperty(FPropertyTag* prope
   return false;
 }
 
-void UMaterialExpressionTerrainLayerCoords::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTerrainLayerCoords::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Type: %s\nScale:%f\nRotation:%f\nPan:%f,%f", MappingType.UTF8().c_str(), MappingScale, MappingRotation, MappingPanU, MappingPanV));
+  visitor.SetValue(FString::Sprintf("Type: %s\nScale:%f\nRotation:%f\nPan:%f,%f", MappingType.UTF8().c_str(), MappingScale, MappingRotation, MappingPanU, MappingPanV));
+}
+
+void UMaterialExpressionTerrainLayerCoords::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (MappingTypeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_MappingType, MappingType.String()));
+  if (MappingScaleProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_MappingScale, MappingScale));
+  if (MappingRotationProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_MappingRotation, MappingRotation));
+  if (MappingPanUProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_MappingPanU, MappingPanU));
+  if (MappingPanVProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_MappingPanV, MappingPanV));
 }
 
 bool UMaterialExpressionTerrainLayerWeight::RegisterProperty(FPropertyTag* property)
@@ -1514,11 +1984,20 @@ bool UMaterialExpressionTerrainLayerWeight::RegisterProperty(FPropertyTag* prope
   return false;
 }
 
-void UMaterialExpressionTerrainLayerWeight::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTerrainLayerWeight::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Base, Layer);
-  visitor->SetValue(ParameterName.String());
+  visitor.SetValue(ParameterName.String());
+}
+
+void UMaterialExpressionTerrainLayerWeight::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Base);
+  output.Parameters.emplace_back(Layer);
+  if (ParameterNameProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ParameterName, ParameterName.String()));
 }
 
 bool UMaterialExpressionTextureCoordinate::RegisterProperty(FPropertyTag* property)
@@ -1532,10 +2011,25 @@ bool UMaterialExpressionTextureCoordinate::RegisterProperty(FPropertyTag* proper
   return false;
 }
 
-void UMaterialExpressionTextureCoordinate::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTextureCoordinate::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("CoordIdx: %d\nTilingUV:%f,%f\nUnMirrorUV: %s, %s", CoordinateIndex, UTiling, VTiling, UnMirrorU ? "true" : "false", UnMirrorV ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("CoordIdx: %d\nTilingUV:%f,%f\nUnMirrorUV: %s, %s", CoordinateIndex, UTiling, VTiling, UnMirrorU ? "true" : "false", UnMirrorV ? "true" : "false"));
+}
+
+void UMaterialExpressionTextureCoordinate::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (CoordinateIndexProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_CoordinateIndex, CoordinateIndex));
+  if (UTilingProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_UTiling, UTiling));
+  if (VTilingProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_VTiling, VTiling));
+  if (UnMirrorUProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_UnMirrorU, UnMirrorU));
+  if (UnMirrorVProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_UnMirrorV, UnMirrorV));
 }
 
 bool UMaterialExpressionTextureSample::RegisterProperty(FPropertyTag* property)
@@ -1546,11 +2040,19 @@ bool UMaterialExpressionTextureSample::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionTextureSample::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTextureSample::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Coordinates);
-  visitor->SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
+  visitor.SetValue(Texture ? Texture->GetObjectNameString() : "NULL");
+}
+
+void UMaterialExpressionTextureSample::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Coordinates);
+  if (TextureProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Texture, Texture));
 }
 
 bool UMaterialExpressionDepthBiasBlend::RegisterProperty(FPropertyTag* property)
@@ -1562,11 +2064,21 @@ bool UMaterialExpressionDepthBiasBlend::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionDepthBiasBlend::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionDepthBiasBlend::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Bias);
-  visitor->SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+  visitor.SetValue(FString::Sprintf("bNormalize: %s\nBiasScale:%f", bNormalize ? "true" : "false", BiasScale));
+}
+
+void UMaterialExpressionDepthBiasBlend::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Bias);
+  if (BiasScaleProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_BiasScale, BiasScale));
+  if (bNormalizeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_bNormalize, bNormalize));
 }
 
 bool UMaterialExpressionAntialiasedTextureMask::RegisterProperty(FPropertyTag* property)
@@ -1577,10 +2089,19 @@ bool UMaterialExpressionAntialiasedTextureMask::RegisterProperty(FPropertyTag* p
   return false;
 }
 
-void UMaterialExpressionAntialiasedTextureMask::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionAntialiasedTextureMask::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("Threshold:%f\nChannel: %s", Threshold, Channel.UTF8().c_str()));
+  visitor.SetValue(FString::Sprintf("Threshold:%f\nChannel: %s", Threshold, Channel.UTF8().c_str()));
+}
+
+void UMaterialExpressionAntialiasedTextureMask::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (ThresholdProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Threshold, Threshold));
+  if (ChannelProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_Channel, Channel));
 }
 
 bool UMaterialExpressionTime::RegisterProperty(FPropertyTag* property)
@@ -1590,10 +2111,17 @@ bool UMaterialExpressionTime::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionTime::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTime::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(FString::Sprintf("bIgnorePause: %s", bIgnorePause ? "true" : "false"));
+  visitor.SetValue(FString::Sprintf("bIgnorePause: %s", bIgnorePause ? "true" : "false"));
+}
+
+void UMaterialExpressionTime::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (bIgnorePauseProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_bIgnorePause, bIgnorePause));
 }
 
 bool UMaterialExpressionTransform::RegisterProperty(FPropertyTag* property)
@@ -1605,11 +2133,21 @@ bool UMaterialExpressionTransform::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void UMaterialExpressionTransform::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTransform::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("SourceType: %s\nType: %s", TransformSourceType.UTF8().c_str(), TransformType.UTF8().c_str()));
+  visitor.SetValue(FString::Sprintf("SourceType: %s\nType: %s", TransformSourceType.UTF8().c_str(), TransformType.UTF8().c_str()));
+}
+
+void UMaterialExpressionTransform::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (TransformSourceTypeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_TransformSourceType, TransformSourceType));
+  if (TransformTypeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_TransformType, TransformType));
 }
 
 bool UMaterialExpressionTransformPosition::RegisterProperty(FPropertyTag* property)
@@ -1620,11 +2158,19 @@ bool UMaterialExpressionTransformPosition::RegisterProperty(FPropertyTag* proper
   return false;
 }
 
-void UMaterialExpressionTransformPosition::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTransformPosition::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
   SET_INPUT(Input);
-  visitor->SetValue(FString::Sprintf("Type: %s", TransformType.UTF8().c_str()));
+  visitor.SetValue(FString::Sprintf("Type: %s", TransformType.UTF8().c_str()));
+}
+
+void UMaterialExpressionTransformPosition::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  output.Parameters.emplace_back(Input);
+  if (TransformTypeProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_TransformType, TransformType));
 }
 
 bool UMaterialExpressionTextureSampleParameter::RegisterProperty(FPropertyTag* property)
@@ -1634,8 +2180,37 @@ bool UMaterialExpressionTextureSampleParameter::RegisterProperty(FPropertyTag* p
   return false;
 }
 
-void UMaterialExpressionTextureSampleParameter::AcceptVisitor(UMaterialExpressionViewVisitor* visitor)
+void UMaterialExpressionTextureSampleParameter::AcceptVisitor(UMaterialExpressionViewVisitor& visitor)
 {
   SUPER_ACCEPT();
-  visitor->SetValue(ParameterName.String());
+  visitor.SetValue(ParameterName.String());
 }
+
+void UMaterialExpressionTextureSampleParameter::ExportExpression(AMaterialExpression& output)
+{
+  Super::ExportExpression(output);
+  if (ParameterNameProperty)
+  output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ParameterName, ParameterName.String()));
+}
+
+void UMaterialExpressionExportVisitor::UpdateBounds(std::vector<UMaterialExpression*> expressions)
+{
+  std::vector<FVector> tmp;
+  for (UMaterialExpression* exp : expressions)
+  {
+    exp->Load();
+    tmp.emplace_back(exp->GetPosX(), exp->GetPosY(), 0);
+  }
+  EditorBounds = FBox(tmp);
+}
+
+AExpressionInput::AExpressionInput(const FExpressionInput& input)
+  : Name(input.Title)
+  , Type("expression")
+  , Expression(input.Expression ? input.Expression->GetExportObject()->ObjectIndex : INDEX_NONE)
+  , Mask(input.Mask)
+  , MaskR(input.MaskR)
+  , MaskG(input.MaskG)
+  , MaskB(input.MaskB)
+  , MaskA(input.MaskA)
+{}
