@@ -16,6 +16,7 @@ public:
   void OnTick() override;
   void OnObjectLoaded() override;
   void ClearToolbar() override;
+  void PopulateToolBar(wxToolBar* toolbar) override;
 
 protected:
   virtual USkeletalMesh* GetMesh() = 0;

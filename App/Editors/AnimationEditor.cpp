@@ -509,6 +509,7 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
   Manager = new osgAnimation::BasicAnimationManager;
 
   TakePicker->Connect(wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(AnimSetEditor::OnTakeChanged), NULL, this);
+  TakePicker->Enable(false);
   MeshButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AnimSetEditor::OnMeshClicked), NULL, this);
   MeshButton->Enable(false);
 }
@@ -530,7 +531,7 @@ void AnimSetEditor::PopulateToolBar(wxToolBar* toolbar)
       tool->Enable(false);
     }
   }
-  GenericEditor::PopulateToolBar(toolbar);
+  GenericAnimEditor::PopulateToolBar(toolbar);
 }
 
 void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
@@ -662,11 +663,19 @@ void AnimSetEditor::OnObjectLoaded()
         TakePicker->Append(sequence->SequenceName.String().WString());
       }
       TakePicker->SetSelection(0);
+      TakePicker->Enable(true);
       TakePicker->Thaw();
     }
   }
   GenericAnimEditor::OnObjectLoaded();
   ShowMissingMesh(!Mesh);
+  if (!Object || Object->GetPackage()->GetFileVersion() < VER_TERA_MODERN)
+  {
+    TakePicker->Enable(false);
+    MeshButton->Enable(false);
+    ErrorLabel->SetLabelText(wxT("32-bit animations not supported yet!"));
+    ErrorLabel->SetToolTip(wxT("Real Editor can't preview and export animations from a 32-bit client yet!"));
+  }
 }
 
 USkeletalMesh* AnimSetEditor::GetMesh()
@@ -862,14 +871,17 @@ void GenericAnimEditor::OnTick()
 
 void GenericAnimEditor::OnObjectLoaded()
 {
-  if (!Mesh)
+  if (Object && Object->GetPackage()->GetFileVersion() > VER_TERA_MODERN)
   {
-    Mesh = GetMesh();
-    CreateRenderModel();
-  }
-  else if (Mesh && ActiveAnimation)
-  {
-    Manager->playAnimation(ActiveAnimation);
+    if (!Mesh)
+    {
+      Mesh = GetMesh();
+      CreateRenderModel();
+    }
+    else if (Mesh && ActiveAnimation)
+    {
+      Manager->playAnimation(ActiveAnimation);
+    }
   }
   GenericEditor::OnObjectLoaded();
 }
@@ -878,6 +890,15 @@ void GenericAnimEditor::ClearToolbar()
 {
   Manager->stopAll();
   GenericEditor::ClearToolbar();
+}
+
+void GenericAnimEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  if (wxToolBarToolBase* item = toolbar->FindById(eID_Export))
+  {
+    item->Enable(Object && Object->GetPackage()->GetFileVersion() == VER_TERA_MODERN);
+  }
 }
 
 void GenericAnimEditor::CreateRenderer(wxPanel* parent)
