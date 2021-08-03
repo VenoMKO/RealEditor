@@ -54,6 +54,34 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 
 #define CRC32_POLY 0x04C11DB7
 
+#define CP_ANSI_HANGUL 949
+
+template <const UINT codepage>
+std::string T_W2A(const wchar_t* str, int32 len)
+{
+  if (len == -1)
+  {
+    len = lstrlenW(str);
+  }
+  int32 size = WideCharToMultiByte(codepage, 0, str, len, nullptr, 0, nullptr, nullptr);
+  std::string result(size, 0);
+  WideCharToMultiByte(codepage, 0, str, len, &result[0], size, nullptr, nullptr);
+  return result;
+}
+
+template <const UINT codepage>
+std::wstring T_A2W(const char* str, int32 len)
+{
+  if (len == -1)
+  {
+    len = (int32)strlen(str);
+  }
+  int32 size = MultiByteToWideChar(codepage, 0, str, len, nullptr, 0);
+  std::wstring result(size, 0);
+  MultiByteToWideChar(codepage, 0, str, len, &result[0], size);
+  return result;
+}
+
 unsigned int CRCLookUpTable[256];
 
 void InitCRCTable()
@@ -155,36 +183,42 @@ bool NeedsElevation()
 
 std::string W2A(const wchar_t* str, int32 len)
 {
-  if (len == -1)
-  {
-    len = lstrlenW(str);
-  }
-  int32 size = WideCharToMultiByte(CP_UTF8, 0, str, len, NULL, 0, NULL, NULL);
-  std::string result(size, 0);
-  WideCharToMultiByte(CP_UTF8, 0, str, len, &result[0], size, NULL, NULL);
-  return result;
+  return T_W2A<CP_UTF8>(str, len);
 }
 
 std::string W2A(const std::wstring& str)
 {
-  return W2A(&str[0], (int32)str.length());
+  return T_W2A<CP_UTF8>(&str[0], (int32)str.length());
 }
 
 std::wstring A2W(const char* str, int32 len)
 {
-  if (len == -1)
-  {
-    len = (int32)strlen(str);
-  }
-  int32 size = MultiByteToWideChar(CP_UTF8, 0, str, len, NULL, 0);
-  std::wstring result(size, 0);
-  MultiByteToWideChar(CP_UTF8, 0, str, len, &result[0], size);
-  return result;
+  return T_A2W<CP_UTF8>(str, len);
 }
 
 std::wstring A2W(const std::string& str)
 {
-  return A2W(&str[0], (int32)str.length());
+  return T_A2W<CP_UTF8>(&str[0], (int32)str.length());
+}
+
+std::wstring K2W(const char* str, int32 len)
+{
+  return T_A2W<CP_ANSI_HANGUL>(str, len);
+}
+
+std::wstring K2W(const std::string& str)
+{
+  return T_A2W<CP_ANSI_HANGUL>(&str[0], (int32)str.length());
+}
+
+std::string W2K(const wchar_t* str, int32 len)
+{
+  return T_W2A<CP_ANSI_HANGUL>(&str[0], len);
+}
+
+std::string W2K(const std::wstring& str)
+{
+  return T_W2A<CP_ANSI_HANGUL>(&str[0], (int32)str.length());
 }
 
 uint64 GetFileTime(const std::wstring& path)

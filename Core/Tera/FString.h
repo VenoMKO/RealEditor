@@ -13,6 +13,7 @@ public:
 
   FString(const FString& str)
     : Data(str.Data)
+    , KoreanCodePage(str.KoreanCodePage)
   {}
 
   FString(const char* str)
@@ -414,11 +415,19 @@ public:
 
   inline std::string String() const
   {
+    if (KoreanCodePage)
+    {
+      return W2A(K2W(Data));
+    }
     return Data;
   }
 
   inline std::wstring WString() const
   {
+    if (KoreanCodePage)
+    {
+      return K2W(Data);
+    }
     return A2W(Data.c_str());
   }
 
@@ -594,6 +603,15 @@ public:
     {
       return {};
     }
+    if (KoreanCodePage)
+    {
+      std::string tmp = W2A(K2W(Data));
+      if (tmp.back() != 0)
+      {
+        return tmp;
+      }
+      return tmp.substr(0, tmp.size() - 1);
+    }
     if (Data.back() != 0)
     {
       return Data;
@@ -624,8 +642,19 @@ public:
     return result;
   }
 
+  inline bool IsKoreanCp() const
+  {
+    return KoreanCodePage;
+  }
+
+  inline void SetIsKoreanCp(bool flag)
+  {
+    KoreanCodePage = flag;
+  }
+
 private:
   std::string Data;
+  bool KoreanCodePage = false;
 };
 
 inline FString operator+(const char* a, const FString& b)

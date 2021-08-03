@@ -24,6 +24,10 @@ FStream& FStream::operator<<(FString& s)
     {
       s.Resize(len);
       SerializeBytes(&s[0], len);
+      if (!s.IsAnsi())
+      {
+        s.SetIsKoreanCp(true);
+      }
     }
     else if (len < 0)
     {
