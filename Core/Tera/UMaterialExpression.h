@@ -160,37 +160,6 @@ struct AMaterialExpression {
   }
 };
 
-class UMaterialExpressionExportVisitor {
-public:
-  virtual ~UMaterialExpressionExportVisitor() = default;
-
-  FString& GetOutput()
-  {
-    return Output;
-  }
-
-  FString GetOutput() const
-  {
-    return Output;
-  }
-
-  int32 ConvertPosX(int32 posX) const
-  {
-    return EditorBounds.Max.X - posX - 250;
-  }
-
-  int32 ConvertPosY(int32 posY) const
-  {
-    return EditorBounds.Max.Y - posY;
-  }
-
-  void UpdateBounds(std::vector<class UMaterialExpression*> expressions);
-
-protected:
-  FString Output;
-  FBox EditorBounds;
-};
-
 class UMaterialExpression : public UObject {
 public:
   DECL_UOBJ(UMaterialExpression, UObject);

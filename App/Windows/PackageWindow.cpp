@@ -812,7 +812,7 @@ void PackageWindow::DebugMarkDirty(wxCommandEvent&)
 void PackageWindow::DebugIteratePackages(wxCommandEvent&)
 {
   // Perform an action(DebugIteratePackage) for every GPK and GMP in the S1Game.
-  // For testing and debuging only.
+  // For testing and debugging only.
   std::vector<FString> contents = FPackage::GetCachedDirCache();
   const FString root = FPackage::GetRootPath();
   DebugIterContext ctx;

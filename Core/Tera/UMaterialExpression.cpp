@@ -2193,17 +2193,6 @@ void UMaterialExpressionTextureSampleParameter::ExportExpression(AMaterialExpres
   output.Parameters.emplace_back(AExpressionInput::MakeExpressionInput(P_ParameterName, ParameterName.String()));
 }
 
-void UMaterialExpressionExportVisitor::UpdateBounds(std::vector<UMaterialExpression*> expressions)
-{
-  std::vector<FVector> tmp;
-  for (UMaterialExpression* exp : expressions)
-  {
-    exp->Load();
-    tmp.emplace_back(exp->GetPosX(), exp->GetPosY(), 0);
-  }
-  EditorBounds = FBox(tmp);
-}
-
 AExpressionInput::AExpressionInput(const FExpressionInput& input)
   : Name(input.Title)
   , Type("expression")
