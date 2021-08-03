@@ -28,7 +28,7 @@
 
 const char* VSEP = "\t";
 
-#define TEST_MAT_EXPS_EXPORT 1
+#define TEST_MAT_EXPS_EXPORT 0
 
 typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
 
