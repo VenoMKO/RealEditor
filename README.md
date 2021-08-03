@@ -1,6 +1,6 @@
 # Real Editor - Tera Online
 ![Header Screenshot](.gitresources/header.jpg)
-> Tera Online 64-bit client package(\*.gpk, \*.gmp, \*.upk, \*.umap, \*.u) editor/viewer. Can be used to create Tera Online 2021 mods.
+> Tera Online 32-bit and 64-bit client package(\*.gpk, \*.gmp, \*.upk, \*.umap, \*.u) editor/viewer. Can be used to create Tera Online 2021 mods.
 &nbsp;
 ## Features
 
@@ -23,6 +23,7 @@
 * [Installation and manual](https://github.com/VenoMKO/RealEditor/wiki/Installation-and-manual)
 * [Costume GPK files[EN]](https://github.com/VenoMKO/RealEditor/wiki/Costumes-and-their-GPK-files-%5BEN%5D)
 * [Accessory GPK files[EN]](https://github.com/VenoMKO/RealEditor/wiki/Accessories-and-their-GPK-files-%5BEN%5D)
+* [How to open 32-bit GPK files](https://github.com/VenoMKO/RealEditor/wiki/How-to-open-32-bit-GPK-files)
 
 ### **Create mods**
 * [Create a texture mod](https://github.com/VenoMKO/RealEditor/wiki/Create-a-composite-mod)
