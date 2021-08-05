@@ -921,8 +921,6 @@ FString ClassFlagsToString(uint32 flags)
   PARSE_CLASS_FLAGS(Parsed);
   PARSE_CLASS_FLAGS(Localized);
   PARSE_CLASS_FLAGS(SafeReplace);
-  PARSE_CLASS_FLAGS(Localized);
-  PARSE_CLASS_FLAGS(SafeReplace);
   PARSE_CLASS_FLAGS(Native);
   PARSE_CLASS_FLAGS(NoExport);
   PARSE_CLASS_FLAGS(Placeable);
