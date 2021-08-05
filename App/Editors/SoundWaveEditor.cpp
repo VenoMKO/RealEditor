@@ -197,7 +197,7 @@ SoundWaveEditor::~SoundWaveEditor()
 
 void SoundWaveEditor::OnObjectLoaded()
 {
-  if (Loading && Object)
+  if (!SoundId && Object)
   {
     SoundId = App::GetSharedAudioDevice()->AddSoundSource(this, (USoundNodeWave*)Object);
   }
