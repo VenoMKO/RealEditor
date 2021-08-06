@@ -1634,11 +1634,23 @@ void FPackage::Load(FStream& s)
     s.SetPosition(Summary.DependsOffset);
   }
   Depends.clear();
-  for (uint32 idx = 0; idx < Summary.ExportsCount; ++idx)
+  if (s.GetFV() > VER_TERA_CLASSIC)
+  {
+    for (uint32 idx = 0; idx < Summary.ExportsCount; ++idx)
+    {
+      std::vector<int>& arr = Depends.emplace_back(std::vector<int>());
+      s << arr;
+      CheckCancel();
+    }
+  }
+  else
   {
     std::vector<int>& arr = Depends.emplace_back(std::vector<int>());
-    s << arr;
-    CheckCancel();
+    arr.resize(Summary.ExportsCount);
+    for (int& item : arr)
+    {
+      s << item;
+    }
   }
 
   if (Summary.ThumbnailTableOffset)
@@ -2579,7 +2591,14 @@ FObjectExport* FPackage::DuplicateExportRecursivly(FObjectExport* source, FObjec
   exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
   exp->ClassIndex = source->ClassIndex;
   Exports.emplace_back(exp);
-  Depends.emplace_back();
+  if (GetFileVersion() > VER_TERA_CLASSIC)
+  {
+    Depends.emplace_back();
+  }
+  else
+  {
+    Depends.front().emplace_back(0);
+  }
   exp->ObjectIndex = (PACKAGE_INDEX)Exports.size();
 
   if (dest)
@@ -3077,7 +3096,14 @@ FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& o
   exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
   exp->ClassIndex = clsImp->ObjectIndex;
   Exports.emplace_back(exp);
-  Depends.emplace_back();
+  if (GetFileVersion() > VER_TERA_CLASSIC)
+  {
+    Depends.emplace_back();
+  }
+  else
+  {
+    Depends.front().emplace_back(0);
+  }
   exp->ObjectIndex = (PACKAGE_INDEX)Exports.size();
 
   if (parent)
@@ -3147,7 +3173,14 @@ void FPackage::RemoveExport(FObjectExport* exp)
     exp->Outer->Inner.erase(std::remove(exp->Outer->Inner.begin(), exp->Outer->Inner.end(), exp), exp->Outer->Inner.end());
   }
   Exports.erase(std::remove(Exports.begin(), Exports.end(), exp), Exports.end());
-  Depends.erase(Depends.begin() + exp->ObjectIndex - 1);
+  if (GetFileVersion() > VER_TERA_CLASSIC)
+  {
+    Depends.erase(Depends.begin() + exp->ObjectIndex - 1);
+  }
+  else
+  {
+    Depends.front().erase(Depends.front().begin() + exp->ObjectIndex - 1);
+  }
   for (FPackageObserver* observer : Observers)
   {
     observer->OnExportRemoved(exp->ObjectIndex);
