@@ -190,6 +190,10 @@ inline double Bilerp(double a, double b, double c, double d, double x, double y)
   return Lerp(Lerp(a, b, x), Lerp(c, d, x), y);
 }
 
+float USRand();
+
+float UFractional(float value);
+
 int32 Trunc(float v);
 
 std::string GetAppVersion();

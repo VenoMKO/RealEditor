@@ -115,6 +115,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new UAeroInnerVolume(exp);
   }
+  else if (c == US1MusicVolume::StaticClassName())
+  {
+    result = new US1MusicVolume(exp);
+  }
   else if (c == UActor::StaticClassName())
   {
     result = new UActor(exp);
@@ -279,6 +283,46 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     result = new USoundNodeWave(exp);
   }
+  else if (c == USoundNodeAmbient::StaticClassName())
+  {
+    result = new USoundNodeAmbient(exp);
+  }
+  else if (c == USoundNodeAttenuation::StaticClassName())
+  {
+    result = new USoundNodeAttenuation(exp);
+  }
+  else if (c == USoundNodeAmbientNonLoop::StaticClassName())
+  {
+    result = new USoundNodeAmbientNonLoop(exp);
+  }
+  else if (c == USoundNodeAmbientNonLoopToggle::StaticClassName())
+  {
+    result = new USoundNodeAmbientNonLoopToggle(exp);
+  }
+  else if (c == USoundNodeConcatenator::StaticClassName())
+  {
+    result = new USoundNodeConcatenator(exp);
+  }
+  else if (c == USoundNodeLooping::StaticClassName())
+  {
+    result = new USoundNodeLooping(exp);
+  }
+  else if (c == USoundNodeMixer::StaticClassName())
+  {
+    result = new USoundNodeMixer(exp);
+  }
+  else if (c == USoundNodeModulator::StaticClassName())
+  {
+    result = new USoundNodeModulator(exp);
+  }
+  else if (c == USoundNodeRandom::StaticClassName())
+  {
+    result = new USoundNodeRandom(exp);
+  }
+  else if (c == USoundCue::StaticClassName())
+  {
+    result = new USoundCue(exp);
+  }
   else if (c == UField::StaticClassName())
   {
     result = new UField(exp);
@@ -434,6 +478,14 @@ UObject* UObject::Object(FObjectExport* exp)
   else if (c == UHeightFogComponent::StaticClassName())
   {
     result = new UHeightFogComponent(exp);
+  }
+  else if (c == UDistributionFloatConstant::StaticClassName())
+  {
+    result = new UDistributionFloatConstant(exp);
+  }
+  else if (c == UDistributionFloatUniform::StaticClassName())
+  {
+    result = new UDistributionFloatUniform(exp);
   }
   else
   {

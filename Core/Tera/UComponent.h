@@ -16,3 +16,37 @@ public:
   DECL_UREF(UClass, TemplateOwnerClass);
   FName TemplateName;
 };
+
+class UDistributionFloat : public UComponent {
+public:
+  DECL_UOBJ(UDistributionFloat, UComponent);
+
+  virtual float GetFloat(float f = 0.f);
+  virtual float GetValue(float f = 0.f, UObject* data = nullptr);
+  virtual void GetInRange(float& minIn, float& maxIn);
+  virtual void GetOutRange(float& minOut, float& maxOut);
+};
+
+class UDistributionFloatConstant : public UDistributionFloat {
+public:
+  DECL_UOBJ(UDistributionFloatConstant, UDistributionFloat);
+  UPROP(float, Constant, 0.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  float GetValue(float f = 0.f, UObject* data = nullptr) override;
+  void GetOutRange(float& minOut, float& maxOut) override;
+};
+
+class UDistributionFloatUniform : public UDistributionFloat {
+public:
+  DECL_UOBJ(UDistributionFloatUniform, UDistributionFloat);
+
+  UPROP(float, Min, 0.f);
+  UPROP(float, Max, 0.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  float GetValue(float f = 0.f, UObject* data = nullptr) override;
+  void GetOutRange(float& minOut, float& maxOut) override;
+};

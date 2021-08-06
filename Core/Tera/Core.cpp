@@ -56,6 +56,9 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 
 #define CP_ANSI_HANGUL 949
 
+int32 GSRandSeed = 0;
+const float	SRandTemp = 1.f;
+
 template <const UINT codepage>
 std::string T_W2A(const wchar_t* str, int32 len)
 {
@@ -1004,6 +1007,19 @@ FString TextureCompressionSettingsToString(uint8 flags)
     break;
   }
   return result;
+}
+
+float USRand()
+{
+  GSRandSeed = (GSRandSeed * 196314165) + 907633515;
+  float Result;
+  *(int32*)&Result = (*(int32*)&SRandTemp & 0xff800000) | (GSRandSeed & 0x007fffff);
+  return UFractional(Result);
+}
+
+float UFractional(float value)
+{
+  return value - Trunc(value);
 }
 
 int32 Trunc(float v)

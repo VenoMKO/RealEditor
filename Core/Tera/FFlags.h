@@ -394,3 +394,13 @@ enum EMaterialLightingModel
   MLM_S1Phong,
   MLM_Anisotropic, // Unavailable on x86
 };
+
+enum SoundDistanceModel
+{
+  ATTENUATION_Linear = 0,
+  ATTENUATION_Logarithmic = 1,
+  ATTENUATION_Inverse = 2,
+  ATTENUATION_LogReverse = 3,
+  ATTENUATION_NaturalSound = 4,
+  ATTENUATION_MAX = 5,
+};

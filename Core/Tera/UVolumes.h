@@ -35,3 +35,13 @@ class US1WaterVolume : public UVolume {
 public:
   DECL_UOBJ(US1WaterVolume, UVolume);
 };
+
+class US1MusicVolume : public UVolume {
+public:
+  DECL_UOBJ(US1MusicVolume, UVolume);
+  UPROP_NOINIT(std::vector<class USoundCue*>, MusicList);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  std::vector<class USoundNodeWave*> GetAllWaves() const;
+};
