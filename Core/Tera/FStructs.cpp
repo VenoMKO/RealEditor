@@ -1,6 +1,7 @@
 #include "FStructs.h"
 #include "FStream.h"
 #include "UObject.h"
+#include "FPackage.h"
 
 #include "Utils/ALog.h"
 
@@ -183,6 +184,10 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
     if (fv != 868)
 #endif
     UThrow("Package version \"%hu/%hu\" is not supported.", fv, lv);
+  }
+  if (FPackage::GetCoreVersion() && fv != FPackage::GetCoreVersion())
+  {
+    return s;
   }
 
   s << sum.HeaderSize;
