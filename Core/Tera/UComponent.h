@@ -21,6 +21,10 @@ class UDistributionFloat : public UComponent {
 public:
   DECL_UOBJ(UDistributionFloat, UComponent);
 
+  virtual bool IsValid() const
+  {
+    return false;
+  }
   virtual float GetFloat(float f = 0.f);
   virtual float GetValue(float f = 0.f, UObject* data = nullptr);
   virtual void GetInRange(float& minIn, float& maxIn);
@@ -34,6 +38,11 @@ public:
 
   bool RegisterProperty(FPropertyTag* property) override;
 
+  bool IsValid() const override
+  {
+    return ConstantProperty;
+  }
+
   float GetValue(float f = 0.f, UObject* data = nullptr) override;
   void GetOutRange(float& minOut, float& maxOut) override;
 };
@@ -46,6 +55,11 @@ public:
   UPROP(float, Max, 0.f);
 
   bool RegisterProperty(FPropertyTag* property) override;
+
+  bool IsValid() const override
+  {
+    return MinProperty && MaxProperty;
+  }
 
   float GetValue(float f = 0.f, UObject* data = nullptr) override;
   void GetOutRange(float& minOut, float& maxOut) override;

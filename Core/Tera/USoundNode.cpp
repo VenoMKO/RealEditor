@@ -4,6 +4,170 @@
 #include "UClass.h"
 #include "Cast.h"
 
+int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& index, bool loop)
+{
+  index++;
+  FString c = node->GetClassNameString();
+  FString childStr;
+  int32 currentIndex = index++;
+  if (c == USoundNodeAmbientNonLoop::StaticClassName())
+  {
+    // This one is a bit confusing.
+    // While the node clearly has a "NonLoop" in its name, it actually does sound looping.
+    // The only difference is that looping is NOT seamless.
+    // RE create a separate loop node to mimic this behavior and
+    // turns off bLooping flag of child wave nodes to prevent seamless looping.
+    USoundNodeAmbientNonLoop* tnode = Cast<USoundNodeAmbientNonLoop>(node);
+    loop = false;
+    cueString += FString::Sprintf("%d\tSoundNodeLoop\n", currentIndex);
+    cueString += FString::Sprintf("\tChildren=((Index=%d))\n", index);
+    if (tnode->DelayMin || tnode->DelayMax)
+    {
+      cueString += FString::Sprintf("%d\tSoundNodeDelay\n", index);
+      index++;
+      cueString += FString::Sprintf("\tDelayMin=%.06f\n\tDelayMax=%.06f\n", tnode->DelayMin, tnode->DelayMax);
+      cueString += FString::Sprintf("\tChildren=((Index=%d))\n", index);
+    }
+    cueString += FString::Sprintf("%d\t%s\n", index, USoundNodeRandom::StaticClassName());
+    cueString += "\tChildren=(";
+    for (int32 sIdx = 0; sIdx < tnode->SoundSlots.size(); ++sIdx)
+    {
+      const FAmbientSoundSlot& childNode = tnode->SoundSlots[sIdx];
+      if (!childNode.Wave)
+      {
+        continue;
+      }
+      int32 childIdx = ExportSoundCueNodeRecursive(childStr, childNode.Wave, index, loop);
+      cueString += FString::Sprintf("(Index=%d,Weight=%.06f)", childIdx, childNode.Weight);
+      if (sIdx + 1 < tnode->SoundSlots.size())
+      {
+        cueString += ",";
+      }
+    }
+    cueString += ")\n";
+  }
+  else if (c == USoundNodeAmbient::StaticClassName())
+  {
+    USoundNodeAmbient* amb = Cast<USoundNodeAmbient>(node);
+    if (USoundNodeWave* wave = amb->Wave)
+    {
+      currentIndex = ExportSoundCueNodeRecursive(childStr, wave, index, loop);
+    }
+  }
+  else if (c == USoundNodeLooping::StaticClassName())
+  {
+    USoundNodeLooping* typedNode = Cast<USoundNodeLooping>(node);
+    if (!typedNode->bLoopIndefinitely)
+    {
+      cueString += "\tbLoopIndefinitely=False\n";
+      cueString += FString::Sprintf("\tLoopCount=%d\n", (typedNode->LoopCountMin + typedNode->LoopCountMin) / 2);
+    }
+    if (node->ChildNodes.size() > 1)
+    {
+      cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeRandom::StaticClassName());
+      cueString += "\tChildren=(";
+      for (int32 cIdx = 0; cIdx < node->ChildNodes.size(); ++cIdx)
+      {
+        int32 childIndex = ExportSoundCueNodeRecursive(childStr, node->ChildNodes[cIdx], index, true);
+        cueString = FString::Sprintf("(Index=%d)", childIndex);
+        if (cIdx + 1 < node->ChildNodes.size())
+        {
+          cueString += ",";
+        }
+      }
+      cueString += ")\n";
+    }
+    else if (node->ChildNodes.size() == 1)
+    {
+      currentIndex = ExportSoundCueNodeRecursive(cueString, node->ChildNodes[0], index, true);
+    }
+  }
+  else if (c == USoundNodeMixer::StaticClassName())
+  {
+    cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeMixer::StaticClassName());
+    cueString += "\tChildren=(";
+    USoundNodeMixer* mixer = Cast<USoundNodeMixer>(node);
+    if (mixer->InputVolume.empty())
+    {
+      mixer->InputVolume.emplace_back(1);
+    }
+    for (int32 cIdx = 0; cIdx < node->ChildNodes.size(); ++cIdx)
+    {
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, mixer->ChildNodes[cIdx], index, loop);
+      cueString += FString::Sprintf("(Index=%d,Volume=%.06f)", childIndex, mixer->InputVolume[cIdx % mixer->InputVolume.size()]);
+      if (cIdx + 1 < node->ChildNodes.size())
+      {
+        cueString += ",";
+      }
+    }
+    cueString += ")\n";
+  }
+  else if (c == USoundNodeModulator::StaticClassName())
+  {
+    USoundNodeModulator* tnode = Cast<USoundNodeModulator>(node);
+    cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeModulator::StaticClassName());
+    cueString += FString::Sprintf("\tPitchMin=%.06f\n", tnode->PitchMin);
+    cueString += FString::Sprintf("\tPitchMax=%.06f\n", tnode->PitchMax);
+    cueString += FString::Sprintf("\tVolumeMin=%.06f\n", tnode->VolumeMin);
+    cueString += FString::Sprintf("\tVolumeMax=%.06f\n", tnode->VolumeMax);
+
+    if (tnode->ChildNodes.size() == 1)
+    {
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[0], index, loop);
+      cueString += FString::Sprintf("\tChildren=((Index=%d))\n", childIndex);
+    }
+    else
+    {
+      cueString += "\tChildren=(";
+      for (int32 cIdx = 0; cIdx < tnode->ChildNodes.size(); ++cIdx)
+      {
+        int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[cIdx], index, loop);
+        cueString += FString::Sprintf("(Index=%d)", childIndex);
+        if (cIdx + 1 < tnode->ChildNodes.size())
+        {
+          cueString += ",";
+        }
+      }
+    }
+  }
+  else if (c == USoundNodeRandom::StaticClassName())
+  {
+    cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeRandom::StaticClassName());
+    USoundNodeRandom* tnode = Cast<USoundNodeRandom>(node);
+    if (tnode->Weights.empty())
+    {
+      tnode->Weights.emplace_back(1);
+    }
+    cueString += "\tChildren=(";
+    for (int32 sIdx = 0; sIdx < tnode->ChildNodes.size(); ++sIdx)
+    {
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[sIdx], index, loop);
+      cueString += FString::Sprintf("(Index=%d,Weight=%.06f)", childIndex, tnode->Weights[sIdx % tnode->Weights.size()]);
+      if (sIdx + 1 < tnode->ChildNodes.size())
+      {
+        cueString += ",";
+      }
+    }
+    cueString += ")\n";
+  }
+  else if (c == USoundNodeWave::StaticClassName())
+  {
+    cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeWave::StaticClassName());
+    cueString += FString::Sprintf("\tLooping=%s\n", loop ? "True" : "False");
+    FString assetPath = FString::Sprintf("S1Game/%s", node->GetLocalDir(true, "/").UTF8().c_str());
+    cueString += FString::Sprintf("\tSound=%s\n", assetPath.UTF8().c_str());
+  }
+  else
+  {
+    DBreak();
+  }
+  if (childStr.Size())
+  {
+    cueString += childStr;
+  }
+  return currentIndex;
+}
+
 bool USoundNodeWave::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();
@@ -38,7 +202,7 @@ void USoundNodeWave::PostLoad()
   }
 }
 
-void USoundNodeWave::GetWaves(std::vector<class USoundNodeWave*>& waves)
+void USoundNodeWave::GetWaves(std::vector<USoundNodeWave*>& waves)
 {
   waves.emplace_back(this);
 }
@@ -61,7 +225,26 @@ void USoundCue::GetWaves(std::vector<USoundNodeWave*>& waves)
   {
     FirstNode->GetWaves(waves);
   }
-  Super::GetWaves(waves);
+}
+
+FString USoundCue::ExportCueToText(bool loop)
+{
+  Load();
+  if (!FirstNode)
+  {
+    return {};
+  }
+
+  FString cueData = GetLocalDir(true, "/") + "\n";
+  cueData += FString::Sprintf("Volume=%.06f\n", VolumeMultiplier);
+  if (PitchMultiplier != 1.f)
+  {
+    cueData += FString::Sprintf("Pitch=%.06f\n", PitchMultiplier);
+  }
+  cueData += "Nodes:\n";
+  int32 index = 0;
+  ExportSoundCueNodeRecursive(cueData, FirstNode, index, loop);
+  return cueData;
 }
 
 bool USoundNode::RegisterProperty(FPropertyTag* property)
@@ -124,6 +307,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -152,6 +339,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -180,6 +371,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -208,6 +403,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -236,6 +435,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -265,6 +468,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -294,6 +501,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -323,6 +534,10 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -367,6 +582,72 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
       }
     }
   }
+  if (PROP_IS(property, VolumeModulation))
+  {
+    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    {
+      for (FPropertyValue* v : property->GetArray())
+      {
+        if (v->Field && v->Field->GetObjectName() == "Distribution")
+        {
+          FPropertyTag* tmp = v->GetPropertyTagPtr();
+          if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
+          {
+            df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
+            float min = 0.f;
+            float max = 0.f;
+            df->GetOutRange(min, max);
+            VolumeMin = min;
+            VolumeMax = max;
+            VolumeModulationProperty = property;
+            return true;
+          }
+        }
+      }
+    }
+    else
+    {
+      DBreak();
+    }
+    return false;
+  }
+  if (PROP_IS(property, PitchModulation))
+  {
+    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    {
+      for (FPropertyValue* v : property->GetArray())
+      {
+        if (v->Field && v->Field->GetObjectName() == "Distribution")
+        {
+          FPropertyTag* tmp = v->GetPropertyTagPtr();
+          if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
+          {
+            df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
+            float min = 0.f;
+            float max = 0.f;
+            df->GetOutRange(min, max);
+            PitchMin = min;
+            PitchMax = max;
+            PitchModulationProperty = property;
+            return true;
+          }
+        }
+      }
+    }
+    else
+    {
+      DBreak();
+    }
+    return false;
+  }
   return false;
 }
 
@@ -379,7 +660,7 @@ void USoundNodeAmbient::PostLoad()
   Super::PostLoad();
 }
 
-void USoundNodeAmbient::GetWaves(std::vector<class USoundNodeWave*>& waves)
+void USoundNodeAmbient::GetWaves(std::vector<USoundNodeWave*>& waves)
 {
   if (Wave)
   {
@@ -393,6 +674,16 @@ void USoundNodeAmbient::GetWaves(std::vector<class USoundNodeWave*>& waves)
     }
   }
   Super::GetWaves(waves);
+}
+
+float USoundNodeAmbient::GetRadiusMin() const
+{
+  return GetPackage()->GetFileVersion() == VER_TERA_CLASSIC ? MinRadius : RadiusMin;
+}
+
+float USoundNodeAmbient::GetRadiusMax() const
+{
+  return GetPackage()->GetFileVersion() == VER_TERA_CLASSIC ? MaxRadius : RadiusMax;
 }
 
 bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
@@ -424,6 +715,10 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -452,6 +747,10 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -480,6 +779,10 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -508,6 +811,10 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -539,6 +846,8 @@ void USoundNodeAttenuation::PostLoad()
 bool USoundNodeAmbientNonLoop::RegisterProperty(FPropertyTag* property)
 {
   SUPER_REGISTER_PROP();
+  REGISTER_FLOAT_PROP(DelayMin);
+  REGISTER_FLOAT_PROP(DelayMax);
   if (PROP_IS(property, DelayTime))
   {
     for (FPropertyValue* v : property->GetArray())
@@ -549,10 +858,15 @@ bool USoundNodeAmbientNonLoop::RegisterProperty(FPropertyTag* property)
         if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
         {
           df->Load();
+          if (!df->IsValid())
+          {
+            return true;
+          }
           float min = 0.f;
           float max = 0.f;
           df->GetOutRange(min, max);
-          DelayTime = (min + max) / 2.f;
+          DelayMin = min;
+          DelayMax = max;
           DelayTimeProperty = property;
           return true;
         }
@@ -594,6 +908,10 @@ bool USoundNodeLooping::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -642,6 +960,10 @@ bool USoundNodeModulator::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -671,6 +993,10 @@ bool USoundNodeModulator::RegisterProperty(FPropertyTag* property)
           if (UDistributionFloat* df = Cast<UDistributionFloat>(tmp->Value->GetObjectValuePtr(false)))
           {
             df->Load();
+            if (!df->IsValid())
+            {
+              return true;
+            }
             float min = 0.f;
             float max = 0.f;
             df->GetOutRange(min, max);
@@ -686,8 +1012,8 @@ bool USoundNodeModulator::RegisterProperty(FPropertyTag* property)
     {
       DBreak();
     }
-    return false;
   }
+  return false;
 }
 
 bool USoundNodeRandom::RegisterProperty(FPropertyTag* property)
@@ -703,5 +1029,35 @@ bool USoundNodeRandom::RegisterProperty(FPropertyTag* property)
     }
     return true;
   }
+  return false;
+}
+
+bool UAmbientSound::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(bAutoPlay);
+  REGISTER_TOBJ_PROP(AudioComponent, UAudioComponent*);
+  return false;
+}
+
+bool UAmbientSoundSimple::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(AmbientProperties, USoundNodeAmbient*);
+  REGISTER_TOBJ_PROP(SoundCueInstance, USoundCue*);
+  REGISTER_TOBJ_PROP(SoundNodeInstance, USoundNodeAmbient*);
+  return false;
+}
+
+bool UAmbientSoundSimpleToggleable::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_BOOL_PROP(bCurrentlyPlaying);
+  REGISTER_BOOL_PROP(bFadeOnToggle);
+  REGISTER_BOOL_PROP(bIgnoreAutoPlay);
+  REGISTER_FLOAT_PROP(FadeInDuration);
+  REGISTER_FLOAT_PROP(FadeInVolumeLevel);
+  REGISTER_FLOAT_PROP(FadeOutDuration);
+  REGISTER_FLOAT_PROP(FadeOutVolumeLevel);
   return false;
 }

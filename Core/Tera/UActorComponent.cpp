@@ -91,3 +91,10 @@ void UBrushComponent::PostLoad()
     }
   }
 }
+
+bool UAudioComponent::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  REGISTER_TOBJ_PROP(SoundCue, class USoundCue*);
+  return false;
+}

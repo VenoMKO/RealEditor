@@ -436,6 +436,9 @@ public:
   // Serialize the object from a stream. Should not be called outside of the Load
   virtual void Serialize(FStream& s);
 
+  // Create a filepath to the object with a given separator
+  FString GetLocalDir(bool fileName = false, const char* sep = "\\");
+
 private:
   virtual void SerializeScriptProperties(FStream& s);
 

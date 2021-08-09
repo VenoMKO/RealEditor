@@ -249,14 +249,9 @@ void SerializeVersion(FStream& s, FAppConfig& c)
 
 void UpdateConfigValues(FAppConfig& c)
 {
-  if (c.VerMajor < 2 || (c.VerMajor == 2 && c.VerMinor < 20))
+  if (c.VerMajor < 2 || (c.VerMajor == 2 && c.VerMinor < 21))
   {
-    if (c.MapExportConfig.ActorClasses && c.MapExportConfig.ActorClasses != (uint32)FMapExportConfig::ActorClass::All)
-    {
-      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::BlockVolumes;
-      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::AeroVolumes;
-      c.MapExportConfig.ActorClasses &= (uint32)FMapExportConfig::ActorClass::WaterVolumes;
-    }
+    c.MapExportConfig.ActorClasses = (uint32)FMapExportConfig::ActorClass::All;
   }
 }
 

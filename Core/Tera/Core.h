@@ -34,6 +34,8 @@ static const unsigned int BUILD_NUMBER = (
 #define CACHE_S1GAME_CONTENTS 0
 // Currently gives no benefits. May be used in the future. 
 #define ADVANCED_TERRAIN_SERIALIZATION 0
+// Export sound cues from ULevel
+#define EXPERIMENTAL_SOUND_LEVEL_EXPORT 1
 
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,

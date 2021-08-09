@@ -69,3 +69,12 @@ public:
 
   void PostLoad() override;
 };
+
+class UAudioComponent : public UActorComponent {
+public:
+  DECL_UOBJ(UAudioComponent, UActorComponent);
+
+  UPROP(class USoundCue*, SoundCue, nullptr);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+};

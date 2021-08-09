@@ -416,6 +416,26 @@ void UObject::Serialize(FStream& s)
   }
 }
 
+FString UObject::GetLocalDir(bool fileName, const char* sep)
+{
+  std::string path;
+  FObjectExport* outer = GetExportObject()->Outer;
+  while (outer)
+  {
+    path = (outer->GetObjectNameString().UTF8() + sep + path);
+    outer = outer->Outer;
+  }
+  if ((GetExportFlags() & EF_ForcedExport) == 0)
+  {
+    path = GetPackage()->GetPackageName().UTF8() + sep + path;
+  }
+  if (fileName)
+  {
+    path += GetObjectNameString().UTF8();
+  }
+  return path;
+}
+
 void UObject::Load()
 {
   if (!GetPackage()->GetStream().GetLoadSerializedObjects() || Loaded || Loading)

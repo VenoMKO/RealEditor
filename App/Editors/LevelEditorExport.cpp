@@ -11,6 +11,7 @@
 #include <Tera/UStaticMesh.h>
 #include <Tera/USkeletalMesh.h>
 #include <Tera/USpeedTree.h>
+#include <Tera/USoundNode.h>
 #include <Tera/UMaterial.h>
 #include <Tera/UMaterialExpression.h>
 #include <Tera/UTexture.h>
@@ -32,8 +33,6 @@ const char* VSEP = "\t";
 
 typedef std::function<void(T3DFile&, LevelExportContext&, UActorComponent*)> ComponentDataFunc;
 
-std::string GetLocalDir(UObject* obj, const char* sep = "\\");
-std::string GetLocalDirAndName(UObject* obj, const char* sep = "\\");
 void AddCommonPrimitiveComponentParameters(T3DFile& f, LevelExportContext& ctx, UPrimitiveComponent* component);
 std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportContext& ctx, const std::vector<UObject*>& materials);
 
@@ -501,7 +500,7 @@ void ExportMaterialExpressions(UMaterial* material, FString& output)
         if (param.ObjectValue)
         {
           output += "Game/S1Game/";
-          output += GetLocalDirAndName(param.ObjectValue, "/");
+          output += param.ObjectValue->GetLocalDir(true, "/");
           if (exp.GetParameter("RE_NormalAlpha"))
           {
             output += "_Alpha";
@@ -569,7 +568,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     std::string key = "Game/";
     key += ctx.DataDirName;
-    key += "/" + GetLocalDirAndName(component->StaticMesh, "/");
+    key += "/" + component->StaticMesh->GetLocalDir(true, "/").UTF8();
 
     if (!ctx.MeshDefaultMaterials.count(key))
     {
@@ -582,7 +581,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
         }
         std::string materialPath = "Game/";
         materialPath += ctx.DataDirName;
-        materialPath += "/" + GetLocalDirAndName(material, "/");
+        materialPath += "/" + material->GetLocalDir(true, "/").UTF8();
         ctx.MeshDefaultMaterials[key].push_back(materialPath);
       }
     }
@@ -594,11 +593,11 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     FString item = "None";
     if (materials[idx])
     {
-      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, materials[idx]->GetLocalDir(false, "/").UTF8().c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
     }
     f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
   }
-  std::filesystem::path path = ctx.GetStaticMeshDir() / GetLocalDir(component->StaticMesh);
+  std::filesystem::path path = ctx.GetStaticMeshDir() / component->StaticMesh->GetLocalDir().UTF8();
   std::error_code err;
   if (!std::filesystem::exists(path, err))
   {
@@ -624,14 +623,14 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
       }
       if (!utils.ExportStaticMesh(component->StaticMesh, fbxCtx))
       {
-        ctx.Errors.emplace_back("Error: Failed to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
+        ctx.Errors.emplace_back("Error: Failed to save static mesh " + component->StaticMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
       }
     }
-    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->StaticMesh, "/") + fbxName).c_str());
+    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + component->StaticMesh->GetLocalDir(false, "/").UTF8() + fbxName).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save static mesh " + GetLocalDir(component->StaticMesh) + component->StaticMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save static mesh " + component->StaticMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 
@@ -639,7 +638,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
   {
     if (!component->StaticMesh->UseSimpleBoxCollision || !component->StaticMesh->UseSimpleLineCollision)
     {
-      const std::string item = GetLocalDir(component->StaticMesh) + fbxName;
+      const std::string item = component->StaticMesh->GetLocalDir().UTF8() + fbxName;
       if (std::find(ctx.ComplexCollisions.begin(), ctx.ComplexCollisions.end(), item) == ctx.ComplexCollisions.end())
       {
         ctx.ComplexCollisions.push_back(item);
@@ -674,7 +673,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
   {
     std::string key = "Game/";
     key += ctx.DataDirName;
-    key += "/" + GetLocalDirAndName(component->SkeletalMesh, "/");
+    key += "/" + component->SkeletalMesh->GetLocalDir(true, "/").UTF8();
 
     if (!ctx.MeshDefaultMaterials.count(key))
     {
@@ -687,7 +686,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
         }
         std::string materialPath = "Game/";
         materialPath += ctx.DataDirName;
-        materialPath += "/" + GetLocalDirAndName(material, "/");
+        materialPath += "/" + material->GetLocalDir(true, "/").UTF8();
         ctx.MeshDefaultMaterials[key].push_back(materialPath);
       }
     }
@@ -698,11 +697,11 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     FString item = "None";
     if (materials[idx])
     {
-      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, GetLocalDir(materials[idx], "/").c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
+      item = FString::Sprintf("%s'\"/Game/%s/%s%s\"'", materials[idx]->GetClassNameString().UTF8().c_str(), ctx.DataDirName, materials[idx]->GetLocalDir(false, "/").UTF8().c_str(), materials[idx]->GetObjectNameString().UTF8().c_str());
     }
     f.AddCustom(FString::Sprintf("OverrideMaterials(%d)", idx).UTF8().c_str(), item.UTF8().c_str());
   }
-  std::filesystem::path path = ctx.GetSkeletalMeshDir() / GetLocalDir(component->SkeletalMesh);
+  std::filesystem::path path = ctx.GetSkeletalMeshDir() / component->SkeletalMesh->GetLocalDir().UTF8();
   std::error_code err;
   if (!std::filesystem::exists(path, err))
   {
@@ -727,14 +726,14 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
       }
       if (!utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
       {
-        ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
+        ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + component->SkeletalMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
       }
     }
-    f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SkeletalMesh, "/") + fbxName).c_str());
+    f.AddSkeletalMesh((std::string(ctx.DataDirName) + "/" + component->SkeletalMesh->GetLocalDir(false, "/").UTF8() + fbxName).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save skeletal mesh " + GetLocalDir(component->SkeletalMesh) + component->SkeletalMesh->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save skeletal mesh " + component->SkeletalMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
@@ -750,16 +749,16 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   {
     std::string key = "Game/";
     key += ctx.DataDirName;
-    key += "/" + GetLocalDirAndName(component->SpeedTree, "/");
+    key += "/" + component->SpeedTree->GetLocalDir(true, "/").UTF8();
     needsDefaults = !ctx.MeshDefaultMaterials.count(key);
   }
   auto AddDefault = [&](UObject* material, bool isLeaf = false) {
     std::string key = "Game/";
     key += ctx.DataDirName;
-    key += "/" + GetLocalDirAndName(component->SpeedTree, "/");
+    key += "/" + component->SpeedTree->GetLocalDir(true, "/").UTF8();
     std::string materialPath = "Game/";
     materialPath += ctx.DataDirName;
-    materialPath += "/" + GetLocalDirAndName(material, "/");
+    materialPath += "/" + material->GetLocalDir(true, "/").UTF8();
     if (isLeaf)
     {
       materialPath += "_leafs";
@@ -824,7 +823,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   {
     std::string key = "Game/";
     key += ctx.DataDirName;
-    key += "/" + GetLocalDirAndName(component->SpeedTree, "/");
+    key += "/" + component->SpeedTree->GetLocalDir(true, "/").UTF8();
 
     if (!ctx.MeshDefaultMaterials.count(key))
     {
@@ -837,7 +836,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
         }
         std::string materialPath = "Game/";
         materialPath += ctx.DataDirName;
-        materialPath += "/" + GetLocalDirAndName(p.second, "/");
+        materialPath += "/" + p.second->GetLocalDir(true, "/").UTF8();
         ctx.MeshDefaultMaterials[key].push_back(materialPath);
       }
     }
@@ -903,7 +902,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
         std::ofstream s(path, std::ios::out);
         for (const auto& p : usedMaterials)
         {
-          s << p.first << ": " << GetLocalDirAndName(p.second) << '\n';
+          s << p.first << ": " << p.second->GetLocalDir(true).UTF8() << '\n';
         }
       }
     }
@@ -912,16 +911,16 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
       std::string gameDir = std::string("Game/") + ctx.DataDirName + '/';
       if (p.first == "leafs")
       {
-        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)][p.first] = p.second ? (gameDir + GetLocalDirAndName(p.second, "/") + "_leafs") : "None";
-        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)]["leafsmesh"] = p.second ? (gameDir + GetLocalDirAndName(p.second, "/")) : "None";
+        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)][p.first] = p.second ? (gameDir + p.second->GetLocalDir(true, "/").UTF8() + "_leafs") : "None";
+        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)]["leafsmesh"] = p.second ? (gameDir + p.second->GetLocalDir(true, "/").UTF8()) : "None";
       }
       else
       {
-        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)][p.first] = p.second ? (gameDir + GetLocalDirAndName(p.second, "/")) : "None";
+        ctx.SpeedTreeMaterialOverrides[GetActorName(actor)][p.first] = p.second ? (gameDir + p.second->GetLocalDir(true, "/").UTF8()) : "None";
       }
     }
   }
-  std::filesystem::path path = ctx.GetSpeedTreeDir() / GetLocalDir(component->SpeedTree);
+  std::filesystem::path path = ctx.GetSpeedTreeDir() / component->SpeedTree->GetLocalDir().UTF8();
   std::error_code err;
   if (!std::filesystem::exists(path, err))
   {
@@ -940,15 +939,15 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
       s.write((const char*)sptData, sptDataSize);
       free(sptData);
     }
-    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + GetLocalDir(component->SpeedTree, "/") + component->SpeedTree->GetObjectNameString().UTF8()).c_str());
+    f.AddStaticMesh((std::string(ctx.DataDirName) + "/" + component->SpeedTree->GetLocalDir(true, "/").UTF8()).c_str());
   }
   else
   {
-    ctx.Errors.emplace_back("Error: Failed to create a folder to save SpeedTree " + GetLocalDir(component->SpeedTree) + component->SpeedTree->GetObjectNameString().UTF8() + " of " + GetActorName(component->GetOuter()));
+    ctx.Errors.emplace_back("Error: Failed to create a folder to save SpeedTree " + component->SpeedTree->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
-
+#pragma mark ExportPointLightComponentData
 ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UPointLightComponent* component = Cast<UPointLightComponent>(acomp);
   if (!component)
@@ -977,7 +976,7 @@ ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportCont
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-
+#pragma mark ExportSpotLightComponentData
 ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   USpotLightComponent* component = Cast<USpotLightComponent>(acomp);
   if (!component)
@@ -1008,7 +1007,7 @@ ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportConte
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-
+#pragma mark ExportDirectionalLightComponentData
 ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(acomp);
   if (!component)
@@ -1034,7 +1033,7 @@ ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExpo
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-
+#pragma mark ExportSkyLightComponentData
 ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   USkyLightComponent* component = Cast<USkyLightComponent>(acomp);
   if (!component)
@@ -1065,7 +1064,7 @@ ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContex
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-
+#pragma mark ExportHeightFogComponentData
 ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UHeightFogComponent* component = Cast<UHeightFogComponent>(acomp);
   if (!component)
@@ -1081,7 +1080,7 @@ ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportConte
   f.AddFloat("FogCutoffDistance", component->ExtinctionDistance);
   f.AddLinearColor("FogInscatteringColor", component->LightColor);
 };
-
+#pragma mark ExportVolumeComponentData
 ComponentDataFunc ExportVolumeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UBrushComponent* component = Cast<UBrushComponent>(acomp);
   if (!component)
@@ -1151,6 +1150,70 @@ ComponentDataFunc ExportVolumeComponentData = [](T3DFile& f, LevelExportContext&
     f.AddCustom("Brush", FString::Sprintf("Model'\"%s\"'", component->Brush->GetObjectNameString().C_str()).UTF8().c_str());
     f.AddCustom("BrushBodySetup", "BodySetup'\"BodySetup_0\"'");
   }
+};
+#pragma mark ExportAudioComponentData
+ComponentDataFunc ExportAudioComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
+  UAmbientSound* sound = acomp->GetTypedOuter<UAmbientSound>();
+  if (!sound)
+  {
+    return;
+  }
+  USoundCue* cue = sound->AudioComponent->SoundCue;
+  if (!cue)
+  {
+    return;
+  }
+
+  std::vector<USoundNodeWave*> waves;
+  cue->GetWaves(waves);
+  ctx.Waves.insert(ctx.Waves.end(), waves.begin(), waves.end());
+
+  std::string asset = "Game/" + std::string(ctx.DataDirName) + '/';
+  FString cueData = asset + cue->ExportCueToText(!Cast<UAmbientSoundNonLoop>(sound));
+  asset += cue->GetLocalDir(true, "/").UTF8();
+  ctx.CuesMap[cue] = cueData.UTF8();
+  f.AddCustom("Sound", FString::Sprintf("SoundCue'\"/%s\"'", asset.c_str()).UTF8().c_str());
+
+  float radiusMin = 100.f;
+  float radiusMax = 1000.f;
+  bool spatialize = true;
+  FString distanceModel = "Linear";
+  f.AddBool("bOverrideAttenuation", true);
+  if (UAmbientSoundSimple* asound = Cast<UAmbientSoundSimple>(sound))
+  {
+    if (asound->AmbientProperties)
+    {
+      asound->AmbientProperties->Load();
+      f.AddFloat("VolumeModulationMin", asound->AmbientProperties->GetVolumeMin());
+      f.AddFloat("VolumeModulationMax", asound->AmbientProperties->GetVolumeMax());
+      f.AddFloat("PitchModulationMin", asound->AmbientProperties->GetPitchMin());
+      f.AddFloat("PitchModulationMax", asound->AmbientProperties->GetPitchMax());
+      radiusMin = asound->AmbientProperties->GetRadiusMin() * ctx.Config.GlobalScale;
+      radiusMax = asound->AmbientProperties->GetRadiusMax() * ctx.Config.GlobalScale;
+      spatialize = asound->AmbientProperties->bSpatialize;
+      switch (asound->AmbientProperties->DistanceModel)
+      {
+      case ATTENUATION_Logarithmic:
+        distanceModel = "Logarithmic";
+        break;
+      case ATTENUATION_Inverse:
+        distanceModel = "Inverse";
+        break;
+      case ATTENUATION_LogReverse:
+        distanceModel = "LogReverse";
+        break;
+      case ATTENUATION_NaturalSound:
+        distanceModel = "NaturalSound";
+        break;
+      }
+    }
+  }
+  else
+  {
+    LogE("Can't export unknown sound class: %s", sound->GetClassNameString().UTF8().c_str());
+    DBreak();
+  }
+  f.AddCustom("AttenuationOverrides", FString::Sprintf("(bSpatialize=%s,DistanceAlgorithm=%s,AttenuationShapeExtents=(X=%.06f,Y=0.000000,Z=0.000000),FalloffDistance=%.06f)", spatialize ? "True" : "False", distanceModel.UTF8().c_str(), radiusMin, radiusMax).UTF8().c_str());
 };
 
 struct T3DComponent {
@@ -1368,6 +1431,7 @@ struct T3DActor {
     FString Type;
   };
   std::vector<AdditionalForward> AdditionalForwards;
+  std::vector<FString> AdditionalLayers;
 
   bool ConfigureStaticMeshActor(UStaticMeshActor* actor)
   {
@@ -1972,6 +2036,23 @@ struct T3DActor {
 
     return Components.size() > 1;
   }
+
+  bool ConfigureSoundActor(UAmbientSound* actor)
+  {
+    if (!actor)
+    {
+      return false;
+    }
+    AdditionalLayers.emplace_back("RE_Sounds");
+    Name = actor->GetObjectNameString();
+    Class = "AmbientSound";
+    T3DComponent& component = Components.emplace_back(actor->AudioComponent, ExportAudioComponentData);
+    component.Name = "AudioComponent0";
+    component.Class = "AudioComponent";
+    RootComponent = &component;
+    RootComponent->TakeActorTransform(actor);
+    return true;
+  }
 };
 
 void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
@@ -2066,6 +2147,62 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
         }
       }
     }
+    if (ctx.Waves.size())
+    {
+      SendEvent(&progress, UPDATE_PROGRESS_DESC, wxString("Saving waves..."));
+      std::vector<USoundNodeWave*> waves;
+      for (UObject* obj : ctx.Waves)
+      {
+        if (USoundNodeWave* wave = Cast<USoundNodeWave>(obj))
+        {
+          wave->Load();
+          if (std::find(waves.begin(), waves.end(), wave) == waves.end())
+          {
+            waves.emplace_back(wave);
+          }
+        }
+      }
+      maxProgress = waves.size();
+      SendEvent(&progress, UPDATE_MAX_PROGRESS, maxProgress);
+      int32 curProgress = 0;
+      for (USoundNodeWave* wave : waves)
+      {
+        SendEvent(&progress, UPDATE_PROGRESS, wxString("Exporting: ") + wave->GetObjectNameString().UTF8(), curProgress);
+        if (wave->GetResourceSize())
+        {
+          auto expPath = ctx.GetWaveDir();
+          expPath /= wave->GetLocalDir().UTF8();
+          std::error_code err;
+          std::filesystem::create_directories(expPath, err);
+          expPath += wave->GetObjectNameString() + ".ogg";
+          if (!std::filesystem::exists(expPath) || ctx.Config.OverrideData)
+          {
+            std::ofstream s(expPath, std::ios::binary);
+            s.write((const char*)wave->GetResourceData(), wave->GetResourceSize());
+          }
+        }
+      }
+    }
+#if EXPERIMENTAL_SOUND_LEVEL_EXPORT
+    {
+      FString cuesList;
+      std::error_code ec;
+      for (const auto& p : ctx.CuesMap)
+      {
+        std::filesystem::path dirp = ctx.GetCueDir() / p.first->GetLocalDir().UTF8();
+        std::filesystem::create_directories(dirp, ec);
+        dirp /= (p.first->GetObjectNameString() + ".cue").UTF8();
+        cuesList += dirp.wstring();
+        cuesList += "\n";
+        std::ofstream ofs(dirp);
+        ofs << p.second;
+      }
+      {
+        std::ofstream ofs(ctx.GetCuesInfoPath());
+        ofs << cuesList.UTF8();
+      }
+    }
+#endif
     if (ctx.Config.Materials || ctx.Config.Textures)
     {
       if (!ExportMaterialsAndTexture(ctx, &progress))
@@ -2279,10 +2416,10 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           std::string e = obj->GetClassNameString().UTF8() + ' ';
           e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(mat, "/") + ' ';
+          e += '/' + mat->GetLocalDir(true, "/").UTF8() + ' ';
           e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(mi, "/") + '\n';
+          e += '/' + mi->GetLocalDir(true, "/").UTF8() + '\n';
           if (std::find(elements.begin(), elements.end(), e) == elements.end())
           {
             elements.push_back(e);
@@ -2299,7 +2436,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       {
         std::string e = "Material Game/";
         e += ctx.DataDirName;
-        e += '/' + GetLocalDirAndName(mat, "/") + '\n';
+        e += '/' + mat->GetLocalDir(true, "/").UTF8() + '\n';
         if (std::find(elements.begin(), elements.end(), e) == elements.end())
         {
           elements.push_back(e);
@@ -2314,7 +2451,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           FString out;
           ExportMaterialExpressions(mat, out);
           auto expPath = ctx.GetMaterialExpressionsPath();
-          expPath /= GetLocalDir(mat, "\\");
+          expPath /= mat->GetLocalDir().UTF8();
           std::error_code err;
           std::filesystem::create_directories(expPath, err);
           expPath += mat->GetObjectNameString();
@@ -2334,7 +2471,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
       {
         std::string e = "Material Game/";
         e += ctx.DataDirName;
-        e += '/' + GetLocalDirAndName(mat, "/") + "_leafs" + '\n';
+        e += '/' + mat->GetLocalDir(true, "/").UTF8() + "_leafs" + '\n';
         if (std::find(elements.begin(), elements.end(), e) == elements.end())
         {
           elements.push_back(e);
@@ -2354,10 +2491,10 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           std::string e = obj->GetClassNameString().UTF8() + ' ';
           e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(parent, "/") + "_leafs" + ' ';
+          e += '/' + parent->GetLocalDir(true, "/").UTF8() + "_leafs" + ' ';
           e += "Game/";
           e += ctx.DataDirName;
-          e += '/' + GetLocalDirAndName(mi, "/") + "_leafs" + '\n';
+          e += '/' + mi->GetLocalDir(true, "/").UTF8() + "_leafs" + '\n';
           if (std::find(elements.begin(), elements.end(), e) == elements.end())
           {
             elements.push_back(e);
@@ -2410,7 +2547,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           s << VSEP << p.first.UTF8() << VSEP;
           if (p.second.Texture)
           {
-            s << "Game/" << ctx.DataDirName << '/' << GetLocalDirAndName(p.second.Texture, "/") << '\n';
+            s << "Game/" << ctx.DataDirName << '/' << p.second.Texture->GetLocalDir(true, "/").UTF8() << '\n';
           }
           else
           {
@@ -2483,7 +2620,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           {
             continue;
           }
-          std::string tpath = GetLocalDirAndName(p.second.Texture);
+          std::string tpath = p.second.Texture->GetLocalDir(true).UTF8();
           if (!textures.count(tpath))
           {
             textures[tpath] = p.second.Texture;
@@ -2496,7 +2633,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
           {
             continue;
           }
-          std::string tpath = GetLocalDirAndName(tex);
+          std::string tpath = tex->GetLocalDir(true).UTF8();
           if (!textures.count(tpath))
           {
             textures[tpath] = tex;
@@ -2542,13 +2679,13 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         result += "Game/";
         result += ctx.DataDirName;
         result += '/';
-        result += GetLocalDirAndName(texture, "/");
+        result += texture->GetLocalDir(true, "/").UTF8();
         if (alpha)
         {
           result += "_Alpha";
         }
         result += VSEP;
-        result += W2A((ctx.GetTextureDir() / GetLocalDir(texture, "\\") / texture->GetObjectNameString().UTF8()).replace_extension().wstring());
+        result += W2A((ctx.GetTextureDir() / texture->GetLocalDir().UTF8() / texture->GetObjectNameString().UTF8()).replace_extension().wstring());
         if (alpha)
         {
           result += "_Alpha";
@@ -2574,7 +2711,7 @@ bool LevelEditor::ExportMaterialsAndTexture(LevelExportContext& ctx, ProgressWin
         SendEvent(progress, UPDATE_PROGRESS_DESC, wxString("Exporting textures: ") + p.second->GetObjectNameString().UTF8());
 
         std::error_code err;
-        std::filesystem::path path = ctx.GetTextureDir() / GetLocalDir(p.second);
+        std::filesystem::path path = ctx.GetTextureDir() / p.second->GetLocalDir().UTF8();
         if (!std::filesystem::exists(path, err))
         {
           std::filesystem::create_directories(path, err);
@@ -2860,7 +2997,7 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
             s << std::to_string(idx + 1) << ". ";
             if (UObject* mat = materialsToSave[idx])
             {
-              s << GetLocalDirAndName(mat);
+              s << mat->GetLocalDir(true).UTF8();
             }
             else
             {
@@ -3057,6 +3194,46 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
       return;
     }
   }
+  else if (US1MusicVolume* actor = Cast<US1MusicVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Sounds))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureVolumeActor(actor, "TriggerVolume", ctx))
+    {
+      return;
+    }
+    exportItem.AdditionalLayers.emplace_back("RE_Sounds");
+    std::vector<USoundNodeWave*> waves = actor->GetAllWaves();
+    ctx.Waves.insert(ctx.Waves.end(), waves.begin(), waves.end());
+#if EXPERIMENTAL_SOUND_LEVEL_EXPORT
+    for (USoundCue* cue : actor->MusicList)
+    {
+      if (!cue)
+      {
+        continue;
+      }
+      std::string asset = "Game/";
+      asset += ctx.DataDirName;
+      asset += '/';
+      FString cueData = cue->ExportCueToText();
+      asset += cueData.UTF8();
+      ctx.CuesMap[cue] = asset;
+    }
+#endif
+  }
+  else if (UAmbientSound* actor = Cast<UAmbientSound>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Sounds))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureSoundActor(actor))
+    {
+      return;
+    }
+  }
   else
   {
     return;
@@ -3145,6 +3322,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       layers.push_back("RE_Hidden");
     }
+    layers.insert(layers.end(), exportItem.AdditionalLayers.begin(), exportItem.AdditionalLayers.end());
     for (int32 idx = 0; idx < layers.size(); ++idx)
     {
       f.AddString(FString::Sprintf("Layers(%d)", idx).UTF8().c_str(), W2A(layers[idx].WString()).c_str());
@@ -3420,13 +3598,13 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
             continue;
           }
 
-          s << padding << padding << GetLocalDir(tm->Material) + tm->Material->GetObjectNameString().UTF8() << ":\n";
+          s << padding << padding << tm->Material->GetLocalDir().UTF8() + tm->Material->GetObjectNameString().UTF8() << ":\n";
           auto textures = tm->Material->GetTextureParameters();
           for (const auto& p : textures)
           {
             if (p.second.Texture)
             {
-              s << padding << padding << padding << p.first.UTF8() << ": " << GetLocalDir(p.second.Texture) << p.second.Texture->GetObjectNameString().UTF8() << '\n';
+              s << padding << padding << padding << p.first.UTF8() << ": " << p.second.Texture->GetLocalDir().UTF8() << p.second.Texture->GetObjectNameString().UTF8() << '\n';
             }
           }
           auto vectors = tm->Material->GetVectorParameters();
@@ -3442,7 +3620,7 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
           }
           if (tm->DisplacementMap)
           {
-            s << padding << padding << padding << "Displacement Map: " << GetLocalDir(tm->DisplacementMap) + tm->DisplacementMap->GetObjectNameString().UTF8() << '\n';
+            s << padding << padding << padding << "Displacement Map: " << tm->DisplacementMap->GetLocalDir().UTF8() + tm->DisplacementMap->GetObjectNameString().UTF8() << '\n';
             s << padding << padding << padding << "Displacement Scale: " << std::to_string(tm->DisplacementScale) << '\n';
           }
           s << padding << padding << padding << "Mapping Scale: " << std::to_string(tm->MappingScale ? 1.f / tm->MappingScale : 1.f) << '\n';
@@ -3488,25 +3666,4 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
       }
     }
   }
-}
-
-std::string GetLocalDir(UObject* obj, const char* sep)
-{
-  std::string path;
-  FObjectExport* outer = obj->GetExportObject()->Outer;
-  while (outer)
-  {
-    path = (outer->GetObjectNameString().UTF8() + sep + path);
-    outer = outer->Outer;
-  }
-  if ((obj->GetExportFlags() & EF_ForcedExport) == 0)
-  {
-    path = obj->GetPackage()->GetPackageName().UTF8() + sep + path;
-  }
-  return path;
-}
-
-std::string GetLocalDirAndName(UObject* obj, const char* sep)
-{
-  return GetLocalDir(obj, sep) + obj->GetObjectNameString().UTF8();
 }

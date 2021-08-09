@@ -33,483 +33,505 @@
 
 UObject* UObject::Object(FObjectExport* exp)
 {
-  UObject* result = nullptr;
   const FString c = exp->GetClassNameString();
   if (c == UClass::StaticClassName())
   {
-    result = new UClass(exp, false);
+    return new UClass(exp, false);
   }
-  else if (c == UPackage::StaticClassName())
+  if (c == UPackage::StaticClassName())
   {
-    result = new UPackage(exp);
+    return new UPackage(exp);
   }
-  else if (c == UTexture2D::StaticClassName())
+  if (c == UTexture2D::StaticClassName())
   {
-    result = new UTexture2D(exp);
+    return new UTexture2D(exp);
   }
-  else if (c == UTextureCube::StaticClassName())
+  if (c == UTextureCube::StaticClassName())
   {
-    result = new UTextureCube(exp);
+    return new UTextureCube(exp);
   }
-  else if (c == UTextureFlipBook::StaticClassName())
+  if (c == UTextureFlipBook::StaticClassName())
   {
-    result = new UTextureFlipBook(exp);
+    return new UTextureFlipBook(exp);
   }
-  else if (c == UShadowMapTexture2D::StaticClassName())
+  if (c == UShadowMapTexture2D::StaticClassName())
   {
-    result = new UShadowMapTexture2D(exp);
+    return new UShadowMapTexture2D(exp);
   }
-  else if (c == ULightMapTexture2D::StaticClassName())
+  if (c == ULightMapTexture2D::StaticClassName())
   {
-    result = new ULightMapTexture2D(exp);
+    return new ULightMapTexture2D(exp);
   }
-  else if (c == USkeletalMesh::StaticClassName())
+  if (c == USkeletalMesh::StaticClassName())
   {
-    result = new USkeletalMesh(exp);
+    return new USkeletalMesh(exp);
   }
-  else if (c == UMaterial::StaticClassName())
+  if (c == UMaterial::StaticClassName())
   {
-    result = new UMaterial(exp);
+    return new UMaterial(exp);
   }
-  else if (c == UMaterialInstance::StaticClassName())
+  if (c == UMaterialInstance::StaticClassName())
   {
-    result = new UMaterialInstance(exp);
+    return new UMaterialInstance(exp);
   }
-  else if (c == UMaterialInstanceConstant::StaticClassName())
+  if (c == UMaterialInstanceConstant::StaticClassName())
   {
-    result = new UMaterialInstanceConstant(exp);
+    return new UMaterialInstanceConstant(exp);
   }
-  else if (c == UStaticMesh::StaticClassName())
+  if (c == UStaticMesh::StaticClassName())
   {
-    result = new UStaticMesh(exp);
+    return new UStaticMesh(exp);
   }
-  else if (c == URB_BodySetup::StaticClassName())
+  if (c == URB_BodySetup::StaticClassName())
   {
-    result = new URB_BodySetup(exp);
+    return new URB_BodySetup(exp);
   }
-  else if (c == UPhysicsAssetInstance::StaticClassName())
+  if (c == UPhysicsAssetInstance::StaticClassName())
   {
-    result = new UPhysicsAssetInstance(exp);
+    return new UPhysicsAssetInstance(exp);
   }
-  else if (c == USpeedTree::StaticClassName())
+  if (c == USpeedTree::StaticClassName())
   {
-    result = new USpeedTree(exp);
+    return new USpeedTree(exp);
   }
-  else if (c == UPrefab::StaticClassName())
+  if (c == UPrefab::StaticClassName())
   {
-    result = new UPrefab(exp);
+    return new UPrefab(exp);
   }
-  else if (c == UModel::StaticClassName())
+  if (c == UModel::StaticClassName())
   {
-    result = new UModel(exp);
+    return new UModel(exp);
   }
-  else if (c == UPolys::StaticClassName())
+  if (c == UPolys::StaticClassName())
   {
-    result = new UPolys(exp);
+    return new UPolys(exp);
   }
-  else if (c == UAeroVolume::StaticClassName())
+  if (c == UAeroVolume::StaticClassName())
   {
-    result = new UAeroVolume(exp);
+    return new UAeroVolume(exp);
   }
-  else if (c == UAeroInnerVolume::StaticClassName())
+  if (c == UAeroInnerVolume::StaticClassName())
   {
-    result = new UAeroInnerVolume(exp);
+    return new UAeroInnerVolume(exp);
   }
-  else if (c == US1MusicVolume::StaticClassName())
+  if (c == US1MusicVolume::StaticClassName())
   {
-    result = new US1MusicVolume(exp);
+    return new US1MusicVolume(exp);
   }
-  else if (c == UActor::StaticClassName())
+  if (c == UActor::StaticClassName())
   {
-    result = new UActor(exp);
+    return new UActor(exp);
   }
-  else if (c == UTerrain::StaticClassName())
+  if (c == UTerrain::StaticClassName())
   {
-    result = new UTerrain(exp);
+    return new UTerrain(exp);
   }
-  else if (c == UTerrainWeightMapTexture::StaticClassName())
+  if (c == UTerrainWeightMapTexture::StaticClassName())
   {
-    result = new UTerrainWeightMapTexture(exp);
+    return new UTerrainWeightMapTexture(exp);
   }
-  else if (c == UTerrainMaterial::StaticClassName())
+  if (c == UTerrainMaterial::StaticClassName())
   {
-    result = new UTerrainMaterial(exp);
+    return new UTerrainMaterial(exp);
   }
-  else if (c == UTerrainLayerSetup::StaticClassName())
+  if (c == UTerrainLayerSetup::StaticClassName())
   {
-    result = new UTerrainLayerSetup(exp);
+    return new UTerrainLayerSetup(exp);
   }
-  else if (c == UBrush::StaticClassName())
+  if (c == UBrush::StaticClassName())
   {
-    result = new UBrush(exp);
+    return new UBrush(exp);
   }
-  else if (c == UBrushComponent::StaticClassName())
+  if (c == UBrushComponent::StaticClassName())
   {
-    result = new UBrushComponent(exp);
+    return new UBrushComponent(exp);
   }
-  else if (c == ULevel::StaticClassName())
+  if (c == ULevel::StaticClassName())
   {
-    result = new ULevel(exp);
+    return new ULevel(exp);
   }
-  else if (c == ULevelStreamingAlwaysLoaded::StaticClassName())
+  if (c == ULevelStreamingAlwaysLoaded::StaticClassName())
   {
-    result = new ULevelStreamingAlwaysLoaded(exp);
+    return new ULevelStreamingAlwaysLoaded(exp);
   }
-  else if (c == ULevelStreamingDistance::StaticClassName())
+  if (c == ULevelStreamingDistance::StaticClassName())
   {
-    result = new ULevelStreamingDistance(exp);
+    return new ULevelStreamingDistance(exp);
   }
-  else if (c == ULevelStreamingKismet::StaticClassName())
+  if (c == ULevelStreamingKismet::StaticClassName())
   {
-    result = new ULevelStreamingKismet(exp);
+    return new ULevelStreamingKismet(exp);
   }
-  else if (c == ULevelStreamingPersistent::StaticClassName())
+  if (c == ULevelStreamingPersistent::StaticClassName())
   {
-    result = new ULevelStreamingPersistent(exp);
+    return new ULevelStreamingPersistent(exp);
   }
-  else if (c == US1LevelStreamingDistance::StaticClassName())
+  if (c == US1LevelStreamingDistance::StaticClassName())
   {
-    result = new US1LevelStreamingDistance(exp);
+    return new US1LevelStreamingDistance(exp);
   }
-  else if (c == US1LevelStreamingBaseLevel::StaticClassName())
+  if (c == US1LevelStreamingBaseLevel::StaticClassName())
   {
-    result = new US1LevelStreamingBaseLevel(exp);
+    return new US1LevelStreamingBaseLevel(exp);
   }
-  else if (c == US1LevelStreamingSound::StaticClassName())
+  if (c == US1LevelStreamingSound::StaticClassName())
   {
-    result = new US1LevelStreamingSound(exp);
+    return new US1LevelStreamingSound(exp);
   }
-  else if (c == US1LevelStreamingSuperLow::StaticClassName())
+  if (c == US1LevelStreamingSuperLow::StaticClassName())
   {
-    result = new US1LevelStreamingSuperLow(exp);
+    return new US1LevelStreamingSuperLow(exp);
   }
-  else if (c == US1LevelStreamingVOID::StaticClassName())
+  if (c == US1LevelStreamingVOID::StaticClassName())
   {
-    result = new US1LevelStreamingVOID(exp);
+    return new US1LevelStreamingVOID(exp);
   }
-  else if (c == US1WaterVolume::StaticClassName())
+  if (c == US1WaterVolume::StaticClassName())
   {
-    result = new US1WaterVolume(exp);
+    return new US1WaterVolume(exp);
   }
-  else if (c == ULevelStreamingVolume::StaticClassName())
+  if (c == ULevelStreamingVolume::StaticClassName())
   {
-    result = new ULevelStreamingVolume(exp);
+    return new ULevelStreamingVolume(exp);
   }
-  else if (c == UBlockingVolume::StaticClassName())
+  if (c == UBlockingVolume::StaticClassName())
   {
-    result = new UBlockingVolume(exp);
+    return new UBlockingVolume(exp);
   }
-  else if (c == UStaticMeshActor::StaticClassName())
+  if (c == UStaticMeshActor::StaticClassName())
   {
-    result = new UStaticMeshActor(exp);
+    return new UStaticMeshActor(exp);
   }
-  else if (c == USkeletalMeshActor::StaticClassName())
+  if (c == USkeletalMeshActor::StaticClassName())
   {
-    result = new USkeletalMeshActor(exp);
+    return new USkeletalMeshActor(exp);
   }
-  else if (c == USpeedTreeActor::StaticClassName())
+  if (c == USpeedTreeActor::StaticClassName())
   {
-    result = new USpeedTreeActor(exp);
+    return new USpeedTreeActor(exp);
   }
-  else if (c == ULight::StaticClassName())
+  if (c == ULight::StaticClassName())
   {
-    result = new ULight(exp);
+    return new ULight(exp);
   }
-  else if (c == UPointLight::StaticClassName())
+  if (c == UPointLight::StaticClassName())
   {
-    result = new UPointLight(exp);
+    return new UPointLight(exp);
   }
-  else if (c == UPointLightMovable::StaticClassName())
+  if (c == UPointLightMovable::StaticClassName())
   {
-    result = new UPointLightMovable(exp);
+    return new UPointLightMovable(exp);
   }
-  else if (c == UPointLightToggleable::StaticClassName())
+  if (c == UPointLightToggleable::StaticClassName())
   {
-    result = new UPointLightToggleable(exp);
+    return new UPointLightToggleable(exp);
   }
-  else if (c == USpotLight::StaticClassName())
+  if (c == USpotLight::StaticClassName())
   {
-    result = new USpotLight(exp);
+    return new USpotLight(exp);
   }
-  else if (c == USpotLightMovable::StaticClassName())
+  if (c == USpotLightMovable::StaticClassName())
   {
-    result = new USpotLightMovable(exp);
+    return new USpotLightMovable(exp);
   }
-  else if (c == USpotLightToggleable::StaticClassName())
+  if (c == USpotLightToggleable::StaticClassName())
   {
-    result = new USpotLightToggleable(exp);
+    return new USpotLightToggleable(exp);
   }
-  else if (c == UDirectionalLight::StaticClassName())
+  if (c == UDirectionalLight::StaticClassName())
   {
-    result = new UDirectionalLight(exp);
+    return new UDirectionalLight(exp);
   }
-  else if (c == UDirectionalLightToggleable::StaticClassName())
+  if (c == UDirectionalLightToggleable::StaticClassName())
   {
-    result = new UDirectionalLightToggleable(exp);
+    return new UDirectionalLightToggleable(exp);
   }
-  else if (c == USkyLight::StaticClassName())
+  if (c == USkyLight::StaticClassName())
   {
-    result = new USkyLight(exp);
+    return new USkyLight(exp);
   }
-  else if (c == USkyLightToggleable::StaticClassName())
+  if (c == USkyLightToggleable::StaticClassName())
   {
-    result = new USkyLightToggleable(exp);
+    return new USkyLightToggleable(exp);
   }
-  else if (c == UInterpActor::StaticClassName())
+  if (c == UInterpActor::StaticClassName())
   {
-    result = new UInterpActor(exp);
+    return new UInterpActor(exp);
   }
-  else if (c == UEmitter::StaticClassName())
+  if (c == UEmitter::StaticClassName())
   {
-    result = new UEmitter(exp);
+    return new UEmitter(exp);
   }
-  else if (c == UHeightFog::StaticClassName())
+  if (c == UHeightFog::StaticClassName())
   {
-    result = new UHeightFog(exp);
+    return new UHeightFog(exp);
   }
-  else if (c == UPrefabInstance::StaticClassName())
+  if (c == UPrefabInstance::StaticClassName())
   {
-    result = new UPrefabInstance(exp);
+    return new UPrefabInstance(exp);
   }
-  else if (c == UAnimSet::StaticClassName())
+  if (c == UAnimSet::StaticClassName())
   {
-    result = new UAnimSet(exp);
+    return new UAnimSet(exp);
   }
-  else if (c == UAnimSequence::StaticClassName())
+  if (c == UAnimSequence::StaticClassName())
   {
-    result = new UAnimSequence(exp);
+    return new UAnimSequence(exp);
   }
-  else if (c == USoundNodeWave::StaticClassName())
+  if (c == USoundNodeWave::StaticClassName())
   {
-    result = new USoundNodeWave(exp);
+    return new USoundNodeWave(exp);
   }
-  else if (c == USoundNodeAmbient::StaticClassName())
+  if (c == USoundNodeAmbient::StaticClassName())
   {
-    result = new USoundNodeAmbient(exp);
+    return new USoundNodeAmbient(exp);
   }
-  else if (c == USoundNodeAttenuation::StaticClassName())
+  if (c == USoundNodeAttenuation::StaticClassName())
   {
-    result = new USoundNodeAttenuation(exp);
+    return new USoundNodeAttenuation(exp);
   }
-  else if (c == USoundNodeAmbientNonLoop::StaticClassName())
+  if (c == USoundNodeAmbientNonLoop::StaticClassName())
   {
-    result = new USoundNodeAmbientNonLoop(exp);
+    return new USoundNodeAmbientNonLoop(exp);
   }
-  else if (c == USoundNodeAmbientNonLoopToggle::StaticClassName())
+  if (c == USoundNodeAmbientNonLoopToggle::StaticClassName())
   {
-    result = new USoundNodeAmbientNonLoopToggle(exp);
+    return new USoundNodeAmbientNonLoopToggle(exp);
   }
-  else if (c == USoundNodeConcatenator::StaticClassName())
+  if (c == USoundNodeConcatenator::StaticClassName())
   {
-    result = new USoundNodeConcatenator(exp);
+    return new USoundNodeConcatenator(exp);
   }
-  else if (c == USoundNodeLooping::StaticClassName())
+  if (c == USoundNodeLooping::StaticClassName())
   {
-    result = new USoundNodeLooping(exp);
+    return new USoundNodeLooping(exp);
   }
-  else if (c == USoundNodeMixer::StaticClassName())
+  if (c == USoundNodeMixer::StaticClassName())
   {
-    result = new USoundNodeMixer(exp);
+    return new USoundNodeMixer(exp);
   }
-  else if (c == USoundNodeModulator::StaticClassName())
+  if (c == USoundNodeModulator::StaticClassName())
   {
-    result = new USoundNodeModulator(exp);
+    return new USoundNodeModulator(exp);
   }
-  else if (c == USoundNodeRandom::StaticClassName())
+  if (c == USoundNodeRandom::StaticClassName())
   {
-    result = new USoundNodeRandom(exp);
+    return new USoundNodeRandom(exp);
   }
-  else if (c == USoundCue::StaticClassName())
+  if (c == USoundCue::StaticClassName())
   {
-    result = new USoundCue(exp);
+    return new USoundCue(exp);
   }
-  else if (c == UField::StaticClassName())
+  if (c == UField::StaticClassName())
   {
-    result = new UField(exp);
+    return new UField(exp);
   }
-  else if (c == UStruct::StaticClassName())
+  if (c == UStruct::StaticClassName())
   {
-    result = new UStruct(exp);
+    return new UStruct(exp);
   }
-  else if (c == UScriptStruct::StaticClassName())
+  if (c == UScriptStruct::StaticClassName())
   {
-    result = new UScriptStruct(exp);
+    return new UScriptStruct(exp);
   }
-  else if (c == UState::StaticClassName())
+  if (c == UState::StaticClassName())
   {
-    result = new UState(exp);
+    return new UState(exp);
   }
-  else if (c == UEnum::StaticClassName())
+  if (c == UEnum::StaticClassName())
   {
-    result = new UEnum(exp);
+    return new UEnum(exp);
   }
-  else if (c == UConst::StaticClassName())
+  if (c == UConst::StaticClassName())
   {
-    result = new UConst(exp);
+    return new UConst(exp);
   }
-  else if (c == UFunction::StaticClassName())
+  if (c == UFunction::StaticClassName())
   {
-    result = new UFunction(exp);
+    return new UFunction(exp);
   }
-  else if (c == UTextBuffer::StaticClassName())
+  if (c == UTextBuffer::StaticClassName())
   {
-    result = new UTextBuffer(exp);
+    return new UTextBuffer(exp);
   }
-  else if (c == UIntProperty::StaticClassName())
+  if (c == UIntProperty::StaticClassName())
   {
-    result = new UIntProperty(exp);
+    return new UIntProperty(exp);
   }
-  else if (c == UBoolProperty::StaticClassName())
+  if (c == UBoolProperty::StaticClassName())
   {
-    result = new UBoolProperty(exp);
+    return new UBoolProperty(exp);
   }
-  else if (c == UByteProperty::StaticClassName())
+  if (c == UByteProperty::StaticClassName())
   {
-    result = new UByteProperty(exp);
+    return new UByteProperty(exp);
   }
-  else if (c == UFloatProperty::StaticClassName())
+  if (c == UFloatProperty::StaticClassName())
   {
-    result = new UFloatProperty(exp);
+    return new UFloatProperty(exp);
   }
-  else if (c == UObjectProperty::StaticClassName())
+  if (c == UObjectProperty::StaticClassName())
   {
-    result = new UObjectProperty(exp);
+    return new UObjectProperty(exp);
   }
-  else if (c == UClassProperty::StaticClassName())
+  if (c == UClassProperty::StaticClassName())
   {
-    result = new UClassProperty(exp);
+    return new UClassProperty(exp);
   }
-  else if (c == UComponentProperty::StaticClassName())
+  if (c == UComponentProperty::StaticClassName())
   {
-    result = new UComponentProperty(exp);
+    return new UComponentProperty(exp);
   }
-  else if (c == UNameProperty::StaticClassName())
+  if (c == UNameProperty::StaticClassName())
   {
-    result = new UNameProperty(exp);
+    return new UNameProperty(exp);
   }
-  else if (c == UStrProperty::StaticClassName())
+  if (c == UStrProperty::StaticClassName())
   {
-    result = new UStrProperty(exp);
+    return new UStrProperty(exp);
   }
-  else if (c == UStructProperty::StaticClassName())
+  if (c == UStructProperty::StaticClassName())
   {
-    result = new UStructProperty(exp);
+    return new UStructProperty(exp);
   }
-  else if (c == UArrayProperty::StaticClassName())
+  if (c == UArrayProperty::StaticClassName())
   {
-    result = new UArrayProperty(exp);
+    return new UArrayProperty(exp);
   }
-  else if (c == UMapProperty::StaticClassName())
+  if (c == UMapProperty::StaticClassName())
   {
-    result = new UMapProperty(exp);
+    return new UMapProperty(exp);
   }
-  else if (c == UInterfaceProperty::StaticClassName())
+  if (c == UInterfaceProperty::StaticClassName())
   {
-    result = new UInterfaceProperty(exp);
+    return new UInterfaceProperty(exp);
   }
-  else if (c == UDelegateProperty::StaticClassName())
+  if (c == UDelegateProperty::StaticClassName())
   {
-    result = new UDelegateProperty(exp);
+    return new UDelegateProperty(exp);
   }
-  else if (c == UMetaData::StaticClassName())
+  if (c == UMetaData::StaticClassName())
   {
-    result = new UMetaData(exp);
+    return new UMetaData(exp);
   }
-  else if (c == UObjectRedirector::StaticClassName())
+  if (c == UObjectRedirector::StaticClassName())
   {
-    result = new UObjectRedirector(exp);
+    return new UObjectRedirector(exp);
   }
-  else if (c == UObjectReferencer::StaticClassName())
+  if (c == UObjectReferencer::StaticClassName())
   {
-    result = new UObjectReferencer(exp);
+    return new UObjectReferencer(exp);
   }
-  else if (c == UPersistentCookerData::StaticClassName())
+  if (c == UPersistentCookerData::StaticClassName())
   {
-    result = new UPersistentCookerData(exp);
+    return new UPersistentCookerData(exp);
   }
-  else if (c == UDynamicSMActor::StaticClassName())
+  if (c == UDynamicSMActor::StaticClassName())
   {
-    result = new UDynamicSMActor(exp);
+    return new UDynamicSMActor(exp);
   }
-  else if (c == UComponent::StaticClassName())
+  if (c == UComponent::StaticClassName())
   {
-    result = new UComponent(exp);
+    return new UComponent(exp);
   }
-  else if (c == UStaticMeshComponent::StaticClassName())
+  if (c == UStaticMeshComponent::StaticClassName())
   {
-    result = new UStaticMeshComponent(exp);
+    return new UStaticMeshComponent(exp);
   }
-  else if (c == USkeletalMeshComponent::StaticClassName())
+  if (c == USkeletalMeshComponent::StaticClassName())
   {
-    result = new USkeletalMeshComponent(exp);
+    return new USkeletalMeshComponent(exp);
   }
-  else if (c == USpeedTreeComponent::StaticClassName())
+  if (c == USpeedTreeComponent::StaticClassName())
   {
-    result = new USpeedTreeComponent(exp);
+    return new USpeedTreeComponent(exp);
   }
-  else if (c == ULightComponent::StaticClassName())
+  if (c == ULightComponent::StaticClassName())
   {
-    result = new ULightComponent(exp);
+    return new ULightComponent(exp);
   }
-  else if (c == UPointLightComponent::StaticClassName())
+  if (c == UPointLightComponent::StaticClassName())
   {
-    result = new UPointLightComponent(exp);
+    return new UPointLightComponent(exp);
   }
-  else if (c == USpotLightComponent::StaticClassName())
+  if (c == USpotLightComponent::StaticClassName())
   {
-    result = new USpotLightComponent(exp);
+    return new USpotLightComponent(exp);
   }
-  else if (c == UDirectionalLightComponent::StaticClassName())
+  if (c == UDirectionalLightComponent::StaticClassName())
   {
-    result = new UDirectionalLightComponent(exp);
+    return new UDirectionalLightComponent(exp);
   }
-  else if (c == UDominantDirectionalLightComponent::StaticClassName())
+  if (c == UDominantDirectionalLightComponent::StaticClassName())
   {
-    result = new UDominantDirectionalLightComponent(exp);
+    return new UDominantDirectionalLightComponent(exp);
   }
-  else if (c == UDominantSpotLightComponent::StaticClassName())
+  if (c == UDominantSpotLightComponent::StaticClassName())
   {
-    result = new UDominantSpotLightComponent(exp);
+    return new UDominantSpotLightComponent(exp);
   }
-  else if (c == USkyLightComponent::StaticClassName())
+  if (c == USkyLightComponent::StaticClassName())
   {
-    result = new USkyLightComponent(exp);
+    return new USkyLightComponent(exp);
   }
-  else if (c == UHeightFogComponent::StaticClassName())
+  if (c == UHeightFogComponent::StaticClassName())
   {
-    result = new UHeightFogComponent(exp);
+    return new UHeightFogComponent(exp);
   }
-  else if (c == UDistributionFloatConstant::StaticClassName())
+  if (c == UAudioComponent::StaticClassName())
   {
-    result = new UDistributionFloatConstant(exp);
+    return new UAudioComponent(exp);
   }
-  else if (c == UDistributionFloatUniform::StaticClassName())
+  if (c == UAmbientSound::StaticClassName())
   {
-    result = new UDistributionFloatUniform(exp);
+    return new UAmbientSound(exp);
   }
-  else
+  if (c == UAmbientSoundMovable::StaticClassName())
   {
-    // MaterialExpressions must be before the UComponent due to UMaterialExpressionComponentMask
-    if (c.StartWith("MaterialExpression"))
-    {
-      result = UMaterialExpression::StaticFactory(exp);
-    }
-    // Fallback for unimplemented components. *Component => UComponent
-    else if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
-             (c.Find("Distribution") != std::string::npos) ||
-              c.StartWith("UIComp_") || c == "RB_Handle")
-    {
-      result = new UComponent(exp);
-    }
-    // Fallback for all *Actor classes except components
-    else if (c.Find(NAME_Actor) != std::string::npos && c != NAME_ActorFactory)
-    {
-      result = new UActor(exp);
-    }
-    else
-    {
-      result = new UObject(exp);
-    }
+    return new UAmbientSoundMovable(exp);
   }
-  return result;
+  if (c == UAmbientSoundSimple::StaticClassName())
+  {
+    return new UAmbientSoundSimple(exp);
+  }
+  if (c == UAmbientSoundNonLoop::StaticClassName())
+  {
+    return new UAmbientSoundNonLoop(exp);
+  }
+  if (c == UAmbientSoundSimpleToggleable::StaticClassName())
+  {
+    return new UAmbientSoundSimpleToggleable(exp);
+  }
+  if (c == UAmbientSoundNonLoopingToggleable::StaticClassName())
+  {
+    return new UAmbientSoundNonLoopingToggleable(exp);
+  }
+  if (c == UDistributionFloatConstant::StaticClassName())
+  {
+    return new UDistributionFloatConstant(exp);
+  }
+  if (c == UDistributionFloatUniform::StaticClassName())
+  {
+    return new UDistributionFloatUniform(exp);
+  }
+  
+  // A fallback for unimplemented classes
+  // MaterialExpressions must be before the UComponent due to UMaterialExpressionComponentMask
+  if (c.StartWith("MaterialExpression"))
+  {
+    return UMaterialExpression::StaticFactory(exp);
+  }
+  // Fallback for unimplemented components. *Component => UComponent
+  if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
+      (c.Find("Distribution") != std::string::npos) ||
+       c.StartWith("UIComp_") || c == "RB_Handle")
+  {
+    return new UComponent(exp);
+  }
+  // Fallback for all *Actor classes except components
+  if (c.Find(NAME_Actor) != std::string::npos && c != NAME_ActorFactory)
+  {
+    return new UActor(exp);
+  }
+  return new UObject(exp);
 }

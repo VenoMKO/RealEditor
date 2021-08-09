@@ -27,6 +27,10 @@ struct LevelExportContext {
   const char* SptMaterialOverrides = "SpeedTreeOverrides.txt";
   const char* TextureInfoStorage = "Textures.txt";
   const char* TerrainStorage = "Terrains";
+  const char* WaveStorage = "Waves";
+  const char* CuesStorage = "Private\\Cues";
+  const char* MatExpressionsStorage = "Private\\Expressions";
+  const char* CuesInfoStorage = "Cues.txt";
 
   inline std::filesystem::path GetStaticMeshDir() const
   {
@@ -46,6 +50,21 @@ struct LevelExportContext {
   inline std::filesystem::path GetTextureDir() const
   {
     return std::filesystem::path(Config.RootDir.WString()) / TextureStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetWaveDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / WaveStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetCueDir() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / CuesStorage / DataDirName;
+  }
+
+  inline std::filesystem::path GetCuesInfoPath() const
+  {
+    return std::filesystem::path(Config.RootDir.WString()) / CuesInfoStorage;
   }
 
   inline std::filesystem::path GetTextureInfoPath() const
@@ -79,7 +98,7 @@ struct LevelExportContext {
 
   inline std::filesystem::path GetMaterialExpressionsPath() const
   {
-    return GetMaterialDir() + "Expressions";
+    return GetMaterialDir() + MatExpressionsStorage;
   }
 
   // A list of default mesh materials before actor overrides for RE Helper plugin
@@ -132,12 +151,14 @@ struct LevelExportContext {
   std::vector<UObject*> UsedMaterials;
   std::vector<UObject*> SptLeafMaterials;
   std::map<std::string, UObject*> MasterMaterials;
+  std::map<UObject*, std::string> CuesMap;
   std::map<std::string, std::vector<std::string>> MeshDefaultMaterials;
   std::map<std::string, std::map<std::string, std::string>> SpeedTreeMaterialOverrides;
   std::map<std::string, std::vector<ComponentTransform>> FbxComponentTransformMap;
   std::vector<std::string> ComplexCollisions;
   std::map<std::string, std::vector<std::string>> MLODs;
   std::vector<std::string> TerrainInfo;
+  std::vector<UObject*> Waves;
   int CurrentProgress = 0;
   int StaticMeshActorsCount = 0;
   int SkeletalMeshActorsCount = 0;

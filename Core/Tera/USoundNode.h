@@ -1,5 +1,7 @@
 #pragma once
 #include "UObject.h"
+#include "UActor.h"
+#include "UActorComponent.h"
 #include <Utils/SoundTravaller.h>
 
 class USoundNode : public UObject {
@@ -80,21 +82,23 @@ public:
   UPROP(bool, bAttenuate, true);
 
   UPROP(bool, bAttenuateWithLowPassFilter, false); //x86
-  UPROP(float, MinRadius, 2000.f);
-  UPROP(float, MaxRadius, 5000.f);
-  UPROP(float, LPFMinRadius, 3500.f);
-  UPROP(float, LPFMaxRadius, 7000.f);
+  UPROP(float, MinRadius, 400.f);
+  UPROP(float, MaxRadius, 4000.f);
+  UPROP(float, LPFMinRadius, 3000.f);
+  UPROP(float, LPFMaxRadius, 6000.f);
+  UPROP(float, VolumeModulation, 1.f);
+  UPROP(float, PitchModulation, 1.f);
 
   UPROP(bool, bAttenuateWithLPF, false); //x64
   UPROP(float, RadiusMin, 400.f);
   UPROP(float, RadiusMax, 4000.f);
   UPROP(float, LPFRadiusMin, 3000.f);
   UPROP(float, LPFRadiusMax, 6000.f);
-
   UPROP(float, PitchMin, 1.f);
   UPROP(float, PitchMax, 1.f);
   UPROP(float, VolumeMin, .7f);
   UPROP(float, VolumeMax, .7f);
+
   UPROP(USoundNodeWave*, Wave, nullptr);
   UPROP_NOINIT(std::vector<FAmbientSoundSlot>, SoundSlots);
 
@@ -103,13 +107,39 @@ public:
   void PostLoad() override;
 
   void GetWaves(std::vector<class USoundNodeWave*>& waves) override;
+
+  float GetRadiusMin() const;
+
+  float GetRadiusMax() const;
+
+  float GetVolumeMin() const
+  {
+    return VolumeMin;
+  }
+
+  float GetVolumeMax() const
+  {
+    return VolumeMax;
+  }
+
+  float GetPitchMin() const
+  {
+    return PitchMin;
+  }
+
+  float GetPitchMax() const
+  {
+    return PitchMax;
+  }
 };
 
 class USoundNodeAmbientNonLoop : public USoundNodeAmbient {
 public:
   DECL_UOBJ(USoundNodeAmbientNonLoop, USoundNodeAmbient);
 
-  UPROP(float, DelayTime, 1.f);
+  UPROP(float, DelayTime, 0.f);
+  UPROP(float, DelayMin, 0.f);
+  UPROP(float, DelayMax, 0.f);
 
   bool RegisterProperty(FPropertyTag* property) override;
 };
@@ -132,7 +162,7 @@ class USoundNodeLooping : public USoundNode {
 public:
   DECL_UOBJ(USoundNodeLooping, USoundNode);
   
-  UPROP(bool, bLoopIndefinitely, false);
+  UPROP(bool, bLoopIndefinitely, true);
   UPROP(float, LoopCountMin, 1000000.f);
   UPROP(float, LoopCountMax, 1000000.f);
   UPROP(float, LoopCount, 1000000.f);
@@ -162,7 +192,7 @@ public:
   void Serialize(FStream& s) override;
   void PostLoad() override;
 
-  void GetWaves(std::vector<class USoundNodeWave*>& waves) override;
+  void GetWaves(std::vector<USoundNodeWave*>& waves) override;
 
   const void* GetResourceData() const
   {
@@ -196,6 +226,26 @@ protected:
   uint32 ResourceSize = 0;
 };
 
+class USoundCue : public UObject {
+public:
+  DECL_UOBJ(USoundCue, UObject);
+
+  UPROP_NOINIT(FName, SoundGroup);
+  UPROP(USoundNode*, FirstNode, nullptr);
+  UPROP(float, Duration, 1.f);
+  UPROP(float, VolumeMultiplier, .75f);
+  UPROP(float, PitchMultiplier, 1.f);
+  UPROP(float, MaxAudibleDistance, 1.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  // Get all waves used by the Cue
+  void GetWaves(std::vector<USoundNodeWave*>& waves);
+
+  // Export to Unreal Engine 4. loop - seamless wave looping
+  FString ExportCueToText(bool loop = true);
+};
+
 class USoundNodeModulator : public USoundNode {
 public:
   DECL_UOBJ(USoundNodeModulator, USoundNode);
@@ -221,18 +271,53 @@ public:
   bool RegisterProperty(FPropertyTag* property) override;
 };
 
-class USoundCue : public USoundNode {
+class UAmbientSound : public UActor {
 public:
-  DECL_UOBJ(USoundCue, USoundNode);
+  DECL_UOBJ(UAmbientSound, UActor);
 
-  UPROP_NOINIT(FName, SoundGroup);
-  UPROP(USoundNode*, FirstNode, nullptr);
-  UPROP(float, Duration, 1.f);
-  UPROP(float, VolumeMultiplier, 1.f);
-  UPROP(float, PitchMultiplier, 1.f);
-  UPROP(float, MaxAudibleDistance, 1.f);
+  UPROP(bool, bAutoPlay, true);
+  UPROP(UAudioComponent*, AudioComponent, nullptr);
 
   bool RegisterProperty(FPropertyTag* property) override;
-
-  void GetWaves(std::vector<class USoundNodeWave*>& waves) override;
 };
+
+class UAmbientSoundMovable : public UAmbientSound {
+public:
+  DECL_UOBJ(UAmbientSoundMovable, UAmbientSound);
+};
+
+class UAmbientSoundSimple : public UAmbientSound {
+public:
+  DECL_UOBJ(UAmbientSoundSimple, UAmbientSound);
+
+  UPROP(USoundNodeAmbient*, AmbientProperties, nullptr);
+  UPROP(USoundCue*, SoundCueInstance, nullptr);
+  UPROP(USoundNodeAmbient*, SoundNodeInstance, nullptr);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+};
+
+class UAmbientSoundNonLoop : public UAmbientSoundSimple {
+public:
+  DECL_UOBJ(UAmbientSoundNonLoop, UAmbientSoundSimple);
+};
+
+class UAmbientSoundSimpleToggleable : public UAmbientSoundSimple {
+public:
+  DECL_UOBJ(UAmbientSoundSimpleToggleable, UAmbientSoundSimple);
+  UPROP(bool, bCurrentlyPlaying, false);
+  UPROP(bool, bFadeOnToggle, false);
+  UPROP(bool, bIgnoreAutoPlay, false);
+  UPROP(float, FadeInDuration, 0.f);
+  UPROP(float, FadeInVolumeLevel, 0.f);
+  UPROP(float, FadeOutDuration, 0.f);
+  UPROP(float, FadeOutVolumeLevel, 0.f);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+};
+
+class UAmbientSoundNonLoopingToggleable : public UAmbientSoundSimpleToggleable {
+public:
+  DECL_UOBJ(UAmbientSoundNonLoopingToggleable, UAmbientSoundSimpleToggleable);
+};
+
