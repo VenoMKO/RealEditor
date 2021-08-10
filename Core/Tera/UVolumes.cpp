@@ -2,6 +2,7 @@
 #include "UModel.h"
 #include "UActorComponent.h"
 #include "USoundNode.h"
+#include "UClass.h"
 
 bool UBrush::RegisterProperty(FPropertyTag* property)
 {
@@ -38,4 +39,41 @@ std::vector<USoundNodeWave*> US1MusicVolume::GetAllWaves() const
     cue->GetWaves(result);
   }
   return result;
+}
+
+bool UReverbVolume::RegisterProperty(FPropertyTag* property)
+{
+  SUPER_REGISTER_PROP();
+  if (PROP_IS(property, Settings))
+  {
+    SettingsProperty = property;
+    return true;
+  }
+  return false;
+}
+
+void UReverbVolume::PostLoad()
+{
+  if (SettingsProperty)
+  {
+    for (FPropertyValue* tmp : SettingsProperty->GetArray())
+    {
+      if (tmp->Field)
+      {
+        if (tmp->Field->GetObjectName() == "ReverbType")
+        {
+          Settings.ReverbType = (ReverbPreset)tmp->GetPropertyTag().GetByte();
+        }
+        else if (tmp->Field->GetObjectName() == "Volume")
+        {
+          Settings.Volume = tmp->GetPropertyTag().GetFloat();
+        }
+        else if (tmp->Field->GetObjectName() == "FadeTime")
+        {
+          Settings.FadeTime = tmp->GetPropertyTag().GetFloat();
+        }
+      }
+    }
+  }
+  Super::PostLoad();
 }

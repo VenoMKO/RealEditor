@@ -114,6 +114,10 @@ UObject* UObject::Object(FObjectExport* exp)
   {
     return new UAeroInnerVolume(exp);
   }
+  if (c == UReverbVolume::StaticClassName())
+  {
+    return new UReverbVolume(exp);
+  }
   if (c == US1MusicVolume::StaticClassName())
   {
     return new US1MusicVolume(exp);

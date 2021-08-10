@@ -31,6 +31,23 @@ public:
   DECL_UOBJ(UAeroInnerVolume, UVolume);
 };
 
+struct FReverbVolumeSettings {
+  ReverbPreset ReverbType = REVERB_Default;
+  float Volume = .5f;
+  float FadeTime = 2.f;
+};
+
+class UReverbVolume : public UVolume {
+public:
+  DECL_UOBJ(UReverbVolume, UVolume);
+
+  UPROP_NOINIT(FReverbVolumeSettings, Settings);
+
+  bool RegisterProperty(FPropertyTag* property) override;
+
+  void PostLoad() override;
+};
+
 class US1WaterVolume : public UVolume {
 public:
   DECL_UOBJ(US1WaterVolume, UVolume);

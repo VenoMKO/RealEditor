@@ -3129,6 +3129,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
+    exportItem.AdditionalLayers.emplace_back("RE_Emitters");
   }
   else if (UTerrain* actor = Cast<UTerrain>(untypedActor))
   {
@@ -3160,6 +3161,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
+    exportItem.AdditionalLayers.emplace_back("RE_Collisions");
   }
   else if (UAeroVolume* actor = Cast<UAeroVolume>(untypedActor))
   {
@@ -3171,6 +3173,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
+    exportItem.AdditionalLayers.emplace_back("RE_Aero");
   }
   else if (UAeroInnerVolume* actor = Cast<UAeroInnerVolume>(untypedActor))
   {
@@ -3182,6 +3185,90 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     {
       return;
     }
+    exportItem.AdditionalLayers.emplace_back("RE_Aero");
+  }
+  else if (UReverbVolume* actor = Cast<UReverbVolume>(untypedActor))
+  {
+    if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Sounds))
+    {
+      return;
+    }
+    if (!exportItem.ConfigureVolumeActor(actor, "AudioVolume", ctx))
+    {
+      return;
+    }
+    FString reverbType = "Default";
+    switch (actor->Settings.ReverbType)
+    {
+    case REVERB_Bathroom:
+      reverbType = "Bathroom";
+      break;
+    case REVERB_StoneRoom:
+      reverbType = "StoneRoom";
+      break;
+    case REVERB_Auditorium:
+      reverbType = "Auditorium";
+      break;
+    case REVERB_ConcertHall:
+      reverbType = "ConcertHall";
+      break;
+    case REVERB_Cave:
+      reverbType = "Cave";
+      break;
+    case REVERB_Hallway:
+      reverbType = "Hallway";
+      break;
+    case REVERB_StoneCorridor:
+      reverbType = "StoneCorridor";
+      break;
+    case REVERB_Alley:
+      reverbType = "Alley";
+      break;
+    case REVERB_Forest:
+      reverbType = "Forest";
+      break;
+    case REVERB_City:
+      reverbType = "City";
+      break;
+    case REVERB_Mountains:
+      reverbType = "Mountains";
+      break;
+    case REVERB_Quarry:
+      reverbType = "Quarry";
+      break;
+    case REVERB_Plain:
+      reverbType = "Plain";
+      break;
+    case REVERB_ParkingLot:
+      reverbType = "ParkingLot";
+      break;
+    case REVERB_SewerPipe:
+      reverbType = "SewerPipe";
+      break;
+    case REVERB_Underwater:
+      reverbType = "Underwater";
+      break;
+    case REVERB_SmallRoom:
+      reverbType = "SmallRoom";
+      break;
+    case REVERB_MediumRoom:
+      reverbType = "MediumRoom";
+      break;
+    case REVERB_LargeRoom:
+      reverbType = "LargeRoom";
+      break;
+    case REVERB_MediumHall:
+      reverbType = "MediumHall";
+      break;
+    case REVERB_LargeHall:
+      reverbType = "LargeHall";
+      break;
+    case REVERB_Plate:
+      reverbType = "Plate";
+      break;
+    }
+    exportItem.AdditionalLayers.emplace_back("RE_Sounds");
+    exportItem.CustomLines.emplace_back(FString::Sprintf("Settings=(ReverbEffect=ReverbEffect'\"/Engine/EngineSounds/ReverbSettings/%s\"',Volume=%.06f,FadeTime=%.06f)", reverbType.UTF8().c_str(), actor->Settings.Volume, actor->Settings.FadeTime));
   }
   else if (US1WaterVolume* actor = Cast<US1WaterVolume>(untypedActor))
   {
