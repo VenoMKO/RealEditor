@@ -58,20 +58,22 @@ void UReverbVolume::PostLoad()
   {
     for (FPropertyValue* tmp : SettingsProperty->GetArray())
     {
-      if (tmp->Field)
+      if (tmp->Type != FPropertyValue::VID::Property)
       {
-        if (tmp->Field->GetObjectName() == "ReverbType")
-        {
-          Settings.ReverbType = (ReverbPreset)tmp->GetPropertyTag().GetByte();
-        }
-        else if (tmp->Field->GetObjectName() == "Volume")
-        {
-          Settings.Volume = tmp->GetPropertyTag().GetFloat();
-        }
-        else if (tmp->Field->GetObjectName() == "FadeTime")
-        {
-          Settings.FadeTime = tmp->GetPropertyTag().GetFloat();
-        }
+        continue;
+      }
+      FString name = tmp->GetPropertyTag().Name.String();
+      if (name == "ReverbType")
+      {
+        Settings.ReverbType = (ReverbPreset)tmp->GetPropertyTag().GetByte();
+      }
+      else if (name == "Volume")
+      {
+        Settings.Volume = tmp->GetPropertyTag().GetFloat();
+      }
+      else if (name == "FadeTime")
+      {
+        Settings.FadeTime = tmp->GetPropertyTag().GetFloat();
       }
     }
   }
