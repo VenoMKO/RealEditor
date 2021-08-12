@@ -1134,6 +1134,10 @@ void SkelMeshEditor::CreateRenderModel()
     m.preMultRotate(quat);
     mt->setMatrix(m);
     mt->addChild(root);
+    if (ShowSkeleton)
+    {
+      mt->addChild(skeleton);
+    }
     Root = new osg::Geode;
     Root->addChild(mt);
   }
@@ -1141,11 +1145,12 @@ void SkelMeshEditor::CreateRenderModel()
   {
     Root = new osg::Geode;
     Root->addChild(root);
+    if (ShowSkeleton)
+    {
+      Root->addChild(skeleton);
+    }
   }
-  if (ShowSkeleton)
-  {
-    Root->addChild(skeleton);
-  }
+  
 
   Renderer->setSceneData(Root.get());
   Renderer->getCamera()->setViewport(0, 0, GetSize().x, GetSize().y);
