@@ -5,42 +5,164 @@
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 
+enum RedirectorTab : size_t {
+  RedirectorSource = 0,
+  RedirectorOriginal = 1,
+  RedirectorError = 2,
+  RedirectorNone = 3,
+};
+
 ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
 {
-  wxBoxSizer* sizer;
-  sizer = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer* bSizer1;
+  bSizer1 = new wxBoxSizer(wxVERTICAL);
 
-  Container = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  sizer->Add(Container, 1, wxEXPAND | wxALL, 5);
+  MessageBook = new wxSimplebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
+  wxPanel* m_panel1;
+  m_panel1 = new wxPanel(MessageBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  wxBoxSizer* bSizer2;
+  bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
-  wxPanel* m_panel2;
-  m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  m_panel2->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
-
+  wxPanel* m_panel5;
+  m_panel5 = new wxPanel(m_panel1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_RAISED | wxTAB_TRAVERSAL);
+  m_panel5->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   wxBoxSizer* bSizer3;
-  bSizer3 = new wxBoxSizer(wxHORIZONTAL);
+  bSizer3 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText1;
-  m_staticText1 = new wxStaticText(m_panel2, wxID_ANY, wxT("Original:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText1 = new wxStaticText(m_panel5, wxID_ANY, wxT("This is a shortcut to an object!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   m_staticText1->Wrap(-1);
-  bSizer3->Add(m_staticText1, 0, wxALL, 5);
+  m_staticText1->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  m_staticText1->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
-  ObjectPath = new wxStaticText(m_panel2, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-  ObjectPath->Wrap(-1);
-  bSizer3->Add(ObjectPath, 0, wxALL, 5);
+  bSizer3->Add(m_staticText1, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+  wxStaticText* m_staticText2;
+  m_staticText2 = new wxStaticText(m_panel5, wxID_ANY, wxT("The actual object is stored in a different GPK file.\nPress \"Source\" to open the GPK with the object."), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+  m_staticText2->Wrap(-1);
+  m_staticText2->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  m_staticText2->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
+
+  EditorSourceButon = new wxButton(m_panel5, eID_Composite, wxT("Source"), wxDefaultPosition, wxDefaultSize, 0);
+  EditorSourceButon->SetToolTip("Open composite package containing this object...");
+  bSizer3->Add(EditorSourceButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
+
+  PathLabelSource = new wxStaticText(m_panel5, wxID_ANY, wxT("Path: None"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL | wxST_ELLIPSIZE_MIDDLE);
+  PathLabelSource->Wrap(-1);
+  PathLabelSource->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer3->Add(PathLabelSource, 0, wxALL | wxEXPAND, 5);
 
 
-  m_panel2->SetSizer(bSizer3);
+  m_panel5->SetSizer(bSizer3);
+  m_panel5->Layout();
+  bSizer3->Fit(m_panel5);
+  bSizer2->Add(m_panel5, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+  m_panel1->SetSizer(bSizer2);
+  m_panel1->Layout();
+  bSizer2->Fit(m_panel1);
+  MessageBook->AddPage(m_panel1, wxT("a page"), false);
+  wxPanel* m_panel2;
+  m_panel2 = new wxPanel(MessageBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  wxBoxSizer* bSizer21;
+  bSizer21 = new wxBoxSizer(wxHORIZONTAL);
+
+  wxPanel* m_panel4;
+  m_panel4 = new wxPanel(m_panel2, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_RAISED | wxTAB_TRAVERSAL);
+  m_panel4->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  wxBoxSizer* bSizer31;
+  bSizer31 = new wxBoxSizer(wxVERTICAL);
+
+  wxStaticText* m_staticText11;
+  m_staticText11 = new wxStaticText(m_panel4, wxID_ANY, wxT("This is a shortcut to an object!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+  m_staticText11->Wrap(-1);
+  m_staticText11->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  m_staticText11->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer31->Add(m_staticText11, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+  wxStaticText* m_staticText21;
+  m_staticText21 = new wxStaticText(m_panel4, wxID_ANY, wxT("The actual object is stored in a different location.\nPress \"Original\" to select the object."), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+  m_staticText21->Wrap(-1);
+  m_staticText21->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  m_staticText21->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer31->Add(m_staticText21, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
+
+  EditorOriginButon = new wxButton(m_panel4, eID_Origin, wxT("Original"), wxDefaultPosition, wxDefaultSize, 0);
+  EditorOriginButon->SetToolTip("Show original object...");
+  bSizer31->Add(EditorOriginButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
+
+  PathLabelOriginal = new wxStaticText(m_panel4, wxID_ANY, wxT("Path: None"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL | wxST_ELLIPSIZE_MIDDLE);
+  PathLabelOriginal->Wrap(-1);
+  PathLabelOriginal->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer31->Add(PathLabelOriginal, 0, wxALL | wxEXPAND, 5);
+
+
+  m_panel4->SetSizer(bSizer31);
+  m_panel4->Layout();
+  bSizer31->Fit(m_panel4);
+  bSizer21->Add(m_panel4, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+  m_panel2->SetSizer(bSizer21);
   m_panel2->Layout();
-  bSizer3->Fit(m_panel2);
-  sizer->Add(m_panel2, 0, wxALL | wxEXPAND, 0);
+  bSizer21->Fit(m_panel2);
+  MessageBook->AddPage(m_panel2, wxT("a page"), false);
+  wxPanel* m_panel3;
+  m_panel3 = new wxPanel(MessageBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  wxBoxSizer* bSizer211;
+  bSizer211 = new wxBoxSizer(wxHORIZONTAL);
 
-  SetSizer(sizer);
+  wxPanel* m_panel6;
+  m_panel6 = new wxPanel(m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_RAISED | wxTAB_TRAVERSAL);
+  m_panel6->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  wxBoxSizer* bSizer311;
+  bSizer311 = new wxBoxSizer(wxVERTICAL);
+
+  ErrorTitle = new wxStaticText(m_panel6, wxID_ANY, wxT("Error!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+  ErrorTitle->Wrap(-1);
+  ErrorTitle->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  ErrorTitle->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer311->Add(ErrorTitle, 0, wxALL | wxEXPAND, 5);
+
+  ErrorDescription = new wxStaticText(m_panel6, wxID_ANY, wxT("This object is a shortcut that has no destination. "), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+  ErrorDescription->Wrap(-1);
+  ErrorDescription->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  ErrorDescription->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
+
+  bSizer311->Add(ErrorDescription, 0, wxBOTTOM | wxRIGHT | wxLEFT | wxEXPAND, 5);
+
+
+  m_panel6->SetSizer(bSizer311);
+  m_panel6->Layout();
+  bSizer311->Fit(m_panel6);
+  bSizer211->Add(m_panel6, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+
+  m_panel3->SetSizer(bSizer211);
+  m_panel3->Layout();
+  bSizer211->Fit(m_panel3);
+  MessageBook->AddPage(m_panel3, wxT("a page"), false);
+  wxPanel* m_panel7;
+  m_panel7 = new wxPanel(MessageBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+  MessageBook->AddPage(m_panel7, wxT("a page"), false);
+
+  bSizer1->Add(MessageBook, 1, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
+
+  MessageBook->ChangeSelection(RedirectorTab::RedirectorNone);
+  SetSizer(bSizer1);
   Layout();
-  sizer->Fit(this);
 
-  Centre(wxBOTH);
+  EditorSourceButon->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectRedirectorEditor::OnEditorSourceClicked), NULL, this);
+  EditorOriginButon->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectRedirectorEditor::OnEditorOriginalClicked), NULL, this);
 }
 
 void ObjectRedirectorEditor::OnObjectLoaded()
@@ -69,6 +191,14 @@ void ObjectRedirectorEditor::OnObjectLoaded()
   if (Source)
   {
     opath = Source->GetObjectPath().UTF8();
+    if (Source->GetPackage() != Window->GetPackage().get() && Source->GetPackage()->IsComposite())
+    {
+      MessageBook->ChangeSelection(RedirectorTab::RedirectorSource);
+    }
+    else
+    {
+      MessageBook->ChangeSelection(RedirectorTab::RedirectorOriginal);
+    }
   }
   else if (Redirector)
   {
@@ -85,17 +215,27 @@ void ObjectRedirectorEditor::OnObjectLoaded()
     }
     else
     {
+      ErrorTitle->SetLabel(wxT("Error! The redirector is empty."));
+      ErrorDescription->SetLabel(wxT("Game developers left this empty object."));
+      MessageBook->ChangeSelection(RedirectorTab::RedirectorError);
       opath = "None";
     }
   }
   else
   {
     opath = "NULL";
+    ErrorTitle->SetLabel(wxT("Error! The redirector is empty."));
+    ErrorDescription->SetLabel(wxT("Failed to find the object or its GPK file."));
+    MessageBook->ChangeSelection(RedirectorTab::RedirectorError);
   }
 
   std::replace(opath.begin(), opath.end(), '.', '\\');
-  ObjectPath->SetLabel(opath);
-  
+  opath = "Path: " + opath;
+  PathLabelSource->SetLabel(opath);
+  PathLabelSource->Layout();
+  PathLabelOriginal->SetLabel(opath);
+  PathLabelOriginal->Layout();
+
   GenericEditor::OnObjectLoaded();
 }
 
@@ -147,4 +287,14 @@ void ObjectRedirectorEditor::OnToolBarEvent(wxCommandEvent& e)
       App::GetSharedApp()->OpenPackage(Source->GetPackage()->GetSourcePath().WString(), Source->GetObjectPath().WString());
     }
   }
+}
+
+void ObjectRedirectorEditor::OnEditorSourceClicked(wxCommandEvent& e)
+{
+  OnToolBarEvent(e);
+}
+
+void ObjectRedirectorEditor::OnEditorOriginalClicked(wxCommandEvent& e)
+{
+  OnToolBarEvent(e);
 }
