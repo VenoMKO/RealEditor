@@ -319,6 +319,10 @@ void ObjectPicker::LoadObjectTree()
   ObjectTreeCtrl->AssociateModel(model);
   ObjectTreeCtrl->GetColumn(0)->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
   model->DecRef();
+  if (Filter.size())
+  {
+    ObjectTreeCtrl->ExpandAll();
+  }
 }
 
 void ObjectPicker::UpdateTableTitle()
