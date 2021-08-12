@@ -844,11 +844,37 @@ void PackageWindow::DebugIteratePackages(wxCommandEvent&)
     }
   }
   // Save ctx if needed
+#ifdef DUMP_PATH
+  std::string rootDir = DUMP_PATH;
+  rootDir += "\\";
+  rootDir += "_IteratorOutput\\";
+  for (const auto& p : ctx.map)
+  {
+    std::ofstream outs(rootDir + p.first.UTF8() + ".txt");
+    for (const FString& entry : p.second)
+    {
+      outs << entry.UTF8() << '\n';
+    }
+  }
+#endif
 }
 
 void PackageWindow::DebugIteratePackage(FPackage* package, DebugIterContext& ctx)
 {
   // Do per-package actions and save results to the ctx
+  auto exports = package->GetAllExports();
+  FString name = package->GetPackageName(true);
+  for (FObjectExport* exp : exports)
+  {
+    if (exp->GetClassName() == UPackage::StaticClassName())
+    {
+      continue;
+    }
+    if (UObject* obj = package->GetObject(exp, false))
+    {
+      ctx.map[name].emplace_back(obj->GetFullObjectName());
+    }
+  }
 }
 
 void PackageWindow::UpdateAccelerators()

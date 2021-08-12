@@ -509,6 +509,12 @@ ObjectTreeNode* ObjectTreeModel::FindItemByObjectIndex(PACKAGE_INDEX index)
   return nullptr;
 }
 
+ObjectTreeDataViewCtrl::ObjectTreeDataViewCtrl(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxValidator& validator, const wxString& name)
+  : wxDataViewCtrl(parent, id, pos, size, style, validator, name)
+{
+  Connect(wxEVT_COMMAND_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler(ObjectTreeDataViewCtrl::OnItemActivated), nullptr, this);
+}
+
 void ObjectTreeDataViewCtrl::AddExportObject(FObjectExport* exp, bool select)
 {
   ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
@@ -651,6 +657,23 @@ void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
   if (GetColumnCount() && GetParent())
   {
     GetColumn(0)->SetWidth(GetParent()->GetSize().x - 30);
+  }
+  e.Skip();
+}
+
+void ObjectTreeDataViewCtrl::OnItemActivated(wxDataViewEvent& e)
+{
+  wxDataViewItem item = GetCurrentItem();
+  if (item.GetID())
+  {
+    if (IsExpanded(item))
+    {
+      Collapse(item);
+    }
+    else
+    {
+      Expand(item);
+    }
   }
   e.Skip();
 }

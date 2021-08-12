@@ -152,7 +152,13 @@ private:
 
 class ObjectTreeDataViewCtrl : public wxDataViewCtrl {
 public:
-  using wxDataViewCtrl::wxDataViewCtrl;
+  ObjectTreeDataViewCtrl(wxWindow* parent, wxWindowID id,
+    const wxPoint& pos = wxDefaultPosition,
+    const wxSize& size = wxDefaultSize, long style = 0,
+    const wxValidator& validator = wxDefaultValidator,
+    const wxString& name = wxASCII_STR(wxDataViewCtrlNameStr));
+
+
   void AddExportObject(FObjectExport* exp, bool select = true);
   void AddImportObject(FObjectImport* imp);
   void RemoveExp(PACKAGE_INDEX idx);
@@ -162,6 +168,7 @@ public:
   void SelectObject(PACKAGE_INDEX idx);
 private:
   void OnSize(wxSizeEvent& e);
+  void OnItemActivated(wxDataViewEvent& e);
   wxDECLARE_EVENT_TABLE();
 private:
   std::map<PACKAGE_INDEX, bool> Expanded;
