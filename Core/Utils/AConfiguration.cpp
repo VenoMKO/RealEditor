@@ -1,4 +1,6 @@
 #include "AConfiguration.h"
+#include "ALog.h"
+
 #include <Tera\FStream.h>
 
 #define SerializeKey(key) { uint16 k = key; s << k; } //
@@ -249,9 +251,14 @@ void SerializeVersion(FStream& s, FAppConfig& c)
 
 void UpdateConfigValues(FAppConfig& c)
 {
-  if (c.VerMajor < 2 || (c.VerMajor == 2 && c.VerMinor < 21))
+  FAppConfig d;
+  if (c.VerMajor < 2 || (c.VerMajor == 2 && c.VerMinor < 30))
   {
     c.MapExportConfig.ActorClasses = (uint32)FMapExportConfig::ActorClass::All;
+  }
+  if (c.MaxLastFilePackages != d.MaxLastFilePackages)
+  {
+    c.MaxLastFilePackages = d.MaxLastFilePackages;
   }
 }
 
@@ -301,14 +308,8 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.LastPkgSavePath;
         break;
       case FAppConfig::CFG_MaxLastFilePackages:
-      {
         s << c.MaxLastFilePackages;
-        if (c.MaxLastFilePackages != d.MaxLastFilePackages)
-        {
-          c.MaxLastFilePackages = d.MaxLastFilePackages;
-        }
         break;
-      }
       case FAppConfig::CFG_LastFilePackages:
         s << c.LastFilePackages;
         break;
@@ -379,13 +380,14 @@ FStream& operator<<(FStream& s, FAppConfig& c)
         s << c.TempS1GameDir;
         break;
       case FAppConfig::CFG_End:
+        UpdateConfigValues(c);
         return s;
       default:
+        LogE("Failed to read the config file. Unknown key %d", (int32)key);
         s.Close();
         return s;
       }
     }
-    UpdateConfigValues(c);
   }
   else
   {
