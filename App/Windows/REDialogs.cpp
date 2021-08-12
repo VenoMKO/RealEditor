@@ -322,6 +322,43 @@ namespace IODialog
     return result;
   }
 
+  std::vector<wxString> OpenMultiPackageDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
+  {
+    wxString path = inPath;
+    if (path.empty())
+    {
+      FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+      path = cfg.LastPkgOpenPath.WString();
+      if (path.Length())
+      {
+        wxFileName f(path);
+        path = f.GetPathWithSep();
+      }
+    }
+    wxFileDialog dialog(parent, caption, path, wxEmptyString, wxT("Tera Package files (*.gpk;*.gmp;*.upk)|*.gpk;*.gmp;*.upk"), wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+    {
+      return {};
+    }
+    std::vector<wxString> result;
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    wxArrayString tmp;
+    dialog.GetPaths(tmp);
+    for (const wxString& p : tmp)
+    {
+      if (result.size() >= OPEN_OP_MAX_FILES)
+      {
+        break;
+      }
+      result.emplace_back(p);
+      wxFileName f(p);
+      cfg.LastPkgOpenPath = f.GetPathWithSep().ToStdWstring();
+      cfg.AddLastFilePackagePath(result.back().ToStdWstring());
+    }
+    App::GetSharedApp()->SaveConfig();
+    return result;
+  }
+
   wxString SavePackageDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
     wxString path = inPath;

@@ -36,6 +36,8 @@ static const unsigned int BUILD_NUMBER = (
 #define ADVANCED_TERRAIN_SERIALIZATION 0
 // Export sound cues from ULevel
 #define EXPERIMENTAL_SOUND_LEVEL_EXPORT 1
+// Maximum number of files to open from a single file dialog
+#define OPEN_OP_MAX_FILES 14
 
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,

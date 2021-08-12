@@ -443,11 +443,11 @@ void WelcomeDialog::OnRecentSelected(wxDataViewEvent& event)
 void WelcomeDialog::OnOpenFileClicked(wxCommandEvent& event)
 {
   ModalRunning = true;
-  wxString path = IODialog::OpenPackageDialog(this);
+  std::vector<wxString> paths = IODialog::OpenMultiPackageDialog(this);
   ModalRunning = false;
-  if (path.size())
+  if (paths.size())
   {
-    QueuedOpenList.emplace_back(path);
+    QueuedOpenList.insert(QueuedOpenList.end(), paths.begin(), paths.end());
   }
   if (QueuedOpenList.size())
   {

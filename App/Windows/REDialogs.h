@@ -11,6 +11,7 @@ namespace IODialog
   wxString SaveDecryptedMapperFile(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString);
 
   wxString OpenPackageDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Open Tera package..."));
+  std::vector<wxString> OpenMultiPackageDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Open Tera packages..."));
   wxString SavePackageDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save Tera package..."));
 
   wxString OpenTextureDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Import a texture..."));

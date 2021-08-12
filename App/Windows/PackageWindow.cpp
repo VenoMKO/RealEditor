@@ -929,12 +929,34 @@ int PackageWindow::GetOpenRecentId()
   return ControlElementId::OpenRecentStart;
 }
 
-bool PackageWindow::Show(bool show /*= true*/)
+bool PackageWindow::Show(bool show)
 {
   bool result = wxFrame::Show(show);
-  if (show && !MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL))
+  if (show)
   {
+    HMONITOR mon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL);
+    if (mon)
+    {
+      MONITORINFO info;
+      info.cbSize = sizeof(MONITORINFO);
+      if (GetMonitorInfo(mon, &info))
+      {
+        wxPoint pos = GetPosition();
+        if (info.rcWork.bottom > (pos.y + 60) && info.rcWork.top <= pos.y &&
+            info.rcWork.right  > (pos.x + 60) && info.rcWork.left<= pos.x)
+        {
+          // The window fits screen working area.
+          return result;
+        }
+      }
+    }
+    // The window is not on the screen. Reposition it.
     Center();
+    if (!IsMaximized())
+    {
+      Application->SetLastWindowSize(GetSize());
+      Application->SetLastWindowPosition(GetPosition());
+    }
   }
   return result;
 }
@@ -1066,8 +1088,8 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
 
 void PackageWindow::OnOpenClicked(wxCommandEvent&)
 {
-  wxString path = IODialog::OpenPackageDialog(this);
-  if (path.size())
+  std::vector<wxString> paths = IODialog::OpenMultiPackageDialog(this);
+  for (const wxString& path : paths)
   {
     Application->OpenPackage(path);
   }
