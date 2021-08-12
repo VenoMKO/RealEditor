@@ -2184,19 +2184,32 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
       }
     }
 #if EXPERIMENTAL_SOUND_LEVEL_EXPORT
+    if (ctx.CuesMap.size())
     {
-      FString cuesList;
       std::error_code ec;
+      {
+        std::filesystem::path dirp = ctx.GetCueDir();
+        std::filesystem::create_directories(dirp, ec);
+        dirp = dirp.parent_path().parent_path();
+        dirp /= "DO_NOT_COPY_TO_UE4";
+        std::ofstream marker(dirp);
+      }
+      FString cuesList;
       for (const auto& p : ctx.CuesMap)
       {
         std::filesystem::path dirp = ctx.GetCueDir() / p.first->GetLocalDir().UTF8();
         std::filesystem::create_directories(dirp, ec);
         dirp /= (p.first->GetObjectNameString() + ".cue").UTF8();
+        if (std::filesystem::exists(dirp, ec) && !ctx.Config.OverrideData)
+        {
+          continue;
+        }
         cuesList += dirp.wstring();
         cuesList += "\n";
         std::ofstream ofs(dirp);
         ofs << p.second;
       }
+      if (!std::filesystem::exists(ctx.GetCuesInfoPath(), ec) || ctx.Config.OverrideData)
       {
         std::ofstream ofs(ctx.GetCuesInfoPath());
         ofs << cuesList.UTF8();
