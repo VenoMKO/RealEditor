@@ -296,6 +296,9 @@
     <ClCompile Include="Core\Tera\UVolumes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\SoundCueEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -449,6 +452,7 @@
     <ClInclude Include="App\Misc\WXDialog.h" />
     <ClInclude Include="Core\Tera\UModel.h" />
     <ClInclude Include="Core\Tera\UVolumes.h" />
+    <ClInclude Include="App\Editors\SoundCueEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

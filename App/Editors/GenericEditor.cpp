@@ -21,6 +21,7 @@
 #include "MaterialEditor.h"
 #include "MaterialInstanceEditor.h"
 #include "PrefabEditor.h"
+#include "SoundCueEditor.h"
 
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
@@ -63,6 +64,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (c == USoundNodeWave::StaticClassName())
   {
     editor = new SoundWaveEditor(parent, window);
+  }
+  else if (c == USoundCue::StaticClassName())
+  {
+    editor = new SoundCueEditor(parent, window);
   }
   else if (c == NAME_Class)
   {
@@ -197,22 +202,18 @@ void GenericEditor::OnToolBarEvent(wxCommandEvent& e)
   if (e.GetId() == eID_Export)
   {
     OnExportClicked(e);
-    e.Skip(true);
   }
   else if (e.GetId() == eID_Import)
   {
     OnImportClicked(e);
-    e.Skip(true);
   }
   else if (e.GetId() == eID_Composite)
   {
     OnSourceClicked(e);
-    e.Skip(true);
   }
   else if (e.GetId() == eID_Class)
   {
     OnClassClicked(e);
-    e.Skip(true);
   }
 }
 

@@ -460,6 +460,21 @@ namespace IODialog
     }
     return result;
   }
+
+  wxString SaveSoundCueDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
+  {
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = App::GetSharedApp()->GetExportPath();
+    }
+    wxString result = wxDirSelector(caption, path, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST, wxDefaultPosition, parent);
+    if (result.Length())
+    {
+      App::GetSharedApp()->SaveExportPath(result);
+    }
+    return result;
+  }
 }
 
 namespace REDialog

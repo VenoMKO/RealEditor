@@ -27,17 +27,17 @@ class USoundNodeAttenuation : public USoundNode {
 public:
   DECL_UOBJ(USoundNodeAttenuation, USoundNode);
 
-  UPROP(SoundDistanceModel, DistanceModel, ATTENUATION_Logarithmic);
+  UPROP(SoundDistanceModel, DistanceModel, ATTENUATION_Linear);
   UPROP(bool, bSpatialize, true);
   UPROP(bool, bAttenuate, true);
 
-  UPROP(bool, bAttenuateWithLowPassFilter, false); //x86
+  UPROP(bool, bAttenuateWithLowPassFilter, true); //x86
   UPROP(float, MinRadius, 400.f);
   UPROP(float, MaxRadius, 4000.f);
   UPROP(float, LPFMinRadius, 3000.f);
   UPROP(float, LPFMaxRadius, 6000.f);
 
-  UPROP(bool, bAttenuateWithLPF, false); //x64
+  UPROP(bool, bAttenuateWithLPF, true); //x64
   UPROP(float, RadiusMin, 400.f);
   UPROP(float, RadiusMax, 4000.f);
   UPROP(float, LPFRadiusMin, 3000.f);
@@ -69,15 +69,13 @@ public:
   }
 
   bool RegisterProperty(FPropertyTag* property) override;
-
-  void PostLoad() override;
 };
 
 class USoundNodeAmbient : public USoundNode {
 public:
   DECL_UOBJ(USoundNodeAmbient, USoundNode);
 
-  UPROP(SoundDistanceModel, DistanceModel, ATTENUATION_Logarithmic);
+  UPROP(SoundDistanceModel, DistanceModel, ATTENUATION_Linear);
   UPROP(bool, bSpatialize, true);
   UPROP(bool, bAttenuate, true);
 
@@ -103,8 +101,6 @@ public:
   UPROP_NOINIT(std::vector<FAmbientSoundSlot>, SoundSlots);
 
   bool RegisterProperty(FPropertyTag* property) override;
-
-  void PostLoad() override;
 
   void GetWaves(std::vector<class USoundNodeWave*>& waves) override;
 
@@ -236,14 +232,15 @@ public:
   UPROP(float, VolumeMultiplier, .75f);
   UPROP(float, PitchMultiplier, 1.f);
   UPROP(float, MaxAudibleDistance, 1.f);
+  UPROP(int32, MaxConcurrentPlayCount, 16);
 
   bool RegisterProperty(FPropertyTag* property) override;
 
   // Get all waves used by the Cue
   void GetWaves(std::vector<USoundNodeWave*>& waves);
 
-  // Export to Unreal Engine 4. loop - seamless wave looping
-  FString ExportCueToText(bool loop = true);
+  // Export to Unreal Engine 4. loop - seamless wave looping. attScale - custom attenuation scale(-1.f - take scale from level export).
+  FString ExportCueToText(bool loop = true, float attScale = -1.f);
 };
 
 class USoundNodeModulator : public USoundNode {

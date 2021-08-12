@@ -24,6 +24,7 @@
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
     <ClCompile Include="App\Editors\PrefabEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
+    <ClCompile Include="App\Editors\SoundCueEditor.cpp" />
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp" />
     <ClCompile Include="App\Editors\SpeedTreeEditor.cpp" />
     <ClCompile Include="App\Editors\StaticMeshActorEditor.cpp" />
@@ -118,6 +119,7 @@
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
+    <ClInclude Include="App\Editors\SoundCueEditor.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
     <ClInclude Include="App\Misc\ArchiveInfo.h" />

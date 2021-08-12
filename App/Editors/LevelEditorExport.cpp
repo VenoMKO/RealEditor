@@ -1169,7 +1169,7 @@ ComponentDataFunc ExportAudioComponentData = [](T3DFile& f, LevelExportContext& 
   ctx.Waves.insert(ctx.Waves.end(), waves.begin(), waves.end());
 
   std::string asset = "Game/" + std::string(ctx.DataDirName) + '/';
-  FString cueData = asset + cue->ExportCueToText(!Cast<UAmbientSoundNonLoop>(sound));
+  FString cueData = asset + cue->ExportCueToText(!Cast<UAmbientSoundNonLoop>(sound), ctx.Config.GlobalScale);
   asset += cue->GetLocalDir(true, "/").UTF8();
   ctx.CuesMap[cue] = cueData.UTF8();
   f.AddCustom("Sound", FString::Sprintf("SoundCue'\"/%s\"'", asset.c_str()).UTF8().c_str());
@@ -1178,9 +1178,9 @@ ComponentDataFunc ExportAudioComponentData = [](T3DFile& f, LevelExportContext& 
   float radiusMax = 1000.f;
   bool spatialize = true;
   FString distanceModel = "Linear";
-  f.AddBool("bOverrideAttenuation", true);
   if (UAmbientSoundSimple* asound = Cast<UAmbientSoundSimple>(sound))
   {
+    f.AddBool("bOverrideAttenuation", true);
     if (asound->AmbientProperties)
     {
       asound->AmbientProperties->Load();
@@ -2304,7 +2304,7 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
     }
     if (actor->GetClassName() == UTerrain::StaticClassName())
     {
-      if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes))
+      if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Terrains))
       {
         continue;
       }
@@ -3304,7 +3304,7 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
       std::string asset = "Game/";
       asset += ctx.DataDirName;
       asset += '/';
-      FString cueData = cue->ExportCueToText();
+      FString cueData = cue->ExportCueToText(true, ctx.Config.GlobalScale);
       asset += cueData.UTF8();
       ctx.CuesMap[cue] = asset;
     }

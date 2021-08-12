@@ -4,7 +4,9 @@
 #include "UClass.h"
 #include "Cast.h"
 
-int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& index, bool loop)
+#include <Utils/AConfiguration.h>
+
+int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& index, bool loop, float scale)
 {
   index++;
   FString c = node->GetClassNameString();
@@ -37,7 +39,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
       {
         continue;
       }
-      int32 childIdx = ExportSoundCueNodeRecursive(childStr, childNode.Wave, index, loop);
+      int32 childIdx = ExportSoundCueNodeRecursive(childStr, childNode.Wave, index, loop, scale);
       cueString += FString::Sprintf("(Index=%d,Weight=%.06f)", childIdx, childNode.Weight);
       if (sIdx + 1 < tnode->SoundSlots.size())
       {
@@ -51,7 +53,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
     USoundNodeAmbient* amb = Cast<USoundNodeAmbient>(node);
     if (USoundNodeWave* wave = amb->Wave)
     {
-      currentIndex = ExportSoundCueNodeRecursive(childStr, wave, index, loop);
+      currentIndex = ExportSoundCueNodeRecursive(childStr, wave, index, loop, scale);
     }
   }
   else if (c == USoundNodeLooping::StaticClassName())
@@ -68,7 +70,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
       cueString += "\tChildren=(";
       for (int32 cIdx = 0; cIdx < node->ChildNodes.size(); ++cIdx)
       {
-        int32 childIndex = ExportSoundCueNodeRecursive(childStr, node->ChildNodes[cIdx], index, true);
+        int32 childIndex = ExportSoundCueNodeRecursive(childStr, node->ChildNodes[cIdx], index, true, scale);
         cueString = FString::Sprintf("(Index=%d)", childIndex);
         if (cIdx + 1 < node->ChildNodes.size())
         {
@@ -79,7 +81,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
     }
     else if (node->ChildNodes.size() == 1)
     {
-      currentIndex = ExportSoundCueNodeRecursive(cueString, node->ChildNodes[0], index, true);
+      currentIndex = ExportSoundCueNodeRecursive(cueString, node->ChildNodes[0], index, true, scale);
     }
   }
   else if (c == USoundNodeMixer::StaticClassName())
@@ -93,7 +95,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
     }
     for (int32 cIdx = 0; cIdx < node->ChildNodes.size(); ++cIdx)
     {
-      int32 childIndex = ExportSoundCueNodeRecursive(childStr, mixer->ChildNodes[cIdx], index, loop);
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, mixer->ChildNodes[cIdx], index, loop, scale);
       cueString += FString::Sprintf("(Index=%d,Volume=%.06f)", childIndex, mixer->InputVolume[cIdx % mixer->InputVolume.size()]);
       if (cIdx + 1 < node->ChildNodes.size())
       {
@@ -113,7 +115,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
 
     if (tnode->ChildNodes.size() == 1)
     {
-      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[0], index, loop);
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[0], index, loop, scale);
       cueString += FString::Sprintf("\tChildren=((Index=%d))\n", childIndex);
     }
     else
@@ -121,7 +123,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
       cueString += "\tChildren=(";
       for (int32 cIdx = 0; cIdx < tnode->ChildNodes.size(); ++cIdx)
       {
-        int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[cIdx], index, loop);
+        int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[cIdx], index, loop, scale);
         cueString += FString::Sprintf("(Index=%d)", childIndex);
         if (cIdx + 1 < tnode->ChildNodes.size())
         {
@@ -141,7 +143,7 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
     cueString += "\tChildren=(";
     for (int32 sIdx = 0; sIdx < tnode->ChildNodes.size(); ++sIdx)
     {
-      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[sIdx], index, loop);
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[sIdx], index, loop, scale);
       cueString += FString::Sprintf("(Index=%d,Weight=%.06f)", childIndex, tnode->Weights[sIdx % tnode->Weights.size()]);
       if (sIdx + 1 < tnode->ChildNodes.size())
       {
@@ -156,6 +158,49 @@ int32 ExportSoundCueNodeRecursive(FString& cueString, USoundNode* node, int32& i
     cueString += FString::Sprintf("\tLooping=%s\n", loop ? "True" : "False");
     FString assetPath = FString::Sprintf("S1Game/%s", node->GetLocalDir(true, "/").UTF8().c_str());
     cueString += FString::Sprintf("\tSound=%s\n", assetPath.UTF8().c_str());
+  }
+  else if (c == USoundNodeAttenuation::StaticClassName())
+  {
+    USoundNodeAttenuation* tnode = Cast<USoundNodeAttenuation>(node);
+    cueString += FString::Sprintf("%d\t%s\n", currentIndex, USoundNodeAttenuation::StaticClassName());
+    cueString += FString::Sprintf("\tSpatialize=%s\n", tnode->bSpatialize ? "True" : "False");
+    cueString += FString::Sprintf("\tAttenuate=%s\n", tnode->bAttenuate ? "True" : "False");
+    cueString += FString::Sprintf("\tRadiusMin=%.06f\n", tnode->GetRadiusMin() * scale);
+    cueString += FString::Sprintf("\tRadiusMax=%.06f\n", tnode->GetRadiusMax() * scale);
+    cueString += FString::Sprintf("\tAttenuateWithLPF=%s\n", tnode->GetAttenuateWithLPF() ? "True" : "False");
+    if (tnode->GetAttenuateWithLPF())
+    {
+      cueString += FString::Sprintf("\tLPFRadiusMin=%.06f\n", tnode->GetLPFRadiusMin() * scale);
+      cueString += FString::Sprintf("\tLPFRadiusMax=%.06f\n", tnode->GetLPFRadiusMax() * scale);
+    }
+    FString distanceModel = "Linear";
+    switch (tnode->DistanceModel)
+    {
+    case ATTENUATION_Logarithmic:
+      distanceModel = "Logarithmic";
+      break;
+    case ATTENUATION_Inverse:
+      distanceModel = "Inverse";
+      break;
+    case ATTENUATION_LogReverse:
+      distanceModel = "LogReverse";
+      break;
+    case ATTENUATION_NaturalSound:
+      distanceModel = "NaturalSound";
+      break;
+    }
+    cueString += FString::Sprintf("\tDistanceModel=%s\n", distanceModel.UTF8().c_str());
+    cueString += "\tChildren=(";
+    for (int32 sIdx = 0; sIdx < tnode->ChildNodes.size(); ++sIdx)
+    {
+      int32 childIndex = ExportSoundCueNodeRecursive(childStr, tnode->ChildNodes[sIdx], index, loop, scale);
+      cueString += FString::Sprintf("(Index=%d)", childIndex);
+      if (sIdx + 1 < tnode->ChildNodes.size())
+      {
+        cueString += ",";
+      }
+    }
+    cueString += ")\n";
   }
   else
   {
@@ -216,6 +261,7 @@ bool USoundCue::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(VolumeMultiplier);
   REGISTER_FLOAT_PROP(PitchMultiplier);
   REGISTER_FLOAT_PROP(MaxAudibleDistance);
+  REGISTER_INT_PROP(MaxConcurrentPlayCount);
   return false;
 }
 
@@ -227,12 +273,17 @@ void USoundCue::GetWaves(std::vector<USoundNodeWave*>& waves)
   }
 }
 
-FString USoundCue::ExportCueToText(bool loop)
+FString USoundCue::ExportCueToText(bool loop, float attScale)
 {
   Load();
   if (!FirstNode)
   {
     return {};
+  }
+  if (attScale < 0.)
+  {
+    FMapExportConfig cfg;
+    attScale = cfg.GlobalScale;
   }
 
   FString cueData = GetLocalDir(true, "/") + "\n";
@@ -241,9 +292,13 @@ FString USoundCue::ExportCueToText(bool loop)
   {
     cueData += FString::Sprintf("Pitch=%.06f\n", PitchMultiplier);
   }
+  if (MaxConcurrentPlayCount != 16)
+  {
+    cueData += FString::Sprintf("MaxConcurrentPlayCount=%d\n", MaxConcurrentPlayCount);
+  }
   cueData += "Nodes:\n";
   int32 index = 0;
-  ExportSoundCueNodeRecursive(cueData, FirstNode, index, loop);
+  ExportSoundCueNodeRecursive(cueData, FirstNode, index, loop, attScale);
   return cueData;
 }
 
@@ -651,15 +706,6 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   return false;
 }
 
-void USoundNodeAmbient::PostLoad()
-{
-  if (GetPackage()->GetFileVersion() > VER_TERA_CLASSIC && !DistanceModelProperty)
-  {
-    DistanceModel = ATTENUATION_Linear;
-  }
-  Super::PostLoad();
-}
-
 void USoundNodeAmbient::GetWaves(std::vector<USoundNodeWave*>& waves)
 {
   if (Wave)
@@ -832,15 +878,6 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
     return false;
   }
   return false;
-}
-
-void USoundNodeAttenuation::PostLoad()
-{
-  if (GetPackage()->GetFileVersion() > VER_TERA_CLASSIC && !DistanceModelProperty)
-  {
-    DistanceModel = ATTENUATION_Linear;
-  }
-  Super::PostLoad();
 }
 
 bool USoundNodeAmbientNonLoop::RegisterProperty(FPropertyTag* property)
