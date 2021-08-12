@@ -5,6 +5,8 @@
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 
+#define SHOW_REDIRECTOR_PATH 0
+
 enum RedirectorTab : size_t {
   RedirectorSource = 0,
   RedirectorOriginal = 1,
@@ -33,7 +35,7 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   wxStaticText* m_staticText1;
   m_staticText1 = new wxStaticText(m_panel5, wxID_ANY, wxT("This is a shortcut to an object!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   m_staticText1->Wrap(-1);
-  m_staticText1->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  m_staticText1->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
   m_staticText1->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer3->Add(m_staticText1, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -41,21 +43,23 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   wxStaticText* m_staticText2;
   m_staticText2 = new wxStaticText(m_panel5, wxID_ANY, wxT("The actual object is stored in a different GPK file.\nPress \"Source\" to open the GPK with the object."), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   m_staticText2->Wrap(-1);
-  m_staticText2->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  m_staticText2->SetFont(wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
   m_staticText2->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   EditorSourceButon = new wxButton(m_panel5, eID_Composite, wxT("Source"), wxDefaultPosition, wxDefaultSize, 0);
+  EditorSourceButon->SetBitmap(wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), wxRIGHT);
   EditorSourceButon->SetToolTip("Open composite package containing this object...");
   bSizer3->Add(EditorSourceButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
-
+#if SHOW_REDIRECTOR_PATH
   PathLabelSource = new wxStaticText(m_panel5, wxID_ANY, wxT("Path: None"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL | wxST_ELLIPSIZE_MIDDLE);
   PathLabelSource->Wrap(-1);
   PathLabelSource->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer3->Add(PathLabelSource, 0, wxALL | wxEXPAND, 5);
-
+  PathLabelSource->SetAutoLayout(true);
+#endif
 
   m_panel5->SetSizer(bSizer3);
   m_panel5->Layout();
@@ -81,7 +85,7 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   wxStaticText* m_staticText11;
   m_staticText11 = new wxStaticText(m_panel4, wxID_ANY, wxT("This is a shortcut to an object!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   m_staticText11->Wrap(-1);
-  m_staticText11->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  m_staticText11->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
   m_staticText11->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer31->Add(m_staticText11, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -89,21 +93,23 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   wxStaticText* m_staticText21;
   m_staticText21 = new wxStaticText(m_panel4, wxID_ANY, wxT("The actual object is stored in a different location.\nPress \"Original\" to select the object."), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   m_staticText21->Wrap(-1);
-  m_staticText21->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  m_staticText21->SetFont(wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
   m_staticText21->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer31->Add(m_staticText21, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
   EditorOriginButon = new wxButton(m_panel4, eID_Origin, wxT("Original"), wxDefaultPosition, wxDefaultSize, 0);
+  EditorOriginButon->SetBitmap(wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE));
   EditorOriginButon->SetToolTip("Show original object...");
   bSizer31->Add(EditorOriginButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
-
+#if SHOW_REDIRECTOR_PATH
   PathLabelOriginal = new wxStaticText(m_panel4, wxID_ANY, wxT("Path: None"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL | wxST_ELLIPSIZE_MIDDLE);
   PathLabelOriginal->Wrap(-1);
   PathLabelOriginal->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer31->Add(PathLabelOriginal, 0, wxALL | wxEXPAND, 5);
-
+  PathLabelOriginal->SetAutoLayout(true);
+#endif
 
   m_panel4->SetSizer(bSizer31);
   m_panel4->Layout();
@@ -128,14 +134,14 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
 
   ErrorTitle = new wxStaticText(m_panel6, wxID_ANY, wxT("Error!"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   ErrorTitle->Wrap(-1);
-  ErrorTitle->SetFont(wxFont(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+  ErrorTitle->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
   ErrorTitle->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer311->Add(ErrorTitle, 0, wxALL | wxEXPAND, 5);
 
   ErrorDescription = new wxStaticText(m_panel6, wxID_ANY, wxT("This object is a shortcut that has no destination. "), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
   ErrorDescription->Wrap(-1);
-  ErrorDescription->SetFont(wxFont(16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
+  ErrorDescription->SetFont(wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString));
   ErrorDescription->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DDKSHADOW));
 
   bSizer311->Add(ErrorDescription, 0, wxBOTTOM | wxRIGHT | wxLEFT | wxEXPAND, 5);
@@ -160,7 +166,7 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   MessageBook->ChangeSelection(RedirectorTab::RedirectorNone);
   SetSizer(bSizer1);
   Layout();
-
+  MessageBook->SetAutoLayout(true);
   EditorSourceButon->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectRedirectorEditor::OnEditorSourceClicked), NULL, this);
   EditorOriginButon->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ObjectRedirectorEditor::OnEditorOriginalClicked), NULL, this);
 }
@@ -215,28 +221,34 @@ void ObjectRedirectorEditor::OnObjectLoaded()
     }
     else
     {
+      opath = "None";
+#if SHOW_REDIRECTOR_PATH
       ErrorTitle->SetLabel(wxT("Error! The redirector is empty."));
       ErrorDescription->SetLabel(wxT("Game developers left this empty object."));
       MessageBook->ChangeSelection(RedirectorTab::RedirectorError);
-      opath = "None";
+      MessageBook->Layout();
+#endif
     }
   }
   else
   {
     opath = "NULL";
+#if SHOW_REDIRECTOR_PATH
     ErrorTitle->SetLabel(wxT("Error! The redirector is empty."));
     ErrorDescription->SetLabel(wxT("Failed to find the object or its GPK file."));
     MessageBook->ChangeSelection(RedirectorTab::RedirectorError);
+    MessageBook->Layout();
+#endif
   }
 
   std::replace(opath.begin(), opath.end(), '.', '\\');
   opath = "Path: " + opath;
+#if SHOW_REDIRECTOR_PATH
   PathLabelSource->SetLabel(opath);
-  PathLabelSource->Layout();
   PathLabelOriginal->SetLabel(opath);
-  PathLabelOriginal->Layout();
-
+#endif
   GenericEditor::OnObjectLoaded();
+  Layout();
 }
 
 void ObjectRedirectorEditor::PopulateToolBar(wxToolBar* toolbar)
