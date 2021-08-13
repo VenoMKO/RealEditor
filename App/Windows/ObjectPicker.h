@@ -56,6 +56,7 @@ protected:
   wxButton* PackageButton = nullptr;
   wxButton* OkButton = nullptr;
   wxButton* CancelButton = nullptr;
+  wxStaticText* ContentsLabel = nullptr;
 };
 
 class ObjectNameDialog : public WXDialog {

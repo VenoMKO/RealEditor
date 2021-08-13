@@ -11,7 +11,6 @@
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
   , AllowDifferentPackage(allowDifferentPackage)
-  , TableTitle(title)
 {
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -81,7 +80,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
     return;
   }
 
-  wxDataViewColumn* col = new wxDataViewColumn(TableTitle + wxT(":"), new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
+  wxDataViewColumn* col = new wxDataViewColumn(wxEmptyString, new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
   ObjectTreeCtrl->AppendColumn(col);
 
   LoadObjectTree();
@@ -95,7 +94,6 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
       ObjectTreeCtrl->EnsureVisible(item);
       Selection = Package->GetObject(selection);
       OkButton->Enable(Selection);
-      UpdateTableTitle();
     }
   }
   else
@@ -110,12 +108,15 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 {
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);
-  TableTitle = wxEmptyString;
 
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
+  ContentsLabel = new wxStaticText(this, wxID_ANY, wxT("Contents:"), wxDefaultPosition, wxDefaultSize, 0);
+  ContentsLabel->Wrap(-1);
+  bSizer2->Add(ContentsLabel, 0, wxALL | wxEXPAND, 5);
+
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), wxDV_NO_HEADER);
   bSizer2->Add(ObjectTreeCtrl, 1, wxRIGHT | wxEXPAND, 1);
 
   wxBoxSizer* bSizer4;
@@ -166,7 +167,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 
   Package = package;
 
-  wxDataViewColumn* col = new wxDataViewColumn(TableTitle + wxT(":"), new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
+  wxDataViewColumn* col = new wxDataViewColumn(wxEmptyString, new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
   ObjectTreeCtrl->AppendColumn(col);
 
   LoadObjectTree();
@@ -180,7 +181,6 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
       ObjectTreeCtrl->EnsureVisible(item);
       Selection = Package->GetObject(selection);
       OkButton->Enable(Selection);
-      UpdateTableTitle();
     }
   }
   else
@@ -211,7 +211,6 @@ void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
   OkButton->Enable(node);
   if (!node)
   {
-    UpdateTableTitle();
     return;
   }
   PACKAGE_INDEX index = node->GetObjectIndex();
@@ -223,7 +222,6 @@ void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
   if (index == FAKE_EXPORT_ROOT || index == FAKE_IMPORT_ROOT)
   {
     OkButton->Enable(false);
-    UpdateTableTitle();
     return;
   }
   bool enabled = (ObjectTreeModel*)(ObjectTreeCtrl->GetModel())->IsEnabled(wxDataViewItem(node), 0);
@@ -231,7 +229,6 @@ void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
   if (enabled)
   {
     Selection = Package->GetObject(index);
-    UpdateTableTitle();
   }
 }
 
@@ -321,31 +318,25 @@ void ObjectPicker::LoadObjectTree()
   model->DecRef();
   if (Filter.size())
   {
-    ObjectTreeCtrl->ExpandAll();
-  }
-}
-
-void ObjectPicker::UpdateTableTitle()
-{
-  if (Selection)
-  {
-    wxString title = TableTitle.empty() ? wxT("Selected object") : TableTitle;
-    ObjectTreeCtrl->GetColumn(0)->SetTitle(title + wxT(": ") + Selection->GetObjectNameString().WString());
-  }
-  else
-  {
-    wxString title = TableTitle.empty() ? wxT("Selected object") : TableTitle;
-    title += wxT(": ");
-    if (AllowRootExport)
+    if (ObjectTreeCtrl->SuitableObjectsCount())
     {
-      title += Package->GetPackageName().WString();
+      ContentsLabel->SetLabel("Contents:");
+      ContentsLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
     }
     else
     {
-      title += wxT("None");
+      wxString text("No suitable objects found!");
+      if (PackageButton->IsEnabled())
+      {
+        text += wxT(" Press \"Package...\" to open a different GPK.");
+      }
+      ContentsLabel->SetLabel(text);
+      ContentsLabel->SetForegroundColour(wxColour(255, 0, 0));
     }
-    ObjectTreeCtrl->GetColumn(0)->SetTitle(title);
+    ObjectTreeCtrl->ExpandAll();
   }
+  Selection = nullptr;
+  OkButton->Enable(false);
 }
 
 void ObjectPicker::OnShowContextMenu(wxDataViewEvent& event)

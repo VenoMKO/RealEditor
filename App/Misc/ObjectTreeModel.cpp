@@ -652,6 +652,30 @@ void ObjectTreeDataViewCtrl::SelectObject(PACKAGE_INDEX idx)
   }
 }
 
+int32 ObjectTreeDataViewCtrl::SuitableObjectsCount()
+{
+  ObjectTreeModel* model = (ObjectTreeModel*)GetModel();
+  ObjectTreeNode* root = model->GetRootExport();
+  std::function<int32(ObjectTreeNode*)> GetChildrenCntRecursive;
+  GetChildrenCntRecursive = [&](ObjectTreeNode* node) {
+    int32 result = 0;
+    if (node)
+    {
+      if (model->IsEnabled(wxDataViewItem(node), 0) && node->GetClassName() != NAME_Package)
+      {
+        result++;
+      }
+      ObjectTreeNodePtrArray& children = node->GetChildren();
+      for (ObjectTreeNode* child : children)
+      {
+        result += GetChildrenCntRecursive(child);
+      }
+    }
+    return result;
+  };
+  return GetChildrenCntRecursive(root);
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())

@@ -166,6 +166,8 @@ public:
   void SaveTreeState();
   void RestoreTreeState();
   void SelectObject(PACKAGE_INDEX idx);
+  int32 SuitableObjectsCount();
+
 private:
   void OnSize(wxSizeEvent& e);
   void OnItemActivated(wxDataViewEvent& e);
