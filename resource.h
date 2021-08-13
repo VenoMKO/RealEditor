@@ -32,6 +32,7 @@
 #define IDB_ICO_ANIMSEQ                 135
 #define IDB_SKEL                        136
 #define IDB_SKEL_OFF                    137
+#define IDB_ICO_SOUND_CUE               138
 
 #define IDB_RES_CORE                    500
 #define IDB_RES_ENGINE                  501

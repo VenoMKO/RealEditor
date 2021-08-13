@@ -81,6 +81,7 @@ enum ClassIco : int {
   IcoSLevel,
   IcoAnimSet,
   IcoAnimSeq,
+  IcoSoundCue,
 };
 
 wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
@@ -142,6 +143,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   if (className == wxT("SoundNodeWave"))
   {
     return IcoSound;
+  }
+  if (className == wxT("SoundCue"))
+  {
+    return IcoSoundCue;
   }
   if (className == wxT("Field") || className == wxT("TextBuffer"))
   {
@@ -426,6 +431,9 @@ void ObjectTreeModel::BuildIcons()
 
   // AnimSequence icon
   IconList->Add(wxBitmap("#135", wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // SoundCue icon
+  IconList->Add(wxBitmap("#138", wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
