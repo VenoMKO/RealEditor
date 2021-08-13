@@ -177,7 +177,7 @@ void PackageWindow::InitLayout()
   stObjects->Wrap(-1);
   treeSizer->Add(stObjects, 0, wxALL, 3);
 
-  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(sidebarPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(sidebarPanel, ControlElementId::ObjTreeCtrl, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
   ObjectTreeCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
   ObjectTreeCtrl->SetMinSize(wxSize(230, 600));
 
@@ -216,11 +216,13 @@ void PackageWindow::InitLayout()
   bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
   BackButton = new wxButton(m_panel8, ControlElementId::Back, wxT("<"), wxDefaultPosition, wxSize(25, -1), 0);
+  BackButton->SetToolTip(wxT("Navigate backward"));
   BackButton->Enable(false);
 
   bSizer16->Add(BackButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
 
   ForwardButton = new wxButton(m_panel8, ControlElementId::Forward, wxT(">"), wxDefaultPosition, wxSize(25, -1), 0);
+  BackButton->SetToolTip(wxT("Navigate forward"));
   ForwardButton->Enable(false);
 
   bSizer16->Add(ForwardButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
@@ -299,6 +301,7 @@ void PackageWindow::InitLayout()
 
   wxStaticText* stPropSize;
   stPropSize = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Prop. size:"), wxDefaultPosition, wxDefaultSize, 0);
+  stPropSize->SetToolTip(wxT("Properties size"));
   stPropSize->Wrap(-1);
   bSizer382->Add(stPropSize, 0, wxALIGN_RIGHT | wxALL, 3);
 
@@ -329,6 +332,7 @@ void PackageWindow::InitLayout()
 
   wxStaticText* stExpFlags;
   stExpFlags = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Exp. flags:"), wxDefaultPosition, wxSize(55, -1), 0);
+  stExpFlags->SetToolTip(wxT("Export flags"));
   stExpFlags->Wrap(-1);
   bSizer60->Add(stExpFlags, 0, wxALIGN_CENTER_VERTICAL | wxALL, 3);
 

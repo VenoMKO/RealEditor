@@ -871,7 +871,7 @@ void GenericAnimEditor::OnTick()
 
 void GenericAnimEditor::OnObjectLoaded()
 {
-  if (Object && Object->GetPackage()->GetFileVersion() > VER_TERA_MODERN)
+  if (Object && Object->GetPackage()->GetFileVersion() > VER_TERA_CLASSIC)
   {
     if (!Mesh)
     {

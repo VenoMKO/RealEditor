@@ -74,6 +74,7 @@ enum ControlElementId {
   Search,
   SearchAccl,
   EscButton,
+  ObjTreeCtrl,
   OpenRecentStart /* OpenRecentStart must be the last id. OpenRecentStart + n - recent file at index n */
 };
 
@@ -2085,10 +2086,10 @@ EVT_MENU(ControlElementId::LogWin, PackageWindow::OnToggleLogClicked)
 EVT_MENU(ControlElementId::Help, PackageWindow::OnHelpClicked)
 EVT_MENU(ControlElementId::DumpObjectsMap, PackageWindow::OnDumpCompositeObjectsClicked)
 EVT_MENU(ControlElementId::BulkCompositeExtract, PackageWindow::OnBulkCompositeExtract)
-EVT_DATAVIEW_ITEM_START_EDITING(wxID_ANY, PackageWindow::OnObjectTreeStartEdit)
+EVT_DATAVIEW_ITEM_START_EDITING(ControlElementId::ObjTreeCtrl, PackageWindow::OnObjectTreeStartEdit)
 EVT_SPLITTER_SASH_POS_CHANGED(ControlElementId::ContentSplitter, PackageWindow::OnPropertiesSplitter)
-EVT_DATAVIEW_SELECTION_CHANGED(wxID_ANY, PackageWindow::OnObjectTreeSelectItem)
-EVT_DATAVIEW_ITEM_CONTEXT_MENU(wxID_ANY, PackageWindow::OnObjectTreeContextMenu)
+EVT_DATAVIEW_SELECTION_CHANGED(ControlElementId::ObjTreeCtrl, PackageWindow::OnObjectTreeSelectItem)
+EVT_DATAVIEW_ITEM_CONTEXT_MENU(ControlElementId::ObjTreeCtrl, PackageWindow::OnObjectTreeContextMenu)
 EVT_MOVE_END(PackageWindow::OnMoveEnd)
 EVT_SIZE(PackageWindow::OnSize)
 EVT_MAXIMIZE(PackageWindow::OnMaximized)
