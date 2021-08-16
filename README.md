@@ -7,7 +7,7 @@
 | Type | Export | Import | Format | Classes |
 | --- | --- | --- | --- | --- |
 | **Textures** | :heavy_check_mark: | :heavy_check_mark: | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap, TextureCube |
-| **Sounds** | :heavy_check_mark: | :heavy_check_mark: | OGG | SoundNodeWave |
+| **Sounds** | :heavy_check_mark: | :heavy_check_mark: | OGG, CUE | SoundNodeWave, SoundCue |
 | **Animations** | :heavy_check_mark: | :x: | FBX | AnimSet, AnimSequence |
 | **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX | SkeletalMesh |
 | **3D models** | :heavy_check_mark: | :x: | FBX | StaticMesh |
