@@ -310,7 +310,7 @@ namespace IODialog
         path = f.GetPathWithSep();
       }
     }
-    wxString result = wxFileSelector(caption, path, wxEmptyString, wxEmptyString, wxS("Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
+    wxString result = wxFileSelector(caption, path, wxEmptyString, wxEmptyString, wxS("Tera Package files (*.gpk; *.gmp; *.u; *.umap; *.upk)|*.gpk;*.gmp;*.u;*.umap;*.upk"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
     if (result.Length())
     {
       wxFileName f(result);
@@ -335,7 +335,7 @@ namespace IODialog
         path = f.GetPathWithSep();
       }
     }
-    wxFileDialog dialog(parent, caption, path, wxEmptyString, wxT("Tera Package files (*.gpk;*.gmp;*.upk)|*.gpk;*.gmp;*.upk"), wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
+    wxFileDialog dialog(parent, caption, path, wxEmptyString, wxT("Tera Package files (*.gpk;*.gmp;*.upk;*.umap;*.u)|*.gpk;*.gmp;*.upk;*.umap;*.u"), wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
     if (dialog.ShowModal() != wxID_OK)
     {
       return {};
@@ -366,7 +366,7 @@ namespace IODialog
     {
       path = App::GetSharedApp()->GetPackageSavePath();
     }
-    wxString result = wxFileSelector(caption, path, filename, wxT("*.gpk"), wxT("Tera Package files (*.gpk;*.gmp;*.upk)|*.gpk;*.gmp;*.upk"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, parent);
+    wxString result = wxFileSelector(caption, path, filename, wxT("*.gpk"), wxT("Tera Package files (*.gpk;*.gmp;*.upk;*.umap;*.u)|*.gpk;*.gmp;*.upk;*.umap;*.u"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, parent);
     if (result.Length())
     {
       wxFileName f(result);
