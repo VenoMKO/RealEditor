@@ -299,6 +299,15 @@
     <ClCompile Include="App\Editors\SoundCueEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Utils\PskUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tera\FMeshCommon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\MeshUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -453,6 +462,9 @@
     <ClInclude Include="Core\Tera\UModel.h" />
     <ClInclude Include="Core\Tera\UVolumes.h" />
     <ClInclude Include="App\Editors\SoundCueEditor.h" />
+    <ClInclude Include="Core\Utils\PskUtils.h" />
+    <ClInclude Include="Core\Tera\FMeshCommon.h" />
+    <ClInclude Include="Core\Utils\MeshUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

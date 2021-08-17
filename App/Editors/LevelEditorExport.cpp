@@ -611,7 +611,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
     {
       FbxUtils utils;
-      FbxExportContext fbxCtx;
+      MeshExportContext fbxCtx;
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;
@@ -715,7 +715,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
     {
       FbxUtils utils;
-      FbxExportContext fbxCtx;
+      MeshExportContext fbxCtx;
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
       fbxCtx.ExportCollisions = ctx.Config.ConvexCollisions;

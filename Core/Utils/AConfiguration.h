@@ -31,11 +31,13 @@ struct FSkelMeshExportConfig {
     CFG_ExportTextures,
     CFG_ScaleFactor,
     CFG_TextureFormat,
+    CFG_LastFormat,
     CFG_End = 0xFFFF
   };
 
   int32 Mode = 0;
   int32 TextureFormat = 0;
+  int32 LastFormat = 0;
   bool ExportTextures = true;
   float ScaleFactor = 1.;
 
@@ -70,10 +72,12 @@ struct FStaticMeshExportConfig {
     CFG_ExportTextures = 1,
     CFG_ScaleFactor,
     CFG_TextureFormat,
+    CFG_LastFormat,
     CFG_End = 0xFFFF
   };
 
   int32 TextureFormat = 0;
+  int32 LastFormat = 0;
   bool ExportTextures = true;
   float ScaleFactor = 1.;
 
@@ -89,6 +93,7 @@ struct FAnimationExportConfig {
     CFG_Resample,
     CFG_Split,
     CFG_InvqW,
+    CFG_LastFormat,
     CFG_End = 0xFFFF
   };
 
@@ -98,6 +103,7 @@ struct FAnimationExportConfig {
   bool Resample = false;
   float ScaleFactor = 1.;
   float RateFactor = 1.;
+  int32 LastFormat = 0;
   bool InverseQuatW = false;
 
   friend FStream& operator<<(FStream& s, FAnimationExportConfig& c);

@@ -453,32 +453,93 @@ namespace IODialog
 
   wxString SaveMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
     {
       path = App::GetSharedApp()->GetExportPath();
     }
-    wxString result = wxFileSelector(caption, path, filename, wxT("*.fbx"), wxT("FBX scene file (*.fbx)|*.fbx"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, parent);
+
+    int32 extension = cfg.SkelMeshExportConfig.LastFormat;;
+    static const std::vector<std::pair<std::string, std::string>> extensions = { {".fbx", "Autodesk Filmbox (*.fbx)"}, {".psk", "ActorX PSK (*.psk)"} };
+    wxString result;
+    SaveDialog(parent, filename, path, caption, extensions, result, extension);
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SaveExportPath(f.GetPathWithSep());
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
+      cfg.StaticMeshExportConfig.LastFormat = extension;
+      cfg.SkelMeshExportConfig.LastFormat = extension;
+      App::GetSharedApp()->SaveConfig();
+    }
+    return result;
+  }
+
+  wxString SaveSkelMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = App::GetSharedApp()->GetExportPath();
+    }
+
+    int32 extension = cfg.SkelMeshExportConfig.LastFormat;;
+    static const std::vector<std::pair<std::string, std::string>> extensions = { {".fbx", "Autodesk Filmbox (*.fbx)"}, {".psk", "ActorX PSK (*.psk)"} };
+    wxString result;
+    SaveDialog(parent, filename, path, caption, extensions, result, extension);
+    if (result.Length())
+    {
+      wxFileName f(result);
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
+      cfg.SkelMeshExportConfig.LastFormat = extension;
+      App::GetSharedApp()->SaveConfig();
+    }
+    return result;
+  }
+
+  wxString SaveStaticMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
+  {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = App::GetSharedApp()->GetExportPath();
+    }
+
+    int32 extension = cfg.StaticMeshExportConfig.LastFormat;;
+    static const std::vector<std::pair<std::string, std::string>> extensions = { {".fbx", "Autodesk Filmbox (*.fbx)"}, {".psk", "ActorX PSK (*.psk)"} };
+    wxString result;
+    SaveDialog(parent, filename, path, caption, extensions, result, extension);
+    if (result.Length())
+    {
+      wxFileName f(result);
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
+      cfg.StaticMeshExportConfig.LastFormat = extension;
+      App::GetSharedApp()->SaveConfig();
     }
     return result;
   }
 
   wxString SaveAnimDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
     {
       path = App::GetSharedApp()->GetExportPath();
     }
-    wxString result = wxFileSelector(caption, path, filename, wxT("*.fbx"), wxT("FBX scene file (*.fbx)|*.fbx"), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, parent);
+
+    int32 extension = cfg.AnimationExportConfig.LastFormat;
+    static const std::vector<std::pair<std::string, std::string>> extensions = { {".fbx", "Autodesk Filmbox (*.fbx)"}, {".psa", "ActorX PSA (*.psa)"} };
+    wxString result;
+    SaveDialog(parent, filename, path, caption, extensions, result, extension);
     if (result.Length())
     {
       wxFileName f(result);
-      App::GetSharedApp()->SaveExportPath(f.GetPathWithSep());
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
+      cfg.AnimationExportConfig.LastFormat = extension;
+      App::GetSharedApp()->SaveConfig();
     }
     return result;
   }

@@ -5,6 +5,7 @@
 
 #include "FStream.h"
 #include "FStructs.h"
+#include "FMeshCommon.h"
 #include "FObjectArray.h"
 #include "UActorComponent.h"
 #include "UMaterial.h"
@@ -20,22 +21,6 @@ enum ETriangleSortOption : uint8
   TRISORT_MergeContiguous,
   TRISORT_Custom,
   TRISORT_CustomLeftRight
-};
-
-struct VJointPos
-{
-  FQuat Orientation;
-  FVector Position;
-
-  float Length = 0;
-  float XSize = 0;
-  float YSize = 0;
-  float ZSize = 0;
-
-  friend FStream& operator<<(FStream& s, VJointPos& p)
-  {
-    return s << p.Orientation << p.Position;
-  }
 };
 
 struct FMeshBone

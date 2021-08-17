@@ -491,6 +491,9 @@ FStream& operator<<(FStream& s, FSkelMeshExportConfig& c)
       case FSkelMeshExportConfig::CFG_TextureFormat:
         s << c.TextureFormat;
         break;
+      case FSkelMeshExportConfig::CFG_LastFormat:
+        s << c.LastFormat;
+        break;
       default:
         s.Close();
         // no break
@@ -506,6 +509,7 @@ FStream& operator<<(FStream& s, FSkelMeshExportConfig& c)
     SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_ExportTextures, c.ExportTextures, d.ExportTextures);
     SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
+    SerializeKVIfNotDefault(FSkelMeshExportConfig::CFG_LastFormat, c.LastFormat, d.LastFormat);
     SerializeKey(FSkelMeshExportConfig::CFG_End);
   }
   return s;
@@ -530,6 +534,9 @@ FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
       case FStaticMeshExportConfig::CFG_TextureFormat:
         s << c.TextureFormat;
         break;
+      case FStaticMeshExportConfig::CFG_LastFormat:
+        s << c.LastFormat;
+        break;
       default:
         s.Close();
         // no break
@@ -544,6 +551,7 @@ FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ExportTextures, c.ExportTextures, d.ExportTextures);
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
+    SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_LastFormat, c.LastFormat, d.LastFormat);
     SerializeKey(FStaticMeshExportConfig::CFG_End);
   }
   return s;
@@ -634,6 +642,9 @@ FStream& operator<<(FStream& s, FAnimationExportConfig& c)
       case FAnimationExportConfig::CFG_InvqW:
         s << c.InverseQuatW;
         break;
+      case FAnimationExportConfig::CFG_LastFormat:
+        s << c.LastFormat;
+        break;
       default:
         s.Close();
         // no break
@@ -652,6 +663,7 @@ FStream& operator<<(FStream& s, FAnimationExportConfig& c)
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_Split, c.Split, d.Split);
     SerializeKVIfNotDefault(FAnimationExportConfig::CFG_InvqW, c.InverseQuatW, d.InverseQuatW);
+    SerializeKVIfNotDefault(FAnimationExportConfig::CFG_LastFormat, c.LastFormat, d.LastFormat);
     SerializeKey(FAnimationExportConfig::CFG_End);
   }
   return s;

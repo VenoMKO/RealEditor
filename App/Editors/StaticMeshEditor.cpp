@@ -14,7 +14,7 @@
 #include <Tera/UMaterial.h>
 
 #include <Utils/ALog.h>
-#include <Utils/FbxUtils.h>
+#include <Utils/MeshUtils.h>
 #include <Utils/AConfiguration.h>
 #include <Utils/TextureProcessor.h>
 
@@ -244,17 +244,21 @@ void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
   appConfig.StaticMeshExportConfig.TextureFormat = opts.GetTextureFormatIndex();
   App::GetSharedApp()->SaveConfig();
 
-  FbxExportContext ctx;
+  MeshExportContext ctx;
   ctx.ExportSkeleton = false;
   ctx.Scale3D = FVector(opts.GetScaleFactor());
-  wxString fbxpath = wxSaveFileSelector("mesh", wxT("FBX file|*.fbx"), Object->GetObjectNameString().WString(), Window);
+  wxString fbxpath = IODialog::SaveStaticMeshDialog(Window, Object->GetObjectNameString().WString());
   if (fbxpath.empty())
   {
     return;
   }
   ctx.Path = fbxpath.ToStdWstring();
-  FbxUtils utils;
-  if (!utils.ExportStaticMesh(Mesh, ctx))
+  MeshExporterType exporterType = MeshUtils::GetExporterTypeFromExtension(wxFileName(fbxpath).GetExt().Lower().ToStdString());
+  auto utils = MeshUtils::CreateUtils(exporterType);
+  appConfig.StaticMeshExportConfig.LastFormat = (int32)exporterType;
+  App::GetSharedApp()->SaveConfig();
+
+  if (!utils->ExportStaticMesh(Mesh, ctx))
   {
     REDialog::Error(ctx.Error);
     return;

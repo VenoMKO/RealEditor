@@ -11,7 +11,6 @@
 #include <osg/MatrixTransform>
 #include <osg/BlendFunc>
 #include <osg/Depth>
-
 #include <osg/LineWidth>
 #include <osgAnimation/Bone>
 #include <osgAnimation/Skeleton>
@@ -26,7 +25,6 @@
 #include <Tera/FObjectResource.h>
 #include <Tera/USkeletalMesh.h>
 #include <Tera/UAnimation.h>
-#include <Tera/USkeletalMesh.h>
 #include <Tera/UTexture.h>
 #include <Tera/FPackage.h>
 
@@ -337,7 +335,7 @@ public:
     return Mesh;
   }
 
-  void GetConfig(FbxExportContext& ctx)
+  void GetConfig(MeshExportContext& ctx)
   {
     Scale->GetValidator()->TransferFromWindow();
     Rate->GetValidator()->TransferFromWindow();
@@ -564,7 +562,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
   opts.SaveConfig(cfg.AnimationExportConfig);
   App::GetSharedApp()->SaveConfig();
   source = opts.GetMesh();
-  FbxExportContext ctx;
+  MeshExportContext ctx;
   opts.GetConfig(ctx);
   if (ctx.SplitTakes)
   {
@@ -786,7 +784,7 @@ void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
   opts.SaveConfig(cfg.AnimationExportConfig);
   App::GetSharedApp()->SaveConfig();
   source = opts.GetMesh();
-  FbxExportContext ctx;
+  MeshExportContext ctx;
   opts.GetConfig(ctx);
   ctx.Path = IODialog::SaveAnimDialog(this, Cast<UAnimSequence>(Object)->SequenceName.String().WString()).ToStdWstring();
   if (ctx.Path.empty())

@@ -429,17 +429,35 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       }
       if (obj->GetClassName() == UStaticMesh::StaticClassName() || obj->GetClassName() == USkeletalMesh::StaticClassName())
       {
-        FbxExportContext ctx;
+        MeshExportContext ctx;
         FAppConfig& appConfig = App::GetSharedApp()->GetConfig();
-        ctx.Path = dest.replace_extension("fbx").wstring();
+        MeshExporterType exportType = MET_Fbx;
+        if (obj->GetClassName() == UStaticMesh::StaticClassName())
+        {
+          exportType = (MeshExporterType)appConfig.StaticMeshExportConfig.LastFormat;
+        }
+        else
+        {
+          exportType = (MeshExporterType)appConfig.SkelMeshExportConfig.LastFormat;
+        }
 
-        FbxUtils utils;
+        switch (exportType)
+        {
+        case MET_Fbx:
+          ctx.Path = dest.replace_extension("fbx").wstring();
+          break;
+        case MET_Psk:
+          ctx.Path = dest.replace_extension("psk").wstring();
+          break;
+        }
+        
+        auto utils = MeshUtils::CreateUtils(exportType);
         if (exp->GetClassName() == UStaticMesh::StaticClassName())
         {
           ctx.Scale3D *= appConfig.StaticMeshExportConfig.ScaleFactor;
           if (UStaticMesh* mesh = Cast<UStaticMesh>(obj))
           {
-            if (!utils.ExportStaticMesh(mesh, ctx))
+            if (!utils->ExportStaticMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
               LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
@@ -459,7 +477,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           ctx.Scale3D *= appConfig.SkelMeshExportConfig.ScaleFactor;
           if (USkeletalMesh* mesh = Cast<USkeletalMesh>(obj))
           {
-            if (!utils.ExportSkeletalMesh(mesh, ctx))
+            if (!utils->ExportSkeletalMesh(mesh, ctx))
             {
               failedExports.push_back(exp);
               LogE("Failed to export %s!", exp->GetObjectNameString().UTF8().c_str());
@@ -477,7 +495,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
       }
       if (obj->GetClassName() == UAnimSet::StaticClassName())
       {
-        FbxExportContext ctx;
+        MeshExportContext ctx;
         FAppConfig& appConfig = App::GetSharedApp()->GetConfig();
         ctx.ExportMesh = appConfig.AnimationExportConfig.ExportMesh;
         ctx.Scale3D = FVector(appConfig.AnimationExportConfig.ScaleFactor);

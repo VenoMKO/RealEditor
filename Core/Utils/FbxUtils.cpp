@@ -13,44 +13,6 @@
 // Reduce bezier tangents. For debug only.
 #define ANIMATION_LOW_BEZIER 0
 
-struct VTriangle {
-  uint32 WedgeIndex[3] = { 0 };
-  uint8 MatIndex = 0;
-  FVector TangentX[3];
-  FVector TangentY[3];
-  FVector TangentZ[3];
-};
-
-struct VVertex {
-  int32 VertexIndex = 0;
-  FVector2D UVs[MAX_TEXCOORDS];
-  uint16 MatIndex = 0;
-
-  bool operator<(const VVertex& b) const
-  {
-    return VertexIndex < b.VertexIndex;
-  }
-};
-
-struct FVertInfluence {
-  float Weight = 0.;
-  uint32 VertIndex = 0;
-  uint16 BoneIndex = 0;
-};
-
-struct VBone {
-  FString Name;
-  VJointPos Transform;
-  int32 ParentIndex = 0;
-  int32 NumChildren = 0;
-  int32 Depth = 0;
-};
-
-struct VMaterial {
-  int32 MaterialIndex = 0;
-  std::string MaterialImportName;
-};
-
 char* FbxWideToUtf8(const wchar_t* in)
 {
   char* unistr = nullptr;
@@ -388,7 +350,7 @@ void CreateBindPose(FbxNode* meshRootNode, FbxScene* scene)
   }
 }
 
-bool ImportBones(std::vector<FbxNode*>& nodeArray, FbxImportContext& ctx, std::vector<FbxNode*>& sortedLinks, std::vector<VBone>& refBones, FbxScene* scene)
+bool ImportBones(std::vector<FbxNode*>& nodeArray, MeshImportContext& ctx, std::vector<FbxNode*>& sortedLinks, std::vector<VBone>& refBones, FbxScene* scene)
 {
   scene->GetFbxManager()->CreateMissingBindPoses(scene);
   std::vector<FbxCluster*> clusters;
@@ -490,7 +452,6 @@ bool ImportBones(std::vector<FbxNode*>& nodeArray, FbxImportContext& ctx, std::v
       localLinkQ = globalsPerLink[linkIndex].GetQ();
     }
     {
-      static float SCALE_TOLERANCE = .1f;
       FbxVector4 gs = globalsPerLink[linkIndex].GetS();
       if ((gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
           (gs[0] > 1.0 + SCALE_TOLERANCE || gs[1] < 1.0 - SCALE_TOLERANCE) ||
@@ -577,7 +538,7 @@ FbxUtils::~FbxUtils()
   }
 }
 
-bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx)
+bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, MeshExportContext& ctx)
 {
   FbxNode* meshNode = nullptr;
   if (!ExportSkeletalMesh(sourceMesh, ctx, (void**)&meshNode) || !meshNode)
@@ -594,7 +555,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   return true;
 }
 
-bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
+bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, MeshExportContext& ctx)
 {
   FbxNode* firstLod = nullptr;
   if (ctx.ExportLods && sourceMesh->GetLodCount() > 1)
@@ -671,7 +632,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, FbxExportContext& ctx)
   return true;
 }
 
-bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, FbxExportContext& ctx)
+bool FbxUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, MeshExportContext& ctx)
 {
   FbxDynamicArray<FbxNode*> bones;
   FbxVector4 scale(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z);
@@ -890,7 +851,7 @@ lSaveSceneSeq:
   return ok;
 }
 
-bool FbxUtils::ExportAnimationSet(USkeletalMesh* sourceMesh, UAnimSet* animSet, FbxExportContext& ctx)
+bool FbxUtils::ExportAnimationSet(USkeletalMesh* sourceMesh, UAnimSet* animSet, MeshExportContext& ctx)
 {
   FbxDynamicArray<FbxNode*> bones;
   FbxVector4 scale(ctx.Scale3D.X, ctx.Scale3D.Y, ctx.Scale3D.Z);
@@ -1126,7 +1087,7 @@ lSaveSceneSet:
   return ok;
 }
 
-bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
+bool FbxUtils::ImportSkeletalMesh(MeshImportContext& ctx)
 {
   struct ScopedImporter {
     ScopedImporter(FbxImporter* imp)
@@ -1675,7 +1636,7 @@ bool FbxUtils::ImportSkeletalMesh(FbxImportContext& ctx)
   return true;
 }
 
-bool FbxUtils::ImportStaticMesh(FbxImportContext& ctx)
+bool FbxUtils::ImportStaticMesh(MeshImportContext& ctx)
 {
   return false;
 }
@@ -1698,7 +1659,7 @@ bool FbxUtils::SaveScene(const std::wstring& path)
   return result;
 }
 
-bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& ctx, void** outNode)
+bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, MeshExportContext& ctx, void** outNode)
 {
   const FStaticLODModel* lod = sourceMesh->GetLod(0);
   if (!lod)
@@ -1899,7 +1860,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, FbxExportContext& c
   return true;
 }
 
-bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExportContext& ctx, void** outNode)
+bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, MeshExportContext& ctx, void** outNode)
 {
   const FStaticMeshRenderData* lod = sourceMesh->GetLod(lodIdx);
   if (!lod)
@@ -2087,7 +2048,7 @@ bool FbxUtils::ExportStaticMesh(UStaticMesh* sourceMesh, int32 lodIdx, FbxExport
   return true;
 }
 
-bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, const char* meshName, std::vector<void*>& outNodes)
+bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, MeshExportContext& ctx, const char* meshName, std::vector<void*>& outNodes)
 {
   URB_BodySetup* bodySetup = sourceMesh->GetBodySetup();
   if (!bodySetup)
@@ -2222,7 +2183,7 @@ bool FbxUtils::ExportCollision(UStaticMesh* sourceMesh, FbxExportContext& ctx, c
   return true;
 }
 
-bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, void* boneNodes, void* animLayer, FbxExportContext& ctx)
+bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, void* boneNodes, void* animLayer, MeshExportContext& ctx)
 {
   FbxAnimLayer* layer = (FbxAnimLayer*)animLayer;
   FbxDynamicArray<FbxNode*>& bones = *(FbxDynamicArray<FbxNode*>*)boneNodes;
@@ -2322,7 +2283,7 @@ bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence
   return true;
 }
 
-void FbxUtils::ApplyRootTransform(void* node, FbxExportContext& ctx)
+void FbxUtils::ApplyRootTransform(void* node, MeshExportContext& ctx)
 {
   FbxNode* meshNode = (FbxNode*)node;
   FbxDouble3 translation = meshNode->LclTranslation.Get();

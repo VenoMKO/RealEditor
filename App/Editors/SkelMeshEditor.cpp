@@ -25,7 +25,7 @@
 #include <Tera/UMaterial.h>
 
 #include <Utils/ALog.h>
-#include <Utils/FbxUtils.h>
+#include <Utils/MeshUtils.h>
 #include <Utils/AConfiguration.h>
 #include <Utils/TextureProcessor.h>
 
@@ -615,26 +615,59 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
   appConfig.SkelMeshExportConfig.TextureFormat = opts.GetTextureFormatIndex();
   App::GetSharedApp()->SaveConfig();
 
-  FbxExportContext ctx;
+  MeshExportContext ctx;
   ctx.ExportSkeleton = opts.GetExportMode() == ExportMode::ExportFull;
-  wxString fbxpath = IODialog::SaveMeshDialog(Window, Object->GetObjectNameString().WString());
+  wxString fbxpath = IODialog::SaveSkelMeshDialog(Window, Object->GetObjectNameString().WString());
   if (fbxpath.empty())
   {
     return;
   }
   ctx.Path = fbxpath.ToStdWstring();
   ctx.Scale3D = FVector(opts.GetScaleFactor());
-  FbxUtils utils;
+
   bool r = false;
-  
-  try
+  MeshExporterType exportType = MeshUtils::GetExporterTypeFromExtension(wxFileName(fbxpath).GetExt().Lower().ToStdString());
+  auto utils = MeshUtils::CreateUtils(exportType);
+  appConfig.SkelMeshExportConfig.LastFormat = (int32)exportType;
+  App::GetSharedApp()->SaveConfig();
+  if (exportType == MET_Psk)
   {
-    r = utils.ExportSkeletalMesh((USkeletalMesh*)Object, ctx);
+    ProgressWindow progress(this, wxT("Exporting..."));
+    progress.SetCanCancel(false);
+    progress.SetCurrentProgress(-1);
+    progress.SetActionText(wxT("Building ActorX..."));
+    std::string errorText;
+    std::thread([&] {
+      try
+      {
+        r = utils->ExportSkeletalMesh((USkeletalMesh*)Object, ctx);
+      }
+      catch (const std::exception& e)
+      {
+        errorText = e.what();
+        r = false;
+      }
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH, r);
+    }).detach();
+    if (!progress.ShowModal())
+    {
+      if (errorText.size() && ctx.Error.empty())
+      {
+        ctx.Error = errorText;
+      }
+    }
   }
-  catch (const std::exception& e)
+  else
   {
-    REDialog::Error(e.what());
-    return;
+    try
+    {
+      r = utils->ExportSkeletalMesh((USkeletalMesh*)Object, ctx);
+    }
+    catch (const std::exception& e)
+    {
+      REDialog::Error(e.what());
+      return;
+    }
   }
 
   if (!r)
@@ -895,7 +928,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   {
     return;
   }
-  FbxImportContext ctx;
+  MeshImportContext ctx;
 
   SkelMeshImportOptions opts(this);
   if (opts.ShowModal() != wxID_OK)
@@ -910,8 +943,8 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
   ctx.ImportData.OptimizeIndexBuffer = opts.GetOptimizeIndexBuffer();
 
   ctx.Path = path.ToStdWstring();
-  FbxUtils utils;
-  if (!utils.ImportSkeletalMesh(ctx))
+  auto utils = MeshUtils::CreateUtils(MET_Fbx);
+  if (!utils->ImportSkeletalMesh(ctx))
   {
     REDialog::Error(ctx.Error);
     return;

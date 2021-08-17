@@ -4,49 +4,10 @@
 #include <Tera/FPackage.h>
 #include <Utils/MeshTravaller.h>
 
-#define SCALE_TOLERANCE .1f
-#define THRESH_POINTS_ARE_SAME (0.002f)
-#define THRESH_NORMALS_ARE_SAME (0.00002f)
-
 struct FSkinVertexMeta {
   FSoftSkinVertex Vertex;
   uint32 PointWedgeIdx = 0;
 };
-
-bool PointsEqual(const FVector& a, const FVector& b, bool bNoEpsilon = false)
-{
-  const float e = bNoEpsilon ? 0.0f : THRESH_POINTS_ARE_SAME * 4.;
-  if (fabs(a.X - b.X) > e || fabs(a.Y - b.Y) > e || fabs(a.Z - b.Z) > e)
-  {
-    return false;
-  }
-
-  return true;
-}
-
-bool NormalsEqual(const FVector& a, const FVector& b)
-{
-  const float e = THRESH_NORMALS_ARE_SAME * 4.f;
-  if (fabs(a.X - b.X) > e || fabs(a.Y - b.Y) > e || fabs(a.Z - b.Z) > e)
-  {
-    return false;
-  }
-  return true;
-}
-
-bool SkeletalMesh_UVsEqual(const RawWedge& V1, const RawWedge& V2, const int32 UVIndex = 0)
-{
-  const FVector2D& UV1 = V1.UV[UVIndex];
-  const FVector2D& UV2 = V2.UV[UVIndex];
-
-  if (abs(UV1.X - UV2.X) > (1.0f / 1024.0f))
-    return 0;
-
-  if (abs(UV1.Y - UV2.Y) > (1.0f / 1024.0f))
-    return 0;
-
-  return 1;
-}
 
 float GetBasisDeterminantSign(const FVector& XAxis, const FVector& YAxis, const FVector& ZAxis)
 {
