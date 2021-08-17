@@ -103,9 +103,6 @@ struct FStaticMeshVertexBase {
   FPackedNormal TangentX; // Tangent
   FPackedNormal TangentZ; // Normal
 
-  virtual ~FStaticMeshVertexBase()
-  {}
-
   void Serialize(FStream& s)
   {
     s << TangentX;
@@ -126,8 +123,6 @@ struct FStaticMeshVertexBase {
   {
     return TangentZ;
   }
-
-  virtual FVector2D GetUVs(int32 idx) const = 0;
 };
 
 template <uint32 NumTexCoords = 1>
@@ -150,11 +145,6 @@ struct FStaticMeshVertexA : public FStaticMeshVertexBase {
       s << v.UV[idx];
     }
     return s;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
   }
 
   FVector2DHalf UV[NumTexCoords];
@@ -180,11 +170,6 @@ struct FStaticMeshVertexAA : public FStaticMeshVertexBase {
       s << v.UV[idx];
     }
     return s;
-  }
-
-  FVector2D GetUVs(int32 idx) const override
-  {
-    return UV[idx];
   }
 
   FVector2D UV[NumTexCoords];
