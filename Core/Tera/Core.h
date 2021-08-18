@@ -13,7 +13,7 @@
 
 // #define CUSTOM_BUILD ".1"
 static const unsigned short APP_VER_MAJOR = 2;
-static const unsigned short APP_VER_MINOR = 30;
+static const unsigned short APP_VER_MINOR = 31;
 static const unsigned int BUILD_NUMBER = (
 #include "../../build_num.txt"
 );
