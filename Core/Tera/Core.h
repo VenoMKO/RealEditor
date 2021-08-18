@@ -39,6 +39,14 @@ static const unsigned int BUILD_NUMBER = (
 // Maximum number of files to open from a single file dialog
 #define OPEN_OP_MAX_FILES 14
 
+// Load minimum class packages to improve load time.
+// Must not be used in Release builds!
+#if _DEBUG
+#define MINIMAL_CORE 1
+#else
+#define MINIMAL_CORE 0
+#endif
+
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,
 // so its better to use CPU buffer instead. (Tera uses GPU buffer to render models)
