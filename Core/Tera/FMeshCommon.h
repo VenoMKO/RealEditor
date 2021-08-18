@@ -220,3 +220,42 @@ struct MeshImportContext {
   MeshTravallerData ImportData;
   FVector Scale3D = FVector(1, 1, 1);
 };
+
+struct VQuatAnimKey {
+  FVector Position;
+  FQuat Orientation;
+  float Time = 1.f;
+
+  friend class FStream& operator<<(class FStream& s, VQuatAnimKey& k);
+};
+
+struct AnimInfoBinary {
+  char Name[64] = { 0 };
+  char Group[64] = { 0 };
+  int32 TotalBones = 0;
+  int32 ScaleInclude = 0;
+  int32 KeyCompressionStyle = 0;
+  int32 KeyQuotum = 0;
+  float KeyReduction = 0.f;
+  float TrackTime = 0.f;
+  float AnimRate = 0.f;
+  int32 StartBone = 0;
+  int32 FirstRawFrame = 0;
+  int32 NumRawFrames = 0;
+
+  void SetName(const char* name)
+  {
+    memset(Name, 0, 64);
+    memcpy(Name, name, std::min<size_t>(strlen(name), 64));
+    Name[63] = 0;
+  }
+
+  void SetGroup(const char* name)
+  {
+    memset(Group, 0, 64);
+    memcpy(Group, name, std::min<size_t>(strlen(name), 64));
+    Group[63] = 0;
+  }
+
+  friend class FStream& operator<<(class FStream& s, AnimInfoBinary& i);
+};

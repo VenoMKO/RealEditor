@@ -72,6 +72,28 @@ FStream& operator<<(FStream& s, FVertInfluence& b)
   return s << b.Weight << b.VertIndex << b.BoneIndex << b.Padding;
 }
 
+FStream& operator<<(FStream& s, VQuatAnimKey& k)
+{
+  return s << k.Position << k.Orientation << k.Time;
+}
+
+FStream& operator<<(FStream& s, AnimInfoBinary& i)
+{
+  s.SerializeBytes(i.Name, sizeof(i.Name));
+  s.SerializeBytes(i.Group, sizeof(i.Group));
+  s << i.TotalBones;
+  s << i.ScaleInclude;
+  s << i.KeyCompressionStyle;
+  s << i.KeyQuotum;
+  s << i.KeyReduction;
+  s << i.TrackTime;
+  s << i.AnimRate;
+  s << i.StartBone;
+  s << i.FirstRawFrame;
+  s << i.NumRawFrames;
+  return s;
+}
+
 bool PointsEqual(const FVector& a, const FVector& b, bool bNoEpsilon)
 {
   const float e = bNoEpsilon ? 0.0f : THRESH_POINTS_ARE_SAME * 4.;

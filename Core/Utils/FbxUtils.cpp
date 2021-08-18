@@ -11,7 +11,7 @@
 
 #define MERGE_CONVEX_HULLS 0
 // Reduce bezier tangents. For debug only.
-#define ANIMATION_LOW_BEZIER 0
+#define ANIMATION_LOW_BEZIER 1
 
 char* FbxWideToUtf8(const wchar_t* in)
 {
@@ -2206,7 +2206,7 @@ bool FbxUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence
     PERF_ITER_END(Skel);
 
     FbxTime t;
-    t.SetSecondDouble(sequence->SequenceLength / float(numRawFrames - 1) * double(frame) * sequence->RateScale * ctx.TrackRateScale);
+    t.SetSecondDouble((sequence->SequenceLength / float(numRawFrames - 1) * double(frame) * sequence->RateScale) / ctx.TrackRateScale);
     const bool last = frame + 1 == numRawFrames;
 
     for (int32 boneIndex = 0; boneIndex < targetBones.Size(); ++boneIndex)

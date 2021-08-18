@@ -1,6 +1,7 @@
 #include "PskUtils.h"
 
 #include <numeric>
+#include <filesystem>
 
 struct PskChunkHeader {
   static constexpr int32 DefaultVersion = 1999801;
@@ -422,5 +423,167 @@ bool PskUtils::ExportStaticMesh(UStaticMesh* sourceMesh, MeshExportContext& ctx)
   s << skelHeader;
   PskChunkHeader inflHeader("RAWWEIGHTS", sizeof(FVertInfluence), 0);
   s << inflHeader;
+  return true;
+}
+
+bool PskUtils::ExportAnimationSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, MeshExportContext& ctx)
+{
+  if (!sourceMesh)
+  {
+    ctx.Error = "Error!\n\nThe animation sequence is empty.";
+    return false;
+  }
+  std::vector<FMeshBone> refBones = sourceMesh->GetReferenceSkeleton();
+
+  FWriteStream s(ctx.Path);
+  PskChunkHeader animHeader("ANIMHEAD", 0, 0);
+  s << animHeader;
+
+  PskChunkHeader bonesHeader("BONENAMES", sizeof(FNamedBoneBinary), refBones.size());
+  s << bonesHeader;
+  for (int32 idx = 0; idx < refBones.size(); ++idx)
+  {
+    const FMeshBone& refBone = refBones[idx];
+    FNamedBoneBinary bone;
+    bone.SetName(refBone.Name.String().UTF8().c_str());
+    bone.ParentIndex = refBone.ParentIndex;
+    if (refBone.ParentIndex == refBones[refBone.ParentIndex].ParentIndex)
+    {
+      bone.ParentIndex = -1;
+    }
+    bone.NumChildren = refBone.NumChildren;
+    s << bone;
+  }
+
+  PskChunkHeader infoHeader("ANIMINFO", sizeof(AnimInfoBinary), 1);
+  s << infoHeader;
+
+  AnimInfoBinary animInfo;
+  animInfo.SetName(sequence->SequenceName.String().C_str());
+  animInfo.SetGroup(NAME_None);
+  animInfo.TotalBones = refBones.size();
+  animInfo.KeyQuotum = sequence->NumFrames * refBones.size();
+  animInfo.AnimRate = sequence->GetFrameRate() * ctx.TrackRateScale;
+  animInfo.TrackTime = sequence->SequenceLength * sequence->GetFrameRate();
+  animInfo.FirstRawFrame = 0;
+  animInfo.NumRawFrames = sequence->GetRawFramesCount();
+  s << animInfo;
+
+  return ExportSequence(sourceMesh, sequence, ctx, s);
+}
+
+bool PskUtils::ExportAnimationSet(USkeletalMesh* sourceMesh, UAnimSet* animSet, MeshExportContext& ctx)
+{
+  if (!sourceMesh)
+  {
+    ctx.Error = "Error!\n\nMissing skeletal mesh.";
+    return false;
+  }
+  if (!animSet)
+  {
+    ctx.Error = "Error!\n\nAnimSet is NULL.";
+    return false;
+  }
+  if (!ctx.SplitTakes)
+  {
+    ctx.Error = "Error!\n\nActorX PSA format does not support merged animations.\nTo fix the issue turn on \"Split takes\" checkbox in the export options.";
+    return false;
+  }
+  sourceMesh->Load();
+  animSet->Load();
+
+  std::vector<UAnimSequence*> sequences = animSet->GetSequences();
+  if (sequences.empty())
+  {
+    ctx.Error = "AnimSet has no sequences!\n\nNothing to export.";
+    return false;
+  }
+
+  if (ctx.ExportMesh)
+  {
+    if (ctx.ProgressDescFunc)
+    {
+      ctx.ProgressDescFunc("Building ActorX model...");
+    }
+    std::wstring tmp = ctx.Path;
+    ctx.Path = ((std::filesystem::path(tmp) / sourceMesh->GetObjectNameString().WString()).replace_extension("psk")).wstring();
+    ExportSkeletalMesh(sourceMesh, ctx);
+    ctx.Path = tmp;
+  }
+  if (ctx.ProgressDescFunc)
+  {
+    ctx.ProgressDescFunc("Exporting animation takes...");
+  }
+  int32 total = (int32)sequences.size();
+  if (ctx.ProgressMaxFunc)
+  {
+    ctx.ProgressMaxFunc(total);
+  }
+  for (int32 idx = 0; idx < total; ++idx)
+  {
+    UAnimSequence* seq = sequences[idx];
+    if (!seq)
+    {
+      continue;
+    }
+    
+    if (ctx.ProgressFunc)
+    {
+      ctx.ProgressFunc(idx + 1);
+    }
+    std::wstring tmp = ctx.Path;
+    ctx.Path = ((std::filesystem::path(tmp) / seq->SequenceName.String().WString()).replace_extension("psk")).wstring();
+    ExportAnimationSequence(sourceMesh, seq, ctx);
+    ctx.Path = tmp;
+  }
+  return true;
+}
+
+bool PskUtils::ExportSequence(USkeletalMesh* sourceMesh, UAnimSequence* sequence, MeshExportContext& ctx, FStream& s)
+{
+  if (!sourceMesh || !sequence)
+  {
+    return false;
+  }
+  std::vector<FMeshBone> refBones = sourceMesh->GetReferenceSkeleton();
+
+  if (refBones.empty())
+  {
+    return false;
+  }
+
+  PskChunkHeader keysHeader("ANIMKEYS", sizeof(VQuatAnimKey), sequence->NumFrames * (int32)refBones.size());
+  s << keysHeader;
+
+  const int32 rawFrames = sequence->GetRawFramesCount();
+  const int32 totalBones = (int32)refBones.size();
+  for (int32 frame = 0; frame < rawFrames; ++frame)
+  {
+    VQuatAnimKey key;
+    FVector position;
+    FQuat orientation;
+    for (int32 boneIndex = 0; boneIndex < totalBones; ++boneIndex)
+    {
+      if (!sequence->GetBoneTransform(sourceMesh, refBones[boneIndex].Name, frame, position, orientation))
+      {
+        position = refBones[boneIndex].BonePos.Position;
+        orientation = refBones[boneIndex].BonePos.Orientation;
+      }
+
+      position *= ctx.Scale3D;
+      position.Y *= -1.f;
+      orientation.Y *= -1.f;
+      // Looks like PSA requires -W by default.
+      // Not a typo! If the flag is OFF - inverse!
+      if (!ctx.InverseAnimQuatW)
+      {
+        orientation.W *= -1.f;
+      }
+
+      key.Orientation = orientation;
+      key.Position = position;
+      s << key;
+    }
+  }
   return true;
 }

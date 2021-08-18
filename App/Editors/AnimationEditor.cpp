@@ -35,6 +35,7 @@
 #include <wx/statline.h>
 
 #include <filesystem>
+#include <thread>
 
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
@@ -180,7 +181,7 @@ namespace
 class AnimExportOptions : public WXDialog {
 public:
   AnimExportOptions(wxWindow* parent, UAnimSet* anim, USkeletalMesh* mesh)
-    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(562, 198))
+    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(490, 256))
     , AnimationSet(anim)
     , Mesh(mesh)
     , DefaultMesh(anim->GetPreviewSkeletalMesh())
@@ -205,7 +206,8 @@ public:
     SkeletonField = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     bSizer2->Add(SkeletonField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
-    SelectButton = new wxButton(this, wxID_ANY, wxT("Select..."), wxDefaultPosition, wxDefaultSize, 0);
+    SelectButton = new wxButton(this, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
+    SelectButton->SetToolTip(wxT("Select a skeletal mesh to apply this animation to."));
     bSizer2->Add(SelectButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
 
@@ -230,7 +232,7 @@ public:
     bSizer4->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
 
     Rate = new wxTextCtrl(this, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(40, -1), 0);
-    Rate->SetToolTip(wxT("Inverse animation duration modifier. Bigger value makes the animation last longer"));
+    Rate->SetToolTip(wxT("Rate at which the animation should play(e.g., 2.0 - two times faster)."));
 
     bSizer4->Add(Rate, 0, wxALL, 5);
 
@@ -252,20 +254,15 @@ public:
 
     Split = new wxCheckBox(this, wxID_ANY, wxT("Split takes"), wxDefaultPosition, wxDefaultSize, 0);
     Split->SetValue(true);
-    Split->SetToolTip(wxT("Split animations to separate FBX files"));
+    Split->SetToolTip(wxT("Split animations to separate FBX files.\nThis option is mandatory for PSA export."));
 
     bSizer5->Add(Split, 0, wxRIGHT | wxLEFT, 5);
 
     Compress = new wxCheckBox(this, wxID_ANY, wxT("Compress"), wxDefaultPosition, wxDefaultSize, 0);
     Compress->SetValue(true);
-    Compress->SetToolTip(wxT("Compress animation tracks by removing trivial keys"));
+    Compress->SetToolTip(wxT("Compress animation tracks by removing trivial keys.\nNot available for PSA export."));
 
     bSizer5->Add(Compress, 0, wxRIGHT | wxLEFT, 5);
-
-    Resample = new wxCheckBox(this, wxID_ANY, wxT("Resample"), wxDefaultPosition, wxDefaultSize, 0);
-    Resample->SetToolTip(wxT("Resample animations to 60 FPS"));
-
-    bSizer5->Add(Resample, 0, wxRIGHT | wxLEFT, 5);
 
     InvqW = new wxCheckBox(this, wxID_ANY, wxT("Inverse qW"), wxDefaultPosition, wxDefaultSize, 0);
     InvqW->SetToolTip(wxT("Inverse quat W when exporting. Enable this if your skeleton has orientation issues."));
@@ -274,6 +271,31 @@ public:
 
 
     bSizer1->Add(bSizer5, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+
+    wxBoxSizer* bSizer6;
+    bSizer6 = new wxBoxSizer(wxHORIZONTAL);
+
+    wxStaticText* m_staticText41;
+    m_staticText41 = new wxStaticText(this, wxID_ANY, wxT("Format:"), wxDefaultPosition, wxSize(60, -1), wxALIGN_RIGHT);
+    m_staticText41->SetToolTip(wxT("Format of a container to store animations.\nNot available for single sequence export."));
+    m_staticText41->Wrap(-1);
+    bSizer6->Add(m_staticText41, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+    wxString FormatPickerChoices[] = { wxT("N/A") };
+    int FormatPickerNChoices = sizeof(FormatPickerChoices) / sizeof(wxString);
+    FormatPicker = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxSize(200, -1), FormatPickerNChoices, FormatPickerChoices, 0);
+    FormatPicker->SetSelection(0);
+    FormatPicker->Enable(false);
+    FormatPicker->SetToolTip(wxT("Format of a container to store animations.\nNot available for single sequence export."));
+
+    bSizer6->Add(FormatPicker, 0, wxTOP | wxBOTTOM | wxRIGHT, 5);
+
+
+    bSizer1->Add(bSizer6, 0, wxEXPAND | wxBOTTOM, 5);
+
+    wxStaticLine* m_staticline1;
+    m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
+    bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP, 5);
 
     wxBoxSizer* bSizer3;
     bSizer3 = new wxBoxSizer(wxHORIZONTAL);
@@ -344,7 +366,6 @@ public:
     ctx.TrackRateScale = RateValue;
     ctx.CompressTracks = Compress->GetValue();
     ctx.SplitTakes = Split->GetValue();
-    ctx.ResampleTracks = Resample->GetValue();
     ctx.InverseAnimQuatW = InvqW->GetValue();
   }
 
@@ -355,10 +376,13 @@ public:
     ExportGeometry->SetValue(cfg.ExportMesh);
     Compress->SetValue(cfg.Compress);
     Split->SetValue(cfg.Split);
-    Resample->SetValue(cfg.Resample);
     Scale->GetValidator()->TransferToWindow();
     Rate->GetValidator()->TransferToWindow();
     InvqW->SetValue(cfg.InverseQuatW);
+    if (AllowsFormatPicker)
+    {
+      FormatPicker->Select(cfg.LastFormat);
+    }
   }
 
   void SaveConfig(FAnimationExportConfig& cfg)
@@ -370,13 +394,39 @@ public:
     cfg.ExportMesh = ExportGeometry->GetValue();
     cfg.Compress = Compress->GetValue();
     cfg.Split = Split->GetValue();
-    cfg.Resample = Resample->GetValue();
     cfg.InverseQuatW = InvqW->GetValue();
+    if (AllowsFormatPicker)
+    {
+      cfg.LastFormat = FormatPicker->GetSelection();
+    }
   }
 
   void AllowSplit(bool flag)
   {
     Split->Enable(flag);
+  }
+
+  void SetAllowFormatPicker(bool flag, MeshExporterType format = MeshExporterType::MET_Fbx)
+  {
+    AllowsFormatPicker = flag;
+    if (flag)
+    {
+      wxString FormatPickerChoices[] = { wxT("Autodesk FBX (*.fbx)"), wxT("ActorX Animation (*.psa)") };
+      FormatPicker->Set(sizeof(FormatPickerChoices) / sizeof(wxString), FormatPickerChoices);
+      FormatPicker->Select((int)format);
+    }
+    else
+    {
+      wxString FormatPickerChoices[] = { wxT("N/A") };
+      FormatPicker->Set(sizeof(FormatPickerChoices) / sizeof(wxString), FormatPickerChoices);
+      FormatPicker->Select(0);
+    }
+    FormatPicker->Enable(flag);
+  }
+
+  MeshExporterType GetFormat() const
+  {
+    return AllowsFormatPicker ? (MeshExporterType)FormatPicker->GetSelection() : MeshExporterType::MET_Fbx;
   }
 
 protected:
@@ -441,8 +491,8 @@ protected:
   wxCheckBox* ExportGeometry = nullptr;
   wxCheckBox* Split = nullptr;
   wxCheckBox* Compress = nullptr;
-  wxCheckBox* Resample = nullptr;
   wxCheckBox* InvqW = nullptr;
+  wxChoice* FormatPicker = nullptr;
   wxButton* DefaultButton = nullptr;
   wxButton* OkButton = nullptr;
   wxButton* CancelButton = nullptr;
@@ -453,6 +503,8 @@ protected:
 
   float ScaleValue = 1.;
   float RateValue = 1.;
+
+  bool AllowsFormatPicker = false;
 };
 
 AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
@@ -472,14 +524,15 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* m_staticText2;
-  m_staticText2 = new wxStaticText(m_panel1, wxID_ANY, wxT("Take:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText2 = new wxStaticText(m_panel1, wxID_ANY, wxT("Preview:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText2->Wrap(-1);
   bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
 
-  TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(175, -1));
+  TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(150, -1));
   bSizer3->Add(TakePicker, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
 
-  MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Mesh..."), wxDefaultPosition, wxDefaultSize, 0);
+  MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Browse..."), wxDefaultPosition, wxDefaultSize, 0);
+  MeshButton->SetToolTip(wxT("Pick a skeletal mesh for this animation."));
   bSizer3->Add(MeshButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
   ErrorLabel = new wxStaticText(m_panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
@@ -552,8 +605,9 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
       }
     }
   }
-  AnimExportOptions opts(this, set, source);
   FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+  AnimExportOptions opts(this, set, source);
+  opts.SetAllowFormatPicker(true);
   opts.ApplyConfig(cfg.AnimationExportConfig);
   if (opts.ShowModal() != wxID_OK)
   {
@@ -576,7 +630,8 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
   {
     return;
   }
-  
+
+  MeshExporterType exporterType = opts.GetFormat();
   ProgressWindow progress(this, "Exporting animations");
   progress.SetCurrentProgress(-1);
   progress.SetActionText(wxT("Preparing..."));
@@ -613,6 +668,21 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
         std::vector<UObject*> inner = set->GetInner();
         ctx.ProgressMaxFunc(inner.size());
         int32 total = (int32)inner.size();
+        auto utils = MeshUtils::CreateUtils(exporterType);
+        const char* extCh = exporterType == MeshExporterType::MET_Fbx ? "fbx" : "psa";
+
+        if (ctx.ExportMesh && source && exporterType == MeshExporterType::MET_Psk)
+        {
+          if (ctx.ProgressDescFunc)
+          {
+            ctx.ProgressDescFunc("Building ActorX model...");
+          }
+          std::wstring tmp = ctx.Path;
+          ctx.Path = ((std::filesystem::path(tmp) / source->GetObjectNameString().WString()).replace_extension("psk")).wstring();
+          utils->ExportSkeletalMesh(source, ctx);
+          ctx.Path = tmp;
+        }
+
         for (int32 idx = 0; idx < inner.size(); ++idx)
         {
           ctx.ProgressFunc(idx + 1);
@@ -622,9 +692,8 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
             {
               ctx.ProgressDescFunc(FString::Sprintf("Exporting: %s(%d/%d)", seq->SequenceName.String().C_str(), idx + 1, total));
             }
-            ctx.Path = (p / seq->SequenceName.String().WString()).replace_extension("fbx").wstring();
-            FbxUtils fbx;
-            if (!(result = fbx.ExportAnimationSequence(source, seq, ctx)))
+            ctx.Path = (p / seq->SequenceName.String().WString()).replace_extension(extCh).wstring();
+            if (!(result = utils->ExportAnimationSequence(source, seq, ctx)))
             {
               break;
             }
@@ -633,8 +702,8 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
       }
       else
       {
-        FbxUtils fbx;
-        result = fbx.ExportAnimationSet(source, Cast<UAnimSet>(Object), ctx);
+        auto utils = MeshUtils::CreateUtils(exporterType);
+        result = utils->ExportAnimationSet(source, Cast<UAnimSet>(Object), ctx);
       }
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
@@ -776,6 +845,7 @@ void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
   AnimExportOptions opts(this, set, source);
   FAppConfig& cfg = App::GetSharedApp()->GetConfig();
   opts.AllowSplit(false);
+  opts.SetAllowFormatPicker(false);
   opts.ApplyConfig(cfg.AnimationExportConfig);
   if (opts.ShowModal() != wxID_OK)
   {
@@ -801,11 +871,25 @@ void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
     SendEvent(&progress, UPDATE_PROGRESS_DESC, desc.WString());
   };
 
-  std::thread([&]() {
-    bool result;
+  MeshExporterType exporterType = (MeshExporterType)cfg.AnimationExportConfig.LastFormat;
+
+  std::thread([&]{
+    bool result = false;
     {
-      FbxUtils fbx;
-      result = fbx.ExportAnimationSequence(source, Cast<UAnimSequence>(Object), ctx);
+      auto utils = MeshUtils::CreateUtils(exporterType);
+      if (ctx.ExportMesh && source && exporterType == MeshExporterType::MET_Psk)
+      {
+        if (ctx.ProgressDescFunc)
+        {
+          ctx.ProgressDescFunc("Building ActorX model...");
+        }
+        std::wstring tmp = ctx.Path;
+        ctx.Path = ((std::filesystem::path(tmp).parent_path() / source->GetObjectNameString().WString()).replace_extension("psk")).wstring();
+        utils->ExportSkeletalMesh(source, ctx);
+        ctx.Path = tmp;
+      }
+      ctx.ProgressDescFunc(FString::Sprintf("Exporting: %s", Cast<UAnimSequence>(Object)->SequenceName.String().C_str()));
+      result = utils->ExportAnimationSequence(source, Cast<UAnimSequence>(Object), ctx);
     }
     SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
   }).detach();

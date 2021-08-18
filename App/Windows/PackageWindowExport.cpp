@@ -502,7 +502,15 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         ctx.CompressTracks = appConfig.AnimationExportConfig.Compress;
         ctx.ResampleTracks = appConfig.AnimationExportConfig.Resample;
         ctx.TrackRateScale = appConfig.AnimationExportConfig.RateFactor;
-        ctx.SplitTakes = appConfig.AnimationExportConfig.Split;
+        if (appConfig.AnimationExportConfig.LastFormat == (int32)MeshExporterType::MET_Fbx)
+        {
+          ctx.SplitTakes = appConfig.AnimationExportConfig.Split;
+        }
+        else
+        {
+          ctx.SplitTakes = true;
+          ctx.ExportMesh = false;
+        }
 
         UAnimSet* set = Cast<UAnimSet>(obj);
         USkeletalMesh* source = nullptr;
@@ -527,6 +535,8 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         {
           continue;
         }
+        MeshExporterType exporterType = (MeshExporterType)appConfig.AnimationExportConfig.LastFormat;
+        const char* ext = exporterType == MeshExporterType::MET_Fbx ? "fbx" : "psa";
         if (ctx.SplitTakes)
         {
           dest.replace_extension().wstring();
@@ -534,6 +544,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
           std::filesystem::create_directories(dest, err);
           std::vector<UObject*> inner = set->GetInner();
           int32 total = (int32)inner.size();
+          auto utils = MeshUtils::CreateUtils(exporterType);
           for (int32 idx = 0; idx < total; ++idx)
           {
             if (UAnimSequence* seq = Cast<UAnimSequence>(inner[idx]))
@@ -541,9 +552,8 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
               progressCounter++;
               count++;
               SendEvent(&progress, UPDATE_PROGRESS, progressCounter);
-              ctx.Path = (dest / seq->SequenceName.String().WString()).replace_extension("fbx").wstring();
-              FbxUtils fbx;
-              if (!fbx.ExportAnimationSequence(source, seq, ctx))
+              ctx.Path = (dest / seq->SequenceName.String().WString()).replace_extension(ext).wstring();
+              if (!utils->ExportAnimationSequence(source, seq, ctx))
               {
                 break;
               }
@@ -552,14 +562,14 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         }
         else
         {
-          ctx.Path = dest.replace_extension("fbx").wstring();
+          ctx.Path = dest.replace_extension(ext).wstring();
           int32 lastCount = 0;
           ctx.ProgressFunc = [&](int32 prg) {
             SendEvent(&progress, UPDATE_PROGRESS, progressCounter + prg);
             lastCount = prg;
           };
-          FbxUtils fbx;
-          fbx.ExportAnimationSet(source, set, ctx);
+          auto utils = MeshUtils::CreateUtils(exporterType);
+          utils->ExportAnimationSet(source, set, ctx);
           progressCounter += lastCount;
           count += lastCount;
         }
