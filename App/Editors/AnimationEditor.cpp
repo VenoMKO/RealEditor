@@ -329,8 +329,8 @@ public:
     OkButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AnimExportOptions::OnOkClicked), NULL, this);
     CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(AnimExportOptions::OnCancelClicked), NULL, this);
 
-    Scale->SetValidator(wxFloatingPointValidator<float>(1, &ScaleValue, wxNUM_VAL_DEFAULT));
-    Rate->SetValidator(wxFloatingPointValidator<float>(1, &RateValue, wxNUM_VAL_DEFAULT));
+    Scale->SetValidator(wxFloatingPointValidator<float>(2, &ScaleValue, wxNUM_VAL_DEFAULT));
+    Rate->SetValidator(wxFloatingPointValidator<float>(2, &RateValue, wxNUM_VAL_DEFAULT));
 
     DefaultButton->Enable(DefaultMesh);
     if (DefaultMesh && !Mesh)
