@@ -668,7 +668,6 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
         std::vector<UObject*> inner = set->GetInner();
         ctx.ProgressMaxFunc(inner.size());
         int32 total = (int32)inner.size();
-        auto utils = MeshUtils::CreateUtils(exporterType);
         const char* extCh = exporterType == MeshExporterType::MET_Fbx ? "fbx" : "psa";
 
         if (ctx.ExportMesh && source && exporterType == MeshExporterType::MET_Psk)
@@ -679,6 +678,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
           }
           std::wstring tmp = ctx.Path;
           ctx.Path = ((std::filesystem::path(tmp) / source->GetObjectNameString().WString()).replace_extension("psk")).wstring();
+          auto utils = MeshUtils::CreateUtils(exporterType);
           utils->ExportSkeletalMesh(source, ctx);
           ctx.Path = tmp;
         }
@@ -693,6 +693,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
               ctx.ProgressDescFunc(FString::Sprintf("Exporting: %s(%d/%d)", seq->SequenceName.String().C_str(), idx + 1, total));
             }
             ctx.Path = (p / seq->SequenceName.String().WString()).replace_extension(extCh).wstring();
+            auto utils = MeshUtils::CreateUtils(exporterType);
             if (!(result = utils->ExportAnimationSequence(source, seq, ctx)))
             {
               break;
