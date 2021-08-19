@@ -8,9 +8,9 @@
 | --- | --- | --- | --- | --- |
 | **Textures** | :heavy_check_mark: | :heavy_check_mark: | TGA, PNG, DDS | Texture2D, TextureFlipBook, ShadowMap2D, LightMap, TextureCube |
 | **Sounds** | :heavy_check_mark: | :heavy_check_mark: | OGG, CUE | SoundNodeWave, SoundCue |
-| **Animations** | :heavy_check_mark: | :x: | FBX | AnimSet, AnimSequence |
-| **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX | SkeletalMesh |
-| **3D models** | :heavy_check_mark: | :x: | FBX | StaticMesh |
+| **Animations** | :heavy_check_mark: | :x: | FBX, PSA | AnimSet, AnimSequence |
+| **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX, PSK | SkeletalMesh |
+| **3D models** | :heavy_check_mark: | :x: | FBX, PSK | StaticMesh |
 | **Speed Trees** | :heavy_check_mark: | :heavy_check_mark: | SPT | SpeedTree |
 | **Maps, Dungeons** | :heavy_check_mark: | :x: | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
 | **SWF/GFX** | :heavy_check_mark: | :heavy_check_mark: | Binary | GFxMovieInfo, SwfMovie |
