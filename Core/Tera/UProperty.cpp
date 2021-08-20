@@ -333,7 +333,7 @@ FPropertyTag* UArrayProperty::CreatePropertyTag(UObject* object)
 
 void UStructProperty::SerializeItem(FStream& s, FPropertyValue* valuePtr, UObject* object, UStruct* defaults) const
 {
-  bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked) || (Struct->StructFlags & STRUCT_Immutable);
+  bool bUseBinarySerialization = (Struct->StructFlags & STRUCT_ImmutableWhenCooked && s.GetPackage()->GetPackageFlag(PKG_Cooked)) || (Struct->StructFlags & STRUCT_Immutable);
   if (s.IsReading())
   {
     valuePtr->Type = FPropertyValue::VID::Struct;
