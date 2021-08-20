@@ -23,9 +23,14 @@
 #include <Tera/FStream.h>
 #include <Utils/ALDevice.h>
 
+#if BNS
+const char* APP_NAME = "BnS Editor";
+const char* VENDOR_NAME_32 = "BnS Editor";
+#else
 const char* APP_NAME = "Real Editor";
 const char* VENDOR_NAME_32 = "Real Editor x32";
 const char* VENDOR_NAME_64 = "Real Editor x64";
+#endif
 
 wxIMPLEMENT_APP(App);
 
@@ -893,9 +898,10 @@ void App::LoadCore(ProgressWindow* pWindow)
   std::thread objectRedirectorMapper;
   if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
+#if !BNS
     SetAppDisplayName(VENDOR_NAME_64);
     SetVendorDisplayName(VENDOR_NAME_64);
-
+#endif
     compositMapper = std::thread([&mapperErrorMutex, &mapperError] {
       try
       {
@@ -967,13 +973,18 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
   }
 #endif
-#if MINIMAL_CORE
+
+#if BNS
+  const std::vector<FString> classPackageNames = { "Engine.u", "T1Game.u", "Editor.u", "UnrealEd.u"};
+  const std::vector<FString> extraClassPackageNames;
+#elif MINIMAL_CORE
   const std::vector<FString> classPackageNames = { "Engine.u", "S1Game.u", "GFxUI.u" };
   const std::vector<FString> extraClassPackageNames;
 #else
   const std::vector<FString> classPackageNames = { "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "IpDrv.u", "UnrealEd.u", "GFxUIEditor.u" };
   const std::vector<FString> extraClassPackageNames = { "WinDrv.u", "OnlineSubsystemPC.u" };
 #endif
+
   PERF_START(ClassPackagesLoad);
   for (const FString& name : classPackageNames)
   {

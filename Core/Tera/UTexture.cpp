@@ -438,7 +438,7 @@ void UTexture2D::PostLoad()
         continue;
       }
 
-      if (FPackage::GetCoreVersion() == VER_TERA_CLASSIC && (GetExportFlags() & EF_ForcedExport) && mip->Data->GetBulkDataOffsetInFile() >= 0)
+      if (FPackage::GetCoreVersion() < VER_TERA_MODERN && (GetExportFlags() & EF_ForcedExport) && mip->Data->GetBulkDataOffsetInFile() >= 0)
       {
         FString objectPath = GetObjectPath();
         FString packageName;

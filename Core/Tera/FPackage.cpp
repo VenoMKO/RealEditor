@@ -586,16 +586,24 @@ FPackage::S1DirError FPackage::ValidateRootDirCandidate(const FString& s1game)
   {
     return S1DirError::NOT_FOUND;
   }
+#if !BNS
   if (s1game.Filename(false) != "S1Game")
   {
     LogE("Error! Folder name \"%s\" does not match the \"S1Game\"", s1game.Filename(false).UTF8());
     return S1DirError::NAME_MISSMATCH;
   }
   const char* classPackages[] = { "Core.u", "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "IpDrv.u", "UnrealEd.u", "GFxUIEditor.u" };
+#else
+  const char* classPackages[] = { "Core.u", "Engine.u", "Editor.u", "T1Game.u", "UnrealEd.u" };
+#endif
   std::filesystem::path root = s1game.WString();
   for (const char* name : classPackages)
   {
+#if !BNS
     if (!std::filesystem::exists(root / "CookedPC" / name))
+#else
+    if (!std::filesystem::exists(root / "CookedPC" / name))
+#endif
     {
       LogE("Error! %s was not found in the S1Game folder.", name);
       return S1DirError::CLASSES_NOT_FOUND;
@@ -1179,7 +1187,26 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   sum.DataPath = path;
   sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   (*stream) << sum;
+#if BNS
+  if (sum.Magic == BNS_CRYPTO_MAGIC)
+  {
+    FILE_OFFSET size = stream->GetSize();
+    stream->SetPosition(0);
+    void* tmpData = malloc(size);
+    stream->SerializeBytes(tmpData, size);
+    BnsInlineCrypto(tmpData, size);
+    delete stream;
+    stream = new MReadStream(tmpData, true, size);
+    (*stream) << sum;
+    sum.DataPath = GetTempFilePath().WString();
+    FWriteStream tmps = FWriteStream(sum.DataPath);
+    tmps.SerializeBytes(tmpData, size);
+    delete stream;
+    stream = new FReadStream(sum.DataPath);
+  }
+#endif
   sum.OriginalPackageFlags = sum.PackageFlags;
+#if !BNS
   if (CoreVersion && sum.GetFileVersion() != CoreVersion)
   {
     if (sum.GetFileVersion() == VER_TERA_CLASSIC)
@@ -1195,6 +1222,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       UThrow("%s version %d(L: %d) differs from your S1Game version %d", sum.PackageName.C_str(), sum.GetFileVersion(), sum.GetLicenseeVersion(), CoreVersion);
     }
   }
+#endif
   if (sum.CompressedChunks.size())
   {
     FILE_OFFSET startOffset = INT_MAX;
@@ -1620,8 +1648,23 @@ void FPackage::Load(FStream& s)
 #endif
   }
 
-  for (FObjectExport* exp : Exports)
+  uint32 tmp1;
+  uint32 tmp2;
+  uint32 key1 = ((Summary.HeaderSize & 0xFF) << 24) |
+    ((Summary.NamesCount & 0xFF) << 16) |
+    ((Summary.NamesOffset & 0xFF) << 8) |
+    ((Summary.ExportsCount & 0xFF));
+  uint32 key2 = (Summary.ExportsOffset + Summary.ImportsCount + Summary.ImportsOffset) & 0x1F;
+  for (int32 idx = 0; idx < Exports.size(); ++idx)
   {
+    FObjectExport* exp = Exports[idx];
+    tmp1 = _rotr(exp->SerialOffset, (idx + key2) & 0x1F);
+    tmp2 = _rotr(key1, idx % 32);
+    exp->SerialOffset = tmp2 ^ tmp1;
+    tmp1 = _rotr(exp->SerialSize, (idx + key2) & 0x1F);
+    tmp2 = _rotr(key1, idx % 32);
+    exp->SerialSize = tmp2 ^ tmp1;
+
     ExportObjects[exp->ObjectIndex] = UObject::Object(exp);
     if (!Referencer && !ExportObjects[exp->ObjectIndex]->HasAnyFlags(RF_ClassDefaultObject) && exp->GetClassName() == UObjectReferencer::StaticClassName())
     {

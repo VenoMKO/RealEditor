@@ -56,6 +56,8 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 
 #define CP_ANSI_HANGUL 949
 
+const char BnSKey[] = { 0x71, 0x69, 0x66, 0x66, 0x6a, 0x64, 0x6c, 0x65, 0x72, 0x64, 0x6f, 0x71, 0x79, 0x6d, 0x76, 0x6b, 0x65, 0x74, 0x64, 0x63, 0x6c, 0x30, 0x65, 0x72, 0x32, 0x73, 0x75, 0x62, 0x69, 0x6f, 0x78, 0x71 };
+
 int32 GSRandSeed = 0;
 const float	SRandTemp = 1.f;
 
@@ -531,6 +533,16 @@ bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET 
   return true;
 }
 
+bool DecompressT1LZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+{
+  void* dec = malloc(srcSize);
+  std::memcpy(dec, src, srcSize);
+  BnsInlineCrypto(dec, srcSize);
+  bool result = DecompressLZO(dec, srcSize, dst, dstSize, concurrent);
+  free(dec);
+  return result;
+}
+
 bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* dstSize, bool concurrent)
 {
   lzo_uint resultSize = *dstSize;
@@ -556,6 +568,9 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
     break;
   case COMPRESS_LZO:
     ok = DecompressLZO(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
+    break;
+  case COMPRESS_T1LZO:
+    ok = DecompressT1LZO(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
     break;
   case COMPRESS_LZX:
     // TODO: implement lzx
@@ -592,6 +607,19 @@ bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* comp
     ok = false;
   }
   return ok;
+}
+
+void BnsInlineCrypto(void* data, size_t length)
+{
+  if (!data || length < sizeof(BnSKey))
+  {
+    return;
+  }
+  char* dataPtr = (char*)data;
+  for (size_t idx = 0; idx < length; ++idx)
+  {
+    dataPtr[idx] ^= BnSKey[idx % sizeof(BnSKey)];
+  }
 }
 
 FString ObjectFlagsToString(uint64 expFlag)

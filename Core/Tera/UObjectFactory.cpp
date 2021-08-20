@@ -528,7 +528,8 @@ UObject* UObject::Object(FObjectExport* exp)
   // Fallback for unimplemented components. *Component => UComponent
   if ((c.Find(UComponent::StaticClassName()) != std::string::npos) ||
       (c.Find("Distribution") != std::string::npos) ||
-       c.StartWith("UIComp_") || c == "RB_Handle")
+       c.Find("UIComp_") != std::string::npos ||
+       c == "RB_Handle")
   {
     return new UComponent(exp);
   }

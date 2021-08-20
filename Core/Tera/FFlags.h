@@ -262,7 +262,8 @@ enum ECompressionFlags
   COMPRESS_None = 0x00,
   COMPRESS_ZLIB = 0x01,
   COMPRESS_LZO = 0x02,
-  COMPRESS_LZX = 0x04
+  COMPRESS_LZX = 0x04,
+  COMPRESS_T1LZO = 0x08,
 };
 
 enum EBulkDataFlags
@@ -276,7 +277,8 @@ enum EBulkDataFlags
   BULKDATA_Unused = 1 << 5,
   BULKDATA_StoreOnlyPayload = 1 << 6,
   BULKDATA_SerializeCompressedLZX = 1 << 7,
-  BULKDATA_SerializeCompressed = (BULKDATA_SerializeCompressedZLIB | BULKDATA_SerializeCompressedLZO | BULKDATA_SerializeCompressedLZX),
+  BULKDATA_SerializeCompressedT1LZO = 1 << 8,
+  BULKDATA_SerializeCompressed = (BULKDATA_SerializeCompressedZLIB | BULKDATA_SerializeCompressedLZO | BULKDATA_SerializeCompressedLZX | BULKDATA_SerializeCompressedT1LZO),
 };
 
 enum TextureAddress : uint8

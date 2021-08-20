@@ -668,11 +668,15 @@ bool UMaterialInterface::RegisterProperty(FPropertyTag* property)
 
 UTexture2D* UMaterialInterface::GetDiffuseTexture() const
 {
+#if BNS
+  UTexture2D* result = GetTextureParameterValue("diffuse", false);
+#else
   UTexture2D* result = GetTextureParameterValue("PCC_HairDiffuseMap");
   if (!result)
   {
     result = GetTextureParameterValue("DiffuseMap");
   }
+#endif
   return result;
 }
 
@@ -1031,7 +1035,7 @@ std::map<FString, bool> UMaterialInterface::GetStaticBoolParameters() const
   return result;
 }
 
-UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) const
+UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name, bool strict) const
 {
   bool thisValue = false;
   for (FPropertyValue* container : TextureParameterValues)
@@ -1040,12 +1044,19 @@ UTexture2D* UMaterialInterface::GetTextureParameterValue(const FString& name) co
     for (FPropertyValue* subcontainer : tmpArray)
     {
       FPropertyTag* tmpTag = subcontainer->GetPropertyTagPtr();
-      if (tmpTag->Name == "ParameterName" && tmpTag->Value->GetName() == name)
+      if (tmpTag->Name == "ParameterName")
       {
-        thisValue = true;
+        if (strict)
+        {
+          thisValue = tmpTag->GetName().String() == name;
+        }
+        else
+        {
+          thisValue = tmpTag->GetName().String().ToUpper().Find(name.ToUpper()) != std::string::npos;
+        }
         continue;
       }
-      else if (thisValue && tmpTag->Name == "ParameterValue")
+      if (thisValue && tmpTag->Name == "ParameterValue")
       {
         PACKAGE_INDEX objIndex = tmpTag->Value->GetObjectIndex();
         thisValue = false;

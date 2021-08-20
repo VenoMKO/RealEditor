@@ -381,14 +381,14 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
   s << Sections;
   s << IndexContainer;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << LegacyShadowIndices;
   }
 
   s << ActiveBoneIndices;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << LegacyShadowTriangleDoubleSided;
   }
@@ -411,14 +411,14 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
     }
   }
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << LegacyEdges;
   }
 
   s << RequiredBones;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     LegacyRawPointIndices.Serialize(s, owner);
     RawPointIndices.Realloc(LegacyRawPointIndices.GetElementCount());
@@ -588,7 +588,7 @@ void USkeletalMesh::Serialize(FStream& s)
 
   s << NameIndexMap;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     // TODO: implement kDOPs for 32-bit client and remove this check
     return;

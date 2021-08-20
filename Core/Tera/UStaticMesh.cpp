@@ -316,7 +316,7 @@ void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
   s << IndexBuffer;
   s << WireframeIndexBuffer;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << LegacyShadowVolumeEdges;
     s << LegacyUnk;
@@ -403,8 +403,10 @@ bool FStaticMeshTriangleBulkData::RequiresSingleElementSerialization(FStream& s)
 void UStaticMesh::Serialize(FStream& s)
 {
   Super::Serialize(s);
-  
-  s << Source;
+  if (s.GetFV() != VER_BNS)
+  {
+    s << Source;
+  }
   s << Bounds;
   s << FBodySetup;
 
@@ -419,7 +421,7 @@ void UStaticMesh::Serialize(FStream& s)
   
   s << SMDataVersion;
 
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << ContentTags;
   }

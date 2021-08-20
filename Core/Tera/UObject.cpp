@@ -494,7 +494,6 @@ void UObject::Load(FStream& s)
     free(data);
 #endif
   }
-  
 #if SERIALIZE_PROPERTIES
   if (HasAnyFlags(RF_ClassDefaultObject))
   {

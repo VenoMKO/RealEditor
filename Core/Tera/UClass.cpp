@@ -242,6 +242,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
 
       if (!property)
       {
+        DBreak();
         LogE("Property %s of %s not found in %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().String().c_str(), object->GetPackage()->GetPackageName().UTF8().c_str());
       }
       else if (tag.ArrayIndex >= property->ArrayDim || tag.ArrayIndex < 0)
@@ -267,7 +268,7 @@ void UStruct::SerializeTaggedProperties(FStream& s, UObject* object, FPropertyVa
       else if (tag.Type == NAME_ByteProperty && ((tag.EnumName == NAME_None && ExactCast<UByteProperty>(property)->Enum != nullptr) || (tag.EnumName != NAME_None && ExactCast<UByteProperty>(property)->Enum == nullptr)) && s.GetFV() >= VER_TERA_CLASSIC)
       {
         LogE("Property coversion required in %s of %s", tag.Name.GetString().UTF8().c_str(), object->GetObjectNameString().UTF8().c_str());
-        // DBreak();
+        DBreak();
       }
       else
       {
@@ -446,7 +447,7 @@ void UClass::Serialize(FStream& s)
   s << ClassFlags;
   SERIALIZE_UREF(s, ClassWithin);
   s << ClassConfigName;
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     s << HideCategories;
     s << ComponentNameToDefaultObjectMap;

@@ -172,12 +172,22 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.Magic;
   if (s.IsReading() && sum.Magic != PACKAGE_MAGIC)
   {
+#if BNS
+    if (sum.Magic == BNS_CRYPTO_MAGIC)
+    {
+      return s;
+    }
+#endif
     UThrow("File is not a valid package.");
   }
   s << sum.FileVersion;
   const uint16 fv = sum.GetFileVersion();
   const uint16 lv = sum.GetLicenseeVersion();
-  if (s.IsReading() && (fv != 610 && fv != 897))
+#if BNS
+  if (s.IsReading() && fv != VER_BNS)
+#else
+  if (s.IsReading() && (fv != VER_TERA_CLASSIC && fv != VER_TERA_MODERN))
+#endif
   {
 #if _DEBUG
     // UDK
@@ -634,6 +644,7 @@ ECompressionFlags FUntypedBulkData::GetDecompressionFlags() const
   return (BulkDataFlags & BULKDATA_SerializeCompressedZLIB) ? COMPRESS_ZLIB :
          (BulkDataFlags & BULKDATA_SerializeCompressedLZX) ? COMPRESS_LZX :
          (BulkDataFlags & BULKDATA_SerializeCompressedLZO) ? COMPRESS_LZO :
+         (BulkDataFlags & BULKDATA_SerializeCompressedT1LZO) ? COMPRESS_T1LZO :
          COMPRESS_None;
 }
 

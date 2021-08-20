@@ -336,6 +336,7 @@ public:
   // Get name at index
   inline void GetIndexedNameString(NAME_INDEX index, FString& output) const
   {
+    DBreakIf(index < 0 || index >= Names.size());
     Names[index].GetString(output);
   }
 

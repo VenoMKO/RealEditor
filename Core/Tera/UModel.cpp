@@ -143,7 +143,7 @@ void UModel::Serialize(FStream& s)
   tmp = (int32)sizeof(int32);
   s << tmp;
   s << PortalNodes;
-  if (s.GetFV() == VER_TERA_CLASSIC)
+  if (s.GetFV() < VER_TERA_MODERN)
   {
     tmp = sizeof(FMeshEdge);
     s << tmp;

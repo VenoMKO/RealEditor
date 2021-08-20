@@ -352,7 +352,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, MinRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -384,7 +384,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, MaxRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -416,7 +416,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, LPFMinRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -448,7 +448,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, LPFMaxRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -480,7 +480,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, VolumeMin))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -513,7 +513,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, VolumeMax))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -546,7 +546,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, PitchMin))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -579,7 +579,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, PitchMax))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -639,7 +639,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, VolumeModulation))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -672,7 +672,7 @@ bool USoundNodeAmbient::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, PitchModulation))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -724,12 +724,12 @@ void USoundNodeAmbient::GetWaves(std::vector<USoundNodeWave*>& waves)
 
 float USoundNodeAmbient::GetRadiusMin() const
 {
-  return GetPackage()->GetFileVersion() == VER_TERA_CLASSIC ? MinRadius : RadiusMin;
+  return GetPackage()->GetFileVersion() < VER_TERA_MODERN ? MinRadius : RadiusMin;
 }
 
 float USoundNodeAmbient::GetRadiusMax() const
 {
-  return GetPackage()->GetFileVersion() == VER_TERA_CLASSIC ? MaxRadius : RadiusMax;
+  return GetPackage()->GetFileVersion() < VER_TERA_MODERN ? MaxRadius : RadiusMax;
 }
 
 bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
@@ -751,7 +751,7 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, MinRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -783,7 +783,7 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, MaxRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -815,7 +815,7 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, LPFMinRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -847,7 +847,7 @@ bool USoundNodeAttenuation::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, LPFMaxRadius))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -935,7 +935,7 @@ bool USoundNodeLooping::RegisterProperty(FPropertyTag* property)
   REGISTER_FLOAT_PROP(LoopCountMax);
   if (PROP_IS(property, LoopCount))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -987,7 +987,7 @@ bool USoundNodeModulator::RegisterProperty(FPropertyTag* property)
   SUPER_REGISTER_PROP();
   if (PROP_IS(property, PitchModulation))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {
@@ -1020,7 +1020,7 @@ bool USoundNodeModulator::RegisterProperty(FPropertyTag* property)
   }
   if (PROP_IS(property, VolumeModulation))
   {
-    if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+    if (GetPackage()->GetFileVersion() < VER_TERA_MODERN)
     {
       for (FPropertyValue* v : property->GetArray())
       {

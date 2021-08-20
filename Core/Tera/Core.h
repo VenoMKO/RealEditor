@@ -107,9 +107,15 @@ enum { MAX_TEXCOORDS = 4 };
 enum { MAX_GPUSKIN_BONES = 75 };
 enum { MSP_MAX = 1 };
 
+#define BNS 1
+
 #define PACKAGE_MAGIC 0x9E2A83C1
+#define BNS_CRYPTO_MAGIC 0xF84CEAB0
+
 #define VER_TERA_CLASSIC 610
 #define VER_TERA_MODERN 897
+#define VER_BNS 573
+
 #define VER_TERA_FILEMOD 2
 
 #ifndef M_PI
@@ -294,6 +300,8 @@ namespace LZO
 bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 decompressedSize, const void* compressedBuffer, int32 compressedSize);
 
 bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* compressedSize, const void* decompressedBuffer, int32 decompressedSize);
+
+void BnsInlineCrypto(void* data, size_t length);
 
 // --------------------------------------------------------------------
 // Logging

@@ -174,7 +174,7 @@ public:
   std::vector<UTexture*> GetTextureSamples() const;
   std::map<FString, bool> GetStaticBoolParameters() const;
 
-  UTexture2D* GetTextureParameterValue(const FString& name) const;
+  UTexture2D* GetTextureParameterValue(const FString& name, bool strict = true) const;
   bool IsTwoSided() const;
   float GetOpacityMaskClipValue() const;
   UTexture2D* GetDiffuseTexture() const;

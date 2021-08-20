@@ -27,7 +27,11 @@ enum ControlElementId {
 
 bool IsValidDir(const wxString& path)
 {
+#if BNS
+  return true;
+#else
   return path.EndsWith(wxFILE_SEP_PATH + RootDir) || path.EndsWith(wxFILE_SEP_PATH + RootDir + wxFILE_SEP_PATH);
+#endif
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)

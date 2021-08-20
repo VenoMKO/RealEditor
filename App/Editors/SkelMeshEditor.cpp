@@ -1128,6 +1128,7 @@ void SkelMeshEditor::CreateRenderModel()
 
 
   FVector customRotation;
+#if !BNS
   FString objName = Mesh->GetObjectNameString().ToUpper();
   if (objName.Find("_FACE") != std::string::npos)
   {
@@ -1152,6 +1153,7 @@ void SkelMeshEditor::CreateRenderModel()
     customRotation.Z = 180;
     customRotation.X = 90;
   }
+#endif
 
   if (!customRotation.IsZero())
   {

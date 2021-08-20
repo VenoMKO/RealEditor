@@ -94,7 +94,7 @@ struct FSkelMeshSection
     s << m.ChunkIndex;
     s << m.BaseIndex;
 
-    if (s.GetFV() == VER_TERA_CLASSIC)
+    if (s.GetFV() < VER_TERA_MODERN)
     {
       uint16 ntris = (uint16)m.NumTriangles;
       s << ntris;
@@ -105,7 +105,7 @@ struct FSkelMeshSection
       s << m.NumTriangles;
     }
 
-    if (s.GetFV() > VER_TERA_CLASSIC)
+    if (s.GetFV() > VER_TERA_CLASSIC || s.GetFV() == VER_BNS)
     {
       s << m.TriangleSorting;
     }
