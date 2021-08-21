@@ -165,7 +165,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer7 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* m_staticText9;
-  m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
+  m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Windows File Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
   m_staticText9->Wrap(300);
   bSizer7->Add(m_staticText9, 0, wxALL, 5);
 
@@ -175,12 +175,12 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   WasRegistered = ((App*)wxTheApp)->CheckMimeTypes(true);
 
   RegisterButton = new wxButton(m_panel5, ControlElementId::Register, wxT("Associate"), wxDefaultPosition, wxDefaultSize, 0);
-  RegisterButton->SetToolTip(wxT("Allow to open packages in the Explorer by double clicking them."));
+  RegisterButton->SetToolTip(wxT("Allow to open packages in the Windows File Explorer by double clicking them."));
   RegisterButton->Enable(!WasRegistered);
   bSizer9->Add(RegisterButton, 0, wxALL, 5);
 
   UnregisterButton = new wxButton(m_panel5, ControlElementId::Unregister, wxT("Dissociate"), wxDefaultPosition, wxDefaultSize, 0);
-  UnregisterButton->SetToolTip(wxT("Don't open packages in the Explorer by double clicking them."));
+  UnregisterButton->SetToolTip(wxT("Don't open packages in the Windows File Explorer by double clicking them."));
   UnregisterButton->Enable(WasRegistered);
   bSizer9->Add(UnregisterButton, 0, wxALL, 5);
 

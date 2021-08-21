@@ -475,6 +475,14 @@ protected:
 
   void OnOkClicked(wxCommandEvent& event)
   {
+    if (Mesh && ExportGeometry->GetValue() && GetFormat() == MeshExporterType::MET_Psk)
+    {
+      if (Mesh->GetNumFaces() > UINT16_MAX)
+      {
+        REDialog::Error(wxT("Selected 3D model has too many polygons for the PSK file format.\nTo fix the issue use FBX file format or turn off the \"Export geometry\" option."));
+        return;
+      }
+    }
     EndModal(wxID_OK);
   }
 

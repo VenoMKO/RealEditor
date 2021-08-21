@@ -451,6 +451,16 @@ public:
     return &IndexContainer;
   }
 
+  int32 GetNumFaces() const
+  {
+    int32 result = 0;
+    for (const auto& s : Sections)
+    {
+      result += s.NumTriangles;
+    }
+    return result;
+  }
+
   void _DebugVerify(UObject* owner) const;
 
 private:
@@ -502,6 +512,16 @@ public:
   std::vector<FMeshBone> GetReferenceSkeleton() const
   {
     return RefSkeleton;
+  }
+
+  int32 GetNumFaces(int32 lodIndex = 0) const
+  {
+    if (LodModels.empty())
+    {
+      return 0;
+    }
+    lodIndex = std::min<int32>(lodIndex, LodModels.size() - 1);
+    return LodModels.at(lodIndex).GetNumFaces();
   }
 
   bool AcceptVisitor(class MeshTravallerData* importData, uint32 lodIdx, FString& error);

@@ -359,6 +359,16 @@ public:
     return (FStaticMeshTriangle*)RawTriangles.BulkData;
   }
 
+  int32 GetNumFaces() const
+  {
+    int32 result = 0;
+    for (const FStaticMeshElement& e : Elements)
+    {
+      result += (int32)e.NumTriangles;
+    }
+    return result;
+  }
+
   UStaticMesh* Owner = nullptr;
 
   FStaticMeshVertexBuffer VertexBuffer;

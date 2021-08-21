@@ -58,6 +58,12 @@ bool PskUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, MeshExportContext& 
     return false;
   }
 
+  if (lod->GetNumFaces() > UINT16_MAX)
+  {
+    ctx.Error = "The model has too many polygons for the PSK file format.\nTo fix the issue use FBX file format.";
+    return false;
+  }
+
   std::vector<UObject*> umaterials = sourceMesh->GetMaterials();
   std::map<int32, int32> materialMap;
   std::vector<VMaterial> materials;
@@ -279,6 +285,12 @@ bool PskUtils::ExportStaticMesh(UStaticMesh* sourceMesh, MeshExportContext& ctx)
   if (verticies.empty())
   {
     ctx.Error = "The model has no vertices!";
+    return false;
+  }
+
+  if (lod->GetNumFaces() > UINT16_MAX)
+  {
+    ctx.Error = "The model has too many polygons for the PSK file format.\nTo fix the issue use FBX file format.";
     return false;
   }
 
