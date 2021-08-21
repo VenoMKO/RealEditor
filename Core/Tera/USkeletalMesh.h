@@ -422,6 +422,13 @@ struct FPerPolyBoneCollisionData {
   friend FStream& operator<<(FStream& s, FPerPolyBoneCollisionData& d);
 };
 
+struct FPerPolyBoneCollisionDataLegacy {
+  FkDOPTree KDOPTree;
+  std::vector<FVector> Vertices;
+
+  friend FStream& operator<<(FStream& s, FPerPolyBoneCollisionDataLegacy& d);
+};
+
 class FStaticLODModel {
 public:
 
@@ -547,6 +554,7 @@ private:
   std::map<FName, int32> NameIndexMap;
 
   std::vector<FPerPolyBoneCollisionData> PerPolyBoneKDOPs;
+  std::vector<FPerPolyBoneCollisionDataLegacy> PerPolyBoneKDOPsLegacy;
 
   std::vector<FString> BoneBreakNames;
   std::vector<uint8> BoneBreakOptions;

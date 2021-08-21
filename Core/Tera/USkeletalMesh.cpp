@@ -376,6 +376,11 @@ FStream& operator<<(FStream& s, FPerPolyBoneCollisionData& d)
   return s << d.KDOPTree << d.Vertices;
 }
 
+FStream& operator<<(FStream& s, FPerPolyBoneCollisionDataLegacy& d)
+{
+  return s << d.KDOPTree << d.Vertices;
+}
+
 void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
 {
   s << Sections;
@@ -590,11 +595,12 @@ void USkeletalMesh::Serialize(FStream& s)
 
   if (s.GetFV() == VER_TERA_CLASSIC)
   {
-    // TODO: implement kDOPs for 32-bit client and remove this check
-    return;
+    s << PerPolyBoneKDOPsLegacy;
   }
-
-  s << PerPolyBoneKDOPs;
+  else
+  {
+    s << PerPolyBoneKDOPs;
+  }
 
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
