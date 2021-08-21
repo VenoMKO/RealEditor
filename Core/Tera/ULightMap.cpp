@@ -100,7 +100,10 @@ void FLightMap2D::Serialize(FStream& s)
   s << ScaleVectors[1];
   SERIALIZE_UREF(s, Texture3);
   s << ScaleVectors[2];
-
+#if BNS
+  SERIALIZE_UREF(s, Texture4);
+  s << ScaleVectors[3];
+#endif
   s << CoordinateScale;
   s << CoordinateBias;
 }

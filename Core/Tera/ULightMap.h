@@ -2,7 +2,11 @@
 #include "Core.h"
 #include "FStructs.h"
 
+#if BNS
+#define NUM_STORED_LIGHTMAP_COEF 4
+#else
 #define NUM_STORED_LIGHTMAP_COEF 3
+#endif
 #define NUM_DIRECTIONAL_LIGHTMAP_COEF 2
 #define NUM_LEGACY_DIRECTIONAL_LIGHTMAP_COEF 3
 #define NUM_SIMPLE_LIGHTMAP_COEF 1
@@ -83,6 +87,7 @@ protected:
   DECL_UREF(UObject, Texture1);
   DECL_UREF(UObject, Texture2);
   DECL_UREF(UObject, Texture3);
+  DECL_UREF(UObject, Texture4);
   FVector ScaleVectors[NUM_STORED_LIGHTMAP_COEF];
   FVector2D CoordinateScale;
   FVector2D CoordinateBias;

@@ -7,6 +7,8 @@
 #include "FObjectResource.h"
 #include "UPhysAsset.h"
 
+#include <filesystem>
+
 FStream& operator<<(FStream& s, FStaticMeshVertexBuffer& b)
 {
 #define ALLOCATE_VERTEX_DATA_TEMPLATE( VertexDataType, numUVs, data, elementCount ) \
@@ -312,10 +314,14 @@ void FStaticMeshRenderData::Serialize(FStream& s, UObject* owner, int32 idx)
     s << LegacyUnkBuffer;
     VertexBuffer.InitFromLegacy(LegacyVertexBuffer);
   }
-  s << NumVertices;
+  //s << NumVertices;
   s << IndexBuffer;
   s << WireframeIndexBuffer;
-
+  if (s.GetFV() == VER_BNS)
+  {
+    NumVertices = LegacyVertexBuffer.ElementCount;
+    return;
+  }
   if (s.GetFV() < VER_TERA_MODERN)
   {
     s << LegacyShadowVolumeEdges;
@@ -403,6 +409,22 @@ bool FStaticMeshTriangleBulkData::RequiresSingleElementSerialization(FStream& s)
 void UStaticMesh::Serialize(FStream& s)
 {
   Super::Serialize(s);
+  FILE_OFFSET dstart = s.GetPosition();
+  {
+    FILE_OFFSET tmp = s.GetPosition();
+    FILE_OFFSET size = Export->SerialOffset + Export->SerialSize - tmp;
+    void* data = malloc(size);
+    s.SerializeBytes(data, size);
+    s.SetPosition(tmp);
+
+    std::string rootDir = DUMP_PATH;
+    rootDir += "\\_BnS\\";
+    std::filesystem::create_directories(rootDir);
+    rootDir += GetObjectNameString().UTF8();
+    FWriteStream ws(rootDir);
+    ws.SerializeBytes(data, size);
+    free(data);
+  }
   if (s.GetFV() != VER_BNS)
   {
     s << Source;
@@ -438,12 +460,13 @@ void UStaticMesh::Serialize(FStream& s)
   s << cnt;
   if (s.IsReading())
   {
-    LODModels.resize(cnt);
+    LODModels.resize(std::min(cnt, 1));
   }
   for (int32 idx = 0; idx < cnt; ++idx)
   {
     LODModels[idx].Serialize(s, this, idx);
   }
+  return;
   
   s << LodInfoCount;
   s << ThumbnailAngle;
@@ -461,7 +484,7 @@ void UStaticMesh::Serialize(FStream& s)
     s << CachedStreamingTextureFactors;
     s << bRemoveDegenerates;
   }
-  else
+  else if (s.GetFV() != VER_BNS)
   {
     s << PhysMeshScale3D;
     s << Unk2;

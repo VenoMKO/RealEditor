@@ -375,9 +375,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Extern\nvtt\project\vc2017\$(Configuration).$(Platform)\lib;$(SolutionDir)Extern\wxWidgets\lib\vc_x64_lib\;$(NVTRISTRIP)\lib\;$(FREEIMAGEWIN)\lib\;$(OGGWIN)\lib\$(Configuration)\;$(VORBISWIN)\win32\VS2010\x64\$(Configuration)\;$(OSGWIN)\lib\debug\;$(FBXWIN)\lib\vs2017\x64\debug\;$(ZYDIS)\debug\lib;$(CRYPTOPP)\x64\Output\Debug\;$(OPENAL)\Debug\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenThreadsd.lib;osgd.lib;osgAnimationd.lib;osgDBd.lib;osgFXd.lib;osgGAd.lib;osgManipulatord.lib;osgParticled.lib;osgPresentationd.lib;osgShadowd.lib;osgSimd.lib;osgTerraind.lib;osgTextd.lib;osgUId.lib;osgUtild.lib;osgViewerd.lib;osgVolumed.lib;osgWidgetd.lib;freetyped.lib;fontconfig.lib;libcharset.lib;libiconv.lib;brotlicommon-static.lib;brotlidec-static.lib;brotlienc-static.lib;bz2d.lib;libpng16d.lib;zlib.lib;nvcore.lib;nvthread.lib;nvmath.lib;nvimage.lib;bc6h.lib;bc7.lib;squish.lib;nvtt.lib;FreeImageLibd.lib;libfbxsdk-mt.lib;libxml2-mt.lib;wininet.lib;libogg.lib;libvorbis_static.lib;libvorbisfile_static.lib;NvTriStrip64d.lib;Zydis.lib;cryptlib.lib;OpenAL32.lib</AdditionalDependencies>
-      <StackReserveSize>
-      </StackReserveSize>
+      <StackReserveSize>10485760</StackReserveSize>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <StackCommitSize>10485760</StackCommitSize>
     </Link>
     <PreBuildEvent>
       <Command>msbuild.exe "$(ProjectDir)Extern\nvtt\project\vc2017\nvtt.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)

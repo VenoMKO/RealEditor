@@ -810,6 +810,8 @@ void PackageWindow::DebugMarkDirty(wxCommandEvent&)
   Package->MarkDirty(true);
 }
 
+#include <Tera/USkeletalMesh.h>
+
 void PackageWindow::DebugIteratePackages(wxCommandEvent&)
 {
   // Perform an action(DebugIteratePackage) for every GPK and GMP in the S1Game.
@@ -820,7 +822,7 @@ void PackageWindow::DebugIteratePackages(wxCommandEvent&)
   for (const FString& contentsItem : contents)
   {
     const FString path = root + "\\" + contentsItem;
-    if (path.FileExtension() != "gpk" && path.FileExtension() != "gmp")
+    if (path.FileExtension() != "upk")
     {
       continue;
     }
@@ -848,7 +850,9 @@ void PackageWindow::DebugIteratePackages(wxCommandEvent&)
 #ifdef DUMP_PATH
   std::string rootDir = DUMP_PATH;
   rootDir += "\\";
-  rootDir += "_IteratorOutput\\";
+  rootDir += "_BnS_IteratorOutput\\";
+  std::error_code err;
+  std::filesystem::create_directories(rootDir, err);
   for (const auto& p : ctx.map)
   {
     std::ofstream outs(rootDir + p.first.UTF8() + ".txt");
@@ -867,14 +871,11 @@ void PackageWindow::DebugIteratePackage(FPackage* package, DebugIterContext& ctx
   FString name = package->GetPackageName(true);
   for (FObjectExport* exp : exports)
   {
-    if (exp->GetClassName() == UPackage::StaticClassName())
+    if (exp->GetClassName() != USkeletalMesh::StaticClassName())
     {
       continue;
     }
-    if (UObject* obj = package->GetObject(exp, false))
-    {
-      ctx.map[name].emplace_back(obj->GetFullObjectName());
-    }
+    ctx.map[name].emplace_back(exp->GetObjectNameString());
   }
 }
 

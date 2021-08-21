@@ -338,6 +338,10 @@ osg::ref_ptr<osg::MatrixTransform> LevelEditor::CreateStaticMeshComponent(UStati
   }
 
   const FStaticMeshRenderData* model = mesh->GetLod(0);
+  if (!model->IndexBuffer.GetElementCount())
+  {
+    return nullptr;
+  }
 
   osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
   osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array(osg::Array::BIND_PER_VERTEX);

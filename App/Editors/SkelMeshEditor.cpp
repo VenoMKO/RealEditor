@@ -96,6 +96,10 @@ osgAnimation::Channel* CreateChannel(const char* name, const osg::Vec3& axis, fl
 osg::ref_ptr<osgAnimation::Skeleton> CreateSkeleton(const std::vector<FMeshBone>& refBones)
 {
   osg::ref_ptr<osgAnimation::Skeleton> skeleton = new osgAnimation::Skeleton;
+  if (refBones.empty())
+  {
+    return skeleton;
+  }
   std::vector<osgAnimation::Bone*> bones;
   bones.emplace_back(CreateBone(refBones.front(), skeleton));
   for (int32 idx = 1; idx < refBones.size(); ++idx)
