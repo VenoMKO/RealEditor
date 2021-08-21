@@ -813,6 +813,10 @@ void AnimSetEditor::OnMeshClicked(wxCommandEvent&)
     return;
   }
   Mesh = Cast<USkeletalMesh>(picker.GetSelectedObject());
+  if (Mesh)
+  {
+    Window->GetPackage()->RetainPackage(Mesh->GetPackage()->Ref());
+  }
   ShowMissingMesh(!Mesh);
   CreateRenderModel();
 }
