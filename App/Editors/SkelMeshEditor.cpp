@@ -204,7 +204,7 @@ public:
     m_button2->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SkelMeshExportOptions::OnCancelClicked), nullptr, this);
 
     ScaleFactorValue = cfg.ScaleFactor;
-    ScaleFactor->SetValidator(wxFloatingPointValidator<float>(1, &ScaleFactorValue, wxNUM_VAL_DEFAULT));
+    ScaleFactor->SetValidator(wxFloatingPointValidator<float>(2, &ScaleFactorValue, wxNUM_VAL_DEFAULT));
 
     ExportTextures->SetValue(cfg.ExportTextures);
 
