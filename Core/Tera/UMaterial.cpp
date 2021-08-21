@@ -670,6 +670,10 @@ UTexture2D* UMaterialInterface::GetDiffuseTexture() const
 {
 #if BNS
   UTexture2D* result = GetTextureParameterValue("diffuse", false);
+  if (!result)
+  {
+    result = GetTextureParameterValue("D");
+  }
 #else
   UTexture2D* result = GetTextureParameterValue("PCC_HairDiffuseMap");
   if (!result)
