@@ -531,11 +531,16 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
   TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(150, -1));
   bSizer3->Add(TakePicker, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
 
-  MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Browse..."), wxDefaultPosition, wxDefaultSize, 0);
+  wxStaticText* m_staticText3;
+  m_staticText3 = new wxStaticText(m_panel1, wxID_ANY, wxT("Mesh:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText3->Wrap(-1);
+  bSizer3->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+
+  MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
   MeshButton->SetToolTip(wxT("Pick a skeletal mesh for this animation."));
   bSizer3->Add(MeshButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
-  ErrorLabel = new wxStaticText(m_panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+  ErrorLabel = new wxStaticText(m_panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
   ErrorLabel->Wrap(-1);
   ErrorLabel->SetForegroundColour(wxColour(255, 13, 13));
 
@@ -783,7 +788,7 @@ UAnimSequence* AnimSetEditor::GetActiveSequence()
 
 void AnimSetEditor::ShowMissingMesh(bool show)
 {
-  wxString text = show ? Cast<UAnimSet>(Object)->GetSequences().size() ? wxT("Preview is unavailable! Missing skeletal mesh.") : wxT("The animation set has no takes! Nothing to show or export.") : wxEmptyString;
+  wxString text = show ? Cast<UAnimSet>(Object)->GetSequences().size() ? wxT("Missing a skeletal mesh. Press \"Change\" and pick a 3D model to animate.") : wxT("The animation set has no takes! Nothing to show or export.") : wxEmptyString;
   ErrorLabel->SetLabelText(text);
   ErrorLabel->SetToolTip(text);
   TakePicker->Enable(!show);
