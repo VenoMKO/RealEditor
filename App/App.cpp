@@ -50,21 +50,7 @@ wxString GetConfigPath()
 
 wxString GetS1Game32Path()
 {
-  wxString path = wxStandardPaths::Get().GetUserLocalDataDir() + wxFILE_SEP_PATH + wxS("x86") + wxFILE_SEP_PATH;
-  if (!wxDirExists(path))
-  {
-    wxMkdir(path);
-  }
-  path += wxS("S1Game");
-  if (!wxDirExists(path))
-  {
-    wxMkdir(path);
-  }
-  wxString cookedPc = path + wxFILE_SEP_PATH + wxS("CookedPC");
-  if (!wxDirExists(cookedPc))
-  {
-    wxMkdir(cookedPc);
-  }
+  wxString path = wxStandardPaths::Get().GetUserLocalDataDir() + wxFILE_SEP_PATH + wxS("x86") + wxFILE_SEP_PATH + wxS("S1Game");
   return path;
 }
 
@@ -355,7 +341,7 @@ void App::AddRecentFile(const wxString& path)
 
 void App::InstallS1Game32()
 {
-  wxString path = GetS1Game32Path() + wxFILE_SEP_PATH;
+  wxString path = GetS1Game32Path() + wxFILE_SEP_PATH + wxT("CookedPC") + wxFILE_SEP_PATH;
 
   auto InstallResource = [&](int resId, const char* name) {
     HRSRC hRes = FindResource(0, MAKEINTRESOURCE(resId), RT_RCDATA);
@@ -363,7 +349,7 @@ void App::InstallS1Game32()
     void* pMem = LockResource(hMem);
     DWORD size = SizeofResource(0, hRes);
 
-    std::wstring item = path + L"CookedPC\\" + A2W(name);
+    std::wstring item = path + A2W(name);
     struct _stat64 stat;
     if (_wstat64(item.c_str(), &stat) || stat.st_size != size)
     {
@@ -374,6 +360,12 @@ void App::InstallS1Game32()
     UnlockResource(hMem);
     FreeResource(hMem);
   };
+
+  std::error_code err;
+  if (!std::filesystem::exists(path.ToStdWstring(), err))
+  {
+    std::filesystem::create_directories(path.ToStdWstring(), err);
+  }
 
   InstallResource(500, "Core.u");
   InstallResource(501, "Engine.u");
