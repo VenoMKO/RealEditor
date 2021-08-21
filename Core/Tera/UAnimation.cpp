@@ -372,7 +372,8 @@ int32 UAnimSequence::GetRawFramesCount()
 
 double UAnimSequence::GetFrameRate()
 {
-  return double(GetRawFramesCount() - 1) / double(SequenceLength) * double(RateScale);
+  double v = double(GetRawFramesCount() - 1) / double(SequenceLength) * double(RateScale);
+  return v != 0. ? v : 1.;
 }
 
 void UAnimSequence::SeparateRawDataIntoTracks(std::vector<FTranslationTrack>& OutTranslationData, std::vector<FRotationTrack>& OutRotationData)

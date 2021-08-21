@@ -26,7 +26,7 @@ class UAnimSet : public UObject {
 public:
   DECL_UOBJ(UAnimSet, UObject);
 
-  UPROP_CREATABLE(bool, bAnimRotationOnly, false);
+  UPROP_CREATABLE(bool, bAnimRotationOnly, true);
   UPROP_CREATABLE_ARR_PTR(TrackBoneNames);
   UPROP_CREATABLE_ARR_PTR(Sequences);
   UPROP(FName*, PreviewSkelMeshName, nullptr);
