@@ -1,6 +1,6 @@
 # Real Editor - Tera Online
 ![Header Screenshot](.gitresources/header.jpg)
-> Tera Online 32-bit and 64-bit client package(\*.gpk, \*.gmp, \*.upk, \*.umap, \*.u) editor/viewer. Can be used to create Tera Online 2021 mods.
+> Tera Online 32-bit and 64-bit client package editor/viewer. Can be used to create Tera Online 2021 mods. Supports \*.gpk, \*.gmp, \*.upk, \*.umap, and \*.u files
 &nbsp;
 ## Features
 
