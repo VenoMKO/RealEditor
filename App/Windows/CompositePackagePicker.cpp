@@ -12,6 +12,7 @@ enum ControlElementId {
 CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString& title, bool filePackages)
   : WXDialog(parent, wxID_ANY, title)
 {
+  SetSize(FromDIP(GetSize()));
   FilePackages = filePackages;
   SetSize(445, 144);
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -26,7 +27,7 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
 
   wxStaticText* m_staticText = new wxStaticText(m_panel1, wxID_ANY, wxT("Package name: "), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText->Wrap(-1);
-  bSizer2->Add(m_staticText, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer2->Add(m_staticText, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   CompositeName = new wxTextCtrl(m_panel1, ControlElementId::TextField, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
   if (filePackages)
@@ -42,12 +43,12 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
   {
     CompositeName->AutoComplete(App::GetSharedApp()->GetCompositePackageNames());
   }
-  bSizer2->Add(CompositeName, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer2->Add(CompositeName, 1, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   m_panel1->SetSizer(bSizer2);
   m_panel1->Layout();
   bSizer2->Fit(m_panel1);
-  bSizer1->Add(m_panel1, 1, wxEXPAND | wxALL, 5);
+  bSizer1->Add(m_panel1, 1, wxEXPAND | wxALL, FromDIP(5));
 
   wxPanel* m_panel2;
   m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -56,15 +57,15 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
 
   OpenButton = new wxButton(m_panel2, wxID_OK, wxT("Open"), wxDefaultPosition, wxDefaultSize, 0);
   OpenButton->Enable(false);
-  bSizer3->Add(OpenButton, 0, wxALL, 5);
+  bSizer3->Add(OpenButton, 0, wxALL, FromDIP(5));
 
   CancelButton = new wxButton(m_panel2, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer3->Add(CancelButton, 0, wxALL, 5);
+  bSizer3->Add(CancelButton, 0, wxALL, FromDIP(5));
 
   m_panel2->SetSizer(bSizer3);
   m_panel2->Layout();
   bSizer3->Fit(m_panel2);
-  bSizer1->Add(m_panel2, 0, wxALIGN_RIGHT | wxALL, 5);
+  bSizer1->Add(m_panel2, 0, wxALIGN_RIGHT | wxALL, FromDIP(5));
 
 
   this->SetSizer(bSizer1);

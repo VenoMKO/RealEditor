@@ -91,6 +91,7 @@ namespace
     AuthDialog(wxWindow* parent = nullptr, const wxString& title = wxEmptyString)
       : WXDialog(parent, wxID_ANY, wxTheApp->GetVendorDisplayName(), wxDefaultPosition, wxSize(526, 201))
     {
+      SetSize(FromDIP(GetSize()));
       SetIcon(wxICON(#114));
       SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -125,24 +126,24 @@ namespace
       }
       desc += wxT("Press Restart as Administrator to restart Real Editor under different credentials.\nAll unsaved changes will be lost.");
       Description = new wxStaticText(m_panel4, wxID_ANY, desc, wxDefaultPosition, wxDefaultSize, 0);
-      Description->Wrap(460);
+      Description->Wrap(FromDIP(460));
       bSizer15->Add(Description, 0, wxRIGHT | wxLEFT, 10);
 
 
-      bSizer14->Add(bSizer15, 1, wxEXPAND, 5);
+      bSizer14->Add(bSizer15, 1, wxEXPAND, FromDIP(5));
 
 
       m_panel4->SetSizer(bSizer14);
       m_panel4->Layout();
       bSizer14->Fit(m_panel4);
-      bSizer11->Add(m_panel4, 1, wxEXPAND, 5);
+      bSizer11->Add(m_panel4, 1, wxEXPAND, FromDIP(5));
 
       wxBoxSizer* bSizer12;
       bSizer12 = new wxBoxSizer(wxVERTICAL);
 
       wxStaticLine* m_staticline2;
       m_staticline2 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-      bSizer12->Add(m_staticline2, 0, wxEXPAND, 5);
+      bSizer12->Add(m_staticline2, 0, wxEXPAND, FromDIP(5));
 
       wxPanel* m_panel5;
       m_panel5 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -150,13 +151,13 @@ namespace
       bSizer13 = new wxBoxSizer(wxHORIZONTAL);
 
 
-      bSizer13->Add(0, 0, 1, wxEXPAND, 5);
+      bSizer13->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
       OkButton = new wxButton(m_panel5, wxID_ANY, wxT("Restart as Administrator"), wxDefaultPosition, wxDefaultSize, 0);
-      bSizer13->Add(OkButton, 0, wxALL, 5);
+      bSizer13->Add(OkButton, 0, wxALL, FromDIP(5));
 
       CancelButton = new wxButton(m_panel5, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-      bSizer13->Add(CancelButton, 0, wxALL, 5);
+      bSizer13->Add(CancelButton, 0, wxALL, FromDIP(5));
 
 
       m_panel5->SetSizer(bSizer13);
@@ -165,7 +166,7 @@ namespace
       bSizer12->Add(m_panel5, 1, wxEXPAND | wxTOP | wxBOTTOM, 10);
 
 
-      bSizer11->Add(bSizer12, 0, wxEXPAND, 5);
+      bSizer11->Add(bSizer12, 0, wxEXPAND, FromDIP(5));
 
 
       this->SetSizer(bSizer11);

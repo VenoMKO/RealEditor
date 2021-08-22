@@ -179,6 +179,7 @@ bool MaterialMapperDialog::AutomaticallyMapMaterials(std::vector<class FString>&
 MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, const std::vector<std::pair<FString, UObject*>>& map, const std::vector<UObject*>& objectMaterials)
   : WXDialog(parent, wxID_ANY, wxT("Material mapping"), wxDefaultPosition, wxSize(462, 333), wxDEFAULT_DIALOG_STYLE)
 {
+  SetSize(FromDIP(GetSize()));
   Object = object;
   ObjectMaterials = objectMaterials;
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -189,10 +190,10 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, co
   wxStaticText* m_staticText1;
   m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("Match FBX materials with the object materials:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText1->Wrap(-1);
-  bSizer1->Add(m_staticText1, 0, wxALL, 5);
+  bSizer1->Add(m_staticText1, 0, wxALL, FromDIP(5));
 
   MaterialsList = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
-  bSizer1->Add(MaterialsList, 1, wxALL | wxEXPAND, 5);
+  bSizer1->Add(MaterialsList, 1, wxALL | wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer3;
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
@@ -200,18 +201,18 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, co
   wxButton* m_button5;
   m_button5 = new wxButton(this, wxID_ANY, wxT("Add..."), wxDefaultPosition, wxDefaultSize, 0);
 
-  bSizer3->Add(m_button5, 0, wxALL, 5);
+  bSizer3->Add(m_button5, 0, wxALL, FromDIP(5));
 
 
-  bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   wxButton* m_button3;
   m_button3 = new wxButton(this, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer3->Add(m_button3, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer3->Add(m_button3, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   wxButton* m_button4;
   m_button4 = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer3->Add(m_button4, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer3->Add(m_button4, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   bSizer1->Add(bSizer3, 0, wxEXPAND | wxTOP | wxBOTTOM, 15);
@@ -227,7 +228,7 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, co
   m_button3->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnOkClicked), nullptr, this);
   m_button4->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MaterialMapperDialog::OnCancelClicked), nullptr, this);
 
-  MaterialsList->AppendTextColumn(wxT("FBX Material"), 0, wxDATAVIEW_CELL_INERT, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  MaterialsList->AppendTextColumn(wxT("FBX Material"), 0, wxDATAVIEW_CELL_INERT, FromDIP(210), static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
 
   // Populate choices
   wxArrayString choices;
@@ -240,7 +241,7 @@ MaterialMapperDialog::MaterialMapperDialog(wxWindow* parent, UObject* object, co
     }
     choices.Add(mat->GetObjectNameString().WString());
   }
-  wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, 210, static_cast<wxAlignment>(wxALIGN_LEFT));
+  wxDataViewColumn* m_dataViewListColumn1 = new wxDataViewColumn(wxT("Object Material"), new wxDataViewChoiceByIndexRenderer(choices), wxDATAVIEW_CELL_EDITABLE, FromDIP(210), static_cast<wxAlignment>(wxALIGN_LEFT));
   MaterialsList->AppendColumn(m_dataViewListColumn1);
   std::vector<MaterialMapperItem> items;
   for (const auto& p : map)

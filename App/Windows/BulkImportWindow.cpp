@@ -171,6 +171,7 @@ public:
     : WXDialog(parent, wxID_ANY, wxT("Add bulk action"), wxDefaultPosition, wxSize(605, 619))
     , ObjectDumpBuffer(objectDumpBuffer)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
@@ -182,7 +183,7 @@ public:
     m_staticText17->Wrap(-1);
     m_staticText17->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-    bSizer20->Add(m_staticText17, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+    bSizer20->Add(m_staticText17, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
     wxPanel* m_panel8;
     m_panel8 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -191,8 +192,8 @@ public:
 
     wxStaticText* m_staticText20;
     m_staticText20 = new wxStaticText(m_panel8, wxID_ANY, wxT("Enter class and name of the object and you want to change and press Search. RE will look for all objects matching the class with similar names."), wxDefaultPosition, wxDefaultSize, 0);
-    m_staticText20->Wrap(580);
-    bSizer23->Add(m_staticText20, 0, wxALL, 5);
+    m_staticText20->Wrap(FromDIP(580));
+    bSizer23->Add(m_staticText20, 0, wxALL, FromDIP(5));
 
     wxBoxSizer* bSizer22;
     bSizer22 = new wxBoxSizer(wxHORIZONTAL);
@@ -200,37 +201,37 @@ public:
     wxStaticText* m_staticText18;
     m_staticText18 = new wxStaticText(m_panel8, wxID_ANY, wxT("Class:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText18->Wrap(-1);
-    bSizer22->Add(m_staticText18, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer22->Add(m_staticText18, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
-    ObjectClassTextField = new wxTextCtrl(m_panel8, wxID_ANY, objectClass, wxDefaultPosition, wxSize(170, -1), wxTE_PROCESS_ENTER);
-    bSizer22->Add(ObjectClassTextField, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    ObjectClassTextField = new wxTextCtrl(m_panel8, wxID_ANY, objectClass, wxDefaultPosition, FromDIP(wxSize(170, -1)), wxTE_PROCESS_ENTER);
+    bSizer22->Add(ObjectClassTextField, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxStaticText* m_staticText19;
     m_staticText19 = new wxStaticText(m_panel8, wxID_ANY, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText19->Wrap(-1);
-    bSizer22->Add(m_staticText19, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer22->Add(m_staticText19, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ObjectNameTextField = new wxTextCtrl(m_panel8, wxID_ANY, objectName, wxDefaultPosition, wxSize(-1, -1), wxTE_PROCESS_ENTER);
-    bSizer22->Add(ObjectNameTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer22->Add(ObjectNameTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     SearchButton = new wxButton(m_panel8, wxID_ANY, wxT("Search"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer22->Add(SearchButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer22->Add(SearchButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer23->Add(bSizer22, 0, wxEXPAND, 5);
+    bSizer23->Add(bSizer22, 0, wxEXPAND, FromDIP(5));
 
 
     m_panel8->SetSizer(bSizer23);
     m_panel8->Layout();
     bSizer23->Fit(m_panel8);
-    bSizer20->Add(m_panel8, 0, wxEXPAND | wxALL, 5);
+    bSizer20->Add(m_panel8, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxStaticText* m_staticText171;
     m_staticText171 = new wxStaticText(this, wxID_ANY, wxT("Search results"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText171->Wrap(-1);
     m_staticText171->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-    bSizer20->Add(m_staticText171, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+    bSizer20->Add(m_staticText171, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
     wxPanel* m_panel9;
     m_panel9 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -239,24 +240,24 @@ public:
 
     wxStaticText* m_staticText24;
     m_staticText24 = new wxStaticText(m_panel9, wxID_ANY, wxT("List of packages containing a copy of the object. Right-click an entry and press \"Show Object\" to view the duplicate object."), wxDefaultPosition, wxDefaultSize, 0);
-    m_staticText24->Wrap(575);
-    bSizer26->Add(m_staticText24, 0, wxALL | wxEXPAND, 5);
+    m_staticText24->Wrap(FromDIP(575));
+    bSizer26->Add(m_staticText24, 0, wxALL | wxEXPAND, FromDIP(5));
 
-    List = new wxDataViewCtrl(m_panel9, wxID_ANY, wxDefaultPosition, wxSize(-1, 200), wxDV_MULTIPLE);
-    bSizer26->Add(List, 0, wxALL | wxEXPAND, 5);
+    List = new wxDataViewCtrl(m_panel9, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 200)), wxDV_MULTIPLE);
+    bSizer26->Add(List, 0, wxALL | wxEXPAND, FromDIP(5));
 
 
     m_panel9->SetSizer(bSizer26);
     m_panel9->Layout();
     bSizer26->Fit(m_panel9);
-    bSizer20->Add(m_panel9, 0, wxEXPAND | wxALL, 5);
+    bSizer20->Add(m_panel9, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxStaticText* m_staticText172;
     m_staticText172 = new wxStaticText(this, wxID_ANY, wxT("Action"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText172->Wrap(-1);
     m_staticText172->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-    bSizer20->Add(m_staticText172, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+    bSizer20->Add(m_staticText172, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
     wxBoxSizer* bSizer38;
     bSizer38 = new wxBoxSizer(wxVERTICAL);
@@ -277,7 +278,7 @@ public:
     wxStaticText* m_staticText28;
     m_staticText28 = new wxStaticText(m_panel11, wxID_ANY, wxT("Import an external file"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText28->Wrap(-1);
-    bSizer29->Add(m_staticText28, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+    bSizer29->Add(m_staticText28, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
     wxBoxSizer* bSizer28;
     bSizer28 = new wxBoxSizer(wxHORIZONTAL);
@@ -285,25 +286,25 @@ public:
     wxStaticText* m_staticText27;
     m_staticText27 = new wxStaticText(m_panel11, wxID_ANY, wxT("Path:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText27->Wrap(-1);
-    bSizer28->Add(m_staticText27, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer28->Add(m_staticText27, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ImportTextField = new wxTextCtrl(m_panel11, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     ImportTextField->Enable(false);
 
-    bSizer28->Add(ImportTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer28->Add(ImportTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ImportBrowseButton = new wxButton(m_panel11, wxID_ANY, wxT("Browse"), wxDefaultPosition, wxDefaultSize, 0);
     ImportBrowseButton->Enable(false);
 
-    bSizer28->Add(ImportBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer28->Add(ImportBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ImportClearButton = new wxButton(m_panel11, wxID_ANY, wxT("Clear"), wxDefaultPosition, wxDefaultSize, 0);
     ImportClearButton->Enable(false);
 
-    bSizer28->Add(ImportClearButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer28->Add(ImportClearButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer29->Add(bSizer28, 1, wxEXPAND, 5);
+    bSizer29->Add(bSizer28, 1, wxEXPAND, FromDIP(5));
 
 
     m_panel11->SetSizer(bSizer29);
@@ -320,7 +321,7 @@ public:
     wxStaticText* m_staticText281;
     m_staticText281 = new wxStaticText(m_panel12, wxID_ANY, wxT("Redirect to an existing object"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText281->Wrap(-1);
-    bSizer291->Add(m_staticText281, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+    bSizer291->Add(m_staticText281, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
     wxBoxSizer* bSizer281;
     bSizer281 = new wxBoxSizer(wxHORIZONTAL);
@@ -328,25 +329,25 @@ public:
     wxStaticText* m_staticText271;
     m_staticText271 = new wxStaticText(m_panel12, wxID_ANY, wxT("Target:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText271->Wrap(-1);
-    bSizer281->Add(m_staticText271, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer281->Add(m_staticText271, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     RedirectTextField = new wxTextCtrl(m_panel12, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     RedirectTextField->Enable(false);
 
-    bSizer281->Add(RedirectTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer281->Add(RedirectTextField, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     RedirectBrowseButton = new wxButton(m_panel12, wxID_ANY, wxT("Browse"), wxDefaultPosition, wxDefaultSize, 0);
     RedirectBrowseButton->Enable(false);
 
-    bSizer281->Add(RedirectBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer281->Add(RedirectBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     RedirectClearButton = new wxButton(m_panel12, wxID_ANY, wxT("Clear"), wxDefaultPosition, wxDefaultSize, 0);
     RedirectClearButton->Enable(false);
 
-    bSizer281->Add(RedirectClearButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer281->Add(RedirectClearButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer291->Add(bSizer281, 1, wxEXPAND, 5);
+    bSizer291->Add(bSizer281, 1, wxEXPAND, FromDIP(5));
 
 
     m_panel12->SetSizer(bSizer291);
@@ -354,37 +355,37 @@ public:
     bSizer291->Fit(m_panel12);
     OperationView->AddPage(m_panel12, wxT("Redirect"), false);
 
-    bSizer39->Add(OperationView, 0, wxALL | wxEXPAND, 5);
+    bSizer39->Add(OperationView, 0, wxALL | wxEXPAND, FromDIP(5));
 
 
     m_panel13->SetSizer(bSizer39);
     m_panel13->Layout();
     bSizer39->Fit(m_panel13);
-    bSizer38->Add(m_panel13, 1, wxEXPAND | wxALL, 5);
+    bSizer38->Add(m_panel13, 1, wxEXPAND | wxALL, FromDIP(5));
 
 
-    bSizer20->Add(bSizer38, 1, wxEXPAND, 5);
+    bSizer20->Add(bSizer38, 1, wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer37;
     bSizer37 = new wxBoxSizer(wxHORIZONTAL);
 
     SearchResultLabel = new wxStaticText(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     SearchResultLabel->Wrap(-1);
-    bSizer37->Add(SearchResultLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer37->Add(SearchResultLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer37->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer37->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
     AddButton = new wxButton(this, wxID_ANY, confirmTitle, wxDefaultPosition, wxDefaultSize, 0);
     AddButton->Enable(false);
 
-    bSizer37->Add(AddButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer37->Add(AddButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer37->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer37->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer20->Add(bSizer37, 1, wxEXPAND, 5);
+    bSizer20->Add(bSizer37, 1, wxEXPAND, FromDIP(5));
 
 
     this->SetSizer(bSizer20);
@@ -419,9 +420,9 @@ public:
     }
     ObjectClassTextField->AutoComplete(classList);
 
-    List->AppendToggleColumn(_(""), BulkImportOperationEntryModel::Col_Check, wxDATAVIEW_CELL_ACTIVATABLE, 25);
-    List->AppendTextColumn(_("Package"), BulkImportOperationEntryModel::Col_Package, wxDATAVIEW_CELL_INERT, 150, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
-    List->AppendTextColumn(_("Object"), BulkImportOperationEntryModel::Col_Path, wxDATAVIEW_CELL_INERT, 250, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+    List->AppendToggleColumn(_(""), BulkImportOperationEntryModel::Col_Check, wxDATAVIEW_CELL_ACTIVATABLE, FromDIP(25));
+    List->AppendTextColumn(_("Package"), BulkImportOperationEntryModel::Col_Package, wxDATAVIEW_CELL_INERT, FromDIP(150), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+    List->AppendTextColumn(_("Object"), BulkImportOperationEntryModel::Col_Path, wxDATAVIEW_CELL_INERT, FromDIP(250), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
 
     UpdateControls();
   }
@@ -787,6 +788,7 @@ protected:
 BulkImportWindow::BulkImportWindow(wxWindow* parent)
   : wxFrame(parent, wxID_ANY, wxT("Bulk Import"), wxDefaultPosition, wxSize(667, 657), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
 {
+  SetSize(FromDIP(GetSize()));
   SetIcon(wxICON(#114));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
@@ -799,7 +801,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   m_staticText10->Wrap(-1);
   m_staticText10->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText10, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText10, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxPanel* m_panel6;
   m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -807,9 +809,9 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer12 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText11;
-  m_staticText11 = new wxStaticText(m_panel6, wxID_ANY, wxT("Select the ObjectDump.txt file. This file is used to search for objects in the composite storage. If you don't have one, you can create it in Window -> Dump all composite objects"), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText11->Wrap(650);
-  bSizer12->Add(m_staticText11, 0, wxALL, 5);
+  m_staticText11 = new wxStaticText(m_panel6, wxID_ANY, wxT("Select the ObjectDump.txt file. This file is used to search for objects in the composite storage.\nIf you don't have one, you can create it in Window -> Dump all composite objects."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText11->Wrap(FromDIP(650));
+  bSizer12->Add(m_staticText11, 0, wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer11;
   bSizer11 = new wxBoxSizer(wxHORIZONTAL);
@@ -817,26 +819,26 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   wxStaticText* m_staticText9;
   m_staticText9 = new wxStaticText(m_panel6, wxID_ANY, wxT("Path:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText9->Wrap(-1);
-  bSizer11->Add(m_staticText9, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(m_staticText9, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   PathPicker = new wxFilePickerCtrl(m_panel6, wxID_ANY, wxEmptyString, wxT("Select the object dump file"), wxT("*.txt"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE | wxFLP_FILE_MUST_EXIST);
-  bSizer11->Add(PathPicker, 1, wxALL, 5);
+  bSizer11->Add(PathPicker, 1, wxALL, FromDIP(5));
 
 
-  bSizer12->Add(bSizer11, 1, wxEXPAND, 5);
+  bSizer12->Add(bSizer11, 1, wxEXPAND, FromDIP(5));
 
 
   m_panel6->SetSizer(bSizer12);
   m_panel6->Layout();
   bSizer12->Fit(m_panel6);
-  bSizer10->Add(m_panel6, 0, wxEXPAND | wxALL, 5);
+  bSizer10->Add(m_panel6, 0, wxEXPAND | wxALL, FromDIP(5));
 
   wxStaticText* m_staticText101;
   m_staticText101 = new wxStaticText(this, wxID_ANY, wxT("Imports"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText101->Wrap(-1);
   m_staticText101->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText101, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText101, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxPanel* m_panel7;
   m_panel7 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -845,14 +847,14 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 
   wxStaticText* m_staticText15;
   m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import operations. Each entry represents a single operation. Press Add to create an import operation."), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText15->Wrap(650);
-  bSizer15->Add(m_staticText15, 0, wxALL, 5);
+  m_staticText15->Wrap(FromDIP(650));
+  bSizer15->Add(m_staticText15, 0, wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer16;
   bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
-  OperationsList = new wxDataViewCtrl(m_panel7, wxID_ANY, wxDefaultPosition, wxSize(-1, 250), wxDV_MULTIPLE);
-  bSizer16->Add(OperationsList, 1, wxALL | wxEXPAND, 5);
+  OperationsList = new wxDataViewCtrl(m_panel7, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 250)), wxDV_MULTIPLE);
+  bSizer16->Add(OperationsList, 1, wxALL | wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer17;
   bSizer17 = new wxBoxSizer(wxVERTICAL);
@@ -860,61 +862,61 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   AddOperationButton = new wxButton(m_panel7, wxID_ANY, wxT("Add"), wxDefaultPosition, wxDefaultSize, 0);
   AddOperationButton->Enable(false);
 
-  bSizer17->Add(AddOperationButton, 0, wxALL, 5);
+  bSizer17->Add(AddOperationButton, 0, wxALL, FromDIP(5));
 
   EditOperationButton = new wxButton(m_panel7, wxID_ANY, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0);
   EditOperationButton->Enable(false);
 
-  bSizer17->Add(EditOperationButton, 0, wxALL, 5);
+  bSizer17->Add(EditOperationButton, 0, wxALL, FromDIP(5));
 
   RemoveOperationButton = new wxButton(m_panel7, wxID_ANY, wxT("Remove"), wxDefaultPosition, wxDefaultSize, 0);
   RemoveOperationButton->Enable(false);
 
-  bSizer17->Add(RemoveOperationButton, 0, wxALL, 5);
+  bSizer17->Add(RemoveOperationButton, 0, wxALL, FromDIP(5));
 
   ClearOperationsButton = new wxButton(m_panel7, wxID_ANY, wxT("Clear"), wxDefaultPosition, wxDefaultSize, 0);
   ClearOperationsButton->Enable(false);
 
-  bSizer17->Add(ClearOperationsButton, 0, wxALL, 5);
+  bSizer17->Add(ClearOperationsButton, 0, wxALL, FromDIP(5));
 
 
-  bSizer16->Add(bSizer17, 0, wxEXPAND, 5);
+  bSizer16->Add(bSizer17, 0, wxEXPAND, FromDIP(5));
 
 
-  bSizer15->Add(bSizer16, 1, wxEXPAND, 5);
+  bSizer15->Add(bSizer16, 1, wxEXPAND, FromDIP(5));
 
 
   m_panel7->SetSizer(bSizer15);
   m_panel7->Layout();
   bSizer15->Fit(m_panel7);
-  bSizer10->Add(m_panel7, 0, wxEXPAND | wxALL, 5);
+  bSizer10->Add(m_panel7, 0, wxEXPAND | wxALL, FromDIP(5));
 
   wxStaticText* m_staticText1011;
   m_staticText1011 = new wxStaticText(this, wxID_ANY, wxT("Advanced"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText1011->Wrap(-1);
   m_staticText1011->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText1011, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText1011, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxString TfcModeRadioChoices[] = { wxT("Generate TFC (Texture File Cache)"), wxT("Disable TFC"), wxT("Keep as is") };
   int TfcModeRadioNChoices = sizeof(TfcModeRadioChoices) / sizeof(wxString);
   TfcModeRadio = new wxRadioBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, TfcModeRadioNChoices, TfcModeRadioChoices, 1, wxRA_SPECIFY_COLS);
   TfcModeRadio->SetSelection(App::GetSharedApp()->GetConfig().BulkImportTfcMode);
-  bSizer10->Add(TfcModeRadio, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(TfcModeRadio, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxBoxSizer* bSizer18;
   bSizer18 = new wxBoxSizer(wxHORIZONTAL);
 
 
-  bSizer18->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer18->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   ContinueButton = new wxButton(this, wxID_ANY, wxT("Continue"), wxDefaultPosition, wxDefaultSize, 0);
   ContinueButton->Enable(false);
 
-  bSizer18->Add(ContinueButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer18->Add(ContinueButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer18->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer18->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   bSizer10->Add(bSizer18, 1, wxEXPAND | wxTOP | wxBOTTOM, 15);
@@ -939,9 +941,9 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   OperationsList->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler(BulkImportWindow::OnOperationsListContextMenu), NULL, this);
   Connect(wxEVT_IDLE, wxIdleEventHandler(BulkImportWindow::OnFirstIdle), NULL, this);
 
-  OperationsList->AppendTextColumn(_("Object"), BulkImportModel::Col_Object, wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
-  OperationsList->AppendTextColumn(_("Action"), BulkImportModel::Col_Type, wxDATAVIEW_CELL_INERT, 100);
-  OperationsList->AppendTextColumn(_("Change"), BulkImportModel::Col_Mod, wxDATAVIEW_CELL_INERT, 150, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  OperationsList->AppendTextColumn(_("Object"), BulkImportModel::Col_Object, wxDATAVIEW_CELL_INERT, FromDIP(200), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  OperationsList->AppendTextColumn(_("Action"), BulkImportModel::Col_Type, wxDATAVIEW_CELL_INERT, FromDIP(100));
+  OperationsList->AppendTextColumn(_("Change"), BulkImportModel::Col_Mod, wxDATAVIEW_CELL_INERT, FromDIP(150), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
 
   FAppConfig& cfg = App::GetSharedApp()->GetConfig();
   if (cfg.CompositeDumpPath.Size())

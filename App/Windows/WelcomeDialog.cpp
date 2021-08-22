@@ -150,6 +150,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
 {
   SetIcon(wxICON(#114));
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+  SetSize(FromDIP(GetSize()));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
   StatusBar = CreateStatusBar(1, wxSTB_SIZEGRIP, wxID_ANY);
 
@@ -159,7 +160,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
-  RecentCtrl = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(230, -1), 0);
+  RecentCtrl = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(230, -1)), 0);
   bSizer2->Add(RecentCtrl, 0, wxALL | wxEXPAND, 1);
 
   wxBoxSizer* bSizer3;
@@ -170,7 +171,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   m_staticText1->Wrap(-1);
   m_staticText1->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer3->Add(m_staticText1, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer3->Add(m_staticText1, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxPanel* m_panel3;
   m_panel3 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -184,40 +185,40 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   wxBoxSizer* bSizer4;
   bSizer4 = new wxBoxSizer(wxHORIZONTAL);
 
-  OpenFileButton = new wxButton(m_panel3, wxID_ANY, wxT("Open package..."), wxDefaultPosition, wxSize(115, -1), 0);
+  OpenFileButton = new wxButton(m_panel3, wxID_ANY, wxT("Open package..."), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
   OpenFileButton->SetToolTip(wxT("Open a GPK, GMP, U file from a disk"));
 
-  bSizer4->Add(OpenFileButton, 0, wxALL, 5);
+  bSizer4->Add(OpenFileButton, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText13;
   m_staticText13 = new wxStaticText(m_panel3, wxID_ANY, wxT("Open a GPK/GMP/U file"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText13->Wrap(-1);
-  bSizer4->Add(m_staticText13, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer4->Add(m_staticText13, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer4->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer4->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
 
-  bSizer5->Add(bSizer4, 0, wxEXPAND, 5);
+  bSizer5->Add(bSizer4, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer18;
   bSizer18 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* m_staticText3;
-  m_staticText3 = new wxStaticText(m_panel3, wxID_ANY, wxT("Open by name:"), wxDefaultPosition, wxSize(110, -1), wxALIGN_RIGHT);
+  m_staticText3 = new wxStaticText(m_panel3, wxID_ANY, wxT("Open by name:"), wxDefaultPosition, FromDIP(wxSize(110, -1)), wxALIGN_RIGHT);
   m_staticText3->Wrap(-1);
-  bSizer18->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
+  bSizer18->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
 
   OpenByNameField = new wxTextCtrl(m_panel3, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(-1, -1), wxTE_PROCESS_ENTER);
-  bSizer18->Add(OpenByNameField, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer18->Add(OpenByNameField, 1, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   OpenByNameButton = new wxButton(m_panel3, wxID_ANY, wxT("Open"), wxDefaultPosition, wxDefaultSize, 0);
   OpenByNameButton->SetToolTip(wxT("Open a package by name"));
 
-  bSizer18->Add(OpenByNameButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer18->Add(OpenByNameButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer5->Add(bSizer18, 1, wxEXPAND, 5);
+  bSizer5->Add(bSizer18, 1, wxEXPAND, FromDIP(5));
 
   wxStaticLine* m_staticline1;
   m_staticline1 = new wxStaticLine(m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
@@ -226,88 +227,88 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   wxBoxSizer* bSizer10;
   bSizer10 = new wxBoxSizer(wxHORIZONTAL);
 
-  ObjectDumpButton = new wxButton(m_panel3, wxID_ANY, wxT("Object dump..."), wxDefaultPosition, wxSize(115, -1), 0);
-  bSizer10->Add(ObjectDumpButton, 0, wxALL, 5);
+  ObjectDumpButton = new wxButton(m_panel3, wxID_ANY, wxT("Object dump..."), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
+  bSizer10->Add(ObjectDumpButton, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText6;
   m_staticText6 = new wxStaticText(m_panel3, wxID_ANY, wxT("Generate a composite object dump(ObjectDump.txt)"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText6->Wrap(-1);
-  bSizer10->Add(m_staticText6, 1, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer10->Add(m_staticText6, 1, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer5->Add(bSizer10, 1, wxEXPAND, 5);
+  bSizer5->Add(bSizer10, 1, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer15;
   bSizer15 = new wxBoxSizer(wxHORIZONTAL);
 
-  DataCenterButton = new wxButton(m_panel3, wxID_ANY, wxT("DataCenter Tool"), wxDefaultPosition, wxSize(115, -1), 0);
-  bSizer15->Add(DataCenterButton, 0, wxALL | wxEXPAND, 5);
+  DataCenterButton = new wxButton(m_panel3, wxID_ANY, wxT("DataCenter Tool"), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
+  bSizer15->Add(DataCenterButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText61;
   m_staticText61 = new wxStaticText(m_panel3, wxID_ANY, wxT("Unpack and export DataCenter_Final.dat file"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText61->Wrap(-1);
-  bSizer15->Add(m_staticText61, 1, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer15->Add(m_staticText61, 1, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer5->Add(bSizer15, 1, wxEXPAND, 5);
+  bSizer5->Add(bSizer15, 1, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer16;
   bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
-  SettingsButton = new wxButton(m_panel3, wxID_ANY, wxT("Settings"), wxDefaultPosition, wxSize(115, -1), 0);
-  bSizer16->Add(SettingsButton, 0, wxALL | wxEXPAND, 5);
+  SettingsButton = new wxButton(m_panel3, wxID_ANY, wxT("Settings"), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
+  bSizer16->Add(SettingsButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText10;
   m_staticText10 = new wxStaticText(m_panel3, wxID_ANY, wxT("Real Editor settings"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText10->Wrap(-1);
-  bSizer16->Add(m_staticText10, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer16->Add(m_staticText10, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer5->Add(bSizer16, 1, wxEXPAND, 5);
+  bSizer5->Add(bSizer16, 1, wxEXPAND, FromDIP(5));
 
   wxPanel* m_panel41;
   m_panel41 = new wxPanel(m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  bSizer5->Add(m_panel41, 0, wxEXPAND | wxALL, 5);
+  bSizer5->Add(m_panel41, 0, wxEXPAND | wxALL, FromDIP(5));
 
 
   m_panel3->SetSizer(bSizer5);
   m_panel3->Layout();
   bSizer5->Fit(m_panel3);
-  bSizer3->Add(m_panel3, 0, wxEXPAND | wxALL, 5);
+  bSizer3->Add(m_panel3, 0, wxEXPAND | wxALL, FromDIP(5));
 
   ShowWelcome = new wxCheckBox(this, wxID_ANY, wxT("Show this dialog when a last GPK window is closed"), wxDefaultPosition, wxDefaultSize, 0);
   ShowWelcome->SetToolTip(wxT("Disable this option if you want Real Editor to exit after a last GPK window is closed."));
   ShowWelcome->SetValue(true);
-  bSizer3->Add(ShowWelcome, 0, wxALL, 5);
+  bSizer3->Add(ShowWelcome, 0, wxALL, FromDIP(5));
 
 
-  bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer14;
   bSizer14 = new wxBoxSizer(wxHORIZONTAL);
 
-  UpdateButton = new wxButton(this, wxID_ANY, wxT("Update"), wxDefaultPosition, wxSize(115, -1), 0);
+  UpdateButton = new wxButton(this, wxID_ANY, wxT("Update"), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
   bSizer14->Add(UpdateButton, 0, wxTOP | wxBOTTOM | wxLEFT, 12);
 
   Version = new wxStaticText(this, wxID_ANY, GetAppVersion(), wxDefaultPosition, wxDefaultSize, 0);
   Version->Wrap(-1);
   Version->SetToolTip(wxString::Format("Build: %u", BUILD_NUMBER));
-  bSizer14->Add(Version, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer14->Add(Version, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer14->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer14->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   CloseButton = new wxButton(this, wxID_ANY, wxT("Close"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer14->Add(CloseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer14->Add(CloseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer3->Add(bSizer14, 0, wxEXPAND, 5);
+  bSizer3->Add(bSizer14, 0, wxEXPAND, FromDIP(5));
 
 
-  bSizer2->Add(bSizer3, 1, wxEXPAND, 5);
+  bSizer2->Add(bSizer3, 1, wxEXPAND, FromDIP(5));
 
 
-  bSizer1->Add(bSizer2, 1, wxEXPAND, 5);
+  bSizer1->Add(bSizer2, 1, wxEXPAND, FromDIP(5));
 
 
   this->SetSizer(bSizer1);
@@ -335,7 +336,7 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   const auto& lastItems = App::GetSharedApp()->GetConfig().LastFilePackages;
 
   OpenByNameButton->Enable(false);
-  RecentCtrl->AppendIconTextColumn(wxT("Recent"), 0, wxDATAVIEW_CELL_INERT, 210, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  RecentCtrl->AppendIconTextColumn(wxT("Recent"), 0, wxDATAVIEW_CELL_INERT, FromDIP(210), static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
 
   RecentModel* model = new RecentModel(lastItems);
   RecentCtrl->AssociateModel(model);

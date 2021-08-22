@@ -11,7 +11,7 @@ MaterialEditor::MaterialEditor(wxPanel* parent, PackageWindow* window)
   Canvas = new wxScrolledWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN | wxHSCROLL | wxVSCROLL);
   Canvas->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
   Canvas->SetScrollRate(50, 50);
-  bSizer13->Add(Canvas, 1, wxEXPAND | wxALL, 5);
+  bSizer13->Add(Canvas, 1, wxEXPAND | wxALL, FromDIP(5));
 
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   SetSizer(bSizer13);

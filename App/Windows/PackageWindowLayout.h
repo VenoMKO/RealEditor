@@ -166,7 +166,7 @@ void PackageWindow::InitLayout()
   SidebarSplitter->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
 
   wxPanel* sidebarPanel;
-  sidebarPanel = new wxPanel(SidebarSplitter, wxID_ANY, wxDefaultPosition, wxSize(150, -1), wxTAB_TRAVERSAL);
+  sidebarPanel = new wxPanel(SidebarSplitter, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(150, -1)), wxTAB_TRAVERSAL);
   sidebarPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
   wxBoxSizer* treeSizer;
@@ -179,7 +179,7 @@ void PackageWindow::InitLayout()
 
   ObjectTreeCtrl = new ObjectTreeDataViewCtrl(sidebarPanel, ControlElementId::ObjTreeCtrl, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
   ObjectTreeCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-  ObjectTreeCtrl->SetMinSize(wxSize(230, 600));
+  ObjectTreeCtrl->SetMinSize(FromDIP(wxSize(230, 600)));
 
   treeSizer->Add(ObjectTreeCtrl, 1, wxALL | wxEXPAND, 4);
 
@@ -187,14 +187,14 @@ void PackageWindow::InitLayout()
   SearchField->SetHint(wxT("Search(Ctrl+F)..."));
   SearchField->Enable(false);
   SearchField->ShowCancelButton(true);
-  treeSizer->Add(SearchField, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
+  treeSizer->Add(SearchField, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
   sidebarPanel->SetSizer(treeSizer);
   sidebarPanel->Layout();
   wxPanel* contentSplitterPanel;
   contentSplitterPanel = new wxPanel(SidebarSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   contentSplitterPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
-  contentSplitterPanel->SetMinSize(wxSize(740, -1));
+  contentSplitterPanel->SetMinSize(FromDIP(wxSize(740, -1)));
 
   wxBoxSizer* contentSizer;
   contentSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -205,7 +205,7 @@ void PackageWindow::InitLayout()
 
   MainPanel = new wxPanel(ContentSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   MainPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
-  MainPanel->SetMinSize(wxSize(510, -1));
+  MainPanel->SetMinSize(FromDIP(wxSize(510, -1)));
 
   wxBoxSizer* bSizer27;
   bSizer27 = new wxBoxSizer(wxVERTICAL);
@@ -215,23 +215,23 @@ void PackageWindow::InitLayout()
   wxBoxSizer* bSizer16;
   bSizer16 = new wxBoxSizer(wxHORIZONTAL);
 
-  BackButton = new wxButton(m_panel8, ControlElementId::Back, wxT("<"), wxDefaultPosition, wxSize(25, -1), 0);
+  BackButton = new wxButton(m_panel8, ControlElementId::Back, wxT("<"), wxDefaultPosition, FromDIP(wxSize(25, -1)), 0);
   BackButton->SetToolTip(wxT("Navigate backward"));
   BackButton->Enable(false);
 
   bSizer16->Add(BackButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
 
-  ForwardButton = new wxButton(m_panel8, ControlElementId::Forward, wxT(">"), wxDefaultPosition, wxSize(25, -1), 0);
+  ForwardButton = new wxButton(m_panel8, ControlElementId::Forward, wxT(">"), wxDefaultPosition, FromDIP(wxSize(25, -1)), 0);
   BackButton->SetToolTip(wxT("Navigate forward"));
   ForwardButton->Enable(false);
 
   bSizer16->Add(ForwardButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
 
-  ObjectTitleLabel = new wxStaticText(m_panel8, wxID_ANY, wxT("[0] Object(Class)"), wxDefaultPosition, wxSize(500, -1), 0);
+  ObjectTitleLabel = new wxStaticText(m_panel8, wxID_ANY, wxT("[0] Object(Class)"), wxDefaultPosition, FromDIP(wxSize(500, -1)), 0);
   ObjectTitleLabel->Wrap(-1);
   ObjectTitleLabel->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer16->Add(ObjectTitleLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer16->Add(ObjectTitleLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
   m_panel8->SetSizer(bSizer16);
@@ -251,9 +251,9 @@ void PackageWindow::InitLayout()
   bSizer31 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* stObjFlags;
-  stObjFlags = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Object flags:"), wxDefaultPosition, wxSize(67, -1), 0);
+  stObjFlags = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Object flags:"), wxDefaultPosition, FromDIP(wxSize(67, -1)), 0);
   stObjFlags->Wrap(-1);
-  bSizer31->Add(stObjFlags, 0, wxALIGN_CENTER | wxALL, 5);
+  bSizer31->Add(stObjFlags, 0, wxALIGN_CENTER | wxALL, FromDIP(5));
 
   ObjectFlagsTextfield = new wxTextCtrl(ObjectInfoPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
   ObjectFlagsTextfield->Enable(false);
@@ -261,7 +261,7 @@ void PackageWindow::InitLayout()
   bSizer31->Add(ObjectFlagsTextfield, 1, wxALL, 1);
 
 
-  bSizer13->Add(bSizer31, 0, wxEXPAND, 5);
+  bSizer13->Add(bSizer31, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer47;
   bSizer47 = new wxBoxSizer(wxHORIZONTAL);
@@ -280,21 +280,21 @@ void PackageWindow::InitLayout()
   bSizer38->Add(stSize, 0, wxALIGN_RIGHT | wxALL, 3);
 
 
-  bSizer47->Add(bSizer38, 0, wxEXPAND, 5);
+  bSizer47->Add(bSizer38, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer381;
   bSizer381 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectOffsetLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+  ObjectOffsetLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, FromDIP(wxSize(70, -1)), 0);
   ObjectOffsetLabel->Wrap(-1);
   bSizer381->Add(ObjectOffsetLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
-  ObjectSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+  ObjectSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, FromDIP(wxSize(70, -1)), 0);
   ObjectSizeLabel->Wrap(-1);
   bSizer381->Add(ObjectSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
 
-  bSizer47->Add(bSizer381, 0, wxEXPAND, 5);
+  bSizer47->Add(bSizer381, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer382;
   bSizer382 = new wxBoxSizer(wxVERTICAL);
@@ -311,27 +311,27 @@ void PackageWindow::InitLayout()
   bSizer382->Add(stDataSize, 0, wxALIGN_RIGHT | wxALL, 3);
 
 
-  bSizer47->Add(bSizer382, 0, wxEXPAND, 5);
+  bSizer47->Add(bSizer382, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer3811;
   bSizer3811 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectPropertiesSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+  ObjectPropertiesSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, FromDIP(wxSize(70, -1)), 0);
   ObjectPropertiesSizeLabel->Wrap(-1);
   bSizer3811->Add(ObjectPropertiesSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
-  ObjectDataSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, wxSize(70, -1), 0);
+  ObjectDataSizeLabel = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("0xFFFFFFFF"), wxDefaultPosition, FromDIP(wxSize(70, -1)), 0);
   ObjectDataSizeLabel->Wrap(-1);
   bSizer3811->Add(ObjectDataSizeLabel, 0, wxALIGN_LEFT | wxALL, 3);
 
 
-  bSizer47->Add(bSizer3811, 0, wxEXPAND, 5);
+  bSizer47->Add(bSizer3811, 0, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer60;
   bSizer60 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* stExpFlags;
-  stExpFlags = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Exp. flags:"), wxDefaultPosition, wxSize(55, -1), 0);
+  stExpFlags = new wxStaticText(ObjectInfoPanel, wxID_ANY, wxT("Exp. flags:"), wxDefaultPosition, FromDIP(wxSize(55, -1)), 0);
   stExpFlags->SetToolTip(wxT("Export flags"));
   stExpFlags->Wrap(-1);
   bSizer60->Add(stExpFlags, 0, wxALIGN_CENTER_VERTICAL | wxALL, 3);
@@ -342,10 +342,10 @@ void PackageWindow::InitLayout()
   bSizer60->Add(ExportFlagsTextfield, 1, wxALIGN_CENTER_VERTICAL | wxALL, 1);
 
 
-  bSizer47->Add(bSizer60, 1, 0, 5);
+  bSizer47->Add(bSizer60, 1, 0, FromDIP(5));
 
 
-  bSizer13->Add(bSizer47, 0, wxEXPAND, 5);
+  bSizer13->Add(bSizer47, 0, wxEXPAND, FromDIP(5));
 
 
   ObjectInfoPanel->SetSizer(bSizer13);
@@ -356,7 +356,7 @@ void PackageWindow::InitLayout()
   Toolbar = new wxToolBar(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORZ_TEXT);
   Toolbar->Realize();
 
-  bSizer27->Add(Toolbar, 0, wxEXPAND, 5);
+  bSizer27->Add(Toolbar, 0, wxEXPAND, FromDIP(5));
 
   EditorContainer = new wxPanel(MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   EditorContainer->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
@@ -385,7 +385,7 @@ void PackageWindow::InitLayout()
 
   PropertiesCtrl = new wxPropertyGridManager(PropertiesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE | wxPG_DESCRIPTION | wxPG_SPLITTER_AUTO_CENTER | wxPG_TOOLTIPS);
   PropertiesCtrl->SetExtraStyle(wxPG_EX_ENABLE_TLP_TRACKING | wxPG_EX_HELP_AS_TOOLTIPS | wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
-  PropertiesCtrl->SetMinSize(wxSize(230, 600));
+  PropertiesCtrl->SetMinSize(FromDIP(wxSize(280, 600)));
 
   propertiesSizer->Add(PropertiesCtrl, 1, wxALL | wxEXPAND, 4);
 
@@ -400,7 +400,7 @@ void PackageWindow::InitLayout()
   contentSplitterPanel->SetSizer(contentSizer);
   contentSplitterPanel->Layout();
   contentSizer->Fit(contentSplitterPanel);
-  SidebarSplitter->SplitVertically(sidebarPanel, contentSplitterPanel, 240);
+  SidebarSplitter->SplitVertically(sidebarPanel, contentSplitterPanel, FromDIP(240));
   bSizer14->Add(SidebarSplitter, 1, wxEXPAND, 0);
 
 

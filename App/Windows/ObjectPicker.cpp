@@ -12,39 +12,40 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
   , AllowDifferentPackage(allowDifferentPackage)
 {
+  SetSize(FromDIP(GetSize()));
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxVERTICAL);
 
-  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), 0);
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(250, -1)), 0);
   bSizer2->Add(ObjectTreeCtrl, 1, wxRIGHT | wxEXPAND, 1);
 
   wxBoxSizer* bSizer4;
   bSizer4 = new wxBoxSizer(wxHORIZONTAL);
 
   wxPanel* m_panel6;
-  m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 60), wxTAB_TRAVERSAL);
+  m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 60)), wxTAB_TRAVERSAL);
   wxBoxSizer* bSizer11;
   bSizer11 = new wxBoxSizer(wxHORIZONTAL);
 
-  bSizer11->SetMinSize(wxSize(-1, 60));
+  bSizer11->SetMinSize(FromDIP(wxSize(-1, 60)));
   PackageButton = new wxButton(m_panel6, wxID_ANY, wxT("Package..."), wxDefaultPosition, wxDefaultSize, 0);
   PackageButton->Enable(AllowDifferentPackage);
 
-  bSizer11->Add(PackageButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(PackageButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer11->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer11->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   OkButton = new wxButton(m_panel6, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
   OkButton->Enable(false);
 
-  bSizer11->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   CancelButton = new wxButton(m_panel6, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer11->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel6->SetSizer(bSizer11);
@@ -52,7 +53,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   bSizer4->Add(m_panel6, 1, wxALL, 0);
 
 
-  bSizer2->Add(bSizer4, 0, wxEXPAND, 5);
+  bSizer2->Add(bSizer4, 0, wxEXPAND, FromDIP(5));
 
 
   SetSizer(bSizer2);
@@ -106,6 +107,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
 {
+  SetSize(FromDIP(GetSize()));
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 
@@ -114,35 +116,35 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 
   ContentsLabel = new wxStaticText(this, wxID_ANY, wxT("Contents:"), wxDefaultPosition, wxDefaultSize, 0);
   ContentsLabel->Wrap(-1);
-  bSizer2->Add(ContentsLabel, 0, wxALL | wxEXPAND, 5);
+  bSizer2->Add(ContentsLabel, 0, wxALL | wxEXPAND, FromDIP(5));
 
-  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(250, -1), wxDV_NO_HEADER);
+  ObjectTreeCtrl = new ObjectTreeDataViewCtrl(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(250, -1)), wxDV_NO_HEADER);
   bSizer2->Add(ObjectTreeCtrl, 1, wxRIGHT | wxEXPAND, 1);
 
   wxBoxSizer* bSizer4;
   bSizer4 = new wxBoxSizer(wxHORIZONTAL);
 
   wxPanel* m_panel6;
-  m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 60), wxTAB_TRAVERSAL);
+  m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 60)), wxTAB_TRAVERSAL);
   wxBoxSizer* bSizer11;
   bSizer11 = new wxBoxSizer(wxHORIZONTAL);
 
-  bSizer11->SetMinSize(wxSize(-1, 60));
+  bSizer11->SetMinSize(FromDIP(wxSize(-1, 60)));
   PackageButton = new wxButton(m_panel6, wxID_ANY, wxT("Package..."), wxDefaultPosition, wxDefaultSize, 0);
   PackageButton->Enable(AllowDifferentPackage);
 
-  bSizer11->Add(PackageButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(PackageButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer11->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer11->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   OkButton = new wxButton(m_panel6, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
   OkButton->Enable(false);
 
-  bSizer11->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   CancelButton = new wxButton(m_panel6, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer11->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer11->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel6->SetSizer(bSizer11);
@@ -150,7 +152,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
   bSizer4->Add(m_panel6, 1, wxALL, 0);
 
 
-  bSizer2->Add(bSizer4, 0, wxEXPAND, 5);
+  bSizer2->Add(bSizer4, 0, wxEXPAND, FromDIP(5));
 
 
   SetSizer(bSizer2);
@@ -419,6 +421,7 @@ ObjectNameDialog::Validator ObjectNameDialog::GetDefaultValidator(FObjectExport*
 ObjectNameDialog::ObjectNameDialog(wxWindow* parent, const wxString& objectName)
   : WXDialog(parent, wxID_ANY, wxT("Enter object name"), wxDefaultPosition, wxSize(418, 143), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
 {
+  SetSize(FromDIP(GetSize()));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
   wxBoxSizer* bSizer20;
   bSizer20 = new wxBoxSizer(wxVERTICAL);
@@ -429,30 +432,30 @@ ObjectNameDialog::ObjectNameDialog(wxWindow* parent, const wxString& objectName)
   wxStaticText* m_staticText10;
   m_staticText10 = new wxStaticText(this, wxID_ANY, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText10->Wrap(-1);
-  bSizer21->Add(m_staticText10, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer21->Add(m_staticText10, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   NameField = new wxTextCtrl(this, wxID_ANY, objectName, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
   NameField->SetMaxLength(1024);
 
-  bSizer21->Add(NameField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer21->Add(NameField, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer20->Add(bSizer21, 1, wxEXPAND, 5);
+  bSizer20->Add(bSizer21, 1, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer22;
   bSizer22 = new wxBoxSizer(wxHORIZONTAL);
 
 
-  bSizer22->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer22->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   OkButton = new wxButton(this, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer22->Add(OkButton, 0, wxALL, 5);
+  bSizer22->Add(OkButton, 0, wxALL, FromDIP(5));
 
   CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer22->Add(CancelButton, 0, wxALL, 5);
+  bSizer22->Add(CancelButton, 0, wxALL, FromDIP(5));
 
 
-  bSizer20->Add(bSizer22, 0, wxEXPAND, 5);
+  bSizer20->Add(bSizer22, 0, wxEXPAND, FromDIP(5));
 
 
   this->SetSizer(bSizer20);

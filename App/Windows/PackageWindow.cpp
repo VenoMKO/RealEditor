@@ -119,6 +119,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   , Application(application)
   , Package(package)
 {
+  SetSize(FromDIP(GetSize()));
   wxString title = application->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - ");
   if (package->IsComposite())
   {
@@ -140,7 +141,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   SelectionHistory.reserve(MAX_SELECTION_HISTORY);
   SetTitle(title);
   SetIcon(wxICON(#114));
-  SetSizeHints(wxSize(1024, 700), wxDefaultSize);
+  SetSizeHints(FromDIP(wxSize(1024, 700)), wxDefaultSize);
   InitLayout();
   wxDataViewColumn* col = new wxDataViewColumn("title", new wxDataViewIconTextRenderer, 1, wxDVC_DEFAULT_WIDTH, wxALIGN_LEFT);
   ObjectTreeCtrl->AppendColumn(col);

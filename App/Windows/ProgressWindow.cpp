@@ -23,6 +23,7 @@ public:
 ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wxString& cancel)
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(500, 115), wxCAPTION | wxTAB_TRAVERSAL)
 {
+  SetSize(FromDIP(GetSize()));
   SetIcon(wxICON(#114));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
@@ -37,23 +38,23 @@ ProgressWindow::ProgressWindow(wxWindow* parent, const wxString& title, const wx
   ActionLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
   ActionLabel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
-  bSizer3->Add(ActionLabel, 1, wxALL | wxALIGN_BOTTOM, 5);
+  bSizer3->Add(ActionLabel, 1, wxALL | wxALIGN_BOTTOM, FromDIP(5));
 
 
-  bSizer1->Add(bSizer3, 1, wxEXPAND, 5);
+  bSizer1->Add(bSizer3, 1, wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
   ProgressBar = new wxGauge(this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
   ProgressBar->SetValue(0);
-  bSizer2->Add(ProgressBar, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer2->Add(ProgressBar, 1, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   CancelButton = new wxButton(this, wxID_ANY, cancel, wxDefaultPosition, wxDefaultSize, 0);
-  bSizer2->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer2->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
-  bSizer1->Add(bSizer2, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+  bSizer1->Add(bSizer2, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(5));
 
 
   SetSizer(bSizer1);

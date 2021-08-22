@@ -26,9 +26,9 @@ MaterialInstanceEditor::MaterialInstanceEditor(wxPanel* parent, PackageWindow* w
   wxStaticText* m_staticText1;
   m_staticText1 = new wxStaticText(m_panel1, wxID_ANY, wxT("Static Parameter Overrides:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText1->Wrap(-1);
-  bSizer2->Add(m_staticText1, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
+  bSizer2->Add(m_staticText1, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
-  StaticParameterOverrides = new wxPropertyGridManager(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(250, -1), wxPGMAN_DEFAULT_STYLE);
+  StaticParameterOverrides = new wxPropertyGridManager(m_panel1, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(250, -1)), wxPGMAN_DEFAULT_STYLE);
   StaticParameterOverrides->SetExtraStyle(wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
   bSizer2->Add(StaticParameterOverrides, 1, wxEXPAND | wxTOP | wxBOTTOM | wxLEFT, 1);
 
@@ -36,7 +36,7 @@ MaterialInstanceEditor::MaterialInstanceEditor(wxPanel* parent, PackageWindow* w
   m_panel1->SetSizer(bSizer2);
   m_panel1->Layout();
   bSizer2->Fit(m_panel1);
-  bSizer1->Add(m_panel1, 0, wxEXPAND, 5);
+  bSizer1->Add(m_panel1, 0, wxEXPAND, FromDIP(5));
 
   SetSizer(bSizer1);
   Layout();

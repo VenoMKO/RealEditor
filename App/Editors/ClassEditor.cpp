@@ -24,7 +24,7 @@ ClassEditor::ClassEditor(wxPanel* parent, PackageWindow* window)
 
   wxPanel* m_panel6;
   m_panel6 = new wxPanel(panel1, wxID_ANY, wxDefaultPosition, wxSize(-1, 1), wxTAB_TRAVERSAL);
-  bSizer11->Add(m_panel6, 0, wxALL | wxEXPAND, 5);
+  bSizer11->Add(m_panel6, 0, wxALL | wxEXPAND, FromDIP(5));
 
   wxFlexGridSizer* fgSizer1;
   fgSizer1 = new wxFlexGridSizer(0, 2, 0, 0);
@@ -36,55 +36,55 @@ ClassEditor::ClassEditor(wxPanel* parent, PackageWindow* window)
   m_staticText4->Wrap(-1);
   m_staticText4->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  fgSizer1->Add(m_staticText4, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 5);
+  fgSizer1->Add(m_staticText4, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, FromDIP(5));
 
   SuperField = new wxStaticText(panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
   SuperField->Wrap(-1);
-  fgSizer1->Add(SuperField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  fgSizer1->Add(SuperField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
   wxStaticText* m_staticText5;
   m_staticText5 = new wxStaticText(panel1, wxID_ANY, wxT("Flags:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText5->Wrap(-1);
   m_staticText5->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  fgSizer1->Add(m_staticText5, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 5);
+  fgSizer1->Add(m_staticText5, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, FromDIP(5));
 
   FlagsField = new wxStaticText(panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
   FlagsField->Wrap(-1);
-  fgSizer1->Add(FlagsField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  fgSizer1->Add(FlagsField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
   wxStaticText* m_staticText6;
   m_staticText6 = new wxStaticText(panel1, wxID_ANY, wxT("Header:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText6->Wrap(-1);
   m_staticText6->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  fgSizer1->Add(m_staticText6, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  fgSizer1->Add(m_staticText6, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   HeaderField = new wxStaticText(panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
   HeaderField->Wrap(-1);
-  fgSizer1->Add(HeaderField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  fgSizer1->Add(HeaderField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
   wxStaticText* m_staticText61;
   m_staticText61 = new wxStaticText(panel1, wxID_ANY, wxT("DLL:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText61->Wrap(-1);
   m_staticText61->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  fgSizer1->Add(m_staticText61, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+  fgSizer1->Add(m_staticText61, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   DLLField = new wxStaticText(panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
   DLLField->Wrap(-1);
-  fgSizer1->Add(DLLField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  fgSizer1->Add(DLLField, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
 
-  bSizer11->Add(fgSizer1, 0, wxEXPAND, 5);
+  bSizer11->Add(fgSizer1, 0, wxEXPAND, FromDIP(5));
 
   wxPanel* m_panel61;
   m_panel61 = new wxPanel(panel1, wxID_ANY, wxDefaultPosition, wxSize(-1, 1), wxTAB_TRAVERSAL);
-  bSizer11->Add(m_panel61, 0, wxALL | wxEXPAND, 5);
+  bSizer11->Add(m_panel61, 0, wxALL | wxEXPAND, FromDIP(5));
 
   PropertiesList = new wxPropertyGridManager(panel1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE);
   PropertiesList->SetExtraStyle(wxPG_EX_MODE_BUTTONS | wxPG_EX_ENABLE_TLP_TRACKING | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
-  bSizer11->Add(PropertiesList, 1, wxALL | wxEXPAND, 5);
+  bSizer11->Add(PropertiesList, 1, wxALL | wxEXPAND, FromDIP(5));
 
 
   panel1->SetSizer(bSizer11);
@@ -133,7 +133,7 @@ ClassEditor::ClassEditor(wxPanel* parent, PackageWindow* window)
   ScriptView->MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL, wxSTC_MARK_EMPTY);
   ScriptView->SetSelBackground(true, wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT));
   ScriptView->SetSelForeground(true, wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHTTEXT));
-  bSizer10->Add(ScriptView, 1, wxEXPAND | wxALL, 5);
+  bSizer10->Add(ScriptView, 1, wxEXPAND | wxALL, FromDIP(5));
 
 
   panel2->SetSizer(bSizer10);
@@ -182,7 +182,7 @@ ClassEditor::ClassEditor(wxPanel* parent, PackageWindow* window)
   CppView->MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL, wxSTC_MARK_EMPTY);
   CppView->SetSelBackground(true, wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT));
   CppView->SetSelForeground(true, wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHTTEXT));
-  bSizer9->Add(CppView, 1, wxEXPAND | wxALL, 5);
+  bSizer9->Add(CppView, 1, wxEXPAND | wxALL, FromDIP(5));
 
 
   panel3->SetSizer(bSizer9);
@@ -190,7 +190,7 @@ ClassEditor::ClassEditor(wxPanel* parent, PackageWindow* window)
   bSizer9->Fit(panel3);
   Notebook->AddPage(panel3, wxT("C++"), false);
 
-  bSizer1->Add(Notebook, 1, wxEXPAND | wxALL, 5);
+  bSizer1->Add(Notebook, 1, wxEXPAND | wxALL, FromDIP(5));
 
 
   this->SetSizer(bSizer1);

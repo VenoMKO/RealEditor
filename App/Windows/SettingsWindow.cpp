@@ -38,6 +38,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 {
   NewConfig = currentConfig;
   SetIcon(wxICON(#114));
+  SetSize(FromDIP(GetSize()));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
   this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
 
@@ -49,7 +50,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText5->Wrap(-1);
   m_staticText5->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer1->Add(m_staticText5, 0, wxALL, 5);
+  bSizer1->Add(m_staticText5, 0, wxALL, FromDIP(5));
 
   wxPanel* m_panel2;
   m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -62,41 +63,41 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   wxStaticText* m_staticText7;
   m_staticText7 = new wxStaticText(m_panel2, wxID_ANY, wxT("Path:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText7->Wrap(-1);
-  bSizer5->Add(m_staticText7, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer5->Add(m_staticText7, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   wxString root = CurrentConfig.UseBuiltInS1Game32 ? wxString("N/A") : wxString(CurrentConfig.RootDir.WString());
-  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, root, wxDefaultPosition, wxSize(500, -1), wxTE_PROCESS_ENTER);
-  bSizer5->Add(PathField, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, root, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+  bSizer5->Add(PathField, 1, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
   PathField->Enable(!CurrentConfig.UseBuiltInS1Game32);
 
   BrowseButton = new wxButton(m_panel2, ControlElementId::Browse, wxT("Browse..."), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer5->Add(BrowseButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer5->Add(BrowseButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
   BrowseButton->Enable(!CurrentConfig.UseBuiltInS1Game32);
 
 
-  bSizer4->Add(bSizer5, 1, wxEXPAND, 5);
+  bSizer4->Add(bSizer5, 1, wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText6;
   m_staticText6 = new wxStaticText(m_panel2, wxID_ANY, wxT("Select the S1Game folder of your Tera client. This path will be used to find and load packages and resources. The path may look like this: \"D:\\Games\\Gameforge\\Tera\\Client\\S1Game\\\"."), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText6->Wrap(600);
-  bSizer4->Add(m_staticText6, 0, wxBOTTOM | wxLEFT | wxRIGHT, 5);
+  m_staticText6->Wrap(FromDIP(570));
+  bSizer4->Add(m_staticText6, 1, wxBOTTOM | wxRIGHT | wxLEFT | wxEXPAND, FromDIP(5));
 
   wxStaticLine* m_staticline2;
   m_staticline2 = new wxStaticLine(m_panel2, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
   bSizer4->Add(m_staticline2, 0, wxEXPAND | wxTOP | wxBOTTOM, 7);
 
   UseBuiltInS1Game32 = new wxCheckBox(m_panel2, wxID_ANY, wxT("Use built-in 32-bit S1Game folder"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer4->Add(UseBuiltInS1Game32, 0, wxALL, 5);
+  bSizer4->Add(UseBuiltInS1Game32, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText81;
   m_staticText81 = new wxStaticText(m_panel2, wxID_ANY, wxT("Enable this option if you want to open a 32-bit GPK file, but you don't have a full 32-bit client."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText81->Wrap(-1);
-  bSizer4->Add(m_staticText81, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+  bSizer4->Add(m_staticText81, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
   m_panel2->SetSizer(bSizer4);
   m_panel2->Layout();
   bSizer4->Fit(m_panel2);
-  bSizer1->Add(m_panel2, 0, wxALL | wxEXPAND, 5);
+  bSizer1->Add(m_panel2, 0, wxALL | wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer10;
   bSizer10 = new wxBoxSizer(wxHORIZONTAL);
@@ -111,7 +112,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText10->Wrap(-1);
   m_staticText10->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer12->Add(m_staticText10, 0, wxALL, 5);
+  bSizer12->Add(m_staticText10, 0, wxALL, FromDIP(5));
 
   wxPanel* m_panel8;
   m_panel8 = new wxPanel(m_panel7, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -120,27 +121,27 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
   RebuildCacheButton = new wxButton(m_panel8, ControlElementId::DirCache, wxT("Rebuild Cache"), wxDefaultPosition, wxDefaultSize, 0);
   RebuildCacheButton->SetToolTip(wxT("Update a cached list of packages in your S1Game folder. Usefull when ") + wxTheApp->GetAppDisplayName() + wxT(" can't find an object."));
-  bSizer13->Add(RebuildCacheButton, 0, wxALL | wxEXPAND, 5);
+  bSizer13->Add(RebuildCacheButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
   UpdateMappingButton = new wxButton(m_panel8, ControlElementId::Mappers, wxT("Update Mapping"), wxDefaultPosition, wxDefaultSize, 0);
   UpdateMappingButton->SetToolTip(wxT("Decrypt and update mappers. May be usefull after Tera update."));
-  bSizer13->Add(UpdateMappingButton, 0, wxALL | wxEXPAND, 5);
+  bSizer13->Add(UpdateMappingButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
   ResetWarningsButton = new wxButton(m_panel8, ControlElementId::Warnings, wxT("Reset Warnings"), wxDefaultPosition, wxDefaultSize, 0);
   ResetWarningsButton->SetToolTip(wxT("Reset all hidden UI warnings."));
-  bSizer13->Add(ResetWarningsButton, 0, wxALL | wxEXPAND, 5);
+  bSizer13->Add(ResetWarningsButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
 
   m_panel8->SetSizer(bSizer13);
   m_panel8->Layout();
   bSizer13->Fit(m_panel8);
-  bSizer12->Add(m_panel8, 0, wxEXPAND | wxALL, 5);
+  bSizer12->Add(m_panel8, 0, wxEXPAND | wxALL, FromDIP(5));
 
 
   m_panel7->SetSizer(bSizer12);
   m_panel7->Layout();
   bSizer12->Fit(m_panel7);
-  bSizer10->Add(m_panel7, 1, wxALL, 5);
+  bSizer10->Add(m_panel7, 1, wxALL, FromDIP(5));
 
   wxPanel* m_panel6;
   m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -152,7 +153,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText8->Wrap(-1);
   m_staticText8->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer11->Add(m_staticText8, 0, wxALL, 5);
+  bSizer11->Add(m_staticText8, 0, wxALL, FromDIP(5));
 
   wxPanel* m_panel3;
   m_panel3 = new wxPanel(m_panel6, wxID_ANY, wxDefaultPosition, wxSize(-1, -1), wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -166,8 +167,8 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
   wxStaticText* m_staticText9;
   m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Windows File Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
-  m_staticText9->Wrap(300);
-  bSizer7->Add(m_staticText9, 0, wxALL, 5);
+  m_staticText9->Wrap(FromDIP(300));
+  bSizer7->Add(m_staticText9, 0, wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer9;
   bSizer9 = new wxBoxSizer(wxVERTICAL);
@@ -177,40 +178,40 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   RegisterButton = new wxButton(m_panel5, ControlElementId::Register, wxT("Associate"), wxDefaultPosition, wxDefaultSize, 0);
   RegisterButton->SetToolTip(wxT("Allow to open packages in the Windows File Explorer by double clicking them."));
   RegisterButton->Enable(!WasRegistered);
-  bSizer9->Add(RegisterButton, 0, wxALL, 5);
+  bSizer9->Add(RegisterButton, 0, wxALL, FromDIP(5));
 
   UnregisterButton = new wxButton(m_panel5, ControlElementId::Unregister, wxT("Dissociate"), wxDefaultPosition, wxDefaultSize, 0);
   UnregisterButton->SetToolTip(wxT("Don't open packages in the Windows File Explorer by double clicking them."));
   UnregisterButton->Enable(WasRegistered);
-  bSizer9->Add(UnregisterButton, 0, wxALL, 5);
+  bSizer9->Add(UnregisterButton, 0, wxALL, FromDIP(5));
 
 
-  bSizer7->Add(bSizer9, 1, wxEXPAND, 5);
+  bSizer7->Add(bSizer9, 1, wxEXPAND, FromDIP(5));
 
 
   m_panel5->SetSizer(bSizer7);
   m_panel5->Layout();
   bSizer7->Fit(m_panel5);
-  bSizer6->Add(m_panel5, 0, wxALL, 5);
+  bSizer6->Add(m_panel5, 0, wxALL, FromDIP(5));
 
   m_panel3->SetSizer(bSizer6);
   m_panel3->Layout();
   bSizer6->Fit(m_panel3);
-  bSizer11->Add(m_panel3, 0, wxALL, 5);
+  bSizer11->Add(m_panel3, 0, wxALL, FromDIP(5));
 
   FastObjDump = new wxCheckBox(m_panel6, ControlElementId::FastDump, wxT("Reduced ObjectDump"));
   FastObjDump->SetToolTip(wxT("Generate small ObjectDump.txt by skipping Components and UPackages."));
   FastObjDump->SetValue(CurrentConfig.FastObjectDump);
-  bSizer11->Add(FastObjDump, 0, wxALL, 5);
+  bSizer11->Add(FastObjDump, 0, wxALL, FromDIP(5));
 
 
   m_panel6->SetSizer(bSizer11);
   m_panel6->Layout();
   bSizer11->Fit(m_panel6);
-  bSizer10->Add(m_panel6, 0, wxALL, 5);
+  bSizer10->Add(m_panel6, 0, wxALL, FromDIP(5));
 
 
-  bSizer1->Add(bSizer10, 1, wxEXPAND, 5);
+  bSizer1->Add(bSizer10, 1, wxEXPAND, FromDIP(5));
 
   wxStaticLine* m_staticline1;
   m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
@@ -223,19 +224,19 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
   wxPanel* m_panel10;
   m_panel10 = new wxPanel(m_panel9, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-  bSizer14->Add(m_panel10, 1, wxEXPAND | wxALL, 5);
+  bSizer14->Add(m_panel10, 1, wxEXPAND | wxALL, FromDIP(5));
 
   ApplyButton = new wxButton(m_panel9, wxID_OK, wxT("Apply"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer14->Add(ApplyButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer14->Add(ApplyButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   CancelButton = new wxButton(m_panel9, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer14->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+  bSizer14->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
   m_panel9->SetSizer(bSizer14);
   m_panel9->Layout();
   bSizer14->Fit(m_panel9);
-  bSizer1->Add(m_panel9, 1, wxALL | wxEXPAND, 5);
+  bSizer1->Add(m_panel9, 1, wxALL | wxEXPAND, FromDIP(5));
 
 
   this->SetSizer(bSizer1);

@@ -186,6 +186,7 @@ public:
     , Mesh(mesh)
     , DefaultMesh(anim->GetPreviewSkeletalMesh())
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer1;
@@ -193,109 +194,109 @@ public:
 
     wxPanel* m_panel1;
     m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-    bSizer1->Add(m_panel1, 0, wxEXPAND | wxALL, 5);
+    bSizer1->Add(m_panel1, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxBoxSizer* bSizer2;
     bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
     wxStaticText* m_staticText2;
-    m_staticText2 = new wxStaticText(this, wxID_ANY, wxT("Skeleton:"), wxDefaultPosition, wxSize(60, -1), wxALIGN_RIGHT);
+    m_staticText2 = new wxStaticText(this, wxID_ANY, wxT("Skeleton:"), wxDefaultPosition, FromDIP(wxSize(60, -1)), wxALIGN_RIGHT);
     m_staticText2->Wrap(-1);
-    bSizer2->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+    bSizer2->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
 
     SkeletonField = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-    bSizer2->Add(SkeletonField, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer2->Add(SkeletonField, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     SelectButton = new wxButton(this, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
     SelectButton->SetToolTip(wxT("Select a skeletal mesh to apply this animation to."));
-    bSizer2->Add(SelectButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    bSizer2->Add(SelectButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer2, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer2, 0, wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer4;
     bSizer4 = new wxBoxSizer(wxHORIZONTAL);
 
     wxStaticText* m_staticText4;
-    m_staticText4 = new wxStaticText(this, wxID_ANY, wxT("Scale:"), wxDefaultPosition, wxSize(60, -1), wxALIGN_RIGHT);
+    m_staticText4 = new wxStaticText(this, wxID_ANY, wxT("Scale:"), wxDefaultPosition, FromDIP(wxSize(60, -1)), wxALIGN_RIGHT);
     m_staticText4->Wrap(-1);
-    bSizer4->Add(m_staticText4, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+    bSizer4->Add(m_staticText4, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
 
-    Scale = new wxTextCtrl(this, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(40, -1), 0);
+    Scale = new wxTextCtrl(this, wxID_ANY, wxT("1.0"), wxDefaultPosition, FromDIP(wxSize(40, -1)), 0);
     Scale->SetToolTip(wxT("Uniform skeleton scale"));
 
-    bSizer4->Add(Scale, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer4->Add(Scale, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxStaticText* m_staticText3;
     m_staticText3 = new wxStaticText(this, wxID_ANY, wxT("Rate:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText3->Wrap(-1);
-    bSizer4->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+    bSizer4->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
 
-    Rate = new wxTextCtrl(this, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(40, -1), 0);
+    Rate = new wxTextCtrl(this, wxID_ANY, wxT("1.0"), wxDefaultPosition, FromDIP(wxSize(40, -1)), 0);
     Rate->SetToolTip(wxT("Rate at which the animation should play(e.g., 2.0 - two times faster)."));
 
-    bSizer4->Add(Rate, 0, wxALL, 5);
+    bSizer4->Add(Rate, 0, wxALL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer4, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer4, 0, wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer5;
     bSizer5 = new wxBoxSizer(wxHORIZONTAL);
 
     wxPanel* m_panel2;
-    m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(56, -1), wxTAB_TRAVERSAL);
-    bSizer5->Add(m_panel2, 0, wxEXPAND | wxALL, 5);
+    m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(56, -1)), wxTAB_TRAVERSAL);
+    bSizer5->Add(m_panel2, 0, wxEXPAND | wxALL, FromDIP(5));
 
     ExportGeometry = new wxCheckBox(this, wxID_ANY, wxT("Export geometry"), wxDefaultPosition, wxDefaultSize, 0);
     ExportGeometry->SetValue(true);
     ExportGeometry->SetToolTip(wxT("Export 3D model with the skeleton"));
 
-    bSizer5->Add(ExportGeometry, 0, wxRIGHT | wxLEFT, 5);
+    bSizer5->Add(ExportGeometry, 0, wxRIGHT | wxLEFT, FromDIP(5));
 
     Split = new wxCheckBox(this, wxID_ANY, wxT("Split takes"), wxDefaultPosition, wxDefaultSize, 0);
     Split->SetValue(true);
     Split->SetToolTip(wxT("Split animations to separate FBX files.\nThis option is mandatory for PSA export."));
 
-    bSizer5->Add(Split, 0, wxRIGHT | wxLEFT, 5);
+    bSizer5->Add(Split, 0, wxRIGHT | wxLEFT, FromDIP(5));
 
     Compress = new wxCheckBox(this, wxID_ANY, wxT("Compress"), wxDefaultPosition, wxDefaultSize, 0);
     Compress->SetValue(true);
     Compress->SetToolTip(wxT("Compress animation tracks by removing trivial keys.\nNot available for PSA export."));
 
-    bSizer5->Add(Compress, 0, wxRIGHT | wxLEFT, 5);
+    bSizer5->Add(Compress, 0, wxRIGHT | wxLEFT, FromDIP(5));
 
     InvqW = new wxCheckBox(this, wxID_ANY, wxT("Inverse qW"), wxDefaultPosition, wxDefaultSize, 0);
     InvqW->SetToolTip(wxT("Inverse quat W when exporting. Enable this if your skeleton has orientation issues."));
 
-    bSizer5->Add(InvqW, 0, wxRIGHT | wxLEFT, 5);
+    bSizer5->Add(InvqW, 0, wxRIGHT | wxLEFT, FromDIP(5));
 
 
-    bSizer1->Add(bSizer5, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+    bSizer1->Add(bSizer5, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(5));
 
     wxBoxSizer* bSizer6;
     bSizer6 = new wxBoxSizer(wxHORIZONTAL);
 
     wxStaticText* m_staticText41;
-    m_staticText41 = new wxStaticText(this, wxID_ANY, wxT("Format:"), wxDefaultPosition, wxSize(60, -1), wxALIGN_RIGHT);
+    m_staticText41 = new wxStaticText(this, wxID_ANY, wxT("Format:"), wxDefaultPosition, FromDIP(wxSize(60, -1)), wxALIGN_RIGHT);
     m_staticText41->SetToolTip(wxT("Format of a container to store animations.\nNot available for single sequence export."));
     m_staticText41->Wrap(-1);
-    bSizer6->Add(m_staticText41, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer6->Add(m_staticText41, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxString FormatPickerChoices[] = { wxT("N/A") };
     int FormatPickerNChoices = sizeof(FormatPickerChoices) / sizeof(wxString);
-    FormatPicker = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxSize(200, -1), FormatPickerNChoices, FormatPickerChoices, 0);
+    FormatPicker = new wxChoice(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(200, -1)), FormatPickerNChoices, FormatPickerChoices, 0);
     FormatPicker->SetSelection(0);
     FormatPicker->Enable(false);
     FormatPicker->SetToolTip(wxT("Format of a container to store animations.\nNot available for single sequence export."));
 
-    bSizer6->Add(FormatPicker, 0, wxTOP | wxBOTTOM | wxRIGHT, 5);
+    bSizer6->Add(FormatPicker, 0, wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
 
-    bSizer1->Add(bSizer6, 0, wxEXPAND | wxBOTTOM, 5);
+    bSizer1->Add(bSizer6, 0, wxEXPAND | wxBOTTOM, FromDIP(5));
 
     wxStaticLine* m_staticline1;
     m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-    bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP, 5);
+    bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP, FromDIP(5));
 
     wxBoxSizer* bSizer3;
     bSizer3 = new wxBoxSizer(wxHORIZONTAL);
@@ -303,16 +304,16 @@ public:
     DefaultButton = new wxButton(this, wxID_ANY, wxT("Default"), wxDefaultPosition, wxDefaultSize, 0);
     DefaultButton->Enable(false);
 
-    bSizer3->Add(DefaultButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    bSizer3->Add(DefaultButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
-    bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
     OkButton = new wxButton(this, wxID_ANY, wxT("Export..."), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer3->Add(OkButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    bSizer3->Add(CancelButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
 
     bSizer1->Add(bSizer3, 1, wxEXPAND, 15);
@@ -523,10 +524,10 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
   bSizer2 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticLine* m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-  bSizer2->Add(m_staticline1, 0, wxEXPAND | wxBOTTOM, 5);
+  bSizer2->Add(m_staticline1, 0, wxEXPAND | wxBOTTOM, FromDIP(5));
 
   wxPanel* m_panel1;
-  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 32), wxTAB_TRAVERSAL);
+  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 32)), wxTAB_TRAVERSAL);
   m_panel1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   wxBoxSizer* bSizer3;
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
@@ -534,35 +535,35 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
   wxStaticText* m_staticText2;
   m_staticText2 = new wxStaticText(m_panel1, wxID_ANY, wxT("Preview:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText2->Wrap(-1);
-  bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
-  TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, wxSize(150, -1));
-  bSizer3->Add(TakePicker, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, 5);
+  TakePicker = new wxChoice(m_panel1, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(150, -1)));
+  bSizer3->Add(TakePicker, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
 
   wxStaticText* m_staticText3;
   m_staticText3 = new wxStaticText(m_panel1, wxID_ANY, wxT("Mesh:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText3->Wrap(-1);
-  bSizer3->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+  bSizer3->Add(m_staticText3, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
 
   MeshButton = new wxButton(m_panel1, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
   MeshButton->SetToolTip(wxT("Pick a skeletal mesh for this animation."));
-  bSizer3->Add(MeshButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer3->Add(MeshButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ErrorLabel = new wxStaticText(m_panel1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END);
   ErrorLabel->Wrap(-1);
   ErrorLabel->SetForegroundColour(wxColour(255, 13, 13));
 
-  bSizer3->Add(ErrorLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer3->Add(ErrorLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel1->SetSizer(bSizer3);
   m_panel1->Layout();
-  bSizer2->Add(m_panel1, 0, wxALL | wxEXPAND, 5);
+  bSizer2->Add(m_panel1, 0, wxALL | wxEXPAND, FromDIP(5));
 
   ContainerPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
   ContainerPanel->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
 
-  bSizer2->Add(ContainerPanel, 1, wxEXPAND | wxTOP, 5);
+  bSizer2->Add(ContainerPanel, 1, wxEXPAND | wxTOP, FromDIP(5));
 
 
   this->SetSizer(bSizer2);

@@ -13,8 +13,9 @@ wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
 LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
   : wxFrame(parent, id, wxTheApp->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - Log"), pos, size, style)
 {
+  SetSize(FromDIP(GetSize()));
   SetIcon(wxICON(#114));
-  SetSizeHints(wxSize(700, 300), wxDefaultSize);
+  SetSizeHints(FromDIP(wxSize(700, 300)), wxDefaultSize);
 
   wxBoxSizer* bSizer1 = new wxBoxSizer(wxVERTICAL);
   LogCtrl = new wxRichTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxVSCROLL | wxHSCROLL | wxNO_BORDER | wxWANTS_CHARS);

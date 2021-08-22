@@ -539,4 +539,7 @@
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Resources\app.manifest" />
+  </ItemGroup>
 </Project>

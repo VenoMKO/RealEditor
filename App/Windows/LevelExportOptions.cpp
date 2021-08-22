@@ -103,6 +103,7 @@ private:
 LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const LevelExportContext& ctx)
   : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(597, 592), wxDEFAULT_DIALOG_STYLE)
 {
+  SetSize(FromDIP(GetSize()));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer10;
@@ -113,7 +114,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   m_staticText5->Wrap(-1);
   m_staticText5->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText5, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText5, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxPanel* m_panel5;
   m_panel5 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -123,7 +124,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   wxStaticText* m_staticText6;
   m_staticText6 = new wxStaticText(m_panel5, wxID_ANY, wxT("Select a folder to save exported data to."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText6->Wrap(-1);
-  bSizer11->Add(m_staticText6, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer11->Add(m_staticText6, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxBoxSizer* bSizer12;
   bSizer12 = new wxBoxSizer(wxHORIZONTAL);
@@ -131,63 +132,63 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   wxStaticText* m_staticText7;
   m_staticText7 = new wxStaticText(m_panel5, wxID_ANY, wxT("Path:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText7->Wrap(-1);
-  bSizer12->Add(m_staticText7, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer12->Add(m_staticText7, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   PathPicker = new wxDirPickerCtrl(m_panel5, wxID_ANY, wxEmptyString, wxT("Select a folder"), wxDefaultPosition, wxDefaultSize, wxDIRP_DEFAULT_STYLE);
-  bSizer12->Add(PathPicker, 1, wxALL, 5);
+  bSizer12->Add(PathPicker, 1, wxALL, FromDIP(5));
 
 
-  bSizer11->Add(bSizer12, 1, wxEXPAND, 5);
+  bSizer11->Add(bSizer12, 1, wxEXPAND, FromDIP(5));
 
 
   m_panel5->SetSizer(bSizer11);
   m_panel5->Layout();
   bSizer11->Fit(m_panel5);
-  bSizer10->Add(m_panel5, 0, wxEXPAND | wxALL, 5);
+  bSizer10->Add(m_panel5, 0, wxEXPAND | wxALL, FromDIP(5));
 
   wxStaticText* m_staticText51;
   m_staticText51 = new wxStaticText(this, wxID_ANY, wxT("Actors"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText51->Wrap(-1);
   m_staticText51->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText51, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText51, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxPanel* m_panel111;
   m_panel111 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
   wxBoxSizer* bSizer17;
   bSizer17 = new wxBoxSizer(wxHORIZONTAL);
 
-  ActorTable = new wxDataViewCtrl(m_panel111, wxID_ANY, wxDefaultPosition, wxSize(-1, 200), wxDV_NO_HEADER);
-  bSizer17->Add(ActorTable, 1, wxALL | wxEXPAND, 5);
+  ActorTable = new wxDataViewCtrl(m_panel111, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 200)), wxDV_NO_HEADER);
+  bSizer17->Add(ActorTable, 1, wxALL | wxEXPAND, FromDIP(5));
 
   wxBoxSizer* bSizer16;
   bSizer16 = new wxBoxSizer(wxVERTICAL);
 
   TurnOnAllButton = new wxButton(m_panel111, wxID_ANY, wxT("All"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer16->Add(TurnOnAllButton, 0, wxALL, 5);
+  bSizer16->Add(TurnOnAllButton, 0, wxALL, FromDIP(5));
 
   TurnOffAllButton = new wxButton(m_panel111, wxID_ANY, wxT("None"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer16->Add(TurnOffAllButton, 0, wxALL, 5);
+  bSizer16->Add(TurnOffAllButton, 0, wxALL, FromDIP(5));
 
 
-  bSizer17->Add(bSizer16, 0, wxEXPAND, 5);
+  bSizer17->Add(bSizer16, 0, wxEXPAND, FromDIP(5));
 
 
   m_panel111->SetSizer(bSizer17);
   m_panel111->Layout();
   bSizer17->Fit(m_panel111);
-  bSizer10->Add(m_panel111, 1, wxEXPAND | wxALL, 5);
+  bSizer10->Add(m_panel111, 1, wxEXPAND | wxALL, FromDIP(5));
 
   wxStaticText* m_staticText511;
   m_staticText511 = new wxStaticText(this, wxID_ANY, wxT("Options"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText511->Wrap(-1);
   m_staticText511->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
-  bSizer10->Add(m_staticText511, 0, wxTOP | wxRIGHT | wxLEFT, 5);
+  bSizer10->Add(m_staticText511, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
   wxNotebook* m_notebook1;
   m_notebook1 = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
-  m_notebook1->SetMinSize(wxSize(-1, 100));
+  m_notebook1->SetMinSize(FromDIP(wxSize(-1, 100)));
 
   wxPanel* m_panel10;
   m_panel10 = new wxPanel(m_notebook1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -200,16 +201,16 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   wxStaticText* m_staticText8;
   m_staticText8 = new wxStaticText(m_panel10, wxID_ANY, wxT("Global Scale:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText8->Wrap(-1);
-  bSizer191->Add(m_staticText8, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer191->Add(m_staticText8, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   GlobalScale = new wxTextCtrl(m_panel10, wxID_ANY, wxT("4.0"), wxDefaultPosition, wxDefaultSize, 0);
   GlobalScale->SetToolTip(wxT("World scale factor:\n1.0 - Match coordinates(NPC locations, pegasus paths, etc.)\n4.0 - Match units(1 Tera meter \u2248 1 UE4 meter)."));
-  GlobalScale->SetMinSize(wxSize(35, -1));
+  GlobalScale->SetMinSize(FromDIP(wxSize(35, -1)));
 
   bSizer191->Add(GlobalScale, 0, wxTOP | wxBOTTOM | wxRIGHT, 10);
 
 
-  bSizer161->Add(bSizer191, 0, 0, 5);
+  bSizer161->Add(bSizer191, 0, 0, FromDIP(5));
 
   wxBoxSizer* bSizer182;
   bSizer182 = new wxBoxSizer(wxHORIZONTAL);
@@ -217,20 +218,20 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   OverrideFiles = new wxCheckBox(m_panel10, wxID_ANY, wxT("Override files"), wxDefaultPosition, wxDefaultSize, 0);
   OverrideFiles->SetToolTip(wxT("Override existing data files(e.g., fbx)."));
 
-  bSizer182->Add(OverrideFiles, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(OverrideFiles, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   IgnoreHidden = new wxCheckBox(m_panel10, wxID_ANY, wxT("Make all visible"), wxDefaultPosition, wxDefaultSize, 0);
   IgnoreHidden->SetToolTip(wxT("Make hidden objects visible. If this is disabled, hidden actors will be shown in the World Outliner, but UE4 won't show them in the scene view."));
 
-  bSizer182->Add(IgnoreHidden, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(IgnoreHidden, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   SplitT3d = new wxCheckBox(m_panel10, wxID_ANY, wxT("Split T3D"), wxDefaultPosition, wxDefaultSize, 0);
   SplitT3d->SetToolTip(wxT("Save each streamed level to it's own T3D file."));
 
-  bSizer182->Add(SplitT3d, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer182->Add(SplitT3d, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer161->Add(bSizer182, 1, wxEXPAND, 5);
+  bSizer161->Add(bSizer182, 1, wxEXPAND, FromDIP(5));
 
 
   m_panel10->SetSizer(bSizer161);
@@ -245,20 +246,20 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   Materials = new wxCheckBox(m_panel11, wxID_ANY, wxT("Export Materials"), wxDefaultPosition, wxDefaultSize, 0);
   Materials->SetToolTip(wxT("Export parameters of materials used by actors. Will export materials that are related to current export operation."));
 
-  bSizer26->Add(Materials, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer26->Add(Materials, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   Textures = new wxCheckBox(m_panel11, wxID_ANY, wxT("Export textures:"), wxDefaultPosition, wxDefaultSize, 0);
   Textures->SetToolTip(wxT("Export textures, used by exported actors. Will export textures that are related to the current export operation."));
 
-  bSizer26->Add(Textures, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer26->Add(Textures, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   wxString TextureFormatSelectorChoices[] = { wxT("TGA"), wxT("PNG"), wxT("DDS") };
   int TextureFormatSelectorNChoices = sizeof(TextureFormatSelectorChoices) / sizeof(wxString);
-  TextureFormatSelector = new wxChoice(m_panel11, wxID_ANY, wxDefaultPosition, wxSize(100, -1), TextureFormatSelectorNChoices, TextureFormatSelectorChoices, 0);
+  TextureFormatSelector = new wxChoice(m_panel11, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(100, -1)), TextureFormatSelectorNChoices, TextureFormatSelectorChoices, 0);
   TextureFormatSelector->SetSelection(0);
   TextureFormatSelector->SetToolTip(wxT("Format used to save textures."));
 
-  bSizer26->Add(TextureFormatSelector, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer26->Add(TextureFormatSelector, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel11->SetSizer(bSizer26);
@@ -281,12 +282,12 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   wxStaticText* m_staticText15;
   m_staticText15 = new wxStaticText(m_panel8, wxID_ANY, wxT("Point lights scale:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText15->Wrap(-1);
-  bSizer18->Add(m_staticText15, 0, wxTOP | wxBOTTOM | wxLEFT | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer18->Add(m_staticText15, 0, wxTOP | wxBOTTOM | wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
-  PointLightMultiplier = new wxTextCtrl(m_panel8, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(35, -1), 0);
+  PointLightMultiplier = new wxTextCtrl(m_panel8, wxID_ANY, wxT("1.0"), wxDefaultPosition, FromDIP(wxSize(35, -1)), 0);
   PointLightMultiplier->SetToolTip(wxT("Multiply point light intensity by this value."));
 
-  bSizer18->Add(PointLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer18->Add(PointLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel8->SetSizer(bSizer18);
@@ -302,12 +303,12 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   wxStaticText* m_staticText151;
   m_staticText151 = new wxStaticText(m_panel9, wxID_ANY, wxT("Spot lights scale:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText151->Wrap(-1);
-  bSizer19->Add(m_staticText151, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5);
+  bSizer19->Add(m_staticText151, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
 
-  SpotLightMultiplier = new wxTextCtrl(m_panel9, wxID_ANY, wxT("1.0"), wxDefaultPosition, wxSize(35, -1), 0);
+  SpotLightMultiplier = new wxTextCtrl(m_panel9, wxID_ANY, wxT("1.0"), wxDefaultPosition, FromDIP(wxSize(35, -1)), 0);
   SpotLightMultiplier->SetToolTip(wxT("Multiply spot light intensity by this value."));
 
-  bSizer19->Add(SpotLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer19->Add(SpotLightMultiplier, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel9->SetSizer(bSizer19);
@@ -316,7 +317,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   bSizer24->Add(m_panel9, 0, wxALL | wxALIGN_CENTER_VERTICAL, 0);
 
 
-  bSizer23->Add(bSizer24, 1, 0, 5);
+  bSizer23->Add(bSizer24, 1, 0, FromDIP(5));
 
   wxBoxSizer* bSizer15;
   bSizer15 = new wxBoxSizer(wxHORIZONTAL);
@@ -324,12 +325,12 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   LightInvSqrt = new wxCheckBox(m_panel12, wxID_ANY, wxT("Use inverse squared falloff"), wxDefaultPosition, wxDefaultSize, 0);
   LightInvSqrt->SetToolTip(wxT("Use physically based inverse squared distance falloff."));
 
-  bSizer15->Add(LightInvSqrt, 0, wxALL, 5);
+  bSizer15->Add(LightInvSqrt, 0, wxALL, FromDIP(5));
 
   DynamicShadows = new wxCheckBox(m_panel12, wxID_ANY, wxT("Force dynamic shadows"), wxDefaultPosition, wxDefaultSize, 0);
   DynamicShadows->SetToolTip(wxT("Enables dynamic shadows for objects that have this option explicitly disabled by developers. Enable this if you plan to use dynamic lighting."));
 
-  bSizer15->Add(DynamicShadows, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer15->Add(DynamicShadows, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   bSizer23->Add(bSizer15, 0, wxEXPAND, 0);
@@ -347,12 +348,12 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   ResampleTerrain = new wxCheckBox(m_panel14, wxID_ANY, wxT("Resample Terrain"), wxDefaultPosition, wxDefaultSize, 0);
   ResampleTerrain->SetToolTip(wxT("Resize terrain heightmap to match weightmap resolution. Allows to use original full resolution weightmaps, but reduces accuracy of the terrain geometry."));
 
-  bSizer27->Add(ResampleTerrain, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer27->Add(ResampleTerrain, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   SplitTerrainWeightMaps = new wxCheckBox(m_panel14, wxID_ANY, wxT("Split weightmaps"), wxDefaultPosition, wxDefaultSize, 0);
   SplitTerrainWeightMaps->SetToolTip(wxT("Save weightmap layers to individual files."));
 
-  bSizer27->Add(SplitTerrainWeightMaps, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer27->Add(SplitTerrainWeightMaps, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel14->SetSizer(bSizer27);
@@ -367,22 +368,22 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   ExportLods = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export LODs"), wxDefaultPosition, wxDefaultSize, 0);
   ExportLods->SetToolTip(wxT("Embed model LODs into fbx."));
 
-  bSizer181->Add(ExportLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer181->Add(ExportLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ExportMLods = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export MLODs"), wxDefaultPosition, wxDefaultSize, 0);
   ExportMLods->SetToolTip(wxT("Allow Real Editor to export MLOD/HLOD actors."));
 
-  bSizer181->Add(ExportMLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer181->Add(ExportMLods, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ConvexCollisions = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export collisions"), wxDefaultPosition, wxDefaultSize, 0);
   ConvexCollisions->SetToolTip(wxT("Export Rigid Body collisions."));
 
-  bSizer181->Add(ConvexCollisions, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer181->Add(ConvexCollisions, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ExportLightmapUVs = new wxCheckBox(m_panel121, wxID_ANY, wxT("Export lightmap UVs"), wxDefaultPosition, wxDefaultSize, 0);
   ExportLightmapUVs->SetToolTip(wxT("Embed custom UV sets."));
 
-  bSizer181->Add(ExportLightmapUVs, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer181->Add(ExportLightmapUVs, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
   m_panel121->SetSizer(bSizer181);
@@ -390,7 +391,7 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   bSizer181->Fit(m_panel121);
   m_notebook1->AddPage(m_panel121, wxT("Models"), false);
 
-  bSizer10->Add(m_notebook1, 1, wxEXPAND | wxALL, 5);
+  bSizer10->Add(m_notebook1, 1, wxEXPAND | wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer14;
   bSizer14 = new wxBoxSizer(wxHORIZONTAL);
@@ -398,21 +399,21 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   DefaultsButton = new wxButton(this, wxID_ANY, wxT("Defaults"), wxDefaultPosition, wxDefaultSize, 0);
   DefaultsButton->SetToolTip(wxT("Restore default settings."));
 
-  bSizer14->Add(DefaultsButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer14->Add(DefaultsButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer14->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer14->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   ExportButton = new wxButton(this, wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0);
   ExportButton->Enable(false);
 
-  bSizer14->Add(ExportButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer14->Add(ExportButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer14->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer14->Add(CancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-  bSizer10->Add(bSizer14, 1, wxEXPAND, 5);
+  bSizer10->Add(bSizer14, 1, wxEXPAND, FromDIP(5));
 
 
   SetSizer(bSizer10);
@@ -433,8 +434,8 @@ LevelExportOptionsWindow::LevelExportOptionsWindow(wxWindow* parent, const Level
   DelayedTextureFormat = HasAVX2() ? ctx.Config.TextureFormat : 2;
   TextureFormatSelector->Enable(HasAVX2());
 
-  ActorTable->AppendToggleColumn(_(""), ActorExportEntryModel::Col_Check, wxDATAVIEW_CELL_ACTIVATABLE, 25);
-  ActorTable->AppendTextColumn(_("Actor Type"), ActorExportEntryModel::Col_Name, wxDATAVIEW_CELL_INERT, 150, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  ActorTable->AppendToggleColumn(_(""), ActorExportEntryModel::Col_Check, wxDATAVIEW_CELL_ACTIVATABLE, FromDIP(25));
+  ActorTable->AppendTextColumn(_("Actor Type"), ActorExportEntryModel::Col_Name, wxDATAVIEW_CELL_INERT, FromDIP(150), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
   ActorTable->Connect(wxEVT_COMMAND_DATAVIEW_ITEM_VALUE_CHANGED, wxDataViewEventHandler(LevelExportOptionsWindow::OnActorTableValueChanged), NULL, this);
 
   TurnOnAllButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(LevelExportOptionsWindow::OnAllClicked), NULL, this);

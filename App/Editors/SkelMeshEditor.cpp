@@ -131,6 +131,7 @@ public:
   SkelMeshExportOptions(wxWindow* parent, const FSkelMeshExportConfig& cfg)
     : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 270), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer1;
@@ -140,7 +141,7 @@ public:
     int ModeGroupNChoices = sizeof(ModeGroupChoices) / sizeof(wxString);
     ModeGroup = new wxRadioBox(this, wxID_ANY, wxT("Export:"), wxDefaultPosition, wxDefaultSize, ModeGroupNChoices, ModeGroupChoices, 1, wxRA_SPECIFY_COLS);
     ModeGroup->SetSelection(1);
-    bSizer1->Add(ModeGroup, 0, wxALL | wxEXPAND, 5);
+    bSizer1->Add(ModeGroup, 0, wxALL | wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer2;
     bSizer2 = new wxBoxSizer(wxHORIZONTAL);
@@ -148,16 +149,16 @@ public:
     wxStaticText* m_staticText2;
     m_staticText2 = new wxStaticText(this, wxID_ANY, wxT("Scale:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText2->Wrap(-1);
-    bSizer2->Add(m_staticText2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer2->Add(m_staticText2, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ScaleFactor = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-    bSizer2->Add(ScaleFactor, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer2->Add(ScaleFactor, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer2, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer2, 0, wxEXPAND, FromDIP(5));
 
     ExportTextures = new wxCheckBox(this, wxID_ANY, wxT("Export textures"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer1->Add(ExportTextures, 0, wxALL, 5);
+    bSizer1->Add(ExportTextures, 0, wxALL, FromDIP(5));
 
     wxBoxSizer* bSizer5;
     bSizer5 = new wxBoxSizer(wxHORIZONTAL);
@@ -165,33 +166,33 @@ public:
     wxStaticText* m_staticText3;
     m_staticText3 = new wxStaticText(this, wxID_ANY, wxT("Texture format:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText3->Wrap(-1);
-    bSizer5->Add(m_staticText3, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer5->Add(m_staticText3, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxString TextureFormatChoices[] = { wxT("TGA"), wxT("PNG"), wxT("DDS") };
     int TextureFormatNChoices = sizeof(TextureFormatChoices) / sizeof(wxString);
     TextureFormat = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, TextureFormatNChoices, TextureFormatChoices, 0);
     TextureFormat->SetSelection(0);
-    bSizer5->Add(TextureFormat, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer5->Add(TextureFormat, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer5, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer5, 0, wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer3;
     bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
 
-    bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
     wxButton* m_button1;
     m_button1 = new wxButton(this, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(m_button1, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer3->Add(m_button1, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxButton* m_button2;
     m_button2 = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(m_button2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer3->Add(m_button2, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer3, 1, wxEXPAND, 5);
+    bSizer1->Add(bSizer3, 1, wxEXPAND, FromDIP(5));
 
 
     this->SetSizer(bSizer1);
@@ -298,6 +299,7 @@ public:
   SkelMeshImportOptions(wxWindow* parent)
     : WXDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(395, 527), wxDEFAULT_DIALOG_STYLE)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer1;
@@ -309,18 +311,18 @@ public:
     bSizer2 = new wxBoxSizer(wxVERTICAL);
 
     ImportSkeleton = new wxCheckBox(m_panel1, wxID_ANY, wxT("Import skeleton"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer2->Add(ImportSkeleton, 0, wxALL, 5);
+    bSizer2->Add(ImportSkeleton, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText1;
     m_StaticText1 = new wxStaticText(m_panel1, wxID_ANY, wxT("This option allows to import 3D models with any suitable skeleton. Disabling it results in strict FBX to GPK bone mapping."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText1->Wrap(350);
-    bSizer2->Add(m_StaticText1, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText1->Wrap(FromDIP(350));
+    bSizer2->Add(m_StaticText1, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel1->SetSizer(bSizer2);
     m_panel1->Layout();
     bSizer2->Fit(m_panel1);
-    bSizer1->Add(m_panel1, 0, wxALL | wxEXPAND, 5);
+    bSizer1->Add(m_panel1, 0, wxALL | wxEXPAND, FromDIP(5));
 
     wxPanel* m_panel2;
     m_panel2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -328,18 +330,18 @@ public:
     bSizer21 = new wxBoxSizer(wxVERTICAL);
 
     ImportTangents = new wxCheckBox(m_panel2, wxID_ANY, wxT("Import normals"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer21->Add(ImportTangents, 0, wxALL, 5);
+    bSizer21->Add(ImportTangents, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText11;
     m_StaticText11 = new wxStaticText(m_panel2, wxID_ANY, wxT("Import normals, binormals, and tangents from the FBX file."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText11->Wrap(350);
-    bSizer21->Add(m_StaticText11, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText11->Wrap(FromDIP(350));
+    bSizer21->Add(m_StaticText11, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel2->SetSizer(bSizer21);
     m_panel2->Layout();
     bSizer21->Fit(m_panel2);
-    bSizer1->Add(m_panel2, 0, wxALL | wxEXPAND, 5);
+    bSizer1->Add(m_panel2, 0, wxALL | wxEXPAND, FromDIP(5));
 
     wxPanel* m_panel3;
     m_panel3 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -347,18 +349,18 @@ public:
     bSizer211 = new wxBoxSizer(wxVERTICAL);
 
     FlipBinormals = new wxCheckBox(m_panel3, wxID_ANY, wxT("Flip binormals"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer211->Add(FlipBinormals, 0, wxALL, 5);
+    bSizer211->Add(FlipBinormals, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText111;
     m_StaticText111 = new wxStaticText(m_panel3, wxID_ANY, wxT("Inverse binormal direction. This may help if you have seams between symmetrical parts."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText111->Wrap(350);
-    bSizer211->Add(m_StaticText111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText111->Wrap(FromDIP(350));
+    bSizer211->Add(m_StaticText111, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel3->SetSizer(bSizer211);
     m_panel3->Layout();
     bSizer211->Fit(m_panel3);
-    bSizer1->Add(m_panel3, 0, wxEXPAND | wxALL, 5);
+    bSizer1->Add(m_panel3, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxPanel* m_panel4;
     m_panel4 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -366,18 +368,18 @@ public:
     bSizer2111 = new wxBoxSizer(wxVERTICAL);
 
     BinormalsUV = new wxCheckBox(m_panel4, wxID_ANY, wxT("Binormals by UV"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer2111->Add(BinormalsUV, 0, wxALL, 5);
+    bSizer2111->Add(BinormalsUV, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText1111;
     m_StaticText1111 = new wxStaticText(m_panel4, wxID_ANY, wxT("Compute binormal direction based on vertex UV space."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText1111->Wrap(350);
-    bSizer2111->Add(m_StaticText1111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText1111->Wrap(FromDIP(350));
+    bSizer2111->Add(m_StaticText1111, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel4->SetSizer(bSizer2111);
     m_panel4->Layout();
     bSizer2111->Fit(m_panel4);
-    bSizer1->Add(m_panel4, 0, wxEXPAND | wxALL, 5);
+    bSizer1->Add(m_panel4, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxPanel* m_panel5;
     m_panel5 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -385,18 +387,18 @@ public:
     bSizer21111 = new wxBoxSizer(wxVERTICAL);
 
     UpdateBounds = new wxCheckBox(m_panel5, wxID_ANY, wxT("Update bounds"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer21111->Add(UpdateBounds, 0, wxALL, 5);
+    bSizer21111->Add(UpdateBounds, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText11111;
     m_StaticText11111 = new wxStaticText(m_panel5, wxID_ANY, wxT("Calculate new mesh bounds for the 3D model. Tera uses these bounds to cull off objects obscured by the model."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText11111->Wrap(350);
-    bSizer21111->Add(m_StaticText11111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText11111->Wrap(FromDIP(350));
+    bSizer21111->Add(m_StaticText11111, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel5->SetSizer(bSizer21111);
     m_panel5->Layout();
     bSizer21111->Fit(m_panel5);
-    bSizer1->Add(m_panel5, 0, wxEXPAND | wxALL, 5);
+    bSizer1->Add(m_panel5, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxPanel* m_panel6;
     m_panel6 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxTAB_TRAVERSAL);
@@ -404,35 +406,35 @@ public:
     bSizer211111 = new wxBoxSizer(wxVERTICAL);
 
     IndexBuffer = new wxCheckBox(m_panel6, wxID_ANY, wxT("Optimize index buffer"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer211111->Add(IndexBuffer, 0, wxALL, 5);
+    bSizer211111->Add(IndexBuffer, 0, wxALL, FromDIP(5));
 
     wxStaticText* m_StaticText111111;
     m_StaticText111111 = new wxStaticText(m_panel6, wxID_ANY, wxT("Optimize 3D model's index buffer. May slightly increase in-game performance."), wxDefaultPosition, wxDefaultSize, 0);
-    m_StaticText111111->Wrap(350);
-    bSizer211111->Add(m_StaticText111111, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
+    m_StaticText111111->Wrap(FromDIP(350));
+    bSizer211111->Add(m_StaticText111111, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
 
     m_panel6->SetSizer(bSizer211111);
     m_panel6->Layout();
     bSizer211111->Fit(m_panel6);
-    bSizer1->Add(m_panel6, 0, wxEXPAND | wxALL, 5);
+    bSizer1->Add(m_panel6, 0, wxEXPAND | wxALL, FromDIP(5));
 
     wxBoxSizer* bSizer14;
     bSizer14 = new wxBoxSizer(wxHORIZONTAL);
 
 
-    bSizer14->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer14->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
     wxButton* okButton;
     okButton = new wxButton(this, wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer14->Add(okButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer14->Add(okButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxButton* cancelButton;
     cancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer14->Add(cancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer14->Add(cancelButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer14, 1, wxEXPAND, 5);
+    bSizer1->Add(bSizer14, 1, wxEXPAND, FromDIP(5));
 
 
     SetSizer(bSizer1);

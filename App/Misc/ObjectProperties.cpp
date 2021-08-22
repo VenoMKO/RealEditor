@@ -376,22 +376,23 @@ public:
     long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
     : WXDialog(parent, id, title, pos, size, style)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer12;
     bSizer12 = new wxBoxSizer(wxVERTICAL);
 
     ShowButton = new wxButton(this, wxID_ANY, wxT("Show"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(ShowButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(ShowButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
     ChangeButton = new wxButton(this, wxID_ANY, wxT("Change..."), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(ChangeButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(ChangeButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
     CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
 
-    bSizer12->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer12->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
 
     SetSizer(bSizer12);
@@ -450,22 +451,23 @@ public:
     long style = wxCAPTION | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
     : WXDialog(parent, id, title, pos, size, style)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer12;
     bSizer12 = new wxBoxSizer(wxVERTICAL);
 
     ExportButton = new wxButton(this, wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(ExportButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(ExportButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
     ImportButton = new wxButton(this, wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(ImportButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(ImportButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
     CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, 5);
+    bSizer12->Add(CancelButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
 
-    bSizer12->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer12->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
 
     SetSizer(bSizer12);

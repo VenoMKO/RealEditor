@@ -185,6 +185,7 @@ DependsResolveDialog::DependsResolveDialog(wxWindow* parent, const std::map<UObj
   : WXDialog(parent, wxID_ANY, wxT("Copy Dependencies"), wxDefaultPosition, wxSize(630, 403))
   , DestinationPackage(destPackage)
 {
+  SetSize(FromDIP(GetSize()));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer1;
@@ -192,12 +193,12 @@ DependsResolveDialog::DependsResolveDialog(wxWindow* parent, const std::map<UObj
 
   wxStaticText* m_staticText1;
   m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("The object you are trying to copy has some dependencies. Specify a destination folder for each of the objects below. Or press the All button to copy all dependencies to a single folder. \nAlso you can select an existing object instead of copying. To do that change the Action from Copy to Existing and press the Edit button."), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText1->Wrap(600);
-  bSizer1->Add(m_staticText1, 0, wxALL, 5);
+  m_staticText1->Wrap(FromDIP(600));
+  bSizer1->Add(m_staticText1, 0, wxALL, FromDIP(5));
 
   DataView = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
   wxDataViewColumn* m_dataViewColumn1;
-  m_dataViewColumn1 = DataView->AppendTextColumn(wxT("Object"), 0, wxDATAVIEW_CELL_INERT, 245, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  m_dataViewColumn1 = DataView->AppendTextColumn(wxT("Object"), 0, wxDATAVIEW_CELL_INERT, FromDIP(245), static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
 
   // Populate choices
   wxArrayString choices;
@@ -206,34 +207,34 @@ DependsResolveDialog::DependsResolveDialog(wxWindow* parent, const std::map<UObj
   wxDataViewColumn* m_dataViewColumn3 = new wxDataViewColumn(wxT("Action"), new wxDataViewChoiceByIndexRenderer(choices), 1, -1, static_cast<wxAlignment>(wxALIGN_LEFT));
   DataView->AppendColumn(m_dataViewColumn3);
   wxDataViewColumn* m_dataViewColumn2;
-  m_dataViewColumn2 = DataView->AppendTextColumn(wxT("Name"), 2, wxDATAVIEW_CELL_INERT, 245, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
-  bSizer1->Add(DataView, 1, wxALL | wxEXPAND, 5);
+  m_dataViewColumn2 = DataView->AppendTextColumn(wxT("Name"), 2, wxDATAVIEW_CELL_INERT, FromDIP(245), static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE);
+  bSizer1->Add(DataView, 1, wxALL | wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText2;
   m_staticText2 = new wxStaticText(this, wxID_ANY, wxT("To set a destination folder select an object in the table and press the Edit button."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText2->Wrap(-1);
-  bSizer1->Add(m_staticText2, 0, wxALL, 5);
+  bSizer1->Add(m_staticText2, 0, wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
   AllButton = new wxButton(this, wxID_ANY, wxT("All..."), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer2->Add(AllButton, 0, wxALL, 5);
+  bSizer2->Add(AllButton, 0, wxALL, FromDIP(5));
 
   EditButton = new wxButton(this, wxID_ANY, wxT("Edit..."), wxDefaultPosition, wxDefaultSize, 0);
   EditButton->Enable(false);
-  bSizer2->Add(EditButton, 0, wxALL, 5);
+  bSizer2->Add(EditButton, 0, wxALL, FromDIP(5));
 
 
-  bSizer2->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer2->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   OkButton = new wxButton(this, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
   OkButton->Enable(false);
 
-  bSizer2->Add(OkButton, 0, wxALL, 5);
+  bSizer2->Add(OkButton, 0, wxALL, FromDIP(5));
 
   CancelButton = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer2->Add(CancelButton, 0, wxALL, 5);
+  bSizer2->Add(CancelButton, 0, wxALL, FromDIP(5));
 
 
   bSizer1->Add(bSizer2, 0, wxEXPAND | wxTOP | wxBOTTOM, 15);

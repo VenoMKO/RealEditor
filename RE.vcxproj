@@ -288,6 +288,9 @@
     <Image Include="Resources\Classes\icon_t2d.png" />
     <Image Include="Resources\FileIcon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Resources\app.manifest" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -384,6 +387,9 @@
 msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
 "$(ProjectDir)build_inc.bat" "$(Configuration)"</Command>
     </PreBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>$(ProjectDir)Resources\app.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug ASAN|x64'">
     <ClCompile>
@@ -444,6 +450,9 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
 msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)
 "$(ProjectDir)build_inc.bat" "$(Configuration)"</Command>
     </PreBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>$(ProjectDir)Resources\app.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

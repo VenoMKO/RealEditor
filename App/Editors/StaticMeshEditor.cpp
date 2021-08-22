@@ -32,6 +32,7 @@ public:
   StaticMeshExportOptions(wxWindow* parent, const FStaticMeshExportConfig& cfg)
     : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 194), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
   {
+    SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* bSizer1;
@@ -43,16 +44,16 @@ public:
     wxStaticText* m_staticText2;
     m_staticText2 = new wxStaticText(this, wxID_ANY, wxT("Scale:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText2->Wrap(-1);
-    bSizer2->Add(m_staticText2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer2->Add(m_staticText2, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     ScaleFactor = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-    bSizer2->Add(ScaleFactor, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer2->Add(ScaleFactor, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer2, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer2, 0, wxEXPAND, FromDIP(5));
 
     ExportTextures = new wxCheckBox(this, wxID_ANY, wxT("Export textures"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer1->Add(ExportTextures, 0, wxALL, 5);
+    bSizer1->Add(ExportTextures, 0, wxALL, FromDIP(5));
 
     wxBoxSizer* bSizer5;
     bSizer5 = new wxBoxSizer(wxHORIZONTAL);
@@ -60,33 +61,33 @@ public:
     wxStaticText* m_staticText3;
     m_staticText3 = new wxStaticText(this, wxID_ANY, wxT("Texture format:"), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText3->Wrap(-1);
-    bSizer5->Add(m_staticText3, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer5->Add(m_staticText3, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxString TextureFormatChoices[] = { wxT("TGA"), wxT("PNG"), wxT("DDS") };
     int TextureFormatNChoices = sizeof(TextureFormatChoices) / sizeof(wxString);
     TextureFormat = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, TextureFormatNChoices, TextureFormatChoices, 0);
     TextureFormat->SetSelection(0);
-    bSizer5->Add(TextureFormat, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer5->Add(TextureFormat, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer5, 0, wxEXPAND, 5);
+    bSizer1->Add(bSizer5, 0, wxEXPAND, FromDIP(5));
 
     wxBoxSizer* bSizer3;
     bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
 
-    bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+    bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
     wxButton* m_button1;
     m_button1 = new wxButton(this, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(m_button1, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer3->Add(m_button1, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
     wxButton* m_button2;
     m_button2 = new wxButton(this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-    bSizer3->Add(m_button2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    bSizer3->Add(m_button2, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
-    bSizer1->Add(bSizer3, 1, wxEXPAND, 5);
+    bSizer1->Add(bSizer3, 1, wxEXPAND, FromDIP(5));
 
 
     this->SetSizer(bSizer1);

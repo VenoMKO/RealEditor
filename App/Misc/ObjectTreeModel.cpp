@@ -688,7 +688,7 @@ void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())
   {
-    GetColumn(0)->SetWidth(GetParent()->GetSize().x - 30);
+    GetColumn(0)->SetWidth(GetParent()->GetSize().x - FromDIP(30));
   }
   e.Skip();
 }
