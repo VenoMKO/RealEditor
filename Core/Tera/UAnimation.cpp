@@ -304,6 +304,12 @@ bool UAnimSequence::GetBoneTransform(USkeletalMesh* mesh, const FName& name, int
       {
         if (refBone.Name == name)
         {
+          if (refBone.ParentIndex == refBones[refBone.ParentIndex].ParentIndex)
+          {
+            // Keep root transform regardless of the bAnimRotationOnly flag
+            position = TransTracks[boneIndex].PosKeys[transTrackIndex];
+            break;
+          }
           position = refBone.BonePos.Position;
           break;
         }
