@@ -61,6 +61,8 @@ public:
   // Needed for cross-region mods
   void DisableCaching();
 
+  void DisableStreaming();
+
 protected:
   void PostLoad() override;
   void DeleteStorage();

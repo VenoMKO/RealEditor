@@ -339,26 +339,6 @@ void UTexture2D::DisableCaching()
     MipTailBaseIdxProperty->Value->GetInt() = 0;
   }
 
-  if (NeverStreamProperty)
-  {
-    NeverStreamProperty->GetBool() = true;
-    NeverStream = true;
-  }
-  else
-  {
-    CreatePropertyNeverStream(true);
-  }
-
-  if (bIsStreamableProperty)
-  {
-    bIsStreamableProperty->GetBool() = false;
-    bIsStreamable = false;
-  }
-  else
-  {
-    CreatePropertybIsStreamable(false);
-  }
-
   for (int32 idx = 0; idx < Mips.size(); ++idx)
   {
     if (idx > 0)
@@ -384,6 +364,29 @@ void UTexture2D::DisableCaching()
   }
   Mips.resize(1);
   MarkDirty();
+}
+
+void UTexture2D::DisableStreaming()
+{
+  if (NeverStreamProperty)
+  {
+    NeverStreamProperty->GetBool() = true;
+    NeverStream = true;
+  }
+  else
+  {
+    CreatePropertyNeverStream(true);
+  }
+
+  if (bIsStreamableProperty)
+  {
+    bIsStreamableProperty->GetBool() = false;
+    bIsStreamable = false;
+  }
+  else
+  {
+    CreatePropertybIsStreamable(false);
+  }
 }
 
 void UTexture2D::PostLoad()
