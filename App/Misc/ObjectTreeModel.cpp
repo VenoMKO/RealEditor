@@ -684,6 +684,20 @@ int32 ObjectTreeDataViewCtrl::SuitableObjectsCount()
   return GetChildrenCntRecursive(root);
 }
 
+bool ObjectTreeDataViewCtrl::HasFilter()
+{
+  const auto& filter = ((ObjectTreeModel*)GetModel())->GetFilter();
+  if (filter.empty())
+  {
+    return false;
+  }
+  if (filter.size() == 1 && filter.front() == NAME_Package)
+  {
+    return false;
+  }
+  return true;
+}
+
 void ObjectTreeDataViewCtrl::OnSize(wxSizeEvent& e)
 {
   if (GetColumnCount() && GetParent())

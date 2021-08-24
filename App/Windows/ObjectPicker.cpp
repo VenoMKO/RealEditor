@@ -203,7 +203,9 @@ ObjectPicker::~ObjectPicker()
 
 void ObjectPicker::SetCanChangePackage(bool flag)
 {
+  AllowDifferentPackage = flag;
   PackageButton->Enable(flag);
+  UpdateTableTitle();
 }
 
 void ObjectPicker::OnObjectSelected(wxDataViewEvent& event)
@@ -317,28 +319,30 @@ void ObjectPicker::LoadObjectTree()
   model->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   ObjectTreeCtrl->AssociateModel(model);
   ObjectTreeCtrl->GetColumn(0)->SetWidth(ObjectTreeCtrl->GetSize().x - 4);
+  ObjectTreeCtrl->ExpandAll();
   model->DecRef();
-  if (Filter.size())
-  {
-    if (ObjectTreeCtrl->SuitableObjectsCount())
-    {
-      ContentsLabel->SetLabel("Contents:");
-      ContentsLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
-    }
-    else
-    {
-      wxString text("No suitable objects found!");
-      if (PackageButton->IsEnabled())
-      {
-        text += wxT(" Press \"Package...\" to open a different GPK.");
-      }
-      ContentsLabel->SetLabel(text);
-      ContentsLabel->SetForegroundColour(wxColour(255, 0, 0));
-    }
-    ObjectTreeCtrl->ExpandAll();
-  }
   Selection = nullptr;
   OkButton->Enable(false);
+  UpdateTableTitle();
+}
+
+void ObjectPicker::UpdateTableTitle()
+{
+  if (!ObjectTreeCtrl->HasFilter() || ObjectTreeCtrl->SuitableObjectsCount())
+  {
+    ContentsLabel->SetLabel("Contents:");
+    ContentsLabel->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
+  }
+  else
+  {
+    wxString text("No suitable objects found!");
+    if (AllowDifferentPackage)
+    {
+      text += wxT(" Press \"Package...\" to open a different GPK.");
+    }
+    ContentsLabel->SetLabel(text);
+    ContentsLabel->SetForegroundColour(wxColour(255, 0, 0));
+  }
 }
 
 void ObjectPicker::OnShowContextMenu(wxDataViewEvent& event)

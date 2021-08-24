@@ -139,6 +139,11 @@ public:
     return SearchName;
   }
 
+  const std::vector<FString>& GetFilter() const
+  {
+    return Filter;
+  }
+
 protected:
   void BuildIcons();
 
@@ -167,6 +172,7 @@ public:
   void RestoreTreeState();
   void SelectObject(PACKAGE_INDEX idx);
   int32 SuitableObjectsCount();
+  bool HasFilter();
 
 private:
   void OnSize(wxSizeEvent& e);
