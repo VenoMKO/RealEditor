@@ -44,6 +44,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+IDB_CUR_GRABHAND        CURSOR                  "Resources\\grabhand.cur"
 
 /////////////////////////////////////////////////////////////////////////////
 //

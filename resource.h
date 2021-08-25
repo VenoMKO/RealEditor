@@ -44,6 +44,8 @@
 #define IDB_RES_IPDRV                   507
 #define IDB_RES_UNREALED                508
 
+#define IDB_CUR_GRABHAND                601
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
