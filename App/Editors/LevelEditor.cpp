@@ -21,6 +21,8 @@
 
 #include <execution>
 
+#include "../resource.h"
+
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
@@ -60,7 +62,7 @@ void LevelEditor::OnObjectLoaded()
 void LevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  auto tool = toolbar->AddTool(eID_Level_Load, LevelLoaded ? "Loaded" : "Preview", wxBitmap("#127", wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
+  auto tool = toolbar->AddTool(eID_Level_Load, LevelLoaded ? "Loaded" : "Preview", wxBitmap(MAKE_IDB(IDB_LEVEL_PREVIEW), wxBITMAP_TYPE_PNG_RESOURCE), "Load the level preview");
   tool->Enable(!LevelLoaded && Level);
   if (!Level)
   {
@@ -642,7 +644,7 @@ void StreamingLevelEditor::OnObjectLoaded()
 void StreamingLevelEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   LevelEditor::PopulateToolBar(toolbar);
-  auto tool = toolbar->AddTool(eID_StreamingLevel_Source, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open the source package with this level.");
+  auto tool = toolbar->AddTool(eID_StreamingLevel_Source, "Source", wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE), "Open the source package with this level.");
   tool->Enable(Level);
   if (!Level)
   {

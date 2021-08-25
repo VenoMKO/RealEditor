@@ -23,6 +23,8 @@
 #include "PrefabEditor.h"
 #include "SoundCueEditor.h"
 
+#include "../resource.h"
+
 enum ExportMode {
   ExportProperties = wxID_HIGHEST + 1,
   ExportObject,
@@ -170,8 +172,8 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
   Toolbar = toolbar;
   if (Object->GetDataSize() > 0)
   {
-    toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
-    toolbar->AddTool(eID_Import, "Import", wxBitmap("#113", wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
+    toolbar->AddTool(eID_Export, "Export", wxBitmap(MAKE_IDB(IDB_EXPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
+    toolbar->AddTool(eID_Import, "Import", wxBitmap(MAKE_IDB(IDB_IMPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
     toolbar->FindById(eID_Import)->Enable(false);
   }
 
@@ -182,12 +184,12 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
       CompositeObjectPath = FPackage::GetObjectCompositePath(Object->GetObjectPath()).WString();
       if (CompositeObjectPath.size())
       {
-        toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
+        toolbar->AddTool(eID_Composite, "Source", wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
       }
     }
     if (Object->GetClass() && !Object->GetClass()->IsBuiltIn())
     {
-      toolbar->AddTool(eID_Class, "Class", wxBitmap("#124", wxBITMAP_TYPE_PNG_RESOURCE), "Show class object");
+      toolbar->AddTool(eID_Class, "Class", wxBitmap(MAKE_IDB(IDB_ICO_BCLASS), wxBITMAP_TYPE_PNG_RESOURCE), "Show class object");
     }
   }
 }

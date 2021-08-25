@@ -5,6 +5,8 @@
 #include <Tera/Core.h>
 #include <Tera/FObjectResource.h>
 
+#include "../resource.h"
+
 inline int GetSuitableExportsCount(FObjectExport* exp, const std::vector<FString>& filter, bool recursivly)
 {
   int result = 0;
@@ -397,43 +399,43 @@ void ObjectTreeModel::BuildIcons()
   IconList->Add(defIcon);
 
   // Class icon
-  IconList->Add(wxBitmap("#117", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_CLASS), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Texture icon
-  IconList->Add(wxBitmap("#121", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_TEXTURE), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Mesh icon
-  IconList->Add(wxBitmap("#118", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_MESH), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Sound icon
-  IconList->Add(wxBitmap("#120", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_SOUND), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Redirector
-  IconList->Add(wxBitmap("#119", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_REDIRECTOR), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Imp dir
-  IconList->Add(wxBitmap("#123", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_IMPORT), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Material icon
-  IconList->Add(wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_MAT), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // MaterialInstance icon
-  IconList->Add(wxBitmap("#126", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_MI), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // Level icon
-  IconList->Add(wxBitmap("#128", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_LEVEL), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // StreamingLevel icon
-  IconList->Add(wxBitmap("#129", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_SLEVEL), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // AnimSet icon
-  IconList->Add(wxBitmap("#134", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_ANIMSET), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // AnimSequence icon
-  IconList->Add(wxBitmap("#135", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_ANIMSEQ), wxBITMAP_TYPE_PNG_RESOURCE));
 
   // SoundCue icon
-  IconList->Add(wxBitmap("#138", wxBITMAP_TYPE_PNG_RESOURCE));
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_SOUND_CUE), wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const

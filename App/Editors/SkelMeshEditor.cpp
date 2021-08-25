@@ -32,6 +32,8 @@
 #include <filesystem>
 #include <functional>
 
+#include "../resource.h"
+
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
@@ -554,15 +556,15 @@ void SkelMeshEditor::PopulateToolBar(wxToolBar* toolbar)
   {
     item->Enable(true);
   }
-  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
-  if ((SkeletonTool = toolbar->AddCheckTool(eID_Skeleton, wxT("Skeleton"), wxBitmap("#136", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#137", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle skeleton")))
+  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap(MAKE_IDB(IDB_ICO_MAT), wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
+  if ((SkeletonTool = toolbar->AddCheckTool(eID_Skeleton, wxT("Skeleton"), wxBitmap(MAKE_IDB(IDB_SKEL), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_SKEL), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle skeleton")))
   {
     if (ShowSkeleton)
     {
       SkeletonTool->Toggle();
     }
   }
-  toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
+  toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap(MAKE_IDB(IDB_REFRESH), wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
 void SkelMeshEditor::OnToolBarEvent(wxCommandEvent& e)

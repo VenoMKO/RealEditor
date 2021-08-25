@@ -21,6 +21,8 @@
 #include <filesystem>
 #include <functional>
 
+#include "../resource.h"
+
 enum MaterialsMenuID {
   EditMaterials = wxID_HIGHEST + 1,
   ShowMaterials,
@@ -207,8 +209,8 @@ void StaticMeshEditor::OnObjectLoaded()
 void StaticMeshEditor::PopulateToolBar(wxToolBar* toolbar)
 {
   GenericEditor::PopulateToolBar(toolbar);
-  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap("#125", wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
-  toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap("#122", wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
+  toolbar->AddTool(eID_Materials, wxT("Materials"), wxBitmap(MAKE_IDB(IDB_ICO_MAT), wxBITMAP_TYPE_PNG_RESOURCE), "Model materials");
+  toolbar->AddTool(eID_Refresh, wxT("Reload"), wxBitmap(MAKE_IDB(IDB_REFRESH), wxBITMAP_TYPE_PNG_RESOURCE), "Reload model and its textures");
 }
 
 void StaticMeshEditor::OnToolBarEvent(wxCommandEvent& e)

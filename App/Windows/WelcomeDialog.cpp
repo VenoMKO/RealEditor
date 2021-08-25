@@ -10,6 +10,8 @@
 #include <Tera/Core.h>
 #include <Tera/FPackage.h>
 
+#include "../resource.h"
+
 struct RecentItem {
   wxString Name;
   FString Path;
@@ -48,7 +50,7 @@ public:
       Recent.emplace_back(item);
     }
     IconList = new wxImageList(16, 16, true, 2);
-    IconList->Add(wxBitmap("#130", wxBITMAP_TYPE_PNG_RESOURCE));
+    IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_GPK_FILE_PNG), wxBITMAP_TYPE_PNG_RESOURCE));
   }
 
   ~RecentModel()

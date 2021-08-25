@@ -7,6 +7,8 @@
 
 #include <filesystem>
 
+#include "../resource.h"
+
 void SoundCueEditor::OnExportClicked(wxCommandEvent&)
 {
   wxString path = IODialog::SaveSoundCueDialog(this);

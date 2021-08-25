@@ -5,6 +5,8 @@
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 
+#include "../resource.h"
+
 #define SHOW_REDIRECTOR_PATH 0
 
 enum RedirectorTab : size_t {
@@ -49,7 +51,7 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   bSizer3->Add(m_staticText2, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
   EditorSourceButon = new wxButton(m_panel5, eID_Composite, wxT("Source"), wxDefaultPosition, wxDefaultSize, 0);
-  EditorSourceButon->SetBitmap(wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), wxRIGHT);
+  EditorSourceButon->SetBitmap(wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE), wxRIGHT);
   EditorSourceButon->SetToolTip("Open composite package containing this object...");
   bSizer3->Add(EditorSourceButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
 #if SHOW_REDIRECTOR_PATH
@@ -99,7 +101,7 @@ ObjectRedirectorEditor::ObjectRedirectorEditor(wxPanel* parent, PackageWindow* w
   bSizer31->Add(m_staticText21, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
   EditorOriginButon = new wxButton(m_panel4, eID_Origin, wxT("Original"), wxDefaultPosition, wxDefaultSize, 0);
-  EditorOriginButon->SetBitmap(wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE));
+  EditorOriginButon->SetBitmap(wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE));
   EditorOriginButon->SetToolTip("Show original object...");
   bSizer31->Add(EditorOriginButon, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
 #if SHOW_REDIRECTOR_PATH
@@ -266,7 +268,7 @@ void ObjectRedirectorEditor::PopulateToolBar(wxToolBar* toolbar)
       CompositeObjectPath = Source->GetObjectPath().WString();
       if (CompositeObjectPath.size())
       {
-        toolbar->AddTool(eID_Composite, "Source", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
+        toolbar->AddTool(eID_Composite, "Source", wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE), "Open composite package containing this object...");
       }
     }
   }
@@ -274,7 +276,7 @@ void ObjectRedirectorEditor::PopulateToolBar(wxToolBar* toolbar)
   
   if (!toolbar->FindById(eID_Composite) && Source)
   {
-    toolbar->AddTool(eID_Origin, "Original", wxBitmap("#116", wxBITMAP_TYPE_PNG_RESOURCE), "Show original object");
+    toolbar->AddTool(eID_Origin, "Original", wxBitmap(MAKE_IDB(IDB_FORWARD), wxBITMAP_TYPE_PNG_RESOURCE), "Show original object");
   }
 }
 

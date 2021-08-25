@@ -37,6 +37,8 @@
 #include <filesystem>
 #include <thread>
 
+#include "../resource.h"
+
 static const osg::Vec3d YawAxis(0.0, 0.0, -1.0);
 static const osg::Vec3d PitchAxis(0.0, -1.0, 0.0);
 static const osg::Vec3d RollAxis(1.0, 0.0, 0.0);
@@ -581,7 +583,7 @@ AnimSetEditor::AnimSetEditor(wxPanel* parent, PackageWindow* window)
 
 void AnimSetEditor::PopulateToolBar(wxToolBar* toolbar)
 {
-  if (wxToolBarToolBase* tool = toolbar->AddTool(eID_Export, "Export", wxBitmap("#112", wxBITMAP_TYPE_PNG_RESOURCE), "Export object data..."))
+  if (wxToolBarToolBase* tool = toolbar->AddTool(eID_Export, "Export", wxBitmap(MAKE_IDB(IDB_EXPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Export object data..."))
   {
     if (UAnimSet* set = Cast<UAnimSet>(Object))
     {

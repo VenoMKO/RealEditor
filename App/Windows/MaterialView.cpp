@@ -518,7 +518,7 @@ void DragableCanvas::OnMouseDown(wxMouseEvent& e)
   CanvasStart = ((wxScrolledWindow*)GetParent())->GetViewStart();
 
   CaptureMouse();
-  SetCursor(wxCursor(IDB(CUR_GRABHAND)));
+  SetCursor(wxCursor(MAKE_IDB(IDB_CUR_GRABHAND)));
 }
 
 void DragableCanvas::OnMouseUp(wxMouseEvent& e)

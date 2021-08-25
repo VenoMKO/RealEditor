@@ -9,6 +9,8 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
+#include "../resource.h"
+
 wxDEFINE_EVENT(UPDATE_STATE, wxCommandEvent);
 
 void SoundWaveEditor::OnExportClicked(wxCommandEvent&)
@@ -180,9 +182,9 @@ void SoundWaveEditor::OnUpdateState(wxCommandEvent&)
 
 SoundWaveEditor::SoundWaveEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
-  , PlayBitmap("#131", wxBITMAP_TYPE_PNG_RESOURCE)
-  , StopBitmap("#133", wxBITMAP_TYPE_PNG_RESOURCE)
-  , PauseBitmap("#132", wxBITMAP_TYPE_PNG_RESOURCE)
+  , PlayBitmap(MAKE_IDB(IDB_PLAY), wxBITMAP_TYPE_PNG_RESOURCE)
+  , StopBitmap(MAKE_IDB(IDB_STOP), wxBITMAP_TYPE_PNG_RESOURCE)
+  , PauseBitmap(MAKE_IDB(IDB_PAUSE), wxBITMAP_TYPE_PNG_RESOURCE)
 {
   Connect(UPDATE_STATE, wxCommandEventHandler(SoundWaveEditor::OnUpdateState), NULL, this);
 }

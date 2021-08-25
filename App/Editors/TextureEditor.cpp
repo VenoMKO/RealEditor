@@ -21,6 +21,8 @@
 
 #include <wx/filename.h>
 
+#include "../resource.h"
+
 TextureEditor::TextureEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
 {
@@ -64,13 +66,13 @@ void TextureEditor::PopulateToolBar(wxToolBar* toolbar)
                  Texture->Format == PF_A8R8G8B8 || Texture->Format == PF_G8);
   }
   toolbar->AddSeparator();
-  toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_RED), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_RED), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_R, Mask->getRedMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_G, wxEmptyString, wxBitmap("#107", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#107", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle green channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_G, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_GREEN), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_GREEN), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle green channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_G, Mask->getGreenMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_B, wxEmptyString, wxBitmap("#105", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#105", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle blue channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_B, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_BLUE), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_BLUE), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle blue channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_B, Mask->getBlueMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_A, wxEmptyString, wxBitmap("#103", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#103", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle alpha channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_A, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_ALPHA), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_ALPHA), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle alpha channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_A, Mask->getAlphaMask());
 }
 
@@ -444,13 +446,13 @@ void TextureCubeEditor::PopulateToolBar(wxToolBar* toolbar)
     item->Enable(false);
   }
   toolbar->AddSeparator();
-  toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#109", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_R, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_RED), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_RED), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle red channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_R, Mask->getRedMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_G, wxEmptyString, wxBitmap("#107", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#107", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle green channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_G, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_GREEN), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_GREEN), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle green channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_G, Mask->getGreenMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_B, wxEmptyString, wxBitmap("#105", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#105", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle blue channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_B, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_BLUE), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_BLUE), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle blue channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_B, Mask->getBlueMask());
-  toolbar->AddCheckTool(eID_Texture2D_Channel_A, wxEmptyString, wxBitmap("#103", wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap("#103", wxBITMAP_TYPE_PNG_RESOURCE), "Toggle alpha channel");
+  toolbar->AddCheckTool(eID_Texture2D_Channel_A, wxEmptyString, wxBitmap(MAKE_IDB(IDB_T2D_ALPHA), wxBITMAP_TYPE_PNG_RESOURCE), wxBitmap(MAKE_IDB(IDB_T2D_ALPHA), wxBITMAP_TYPE_PNG_RESOURCE), "Toggle alpha channel");
   toolbar->ToggleTool(eID_Texture2D_Channel_A, Mask->getAlphaMask());
 }
 
