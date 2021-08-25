@@ -453,6 +453,10 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
   {
     if (window->GetPackagePath() == fixedName)
     {
+      if (window->IsIconized())
+      {
+        window->Iconize(false);
+      }
       if (frameInfo.size())
       {
         wxPoint pos = window->GetPosition();
