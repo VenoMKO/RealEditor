@@ -7,10 +7,12 @@
 
 #include <sstream>
 
+#include "../resource.h"
+
 const int32 CanvasPadding = 200;
 
 UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
-  : wxPanel(parent)
+  : DragableCanvas(parent)
   , Material(material)
 {
   for (FPropertyTag* tag : Material->MaterialInputs)
@@ -213,15 +215,15 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 
       for (FExpressionInput& input : i.Inputs)
       {
-        i.InputsPositions.push_back(wxPoint(posX, posY));
+        i.InputsPositions.emplace_back(wxPoint(posX, posY));
         posY += outputNodeHeight * 2;
       }
 
       posY = titleExtent.y + i.Position.y + 6;
       posX = i.Position.x - 10;
 
-      i.PosRGBA.x = posX;
-      i.PosRGBA.y = posY;
+      i.PosRGB.x = posX;
+      i.PosRGB.y = posY;
 
       posY += outputNodeHeight * 2;
 
@@ -345,11 +347,21 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
     }
   }
 
-  auto createConnection = [](wxGraphicsContext* ctx, const wxPoint& start, const wxPoint& end) {
+  auto createConnection = [](wxGraphicsContext* ctx, const wxPoint& start, const wxPoint& end, const wxColor* color = nullptr) {
     wxGraphicsPath path = ctx->CreatePath();
     path.MoveToPoint(start);
     path.AddCurveToPoint(start.x + 20, start.y, end.x - 20, end.y, end.x, end.y);
+    ctx->PushState();
+    if (!color)
+    {
+      ctx->SetPen(wxPen(*wxBLACK));
+    }
+    else
+    {
+      ctx->SetPen(wxPen(*color));
+    }
     ctx->StrokePath(path);
+    ctx->PopState();
   };
 
   // Draw expression connections
@@ -378,9 +390,9 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
       
 
       MaterialExpressionInfo& di = GraphNodes[ExpressionMap[input.Expression]];
-      if (!input.Mask)
+      if (!input.Mask || (input.MaskR && input.MaskG && input.MaskB))
       {
-        wxPoint src = di.PosRGBA;
+        wxPoint src = di.PosRGB;
         src.y += outputNodeHeight / 2;
         createConnection(ctx, dst, src);
       }
@@ -390,19 +402,19 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
         {
           wxPoint src = di.PosR;
           src.y += outputNodeHeight / 2;
-          createConnection(ctx, dst, src);
+          createConnection(ctx, dst, src, wxRED);
         }
         if (input.MaskG)
         {
           wxPoint src = di.PosG;
           src.y += outputNodeHeight / 2;
-          createConnection(ctx, dst, src);
+          createConnection(ctx, dst, src, wxGREEN);
         }
         if (input.MaskB)
         {
           wxPoint src = di.PosB;
           src.y += outputNodeHeight / 2;
-          createConnection(ctx, dst, src);
+          createConnection(ctx, dst, src, wxBLUE);
         }
         if (input.MaskA)
         {
@@ -458,7 +470,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
       MaterialExpressionInfo& di = GraphNodes[ExpressionMap[input.Expression]];
       if (!input.Mask)
       {
-        wxPoint src = di.PosRGBA;
+        wxPoint src = di.PosRGB;
         src.y += outputNodeHeight / 2;
         createConnection(ctx, dst, src);
       }
@@ -495,8 +507,65 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
   }
 }
 
+void DragableCanvas::OnMouseDown(wxMouseEvent& e)
+{
+  if (e.GetButton() != wxMOUSE_BTN_LEFT)
+  {
+    return;
+  }
+  IsDragging = true;
+  MouseStart = wxGetMousePosition();
+  CanvasStart = ((wxScrolledWindow*)GetParent())->GetViewStart();
 
-BEGIN_EVENT_TABLE(UDKMaterialGraph, wxPanel)
+  CaptureMouse();
+  SetCursor(wxCursor(IDB(CUR_GRABHAND)));
+}
+
+void DragableCanvas::OnMouseUp(wxMouseEvent& e)
+{
+  if (e.GetButton() != wxMOUSE_BTN_LEFT || !IsDragging)
+  {
+    return;
+  }
+  IsDragging = false;
+  ReleaseMouse();
+  SetCursor(wxCursor(wxCURSOR_ARROW));
+}
+
+void DragableCanvas::OnMouseMove(wxMouseEvent& e)
+{
+  if (!IsDragging)
+  {
+    return;
+  }
+  int unitX = 0;
+  int unitY = 0;
+  wxScrolledWindow* scrolledWin = (wxScrolledWindow*)GetParent();
+  scrolledWin->GetScrollPixelsPerUnit(&unitX, &unitY);
+  wxPoint pos = wxGetMousePosition() - MouseStart;
+  if (unitX)
+  {
+    pos.x /= unitX;
+  }
+  if (unitY)
+  {
+    pos.y /= unitY;
+  }
+  pos = CanvasStart - pos;
+  pos.x = std::max(pos.x, 0);
+  pos.y = std::max(pos.y, 0);
+  scrolledWin->Scroll(pos);
+}
+
+
+BEGIN_EVENT_TABLE(UDKMaterialGraph, DragableCanvas)
 EVT_PAINT(UDKMaterialGraph::OnPaint)
 EVT_ERASE_BACKGROUND(UDKMaterialGraph::OnEraseBg)
+END_EVENT_TABLE()
+
+
+BEGIN_EVENT_TABLE(DragableCanvas, wxPanel)
+EVT_LEFT_DOWN(DragableCanvas::OnMouseDown)
+EVT_LEFT_UP(DragableCanvas::OnMouseUp)
+EVT_MOTION(DragableCanvas::OnMouseMove)
 END_EVENT_TABLE()

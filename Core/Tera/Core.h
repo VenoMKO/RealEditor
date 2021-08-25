@@ -278,6 +278,8 @@ FString GetClientVersionString(const FString& s1data);
 #endif
 #endif
 
+#define IDB(name) "#" wxSTRINGIZE(IDB_ ## name)
+
 // --------------------------------------------------------------------
 // Compression
 // --------------------------------------------------------------------
