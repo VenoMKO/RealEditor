@@ -35,7 +35,6 @@ public:
   void OnChar(wxKeyEvent& event);
   void OnKeyUp(wxKeyEvent& event);
 
-  void OnMouseEnter(wxMouseEvent& event);
   void OnMouseDown(wxMouseEvent& event);
   void OnMouseUp(wxMouseEvent& event);
   void OnMouseMotion(wxMouseEvent& event);
@@ -44,6 +43,9 @@ public:
   void UseCursor(bool value);
 
   void SetContextCurrent();
+private:
+  void ConvertPosition(int& x, int& y);
+
 private:
   DECLARE_EVENT_TABLE()
 
@@ -56,6 +58,7 @@ private:
   // TODO: remove this and create a proper orthographic manipulator
   bool LockLmb = false;
   bool LockScroll = false;
+  std::map<int, bool> DragMap;
 };
 
 class OSGWindow : public osgViewer::GraphicsWindow

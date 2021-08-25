@@ -22,6 +22,28 @@ void OSGCanvas::SetContextCurrent()
   Context.SetCurrent(*this);
 }
 
+void OSGCanvas::ConvertPosition(int& x, int& y)
+{
+  wxWindow* parent = GetParent();
+  {
+    wxWindow* tmp = parent;
+    while (tmp)
+    {
+      parent = tmp;
+      tmp = parent->GetParent();
+    }
+  }
+  if (parent)
+  {
+    ClientToScreen(&x, &y);
+    int tmpX = 0;
+    int tmpY = 0;
+    parent->GetPosition(&tmpX, &tmpY);
+    x -= tmpX;
+    y -= tmpY;
+  }
+}
+
 void OSGCanvas::OnPaint(wxPaintEvent&)
 {
   wxPaintDC dc(this);
@@ -58,26 +80,27 @@ void OSGCanvas::OnKeyUp(wxKeyEvent& event)
   }
 }
 
-void OSGCanvas::OnMouseEnter(wxMouseEvent&)
-{
-  if (Window->IsActive())
-  {
-    SetFocus();
-  }
-}
-
 void OSGCanvas::OnMouseDown(wxMouseEvent& event)
 {
   if (Container.valid())
   {
+    if (!DragMap[wxMOUSE_BTN_LEFT] && !DragMap[wxMOUSE_BTN_RIGHT] && !DragMap[wxMOUSE_BTN_MIDDLE] &&
+        (event.GetButton() == wxMOUSE_BTN_LEFT || event.GetButton() == wxMOUSE_BTN_RIGHT || event.GetButton() == wxMOUSE_BTN_MIDDLE))
+    {
+      CaptureMouse();
+    }
+    int x, y;
+    event.GetPosition(&x, &y);
+    ConvertPosition(x, y);
+    DragMap[event.GetButton()] = true;
     if (LockLmb)
     {
       auto btn = event.GetButton();
-      Container->getEventQueue()->mouseButtonPress(event.GetX(), event.GetY(), btn == 1 ? 2 : btn);
+      Container->getEventQueue()->mouseButtonPress(x, y, btn == 1 ? 2 : btn);
     }
     else
     {
-      Container->getEventQueue()->mouseButtonPress(event.GetX(), event.GetY(), event.GetButton());
+      Container->getEventQueue()->mouseButtonPress(x, y, event.GetButton());
     }
   }
 }
@@ -86,14 +109,26 @@ void OSGCanvas::OnMouseUp(wxMouseEvent& event)
 {
   if (Container.valid())
   {
+    if (DragMap[event.GetButton()])
+    {
+      DragMap[event.GetButton()] = false;
+      if (!DragMap[wxMOUSE_BTN_LEFT] && !DragMap[wxMOUSE_BTN_RIGHT] && !DragMap[wxMOUSE_BTN_MIDDLE])
+      {
+        ReleaseMouse();
+      }
+    }
+    int x, y;
+    event.GetPosition(&x, &y);
+    ConvertPosition(x, y);
+    DragMap[event.GetButton()] = false;
     if (LockLmb)
     {
       auto btn = event.GetButton();
-      Container->getEventQueue()->mouseButtonRelease(event.GetX(), event.GetY(), btn == 1 ? 2 : btn);
+      Container->getEventQueue()->mouseButtonRelease(x, y, btn == 1 ? 2 : btn);
     }
     else
     {
-      Container->getEventQueue()->mouseButtonRelease(event.GetX(), event.GetY(), event.GetButton());
+      Container->getEventQueue()->mouseButtonRelease(x, y, event.GetButton());
     }
   }
 }
@@ -102,7 +137,10 @@ void OSGCanvas::OnMouseMotion(wxMouseEvent& event)
 {
   if (Container.valid())
   {
-    Container->getEventQueue()->mouseMotion(event.GetX(), event.GetY());
+    int x, y;
+    event.GetPosition(&x, &y);
+    ConvertPosition(x, y);
+    Container->getEventQueue()->mouseMotion(x, y);
   }
 }
 
@@ -209,7 +247,6 @@ EVT_ERASE_BACKGROUND(OSGCanvas::OnEraseBackground)
 EVT_CHAR(OSGCanvas::OnChar)
 EVT_KEY_UP(OSGCanvas::OnKeyUp)
 
-EVT_ENTER_WINDOW(OSGCanvas::OnMouseEnter)
 EVT_LEFT_DOWN(OSGCanvas::OnMouseDown)
 EVT_MIDDLE_DOWN(OSGCanvas::OnMouseDown)
 EVT_RIGHT_DOWN(OSGCanvas::OnMouseDown)

@@ -910,8 +910,12 @@ void PackageWindow::FixOSG()
   Freeze();
   if (IsMaximized())
   {
-    Maximize(false);
-    Maximize(true);
+    static const int MagicSize = 22;
+    wxSize s = GetSize();
+    s.y -= FromDIP(MagicSize);
+    SetSize(s);
+    s.y += FromDIP(MagicSize);
+    SetSize(s);
   }
   else
   {
