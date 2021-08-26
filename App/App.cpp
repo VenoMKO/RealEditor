@@ -217,9 +217,16 @@ void App::OnRpcOpenFile(const wxString& path)
   }
   else if (IsReady && !path.empty())
   {
-    wxCommandEvent* event = new wxCommandEvent(OPEN_PACKAGE);
-    event->SetString(path);
-    wxQueueEvent(this, event);
+    if (Dialogs.size() || REDialogsCount.load() > 0)
+    {
+      MessageBeep(MB_ICONINFORMATION);
+    }
+    else
+    {
+      wxCommandEvent* event = new wxCommandEvent(OPEN_PACKAGE);
+      event->SetString(path);
+      wxQueueEvent(this, event);
+    }
   }
   if (wxWindow* top = GetTopWindow())
   {

@@ -60,6 +60,7 @@ class App
   : public wxApp
   , public WXDialogObserver {
 public:
+  friend struct REScopedDialogCounter;
   static App* GetSharedApp()
   {
     return (App*)wxTheApp;
@@ -190,6 +191,14 @@ private:
   void OnObjectLoaded(wxCommandEvent& e);
   void ShowWelcomeBeforeExit(wxCommandEvent&);
   ALDevice* InitAudioDevice();
+  void DecreaseREDialogsCount()
+  {
+    REDialogsCount--;
+  }
+  void IncreaseREDialogsCount()
+  {
+    REDialogsCount++;
+  }
 
   // Build DirCache and load class packages
   void LoadCore(ProgressWindow*);
@@ -209,6 +218,7 @@ private:
   std::vector<PackageWindow*> PackageWindows;
   std::vector<wxString> OpenList;
   std::vector<WXDialog*> Dialogs;
+  std::atomic_int REDialogsCount = { 0 };
 
   wxArrayString CompositePackageNames;
   wxArrayString FilePackageNames;
@@ -220,3 +230,16 @@ private:
   bool IgnoreWinClose = false;
 };
 
+struct REScopedDialogCounter {
+  REScopedDialogCounter(const REScopedDialogCounter&) = delete;
+
+  REScopedDialogCounter()
+  {
+    App::GetSharedApp()->IncreaseREDialogsCount();
+  }
+
+  ~REScopedDialogCounter()
+  {
+    App::GetSharedApp()->DecreaseREDialogsCount();
+  }
+};

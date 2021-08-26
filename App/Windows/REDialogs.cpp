@@ -13,6 +13,7 @@ namespace
   // If the result extension doesn't match the selected filter this function appends the correct extension.
   void SaveDialog(wxWindow* parent, const wxString& filename, const wxString& path, const wxString caption, const std::vector<std::pair<std::string, std::string>>& extensions, wxString& outPath, int32& outExt)
   {
+    REScopedDialogCounter h;
     std::vector<std::pair<std::string, std::string>> arrangedExtensions = extensions;
     if (outExt >= arrangedExtensions.size())
     {
@@ -237,6 +238,7 @@ namespace IODialog
 
   wxString SaveDatacenter(int mode, wxWindow* parent, const wxString& path, const wxString& filename)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     if (!mode)
     {
@@ -268,6 +270,7 @@ namespace IODialog
 
   wxString OpenMapperForEncryption(wxWindow* parent, const wxString& filename)
   {
+    REScopedDialogCounter h;
     wxString path;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     if (cfg.RootDir.Length())
@@ -279,6 +282,7 @@ namespace IODialog
 
   wxString OpenMapperForDecryption(wxWindow* parent, const wxString& filename)
   {
+    REScopedDialogCounter h;
     wxString path;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     if (cfg.RootDir.Length())
@@ -290,16 +294,19 @@ namespace IODialog
 
   wxString SaveEncryptedMapperFile(wxWindow* parent, const wxString& filename)
   {
+    REScopedDialogCounter h;
     return wxFileSelector(wxT("Save encrypted file"), wxEmptyString, filename, wxEmptyString, wxS("Mapper file (*.dat)|*.dat"), wxFD_SAVE, parent);
   }
 
   wxString SaveDecryptedMapperFile(wxWindow* parent, const wxString& filename)
   {
+    REScopedDialogCounter h;
     return wxFileSelector(wxT("Save decrypted file"), wxEmptyString, filename, wxEmptyString, wxS("Text file (*.txt)|*.txt"), wxFD_SAVE, parent);
   }
 
   wxString OpenPackageDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -325,6 +332,7 @@ namespace IODialog
 
   std::vector<wxString> OpenMultiPackageDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -362,6 +370,7 @@ namespace IODialog
 
   wxString SavePackageDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -378,6 +387,7 @@ namespace IODialog
 
   wxString OpenTextureDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -404,6 +414,7 @@ namespace IODialog
 
   wxString SaveTextureDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
@@ -438,6 +449,7 @@ namespace IODialog
 
   wxString OpenMeshDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -454,6 +466,7 @@ namespace IODialog
 
   wxString SaveMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
@@ -478,6 +491,7 @@ namespace IODialog
 
   wxString SaveSkelMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
@@ -501,6 +515,7 @@ namespace IODialog
 
   wxString SaveStaticMeshDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
@@ -524,6 +539,7 @@ namespace IODialog
 
   wxString SaveAnimDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     FAppConfig& cfg = App::GetSharedApp()->GetConfig();
     wxString path = inPath;
     if (path.empty())
@@ -547,6 +563,7 @@ namespace IODialog
 
   wxString SaveAnimDirDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -562,6 +579,7 @@ namespace IODialog
 
   wxString SaveSoundCueDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
   {
+    REScopedDialogCounter h;
     wxString path = inPath;
     if (path.empty())
     {
@@ -580,6 +598,7 @@ namespace REDialog
 {
   int Message(wxWindow* parent, const wxString& title, const wxString& message, int style)
   {
+    REScopedDialogCounter h;
     if (!message.Contains("\n\n"))
     {
       return wxMessageBox(title + L"\n\n" + message, wxTheApp->GetAppDisplayName(), style);
