@@ -44,6 +44,11 @@ FPropertyTag* CreateProperty##TName(const TType& value)\
   if (FPropertyTag* tag = CreateProperty(P_##TName))\
   {\
     tag->GetTypedValue<TType>() = value;\
+    if (tag->Type == NAME_BoolProperty && tag->Value && tag->Value->Type == FPropertyValue::VID::Bool)\
+    {\
+      /* GetTypedValue<bool> returns tag's bool field while a property grid uses FPropertyValue to read bool values. Set correct value to FPropertyValue object here. */\
+      tag->Value->GetBool() = value;\
+    }\
     AddProperty(tag);\
     RegisterProperty(tag);\
     return tag;\
