@@ -12,7 +12,7 @@
 | **3D models** | :heavy_check_mark: | :heavy_check_mark: | FBX, PSK | SkeletalMesh |
 | **3D models** | :heavy_check_mark: | :x: | FBX, PSK | StaticMesh |
 | **Speed Trees** | :heavy_check_mark: | :heavy_check_mark: | SPT | SpeedTree |
-| **Maps, Dungeons** | :heavy_check_mark: | :x: | Unreal 4.26 | Level, StreamingLevel, S1StreamingLevel |
+| **Maps, Dungeons** | :heavy_check_mark: | :x: | Unreal 4.27 | Level, StreamingLevel, S1StreamingLevel |
 | **SWF/GFX** | :heavy_check_mark: | :heavy_check_mark: | Binary | GFxMovieInfo, SwfMovie |
 | **DataCenter** | :heavy_check_mark: | :x: | XML/JSON | DataCenter_Final.dat |
 
