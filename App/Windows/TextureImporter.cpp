@@ -497,26 +497,56 @@ bool TextureImporter::Run()
   else
   {
     inFormat = TextureProcessor::TCFormat::DDS;
-    switch (Texture->Format)
+    if (Texture->Format == PF_Unknown)
     {
-    case PF_DXT1:
-    case PF_DXT3:
-    case PF_DXT5:
-      outputFormat = TextureProcessor::TCFormat::DXT;
-      break;
-    case PF_A8R8G8B8:
-      outputFormat = TextureProcessor::TCFormat::ARGB8;
-      break;
-    case PF_G8:
-      outputFormat = TextureProcessor::TCFormat::G8;
-      break;
-    default:
-    {
-      std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
-      LogE(errmsg.c_str());
-      REDialog::Error(errmsg);
-      return false;
+      FReadStream s(path.ToStdWstring());
+      DDS::DDSHeader header;
+      s << header;
+      switch (header.GetPixelFormat())
+      {
+      case PF_DXT1:
+      case PF_DXT3:
+      case PF_DXT5:
+        outputFormat = TextureProcessor::TCFormat::DXT;
+        break;
+      case PF_A8R8G8B8:
+        outputFormat = TextureProcessor::TCFormat::ARGB8;
+        break;
+      case PF_G8:
+        outputFormat = TextureProcessor::TCFormat::G8;
+        break;
+      default:
+      {
+        std::string errmsg = std::string("Format ") + PixelFormatToString(header.GetPixelFormat()).String() + " is not supported!\nUse one of the following formats: DXT1-5(BC1-3), ARGB8, G8(R8).";
+        LogE(errmsg.c_str());
+        REDialog::Error(errmsg);
+        return false;
+      }
+      }
     }
+    else
+    {
+      switch (Texture->Format)
+      {
+      case PF_DXT1:
+      case PF_DXT3:
+      case PF_DXT5:
+        outputFormat = TextureProcessor::TCFormat::DXT;
+        break;
+      case PF_A8R8G8B8:
+        outputFormat = TextureProcessor::TCFormat::ARGB8;
+        break;
+      case PF_G8:
+        outputFormat = TextureProcessor::TCFormat::G8;
+        break;
+      default:
+      {
+        std::string errmsg = std::string("Format ") + PixelFormatToString(Texture->Format).String() + " is not supported!";
+        LogE(errmsg.c_str());
+        REDialog::Error(errmsg);
+        return false;
+      }
+      }
     }
   }
 
