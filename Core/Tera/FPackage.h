@@ -129,6 +129,8 @@ public:
   static MTransStream& GetTransactionStream();
   // Validate the root dir
   static S1DirError ValidateRootDirCandidate(const FString& s1game = {});
+  // Find class object by name
+  static UClass* FindClass(const FString& name);
 
 private:
   // Packages must be loaded/created from the static methods

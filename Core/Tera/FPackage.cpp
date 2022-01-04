@@ -618,6 +618,11 @@ FPackage::S1DirError FPackage::ValidateRootDirCandidate(const FString& s1game)
   return S1DirError::OK;
 }
 
+UClass* FPackage::FindClass(const FString& name)
+{
+  return Cast<UClass>(ClassMap[name]);
+}
+
 void FPackage::CleanCacheDir()
 {
   std::error_code err;
@@ -2802,10 +2807,6 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
   const FString classPackage = cls->GetPackage()->GetPackageName();
   for (FObjectImport* imp : Imports)
   {
-    if (imp->GetObjectName() == cls->GetObjectName())
-    {
-      DBreak();
-    }
     if (imp->GetClassName() == UClass::StaticClassName() && imp->GetObjectName() == cls->GetObjectName())
     {
       return imp->ObjectIndex;
@@ -2837,6 +2838,14 @@ PACKAGE_INDEX FPackage::ImportClass(UClass* cls)
   {
     classImport->ObjectIndex = -PACKAGE_INDEX(Imports.size()) - 1;
     Imports.push_back(classImport);
+    if (classPackageImport)
+    {
+      classImport->OuterIndex = classPackageImport->ObjectIndex;
+      if (std::find(classPackageImport->Inner.begin(), classPackageImport->Inner.end(), classImport) == classPackageImport->Inner.end())
+      {
+        classPackageImport->Inner.emplace_back(classImport);
+      }
+    }
     for (FPackageObserver* observer : Observers)
     {
       observer->OnImportAdded(classImport);
@@ -2958,8 +2967,14 @@ FObjectImport* FPackage::GetImportObject(const FString& objectName, const FStrin
 
 bool FPackage::AddImport(UObject* object, FObjectImport*& output)
 {
-  if (!object || !object->GetPackage() || object->GetPackage() == this)
+  if (!object || !object->GetPackage())
   {
+    output = nullptr;
+    return false;
+  }
+  if (object->GetPackage() == this)
+  {
+    LogE("Can't import resource! Source and destination are the same package.");
     output = nullptr;
     return false;
   }
@@ -3032,7 +3047,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
       return false;
     }
 
-    if (added && outerImp)
+    if (added && outerImp && std::find(outerImp->Inner.begin(), outerImp->Inner.end(), imp) == outerImp->Inner.end())
     {
       outerImp->Inner.push_back(imp);
       imp->OuterIndex = outerImp->ObjectIndex;
