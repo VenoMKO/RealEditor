@@ -83,3 +83,24 @@ protected:
   wxButton* CancelButton = nullptr;
   std::function<bool(const wxString&)> ValidatorFunc;
 };
+
+class ClassPicker : public wxDialog {
+public:
+  ClassPicker(wxWindow* parent = nullptr, const wxString& title = wxT("Select class"));
+
+  wxString GetSelectedClassName() const;
+
+protected:
+  wxComboBox* ClassCombo = nullptr;
+  wxButton* OkButton = nullptr;
+  wxButton* CancelButton = nullptr;
+
+  void OnClassSelected(wxCommandEvent&);
+  void OnClassText(wxCommandEvent&);
+  void OnClassTextEnter(wxCommandEvent&);
+  void OnOkClicked(wxCommandEvent&);
+  void OnCancelClicked(wxCommandEvent&);
+
+private:
+  wxString ClassName;
+};

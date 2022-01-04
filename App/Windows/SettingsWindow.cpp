@@ -23,6 +23,7 @@ enum ControlElementId {
   Update,
   DcTool,
   FastDump,
+  ShowImports,
 };
 
 bool IsValidDir(const wxString& path)
@@ -31,7 +32,7 @@ bool IsValidDir(const wxString& path)
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)
-  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 448), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 468), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
   , CurrentConfig(currentConfig)
   , NewConfig(output)
   , AllowRebuild(allowRebuild)
@@ -204,6 +205,10 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   FastObjDump->SetValue(CurrentConfig.FastObjectDump);
   bSizer11->Add(FastObjDump, 0, wxALL, FromDIP(5));
 
+  ShowImportObjects = new wxCheckBox(m_panel6, ControlElementId::ShowImports, wxT("Show package imports"));
+  ShowImportObjects->SetToolTip(wxT("Allow GPK object tree to display referenced objects(imports)."));
+  ShowImportObjects->SetValue(CurrentConfig.ShowImports);
+  bSizer11->Add(ShowImportObjects, 0, wxALL, FromDIP(5));
 
   m_panel6->SetSizer(bSizer11);
   m_panel6->Layout();
@@ -512,6 +517,11 @@ void SettingsWindow::OnUseBuiltInS1Game32(wxCommandEvent&)
   }
 }
 
+void SettingsWindow::OnShowImports(wxCommandEvent&)
+{
+  NewConfig.ShowImports = ShowImportObjects->GetValue();
+}
+
 wxBEGIN_EVENT_TABLE(SettingsWindow, WXDialog)
 EVT_BUTTON(ControlElementId::Browse, SettingsWindow::OnBrowseClicked)
 EVT_BUTTON(wxID_OK, SettingsWindow::OnOkClicked)
@@ -525,4 +535,5 @@ EVT_BUTTON(ControlElementId::Mappers, SettingsWindow::OnUpdateMappersClicked)
 EVT_BUTTON(ControlElementId::Warnings, SettingsWindow::OnResetWarningClicked)
 EVT_TEXT(ControlElementId::Path, SettingsWindow::OnPathChanged)
 EVT_TEXT_ENTER(ControlElementId::Path, SettingsWindow::OnOkClicked)
+EVT_CHECKBOX(ControlElementId::ShowImports, SettingsWindow::OnShowImports)
 wxEND_EVENT_TABLE()

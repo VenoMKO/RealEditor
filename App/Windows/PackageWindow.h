@@ -106,6 +106,8 @@ private:
   void OnAddPackageClicked(int parent);
   void OnAddTextureClicked(int parent);
   void OnAddMaterialClicked(int parent);
+  void OnAddResourceClicked();
+  void OnAddClassClicked();
   void OnDuplicateClicked(PACKAGE_INDEX objIndex);
   void OnCopyObjectClicked(PACKAGE_INDEX objIndex);
   void OnPasteObjectClicked(PACKAGE_INDEX objIndex);

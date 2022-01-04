@@ -1,4 +1,7 @@
 #include "ObjectPicker.h"
+
+#include <wx/statline.h>
+
 #include "../App.h"
 #include "../Misc/ObjectTreeModel.h"
 #include "CompositePackagePicker.h"
@@ -7,6 +10,7 @@
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
+#include <Tera/UClass.h>
 
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, const wxString& packageName, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
@@ -517,6 +521,111 @@ void ObjectNameDialog::OnOkClicked(wxCommandEvent&)
 }
 
 void ObjectNameDialog::OnCancelClicked(wxCommandEvent&)
+{
+  EndModal(wxID_CANCEL);
+}
+
+ClassPicker::ClassPicker(wxWindow* parent, const wxString& title) 
+  : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(393, 177), wxDEFAULT_DIALOG_STYLE)
+{
+  SetSize(FromDIP(GetSize()));
+  SetSizeHints(wxDefaultSize, wxDefaultSize);
+
+  wxBoxSizer* bSizer1;
+  bSizer1 = new wxBoxSizer(wxVERTICAL);
+
+  wxBoxSizer* bSizer2;
+  bSizer2 = new wxBoxSizer(wxHORIZONTAL);
+
+  wxStaticText* m_staticText1;
+  m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("Class:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText1->Wrap(-1);
+  bSizer2->Add(m_staticText1, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+  ClassCombo = new wxComboBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_DROPDOWN | wxCB_SORT | wxTE_PROCESS_ENTER);
+  bSizer2->Add(ClassCombo, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+  ClassCombo->Freeze();
+
+  std::vector<UClass*> allClasses = FPackage::GetClasses();
+
+  for (UClass* cls : allClasses)
+  {
+    ClassCombo->Append(cls->GetObjectName().String().WString());
+  }
+
+  ClassCombo->Thaw();
+
+
+  bSizer1->Add(bSizer2, 1, wxEXPAND, 5);
+
+  wxStaticLine* m_staticline1;
+  m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
+  bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+
+  wxPanel* m_panel1;
+  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 35), wxTAB_TRAVERSAL);
+  wxBoxSizer* bSizer3;
+  bSizer3 = new wxBoxSizer(wxHORIZONTAL);
+
+
+  bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+
+  OkButton = new wxButton(m_panel1, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer3->Add(OkButton, 0, wxALL, 5);
+
+  CancelButton = new wxButton(m_panel1, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
+  bSizer3->Add(CancelButton, 0, wxALL, 5);
+
+
+  m_panel1->SetSizer(bSizer3);
+  m_panel1->Layout();
+  bSizer1->Add(m_panel1, 0, wxEXPAND | wxALL, 5);
+
+
+  this->SetSizer(bSizer1);
+  this->Layout();
+
+  this->Centre(wxBOTH);
+
+  OkButton->Enable(false);
+  ClassCombo->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(ClassPicker::OnClassSelected), NULL, this);
+  ClassCombo->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(ClassPicker::OnClassText), NULL, this);
+  ClassCombo->Connect(wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler(ClassPicker::OnClassTextEnter), NULL, this);
+  OkButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ClassPicker::OnOkClicked), NULL, this);
+  CancelButton->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ClassPicker::OnCancelClicked), NULL, this);
+}
+
+wxString ClassPicker::GetSelectedClassName() const
+{
+  return OkButton->IsEnabled() ? ClassCombo->GetValue() : wxEmptyString;
+}
+
+void ClassPicker::OnClassSelected(wxCommandEvent&)
+{
+  OkButton->Enable(true);
+}
+
+void ClassPicker::OnClassText(wxCommandEvent&)
+{
+  OkButton->Enable(FPackage::FindClass(ClassCombo->GetValue().ToStdWstring()));
+}
+
+void ClassPicker::OnClassTextEnter(wxCommandEvent&)
+{
+  OkButton->Enable(FPackage::FindClass(ClassCombo->GetValue().ToStdWstring()));
+  if (OkButton->IsEnabled())
+  {
+    EndModal(wxID_OK);
+  }
+}
+
+void ClassPicker::OnOkClicked(wxCommandEvent&)
+{
+  EndModal(wxID_OK);
+}
+
+void ClassPicker::OnCancelClicked(wxCommandEvent&)
 {
   EndModal(wxID_CANCEL);
 }

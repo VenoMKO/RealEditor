@@ -28,6 +28,8 @@ private:
 
   void OnUseBuiltInS1Game32(wxCommandEvent&);
 
+  void OnShowImports(wxCommandEvent&);
+
 private:
   FAppConfig CurrentConfig;
   FAppConfig& NewConfig;
@@ -45,6 +47,7 @@ private:
   wxButton* ApplyButton;
   wxCheckBox* FastObjDump;
   wxCheckBox* UseBuiltInS1Game32;
+  wxCheckBox* ShowImportObjects;
 
   bool AllowRebuild = true;
   bool WasRegistered = false;

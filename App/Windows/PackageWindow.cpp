@@ -87,6 +87,8 @@ enum ObjTreeMenuId {
   AddPackage,
   AddTexture,
   AddMaterial,
+  AddClass,
+  AddResource,
   Duplicate,
   CopyObject,
   PasteObject,
@@ -261,6 +263,10 @@ void PackageWindow::SelectObject(UObject* object)
     {
       OnExportObjectSelected(idx);
     }
+    else if (idx < 0)
+    {
+      OnImportObjectSelected(idx);
+    }
   }
 }
 
@@ -321,10 +327,10 @@ void PackageWindow::OnUpdateProperties(wxCommandEvent&)
 void PackageWindow::LoadObjectTree()
 {
   std::vector<FObjectImport*> imps;
-#ifdef _DEBUG
-  // Imports confuse some users. Show them in DEBUG builds only.
-  imps = Package->GetRootImports();
-#endif
+  if (App::GetSharedApp()->GetConfig().ShowImports)
+  {
+    imps = Package->GetRootImports();
+  }
   DataModel = new ObjectTreeModel(Package->GetPackageName(), Package->GetRootExports(), imps, std::vector<FString>());
   DataModel->GetRootExport()->SetCustomObjectIndex(FAKE_EXPORT_ROOT);
   if (ObjectTreeNode* rimp = DataModel->GetRootImport())
@@ -449,6 +455,14 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     menu.Append(ObjTreeMenuId::CopyPath, wxT("Copy object path"));
   }
 
+  if (node->GetObjectIndex() == FAKE_IMPORT_ROOT)
+  {
+    wxMenu* addMenu = new wxMenu;
+    addMenu->Append(ObjTreeMenuId::AddResource, wxT("Resource..."));
+    addMenu->Append(ObjTreeMenuId::AddClass, wxT("Class..."));
+    menu.AppendSubMenu(addMenu, wxT("Add"));
+  }
+
   if (isRootExp)
   {
     menu.AppendSeparator();
@@ -507,8 +521,99 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
   case CopyGpkName:
     OnCopyGpkNameClicked();
     break;
+  case AddResource:
+    OnAddResourceClicked();
+    break;
+  case AddClass:
+    OnAddClassClicked();
+    break;
   default:
     break;
+  }
+}
+
+void PackageWindow::OnAddResourceClicked()
+{
+  wxString path = IODialog::OpenPackageDialog(this);
+  if (path.empty())
+  {
+    return;
+  }
+  std::shared_ptr<FPackage> pkg = nullptr;
+  try
+  {
+    if (pkg = FPackage::GetPackage(path.ToStdWstring()))
+    {
+      pkg->Load();
+    }
+  }
+  catch (const std::exception& e)
+  {
+    REDialog::Error(e.what());
+    return;
+  }
+  if (pkg)
+  {
+    ObjectPicker picker(this, _("Select resource to import..."), true, pkg);
+    if (picker.ShowModal() != wxID_OK || !picker.GetSelectedObject())
+    {
+      FPackage::UnloadPackage(pkg);
+      return;
+    }
+    UObject* selection = picker.GetSelectedObject();
+    if (selection->GetClassName() == NAME_Package)
+    {
+      REDialog::Error("Can't import folders(packages)!");
+      FPackage::UnloadPackage(pkg);
+      return;
+    }
+    if (selection->GetOuter() && selection->GetOuter()->GetClassName() != NAME_Package)
+    {
+      REDialog::Error("Can't import sub-objects(components)!");
+      FPackage::UnloadPackage(pkg);
+      return;
+    }
+    try
+    {
+      selection->Load();
+    }
+    catch (const std::exception& e)
+    {
+      REDialog::Error(e.what());
+      FPackage::UnloadPackage(pkg);
+      return;
+    }
+    ObjectTreeCtrl->Expand(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootImport()));
+    FObjectImport* imp = nullptr;
+    GetPackage()->AddImport(selection, imp);
+    if (imp)
+    {
+      SelectObject(GetPackage()->GetObject(imp, false));
+    }
+    FPackage::UnloadPackage(pkg);
+  }
+}
+
+void PackageWindow::OnAddClassClicked()
+{
+  ClassPicker picker(this);
+  if (picker.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  wxString className = picker.GetSelectedClassName();
+  if (className.empty())
+  {
+    return;
+  }
+  if (UClass* cls = FPackage::FindClass(className.ToStdWstring()))
+  {
+    ObjectTreeCtrl->Expand(wxDataViewItem(((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->GetRootImport()));
+    PACKAGE_INDEX idx = GetPackage()->ImportClass(cls);
+    if (idx < 0)
+    {
+      SelectObject(cls);
+    }
   }
 }
 
