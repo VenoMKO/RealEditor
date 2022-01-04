@@ -27,6 +27,7 @@ protected:
   wxButton* FindButton = nullptr;
   wxFilePickerCtrl* DcFilePicker = nullptr;
   wxRadioBox* Mode = nullptr;
+  wxRadioBox* Client = nullptr;
   wxButton* UnpackButton = nullptr;
   wxButton* CloseButton = nullptr;
   wxButton* EditButton = nullptr;

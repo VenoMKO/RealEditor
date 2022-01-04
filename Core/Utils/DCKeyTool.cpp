@@ -11,7 +11,8 @@
 
 #include <Zydis/Zydis.h>
 
-const std::vector<uint8_t> SearchPattern = { 0x48, 0x33, 0xC4, 0x48, 0x89, 0x84, 0x24, 0x40, 0x01, 0x00, 0x00, 0x4C, 0x8B, 0xF9, 0x41, 0xC7, 0x43 };
+const std::vector<uint8_t> SearchPattern64 = { 0x48, 0x33, 0xC4, 0x48, 0x89, 0x84, 0x24, 0x40, 0x01, 0x00, 0x00, 0x4C, 0x8B, 0xF9, 0x41, 0xC7, 0x43 };
+const std::vector<uint8_t> SearchPattern86 = { 0x56, 0x57, 0x50, 0x8D, 0x45, 0xF4, 0x64, 0xA3, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x73, 0x08 };
 
 HANDLE DCKeyTool::GetTeraProcess()
 {
@@ -65,6 +66,9 @@ bool DCKeyTool::FindKey()
   {
     return false;
   }
+  
+  BOOL x86 = IsX86();
+  const std::vector<uint8_t>& searchPattern = x86 ? SearchPattern86 : SearchPattern64;
   Result.clear();
   SYSTEM_INFO info;
   GetSystemInfo(&info);
@@ -81,7 +85,7 @@ bool DCKeyTool::FindKey()
     }
     std::vector<uint8_t> memory(region->RegionSize);
     size_t readSize = 0;
-    if (!ReadProcessMemory(Process, (LPVOID)region->BaseAddress, memory.data(), memory.size(), &readSize) || !readSize || readSize < SearchPattern.size())
+    if (!ReadProcessMemory(Process, (LPVOID)region->BaseAddress, memory.data(), memory.size(), &readSize) || !readSize || readSize < searchPattern.size())
     {
       delete region;
       continue;
@@ -91,15 +95,22 @@ bool DCKeyTool::FindKey()
       memory.resize(readSize);
     }
     ZydisDecoder decoder;
-    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
-    auto it = std::search(memory.begin(), memory.end(), std::boyer_moore_searcher(SearchPattern.begin(), SearchPattern.end()));
+    if (x86)
+    {
+      ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_COMPAT_32, ZYDIS_ADDRESS_WIDTH_32);
+    }
+    else
+    {
+      ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
+    }
+    auto it = std::search(memory.begin(), memory.end(), std::boyer_moore_searcher(searchPattern.begin(), searchPattern.end()));
     while (it != memory.end())
     {
       ZydisDecodedInstruction instruction;
       std::vector<ZyanU32> raw;
       while (it != memory.end() && ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, &*it, memory.end() - it, &instruction)))
       {
-        if (instruction.mnemonic == ZYDIS_MNEMONIC_MOV && instruction.operands[0].mem.base == ZYDIS_REGISTER_R11)
+        if (instruction.mnemonic == ZYDIS_MNEMONIC_MOV && (x86 ? instruction.operands[0].mem.base == ZYDIS_REGISTER_EBP : instruction.operands[0].mem.base == ZYDIS_REGISTER_R11))
         {
           raw.emplace_back((ZyanU32)instruction.operands[1].imm.value.u);
         }
@@ -121,11 +132,17 @@ bool DCKeyTool::FindKey()
         }
         it += instruction.length;
       }
-      it = std::search(it, memory.end(), std::boyer_moore_searcher(SearchPattern.begin(), SearchPattern.end()));
+      it = std::search(it, memory.end(), std::boyer_moore_searcher(searchPattern.begin(), searchPattern.end()));
     }
     delete region;
   }
-  return Result.size();
+  return true;
+}
+
+bool DCKeyTool::IsX86()
+{
+  BOOL wow64 = false;
+  return Process && IsWow64Process(Process, &wow64) && wow64;
 }
 
 PMEMORY_BASIC_INFORMATION DCKeyTool::GetNextRegion()

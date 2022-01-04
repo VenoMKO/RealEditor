@@ -379,6 +379,9 @@ FStream& operator<<(FStream& s, FAppConfig& c)
       case FAppConfig::CFG_TempS1GameDir:
         s << c.TempS1GameDir;
         break;
+      case FAppConfig::CFG_LastDcClient:
+        s << c.LastDcClient;
+        break;
       case FAppConfig::CFG_End:
         UpdateConfigValues(c);
         return s;
@@ -427,6 +430,8 @@ FStream& operator<<(FStream& s, FAppConfig& c)
 
     SerializeKeyValue(FAppConfig::CFG_UseBuiltInS1Game32, c.UseBuiltInS1Game32);
     SerializeKeyValue(FAppConfig::CFG_TempS1GameDir, c.TempS1GameDir);
+
+    SerializeKeyValue(FAppConfig::CFG_LastDcClient, c.LastDcClient);
 
     // Log
     SerializeKey(FAppConfig::CFG_LogBegin);

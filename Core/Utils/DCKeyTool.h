@@ -21,6 +21,8 @@ struct DCKeyTool {
     return Result;
   }
 
+  bool IsX86();
+
 protected:
   PMEMORY_BASIC_INFORMATION GetNextRegion();
 

@@ -28,8 +28,22 @@
 
 #include <Tera/DC.h>
 
+bool IsClient64(const std::filesystem::path& s1data, bool& outResult)
+{
+  std::error_code err;
+  std::filesystem::path exePath = s1data.parent_path().parent_path().parent_path() / L"Binaries" / L"TERA.exe";
+  if (std::filesystem::exists(exePath, err) && !err)
+  {
+    DWORD binType = 0;
+    BOOL result = GetBinaryTypeW(exePath.c_str(), &binType);
+    outResult = binType == SCS_64BIT_BINARY;
+    return result;
+  }
+  return false;
+}
+
 DcToolDialog::DcToolDialog(wxWindow* parent)
-  : WXDialog(parent, wxID_ANY, wxT("Unpack DataCenter file"), wxDefaultPosition, wxSize(457, 465))
+  : WXDialog(parent, wxID_ANY, wxT("Export DataCenter file"), wxDefaultPosition, wxSize(457, 465))
 {
   SetSize(FromDIP(GetSize()));
   FAppConfig cfg = App::GetSharedApp()->GetConfig();
@@ -119,7 +133,7 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   bSizer2 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* m_staticText1;
-  m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("DC file:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("DataCenter file:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText1->Wrap(-1);
   bSizer2->Add(m_staticText1, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
@@ -130,20 +144,31 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
   bSizer1->Add(bSizer2, 0, wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText10;
-  m_staticText10 = new wxStaticText(this, wxID_ANY, wxT("Key and IV fields must be filled for the Unpack feature."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText10 = new wxStaticText(this, wxID_ANY, wxT("Key and IV fields must be filled for the Export feature."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText10->Wrap(-1);
   bSizer1->Add(m_staticText10, 0, wxALL, FromDIP(5));
 
   wxBoxSizer* bSizer10;
   bSizer10 = new wxBoxSizer(wxHORIZONTAL);
 
-  wxString ModeChoices[] = { wxT("Unpack"), wxT("Export as XML"), wxT("Export as JSON") };
-  int ModeNChoices = sizeof(ModeChoices) / sizeof(wxString);
-  Mode = new wxRadioBox(this, wxID_ANY, wxT("Mode"), wxDefaultPosition, wxDefaultSize, ModeNChoices, ModeChoices, 1, wxRA_SPECIFY_COLS);
-  Mode->SetSelection(0);
-  bSizer10->Add(Mode, 1, wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
+  wxBoxSizer* bSizer110;
+  bSizer110 = new wxBoxSizer(wxHORIZONTAL);
 
-  UnpackButton = new wxButton(this, wxID_ANY, wxT("Unpack"), wxDefaultPosition, wxDefaultSize, 0);
+  wxString ClientChoices[] = { wxT("Auto-detect"), wxT("Old client(32-bit)"), wxT("Modern client(64-bit)") };
+  int ClientNChoices = sizeof(ClientChoices) / sizeof(wxString);
+  Client = new wxRadioBox(this, wxID_ANY, wxT("Client"), wxDefaultPosition, wxDefaultSize, ClientNChoices, ClientChoices, 1, wxRA_SPECIFY_COLS);
+  Client->SetSelection(0);
+  bSizer110->Add(Client, 1, wxALL, FromDIP(5));
+
+  wxString ModeChoices[] = { wxT("Binary"), wxT("XML"), wxT("JSON") };
+  int ModeNChoices = sizeof(ModeChoices) / sizeof(wxString);
+  Mode = new wxRadioBox(this, wxID_ANY, wxT("Export Type"), wxDefaultPosition, wxDefaultSize, ModeNChoices, ModeChoices, 1, wxRA_SPECIFY_COLS);
+  Mode->SetSelection(0);
+  bSizer110->Add(Mode, 1, wxTOP | wxBOTTOM | wxLEFT, FromDIP(5));
+
+  bSizer10->Add(bSizer110, 1, wxEXPAND, 0);
+
+  UnpackButton = new wxButton(this, wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0);
   bSizer10->Add(UnpackButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
 
@@ -192,6 +217,7 @@ DcToolDialog::DcToolDialog(wxWindow* parent)
     DcFilePicker->SetInitialDirectory(std::filesystem::path(FPackage::GetDcPath(cfg.RootDir).WString()).parent_path().wstring());
   }
   Mode->SetSelection(cfg.LastDcMode);
+  Client->SetSelection(cfg.LastDcClient);
 
   UpdateButtons();
 
@@ -252,6 +278,12 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
     return;
   }
   auto results = tool.GetResults();
+
+  if (results.empty())
+  {
+    REDialog::Error("Possible reasones:\n* TERA is protected by XIGNCODE\n* Client version is not supported\n* Anti-virus software blocked RE from accessing TERA process", "Couldn't find the key!");
+    return;
+  }
   KeyField->SetValue(results.front().first);
   VecField->SetValue(results.front().second);
   App::GetSharedApp()->GetConfig().LastDcKey = results.front().first;
@@ -285,7 +317,11 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
     return;
   }
   App::GetSharedApp()->GetConfig().LastDcMode = Mode->GetSelection();
+  App::GetSharedApp()->GetConfig().LastDcClient = Client->GetSelection();
   App::GetSharedApp()->SaveConfig();
+
+  bool is64Bit = Client->GetSelection() == 2;
+  bool useDcVersion = Client->GetSelection() == 0 && !IsClient64(std::filesystem::path(wstr).remove_filename(), is64Bit);
 
   std::filesystem::path dst;
   if (!Mode->GetSelection())
@@ -327,7 +363,7 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
 
   App::GetSharedApp()->GetConfig().LastDcSavePath = dst.wstring();
   App::GetSharedApp()->SaveConfig();
-  
+
   ProgressWindow progress(this, wxEmptyString);
   progress.SetActionText(wxT("Unpacking..."));
   progress.SetCanCancel(false);
@@ -417,7 +453,7 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
         return;
       }
     }
-    
+
     if (inflatedDc.empty())
     {
       SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
@@ -439,74 +475,112 @@ void DcToolDialog::OnUnpackClicked(wxCommandEvent& event)
 
     MReadStream s(inflatedDc.data(), false, inflatedDc.size());
     PERF_START(SerializeDC);
-#ifdef USE_STATIC_DC_4_EXPORT
-    S1Data::StaticDataCenter dc;
-    dc.Serialize(s);
+#if USE_STATIC_DC_4_EXPORT
+    std::unique_ptr<S1Data::DCInterface> dc = std::make_unique<S1Data::StaticDataCenter>();
 #else
-    S1Data::DataCenter dc;
-    dc.Serialize(s);
+    std::unique_ptr<S1Data::DCInterface> dc = std::make_unique<S1Data::DataCenter>();
+#endif
+    dc->SetIsX86(!is64Bit);
+    dc->SetDetectArchitecture(useDcVersion);
+    try
+    {
+      dc->Serialize(s);
+    }
+    catch (const std::exception& e)
+    {
+      err = "Failed to parse DC!\n\n";
+      err += e.what();
+      if (Client->GetSelection() == 0)
+      {
+        err += "\nTry to manually specify the client architecture(32/64 bit)!";
+      }
+      else
+      {
+        err += "\nMake sure the client architecture(32/64 bit) is set correctly!";
+      }
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH, false);
+      return;
+    }
+#if !USE_STATIC_DC_4_EXPORT
     inflatedDc.clear();
 #endif
     PERF_END(SerializeDC);
 
     SendEvent(&progress, UPDATE_PROGRESS_DESC, wxS("Saving..."));
 
-    dst /= (std::filesystem::path(wstr).filename().replace_extension().wstring() + L'_' + std::to_wstring(dc.GetHeader()->Version));
+    dst /= (std::filesystem::path(wstr).filename().replace_extension().wstring() + L'_' + std::to_wstring(dc->GetHeader()->Version));
 
-    std::unordered_map<S1Data::DCName, std::vector<S1Data::DCElement*>> items;
-    S1Data::DCElement* rootElement = dc.GetRootElement();
+    std::unordered_map<S1Data::DCName, std::vector<S1Data::DCElement>> items;
+    S1Data::DCElement rootElement = dc->GetRootElement();
     int32 total = 0;
-    std::vector<S1Data::DCElement*> folders;
-    for (int32 rootIndex = 0; rootIndex < rootElement->ChildrenCount; ++rootIndex)
+    std::vector<S1Data::DCElement> folders;
+    for (int32 rootIndex = 0; rootIndex < rootElement.GetChildrenCount(); ++rootIndex)
     {
-      if (S1Data::DCElement* element = dc.GetElement(rootElement->ChildrenIndices, rootIndex))
+      S1Data::DCElement element = dc->GetElement(rootElement.GetChildrenIndices(), rootIndex);
+      if (element.IsValidElement())
       {
-        if (items[element->Name].size())
+        if (items[element.GetName()].size())
         {
-          if (items[element->Name].size() == 1)
+          if (items[element.GetName()].size() == 1)
           {
             folders.emplace_back(element);
           }
-          items[element->Name].emplace_back(element);
+          items[element.GetName()].emplace_back(element);
         }
         else
         {
-          items[element->Name].emplace_back(element);
+          items[element.GetName()].emplace_back(element);
         }
         total++;
       }
     }
-    std::for_each(std::execution::par_unseq, folders.begin(), folders.end(), [&](const S1Data::DCElement* element) {
-      std::filesystem::create_directories(dst / std::wstring(dc.GetName(element->Name)));
+
+    if (items.empty())
+    {
+      err = "Failed to parse DC!\n\n";
+      if (Client->GetSelection() == 0)
+      {
+        err += "Try to manually specify architecture(32/64 bit) of the client.";
+      }
+      else
+      {
+        err += "Probably the client architecture(32/64 bit) does not match the DataCanter file.";
+      }
+      SendEvent(&progress, UPDATE_PROGRESS_FINISH, false);
+      return;
+    }
+
+    std::for_each(std::execution::par_unseq, folders.begin(), folders.end(), [&](const S1Data::DCElement& element) {
+      std::filesystem::create_directories(dst / std::wstring(dc->GetName(element.GetName())));
     });
     SendEvent(&progress, UPDATE_MAX_PROGRESS, total);
     SendEvent(&progress, UPDATE_PROGRESS, 0);
-    
+
     PERF_START(ExportDC);
     S1Data::DCExporter* exporter = nullptr;
     if (Mode->GetSelection() == 1)
     {
-      exporter = new S1Data::DCXmlExporter(&dc);
+      exporter = new S1Data::DCXmlExporter(dc.get());
     }
     else
     {
-      exporter = new S1Data::DCJsonExporter(&dc);
+      exporter = new S1Data::DCJsonExporter(dc.get());
     }
 
     std::for_each(std::execution::par_unseq, items.begin(), items.end(), [&](const auto& p) {
-      const std::vector<S1Data::DCElement*>& elements = p.second;
+      const std::vector<S1Data::DCElement>& elements = p.second;
       if (elements.size() == 1)
       {
-        S1Data::DCElement* element = elements.front();
-        exporter->ExportElement(element, dst / std::wstring(dc.GetName(element->Name)));
+        const S1Data::DCElement& element = elements.front();
+        exporter->ExportElement(element, dst / std::wstring(dc->GetName(element.GetName())));
         SendEvent(&progress, UPDATE_PROGRESS_ADV);
       }
       else
       {
-        std::for_each(std::execution::par_unseq, elements.begin(), elements.end(), [&](auto* element) {
-          std::wstring name(dc.GetName(element->Name));
+        std::for_each(std::execution::par_unseq, elements.begin(), elements.end(), [&](const auto& element) {
+          std::wstring name(dc->GetName(element.GetName()));
           size_t idx = distance(elements.begin(), find(elements.begin(), elements.end(), element));
-          if (idx < elements.size() && element->Name.Index)
+          if (idx < elements.size() && element.GetName().Index)
           {
             exporter->ExportElement(element, dst / name / (name + L"-" + std::to_wstring(idx + 1)));
             SendEvent(&progress, UPDATE_PROGRESS_ADV);
