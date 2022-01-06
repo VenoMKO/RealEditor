@@ -1181,6 +1181,22 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
       LoadedPackages.push_back(found);
       return found;
     }
+    for (auto package : LoadedPackages)
+    {
+      for (auto exPackage : package->ExternalPackages)
+      {
+        if (package->GetSourcePath() == path)
+        {
+          found = package;
+          break;
+        }
+      }
+      if (found)
+      {
+        LoadedPackages.push_back(found);
+        return found;
+      }
+    }
   }
   if (path.StartWith(RootDir))
   {
@@ -3187,6 +3203,11 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
       imp->GetObjectPath() == object->GetObjectPath())
     {
       output = imp;
+      if (!ImportObjects[imp->ObjectIndex])
+      {
+        ImportObjects[imp->ObjectIndex] = object;
+        RetainPackage(object->GetPackage()->Ref());
+      }
       return false;
     }
     if (imp->GetObjectName() == outerPackageName && imp->GetClassName() == NAME_Package)
@@ -3269,7 +3290,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
     outerImp->Inner.push_back(importObject);
     importObject->OuterIndex = outerImp->ObjectIndex;
   }
-
+  
   for (FPackageObserver* observer : Observers)
   {
     observer->OnImportAdded(importObject);
@@ -3278,6 +3299,7 @@ bool FPackage::AddImport(UObject* object, FObjectImport*& output)
   importObject->ObjectIndex = -(PACKAGE_INDEX)Imports.size();
   output = importObject;
   ImportObjects[importObject->ObjectIndex] = object;
+  RetainPackage(object->GetPackage()->Ref());
   MarkDirty();
   LogI("Added import: %s", importObject->GetFullObjectName().UTF8().c_str());
   return true;
