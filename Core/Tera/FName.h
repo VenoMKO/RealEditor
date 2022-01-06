@@ -10,11 +10,27 @@ public:
 
   FNameEntry(const FString& value)
     : String(value)
-  {}
+  {
+    DBreakIf(String.Length() > MAX_NAME_ENTRY);
+#if TERMINATE_NEW_NAMES
+    if (String.Back())
+    {
+      String += '\0';
+    }
+#endif
+  }
 
   FNameEntry(const char* value)
     : String(value)
-  {}
+  {
+    DBreakIf(String.Length() > MAX_NAME_ENTRY);
+#if TERMINATE_NEW_NAMES
+    if (String.Back())
+    {
+      String += '\0';
+    }
+#endif
+  }
 
   uint64 GetFlags() const
   {
@@ -34,6 +50,13 @@ public:
   void SetString(const FString& string)
   {
     String = string;
+    DBreakIf(String.Length() > MAX_NAME_ENTRY);
+#if TERMINATE_EXISTING_NAMES
+    if (String.Back())
+    {
+      String += '\0';
+    }
+#endif
   }
 
   bool operator==(const FString& name) const;

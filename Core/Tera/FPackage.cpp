@@ -2893,7 +2893,7 @@ PACKAGE_INDEX FPackage::GetNameIndex(const FString& name, bool insert)
   }
   if (insert)
   {
-    Names.push_back(FNameEntry(name));
+    Names.emplace_back(name);
     return (PACKAGE_INDEX)Names.size() - 1;
   }
   return INDEX_NONE;

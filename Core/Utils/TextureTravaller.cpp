@@ -219,15 +219,19 @@ bool TextureTravaller::Visit(UTexture2D* texture)
     texture->TextureFileCacheNameProperty = nullptr;
   }
 
-  if (!texture->FirstResourceMemMipProperty)
+  if (texture->GetPackage()->GetFileVersion() > VER_TERA_CLASSIC)
   {
-    texture->CreatePropertyFirstResourceMemMip(0);
+    if (!texture->FirstResourceMemMipProperty)
+    {
+      texture->CreatePropertyFirstResourceMemMip(0);
+    }
+    if (texture->FirstResourceMemMip != 0)
+    {
+      texture->FirstResourceMemMip = 0;
+      texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
+    }
   }
-  if (texture->FirstResourceMemMip != 0)
-  {
-    texture->FirstResourceMemMip = 0;
-    texture->FirstResourceMemMipProperty->Value->GetInt() = 0;
-  }
+  
   // We pulled all the data, so it should be safe to turn off fexp flag
   texture->Export->ExportFlags &= ~EF_ForcedExport;
 

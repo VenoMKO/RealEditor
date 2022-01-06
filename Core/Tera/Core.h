@@ -50,6 +50,10 @@ static const unsigned int BUILD_NUMBER = (
 #endif
 // Compress texture MipMaps
 #define TEXTURE2D_COMPRESSION 1
+// Add NULL-terminator to new FNameEntries
+#define TERMINATE_NEW_NAMES 1
+// Add NULL-terminator to existing FNameEntries on edit
+#define TERMINATE_EXISTING_NAMES 1
 
 // Load minimum class packages to improve load time.
 // Must not be used in Release builds!
