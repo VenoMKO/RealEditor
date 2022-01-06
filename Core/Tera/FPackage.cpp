@@ -34,6 +34,7 @@ const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k'
 FString FPackage::RootDir;
 std::recursive_mutex FPackage::PackagesMutex;
 std::vector<std::shared_ptr<FPackage>> FPackage::LoadedPackages;
+std::vector<std::shared_ptr<FPackage>> FPackage::LoadedSourcelessPackages;
 std::vector<std::shared_ptr<FPackage>> FPackage::DefaultClassPackages;
 std::vector<FString> FPackage::DirCache;
 std::vector<FString> FPackage::FilePackageNames;
@@ -623,6 +624,24 @@ UClass* FPackage::FindClass(const FString& name)
   return Cast<UClass>(ClassMap[name]);
 }
 
+std::shared_ptr<FPackage> FPackage::CreateNewPackage(const FPackageSummary& summary)
+{
+  FPackageSummary sum = summary;
+  sum.Generations.emplace_back();
+  sum.OriginalCompressionFlags = sum.CompressionFlags;
+  sum.OriginalPackageFlags = sum.PackageFlags;
+  sum.PackageFlags |= PKG_NoSource | PKG_Dirty;
+  sum.PackageSource = CalculateStringCRC((const uint8*)sum.PackageName.C_str(), sum.PackageName.Size());
+  std::shared_ptr<FPackage> pkg = nullptr;
+  {
+    std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
+    pkg = LoadedSourcelessPackages.emplace_back(new FPackage(sum));
+  }
+  pkg->GetNameIndex(NAME_None, true);
+  pkg->Ready.store(true);
+  return pkg;
+}
+
 void FPackage::CleanCacheDir()
 {
   std::error_code err;
@@ -1189,11 +1208,11 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   {
     if (sum.GetFileVersion() == VER_TERA_CLASSIC)
     {
-      UThrow("Your S1Game folder contains 64-bit client, but the %s is a 32-bit file.\nChange your S1Game folder to a 32-bit client and try again.", path.FilenameString(true).c_str());
+      UThrow("Real Editor can't work with 32-bit and 64-bit files simultaneously!\nYour S1Game folder contains 64-bit client, but the %s is a 32-bit file.\nChange your S1Game folder to a 32-bit client and try again.", path.FilenameString(true).c_str());
     }
     else if (sum.GetFileVersion() == VER_TERA_MODERN)
     {
-      UThrow("Your S1Game folder contains 32-bit client, but the %s is a 64-bit file.\nChange your S1Game folder to a 64-bit client and try again.", path.FilenameString(true).c_str());
+      UThrow("Real Editor can't work with 32-bit and 64-bit files simultaneously!\nYour S1Game folder contains 32-bit client, but the %s is a 64-bit file.\nChange your S1Game folder to a 64-bit client and try again.", path.FilenameString(true).c_str());
     }
     else
     {
@@ -1239,11 +1258,19 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
     {
+#if ALLOW_CONCURRENT_LZO
       concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedData, startOffset](size_t idx) {
         const FCompressedChunk& chunk = chunks[idx];
         uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
         LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
       });
+#else
+      for (size_t idx = 0; idx < chunks.size(); ++idx) {
+        const FCompressedChunk& chunk = chunks[idx];
+        uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
+        LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+      }
+#endif
     }
     catch (const std::exception& e)
     {
@@ -1449,21 +1476,45 @@ void FPackage::UnloadPackage(std::shared_ptr<FPackage> package)
   bool lastPackageRef = false;
   {
     std::scoped_lock<std::recursive_mutex> lock(PackagesMutex);
-    for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
+    if (package->GetPackageFlag(PKG_NoSource))
     {
-      if (LoadedPackages[idx].get() == package.get())
+      for (size_t idx = 0; idx < LoadedSourcelessPackages.size(); ++idx)
       {
-        if (!lastPackageRef)
+        if (LoadedSourcelessPackages[idx].get() == package.get())
         {
-          LoadedPackages.erase(LoadedPackages.begin() + idx);
-          lastPackageRef = true;
-          idx--;
+          if (!lastPackageRef)
+          {
+            LoadedSourcelessPackages.erase(LoadedSourcelessPackages.begin() + idx);
+            lastPackageRef = true;
+            idx--;
+          }
+          else
+          {
+            // There are more refs. No need to continue
+            lastPackageRef = false;
+            break;
+          }
         }
-        else
+      }
+    }
+    else
+    {
+      for (size_t idx = 0; idx < LoadedPackages.size(); ++idx)
+      {
+        if (LoadedPackages[idx].get() == package.get())
         {
-          // There are more refs. No need to continue
-          lastPackageRef = false;
-          break;
+          if (!lastPackageRef)
+          {
+            LoadedPackages.erase(LoadedPackages.begin() + idx);
+            lastPackageRef = true;
+            idx--;
+          }
+          else
+          {
+            // There are more refs. No need to continue
+            lastPackageRef = false;
+            break;
+          }
         }
       }
     }
@@ -1804,8 +1855,27 @@ bool FPackage::Save(PackageSaveContext& context)
       }
     }
   }
-  
-  if (!IsDirty())
+
+  bool hasSource = true;
+  if (Summary.PackageFlags & PKG_NoSource)
+  {
+    hasSource = false;
+
+    Summary.PackageFlags &= ~PKG_NoSource;
+    Summary.OriginalPackageFlags = Summary.PackageFlags;
+    Summary.Generations.front().Names = Names.size();
+    Summary.Generations.front().Exports = Exports.size();
+    Summary.Generations.front().NetObjects = 0;
+    for (FObjectExport* exp : Exports)
+    {
+      UObject* obj = GetObject(exp, false);
+      if (obj->GetNetIndex() != INDEX_NONE)
+      {
+        Summary.Generations.front().NetObjects++;
+      }
+    }
+  }
+  else if (!IsDirty())
   {
     if (context.Compression == COMPRESS_None)
     {
@@ -1846,11 +1916,19 @@ bool FPackage::Save(PackageSaveContext& context)
 
         void* decompressedPackageData = malloc(readStream.GetPosition() + totalDecompressedSize);
 
+#if ALLOW_CONCURRENT_LZO
         concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedPackageData, startOffset](size_t idx) {
           const FCompressedChunk& chunk = chunks[idx];
           uint8* dst = (uint8*)decompressedPackageData + chunk.DecompressedOffset - startOffset;
           LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
         });
+#else
+        for (size_t idx = 0; idx < chunks.size(); ++idx) {
+          const FCompressedChunk& chunk = chunks[idx];
+          uint8* dst = (uint8*)decompressedPackageData + chunk.DecompressedOffset - startOffset;
+          LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+        }
+#endif
 
         MWriteStream memStream(decompressedPackageData, readStream.GetPosition() + totalDecompressedSize);
         memStream << summary;
@@ -1985,349 +2063,470 @@ bool FPackage::Save(PackageSaveContext& context)
     return true;
   }
 
-  FWriteStream writer(context.Path);
-  if (!writer.IsGood())
+  FString ctxPath = context.Path;
+  if (!hasSource && Summary.CompressionFlags)
   {
-    context.Error = "Failed to write data!";
-    return false;
+    ctxPath = GetTempFilePath();
   }
-  writer.SetPackage(this);
-  
-  // Stream of the decompressed temporary source.
-  FReadStream reader(Summary.DataPath); // TODO: we may have no data path for a new packages.
-  reader.SetPackage(this);
-  if (!reader.IsGood())
+  std::vector<FObjectExport*> marked;
+
+  bool isOk = true;
+  FILE_OFFSET payloadSize = 0;
   {
-    context.Error = "Failed to read the source package!";
-    return false;
-  }
-
-  // Get the original package summary
-  FPackageSummary summary; // TODO: we may not have source package(e.g. a new packge)
-  reader << summary;
-
-  if (!Summary.ImportGuidsCount && !Summary.ExportGuidsCount)
-  {
-    // Non-zero values force linker to seek for Guid map.
-    // Set offset to INDEX_NONE to make games linker ignore the map.
-    Summary.ImportExportGuidsOffset = INDEX_NONE;
-  }
-  else
-  {
-    // Never seen these maps in Tera. Need to implement if BHS used them somewhere
-    DBreak();
-    context.Error = "Packages with crosslevel guids are not supported yet!";
-    return false;
-  }
-  
-  Summary.ThumbnailTableOffset = 0; // Cleanup after BHS. They forgot to strip these.
-
-  Summary.NamesCount = (uint32)Names.size();
-  Summary.ExportsCount = (uint32)Exports.size();
-  Summary.ImportsCount = (uint32)Imports.size();
-
-  Summary.CompressionFlags = context.Compression;
-  if (context.Compression == COMPRESS_None)
-  {
-    Summary.PackageFlags &= ~PKG_StoreCompressed;
-  }
-  else
-  {
-    Summary.PackageFlags |= PKG_StoreCompressed;
-  }
-
-  Summary.PackageFlags &= ~PKG_Dirty;
-
-  writer << Summary;
-
-  std::vector<FObjectExport*> newExports;
-  std::vector<FObjectExport*> sortedExports;
-  for (FObjectExport* exp : Exports)
-  {
-    if (exp->SerialOffset)
+    FWriteStream writer(ctxPath);
+    if (!writer.IsGood())
     {
-      sortedExports.emplace_back(exp);
+      context.Error = "Failed to write data!";
+      return false;
+    }
+    writer.SetPackage(this);
+
+    FPackageSummary summary;
+    std::unique_ptr<FReadStream> reader = nullptr;
+    if (hasSource)
+    {
+      // Stream of the decompressed temporary source.
+      reader = std::make_unique<FReadStream>(Summary.DataPath);
+      reader->SetPackage(this);
+      if (!reader->IsGood())
+      {
+        context.Error = "Failed to read the source package!";
+        return false;
+      }
+      // Get the original package summary
+      *reader << summary;
     }
     else
     {
-      newExports.emplace_back(exp);
+      summary = Summary;
     }
-  }
-  std::sort(sortedExports.begin(), sortedExports.end(), [](FObjectExport* a, FObjectExport* b) {
-    return a->SerialOffset < b->SerialOffset && a->SerialOffset;
-  });
-  std::sort(newExports.begin(), newExports.end(), [](FObjectExport* a, FObjectExport* b) {
-    return a->ObjectIndex < b->ObjectIndex;
-  });
-  if (newExports.size())
-  {
-    // Ensure all new exports are in the end
-    sortedExports.insert(sortedExports.end(), newExports.begin(), newExports.end());
-  }
 
-  // Check if header size did change and we honor offsets
-  bool moveTables = context.PreserveOffsets && (Summary.NamesOffset != writer.GetPosition());
-
-  if (!moveTables && context.PreserveOffsets)
-  {
-    // TODO: exports have non-const size. Table can become larger even if elements count is lower. Fixed-size calculation
-    if (Summary.ExportsCount > summary.ExportsCount || Summary.ImportsCount > summary.ImportsCount)
+    if (!Summary.ImportGuidsCount && !Summary.ExportGuidsCount)
     {
-      moveTables = true;
+      // Non-zero values force linker to seek for Guid map.
+      // Set offset to INDEX_NONE to make games linker ignore the map.
+      Summary.ImportExportGuidsOffset = INDEX_NONE;
     }
-  }
-
-  Summary.NamesOffset = writer.GetPosition();
-  for (FNameEntry& e : Names)
-  {
-    writer << e;
-  }
-
-  if (context.PreserveOffsets)
-  {
-    if (!moveTables && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+    else
     {
-      // Names table become larger. We need to move tables to preserve offsets
-      moveTables = true;
-    }
-    if (!moveTables)
-    {
-      // Check if the tables were moved during previous save
-      for (FObjectExport* exp : Exports)
-      {
-        if (exp->SerialOffset < Summary.ImportsOffset)
-        {
-          moveTables = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (moveTables)
-  {
-    // Prevent the game from buffering whole package if we are moving tables to the end.
-    Summary.HeaderSize = writer.GetPosition();
-  }
-  else
-  {
-    Summary.ImportsOffset = writer.GetPosition();
-    for (FObjectImport* imp : Imports)
-    {
-      writer << *imp;
+      // Never seen these maps in Tera. Need to implement if BHS used them somewhere
+      DBreak();
+      context.Error = "Packages with crosslevel guids are not supported yet!";
+      return false;
     }
 
-    Summary.ExportsOffset = writer.GetPosition();
+    Summary.ThumbnailTableOffset = 0; // Cleanup after BHS. They forgot to strip these.
+
+    Summary.NamesCount = (uint32)Names.size();
+    Summary.ExportsCount = (uint32)Exports.size();
+    Summary.ImportsCount = (uint32)Imports.size();
+
+    Summary.CompressionFlags = context.Compression;
+    if (context.Compression == COMPRESS_None)
+    {
+      Summary.PackageFlags &= ~PKG_StoreCompressed;
+    }
+    else
+    {
+      Summary.PackageFlags |= PKG_StoreCompressed;
+    }
+
+    Summary.PackageFlags &= ~PKG_Dirty;
+
+    writer << Summary;
+
+    std::vector<FObjectExport*> newExports;
+    std::vector<FObjectExport*> sortedExports;
     for (FObjectExport* exp : Exports)
     {
-      writer << *exp;
-    }
-
-    Summary.DependsOffset = writer.GetPosition();
-    for (auto& dep : Depends)
-    {
-      writer << dep;
-    }
-    Summary.HeaderSize = writer.GetPosition();
-  }
-
-  FILE_OFFSET exportsStart = sortedExports.front()->SerialOffset;
-  auto appendZeroed = [](FStream& s, FILE_OFFSET size) {
-    void* tmp = calloc(size, 1);
-    s.SerializeBytes(tmp, size);
-    free(tmp);
-  };
-
-  if (exportsStart > writer.GetPosition())
-  {
-    appendZeroed(writer, exportsStart - writer.GetPosition());
-  }
-  else if (exportsStart < writer.GetPosition())
-  {
-    DBreakIf(context.PreserveOffsets);
-    context.Error = "Package has too much changes in the header. Can't save it with the 'Preserve Offsets' flag";
-    return false;
-  }
-
-  if (context.MaxProgressCallback)
-  {
-    context.MaxProgressCallback(Exports.size());
-  }
-  if (context.ProgressCallback)
-  {
-    context.ProgressCallback(0);
-  }
-  if (context.ProgressDescriptionCallback)
-  {
-    context.ProgressDescriptionCallback("Serializing objects...");
-  }
-
-  // List of holes left after moving dirty objects. Offset, Size.
-  std::vector<std::pair<FILE_OFFSET, FILE_OFFSET>> holes;
-  int32 idx = 0;
-  for (FObjectExport* exp : sortedExports)
-  {
-    if (exp->ObjectFlags & RF_Marked)
-    {
-      if (context.PreserveOffsets)
+      if (exp->SerialOffset)
       {
-        holes.push_back({ writer.GetPosition(), exp->SerialSize });
-        appendZeroed(writer, exp->SerialSize);
+        sortedExports.emplace_back(exp);
       }
       else
       {
-        exp->SerialOffset = writer.GetPosition();
-        UObject* obj = ExportObjects[exp->ObjectIndex];
-        obj->Serialize(writer);
-        exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
+        newExports.emplace_back(exp);
       }
+    }
+    std::sort(sortedExports.begin(), sortedExports.end(), [](FObjectExport* a, FObjectExport* b) {
+      return a->SerialOffset < b->SerialOffset&& a->SerialOffset;
+    });
+    std::sort(newExports.begin(), newExports.end(), [](FObjectExport* a, FObjectExport* b) {
+      return a->ObjectIndex < b->ObjectIndex;
+    });
+    if (newExports.size())
+    {
+      // Ensure all new exports are in the end
+      sortedExports.insert(sortedExports.end(), newExports.begin(), newExports.end());
+    }
+
+    // Check if header size did change and we honor offsets
+    bool moveTables = hasSource && context.PreserveOffsets && (Summary.NamesOffset != writer.GetPosition());
+
+    if (hasSource && !moveTables && context.PreserveOffsets)
+    {
+      // TODO: exports have non-const size. Table can become larger even if elements count is lower. Fixed-size calculation
+      if (Summary.ExportsCount > summary.ExportsCount || Summary.ImportsCount > summary.ImportsCount)
+      {
+        moveTables = true;
+      }
+    }
+
+    Summary.NamesOffset = writer.GetPosition();
+    for (FNameEntry& e : Names)
+    {
+      writer << e;
+    }
+
+    if (hasSource && context.PreserveOffsets)
+    {
+      if (!moveTables && writer.GetPosition() - Summary.NamesOffset > Summary.NamesSize)
+      {
+        // Names table become larger. We need to move tables to preserve offsets
+        moveTables = true;
+      }
+      if (!moveTables)
+      {
+        // Check if the tables were moved during previous save
+        for (FObjectExport* exp : Exports)
+        {
+          if (exp->SerialOffset < Summary.ImportsOffset)
+          {
+            moveTables = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (moveTables)
+    {
+      // Prevent the game from buffering whole package if we are moving tables to the end.
+      Summary.HeaderSize = writer.GetPosition();
     }
     else
     {
-      if (context.PreserveOffsets && writer.GetPosition() != exp->SerialOffset)
+      Summary.ImportsOffset = writer.GetPosition();
+      for (FObjectImport* imp : Imports)
       {
-        if (writer.GetPosition() < exp->SerialOffset)
-        {
-          holes.push_back({ writer.GetPosition(), exp->SerialOffset - writer.GetPosition() });
-          appendZeroed(writer, exp->SerialOffset - writer.GetPosition());
-        }
-        else if (exp->SerialOffset)
-        {
-          DBreak();
-          LogE("Failed to preserve offset of %s", exp->GetObjectNameString().C_str());
-        }
+        writer << *imp;
       }
-      if (!context.FullRecook)
+
+      Summary.ExportsOffset = writer.GetPosition();
+      for (FObjectExport* exp : Exports)
       {
-        reader.SetPosition(exp->SerialOffset);
-        void* data = malloc(exp->SerialSize);
-        reader.SerializeBytes(data, exp->SerialSize);
-        exp->SerialOffset = writer.GetPosition();
-        writer.SerializeBytes(data, exp->SerialSize);
-        free(data);
+        writer << *exp;
       }
-      else
+
+      Summary.DependsOffset = writer.GetPosition();
+      for (auto& dep : Depends)
       {
-        exp->SerialOffset = writer.GetPosition();
-        UObject* obj = ExportObjects[exp->ObjectIndex];
-        if (!obj->IsLoaded())
-        {
-          obj->Load();
-        }
-        obj->Serialize(writer);
-        exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
+        writer << dep;
       }
+      Summary.HeaderSize = writer.GetPosition();
+    }
+
+    FILE_OFFSET exportsStart = hasSource ? sortedExports.front()->SerialOffset : Summary.HeaderSize;
+    auto appendZeroed = [](FStream& s, FILE_OFFSET size) {
+      void* tmp = calloc(size, 1);
+      s.SerializeBytes(tmp, size);
+      free(tmp);
+    };
+
+    if (exportsStart > writer.GetPosition())
+    {
+      appendZeroed(writer, exportsStart - writer.GetPosition());
+    }
+    else if (exportsStart < writer.GetPosition())
+    {
+      DBreakIf(context.PreserveOffsets);
+      context.Error = "Package has too much changes in the header. Can't save it with the 'Preserve Offsets' flag";
+      return false;
+    }
+
+    if (context.MaxProgressCallback)
+    {
+      context.MaxProgressCallback(Exports.size());
     }
     if (context.ProgressCallback)
     {
-      context.ProgressCallback(++idx);
+      context.ProgressCallback(0);
     }
-  }
-
-  if (moveTables)
-  {
-    Summary.ImportsOffset = writer.GetPosition();
-    for (FObjectImport* imp : Imports)
+    if (context.ProgressDescriptionCallback)
     {
-      writer << *imp;
+      context.ProgressDescriptionCallback("Serializing objects...");
     }
 
-    Summary.ExportsOffset = writer.GetPosition();
-    for (FObjectExport* exp : Exports)
-    {
-      writer << *exp;
-    }
-
-    Summary.DependsOffset = writer.GetPosition();
-    for (auto& dep : Depends)
-    {
-      writer << dep;
-    }
-  }
-
-  if (context.PreserveOffsets)
-  {
+    // List of holes left after moving dirty objects. Offset, Size.
+    std::vector<std::pair<FILE_OFFSET, FILE_OFFSET>> holes;
+    int32 idx = 0;
     for (FObjectExport* exp : sortedExports)
     {
       if (exp->ObjectFlags & RF_Marked)
       {
-        MWriteStream tmpWriter(nullptr, 1024 * 1024, writer.GetPosition());
-        tmpWriter.SetPackage(this);
-
-        exp->SerialOffset = writer.GetPosition();
-        UObject* obj = ExportObjects[exp->ObjectIndex];
-        DBreakIf(!obj->IsLoaded());
-        obj->Serialize(tmpWriter);
-        exp->SerialSize = tmpWriter.GetPosition() - exp->SerialOffset;
-
-        // Try to fit data in an existing hole
-        int32 foundHole = -1;
-        FILE_OFFSET holeSizeDelta = INT32_MAX;
-        for (int32 idx = 0; idx < holes.size(); ++idx)
+        if (context.PreserveOffsets && hasSource)
         {
-          FILE_OFFSET holeSize = holes[idx].second;
-          if (holeSize >= exp->SerialSize && holeSize - exp->SerialSize < holeSizeDelta)
-          {
-            holeSizeDelta = holeSize - exp->SerialSize;
-            foundHole = idx;
-          }
-        }
-
-        if (foundHole >= 0)
-        {
-          auto& hole = holes[foundHole];
-          exp->SerialOffset = hole.first;
-          
-          FILE_OFFSET tmpPos = writer.GetPosition();
-
-          writer.SetPosition(exp->SerialOffset);
-          obj->Serialize(writer);
-         
-          if (exp->SerialSize != writer.GetPosition() - exp->SerialOffset)
-          {
-            context.Error = "Failed to save package due to ambiguous object size!";
-            LogE("Failed to save package due to ambiguous object size!");
-            return false;
-          }
-          
-          hole.first += exp->SerialSize;
-          hole.second -= exp->SerialSize;
-          DBreakIf(hole.second < 0);
-
-          writer.SetPosition(tmpPos);
+          holes.push_back({ writer.GetPosition(), exp->SerialSize });
+          appendZeroed(writer, exp->SerialSize);
         }
         else
         {
-          writer.SerializeBytes(tmpWriter.GetAllocation(), exp->SerialSize);
+          exp->SerialOffset = writer.GetPosition();
+          UObject* obj = ExportObjects[exp->ObjectIndex];
+          obj->Serialize(writer);
+          exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
+        }
+      }
+      else
+      {
+        if (context.PreserveOffsets && writer.GetPosition() != exp->SerialOffset)
+        {
+          if (writer.GetPosition() < exp->SerialOffset)
+          {
+            holes.push_back({ writer.GetPosition(), exp->SerialOffset - writer.GetPosition() });
+            appendZeroed(writer, exp->SerialOffset - writer.GetPosition());
+          }
+          else if (exp->SerialOffset)
+          {
+            DBreak();
+            LogE("Failed to preserve offset of %s", exp->GetObjectNameString().C_str());
+          }
+        }
+        if (!context.FullRecook)
+        {
+          reader->SetPosition(exp->SerialOffset);
+          void* data = malloc(exp->SerialSize);
+          reader->SerializeBytes(data, exp->SerialSize);
+          exp->SerialOffset = writer.GetPosition();
+          writer.SerializeBytes(data, exp->SerialSize);
+          free(data);
+        }
+        else
+        {
+          exp->SerialOffset = writer.GetPosition();
+          UObject* obj = ExportObjects[exp->ObjectIndex];
+          if (!obj->IsLoaded())
+          {
+            obj->Load();
+          }
+          obj->Serialize(writer);
+          exp->SerialSize = writer.GetPosition() - exp->SerialOffset;
+        }
+      }
+      if (context.ProgressCallback)
+      {
+        context.ProgressCallback(++idx);
+      }
+    }
+
+    if (moveTables)
+    {
+      Summary.ImportsOffset = writer.GetPosition();
+      for (FObjectImport* imp : Imports)
+      {
+        writer << *imp;
+      }
+
+      Summary.ExportsOffset = writer.GetPosition();
+      for (FObjectExport* exp : Exports)
+      {
+        writer << *exp;
+      }
+
+      Summary.DependsOffset = writer.GetPosition();
+      for (auto& dep : Depends)
+      {
+        writer << dep;
+      }
+    }
+
+    if (context.PreserveOffsets && hasSource)
+    {
+      for (FObjectExport* exp : sortedExports)
+      {
+        if (exp->ObjectFlags & RF_Marked)
+        {
+          MWriteStream tmpWriter(nullptr, 1024 * 1024, writer.GetPosition());
+          tmpWriter.SetPackage(this);
+
+          exp->SerialOffset = writer.GetPosition();
+          UObject* obj = ExportObjects[exp->ObjectIndex];
+          DBreakIf(!obj->IsLoaded());
+          obj->Serialize(tmpWriter);
+          exp->SerialSize = tmpWriter.GetPosition() - exp->SerialOffset;
+
+          // Try to fit data in an existing hole
+          int32 foundHole = -1;
+          FILE_OFFSET holeSizeDelta = INT32_MAX;
+          for (int32 idx = 0; idx < holes.size(); ++idx)
+          {
+            FILE_OFFSET holeSize = holes[idx].second;
+            if (holeSize >= exp->SerialSize && holeSize - exp->SerialSize < holeSizeDelta)
+            {
+              holeSizeDelta = holeSize - exp->SerialSize;
+              foundHole = idx;
+            }
+          }
+
+          if (foundHole >= 0)
+          {
+            auto& hole = holes[foundHole];
+            exp->SerialOffset = hole.first;
+
+            FILE_OFFSET tmpPos = writer.GetPosition();
+
+            writer.SetPosition(exp->SerialOffset);
+            obj->Serialize(writer);
+
+            if (exp->SerialSize != writer.GetPosition() - exp->SerialOffset)
+            {
+              context.Error = "Failed to save package due to ambiguous object size!";
+              LogE("Failed to save package due to ambiguous object size!");
+              return false;
+            }
+
+            hole.first += exp->SerialSize;
+            hole.second -= exp->SerialSize;
+            DBreakIf(hole.second < 0);
+
+            writer.SetPosition(tmpPos);
+          }
+          else
+          {
+            writer.SerializeBytes(tmpWriter.GetAllocation(), exp->SerialSize);
+          }
         }
       }
     }
-  }
 
-  // Apply header changes
-  writer.SetPosition(0);
-  writer << Summary;
+    payloadSize = writer.GetPosition();
 
-  // Unmark objects and apply exports table changes 
-  std::vector<FObjectExport*> marked;
-  writer.SetPosition(Summary.ExportsOffset);
-  for (FObjectExport* exp : Exports)
-  {
-    if (exp->ObjectFlags & RF_Marked)
+    // Apply header changes
+    writer.SetPosition(0);
+    writer << Summary;
+
+    // Unmark objects and apply exports table changes 
+    writer.SetPosition(Summary.ExportsOffset);
+    for (FObjectExport* exp : Exports)
     {
-      marked.push_back(exp);
-      exp->ObjectFlags &= ~RF_Marked;
+      if (exp->ObjectFlags & RF_Marked)
+      {
+        marked.push_back(exp);
+        exp->ObjectFlags &= ~RF_Marked;
+      }
+      writer << *exp;
     }
-    writer << *exp;
+    isOk = writer.IsGood();
   }
+
+  if (isOk && !hasSource && Summary.CompressionFlags)
+  {
+    struct TmpChunkData {
+      void* UncompressedData = nullptr;
+      void* CompressedData = nullptr;
+    };
+
+    FILE_OFFSET pos = (Summary.NamesOffset && Summary.NamesOffset < Summary.HeaderSize) ? Summary.NamesOffset : Summary.HeaderSize;
+
+    Summary.CompressedChunks.clear();
+    Summary.CompressedChunks.emplace_back();
+    Summary.CompressedChunks.back().DecompressedOffset = pos;
+
+    std::vector<TmpChunkData> tmpChunks;
+    tmpChunks.emplace_back();
+
+    auto prepareChunk = [this, &tmpChunks](int32 idx) {
+      FObjectExport* exp = Exports[idx];
+      if (exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset >= COMPRESSED_CHUNK_SIZE)
+      {
+        Summary.CompressedChunks.back().DecompressedSize = exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset;
+        tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
+        tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
+
+        Summary.CompressedChunks.emplace_back();
+        Summary.CompressedChunks.back().DecompressedOffset = exp->SerialOffset;
+        tmpChunks.emplace_back();
+      }
+      else if (idx && ((exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset) >= COMPRESSED_CHUNK_SIZE)
+      {
+        Summary.CompressedChunks.back().DecompressedSize = (exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset;
+        tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
+        tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
+
+        Summary.CompressedChunks.emplace_back();
+        Summary.CompressedChunks.back().DecompressedOffset = (exp->SerialOffset + exp->SerialSize);
+        tmpChunks.emplace_back();
+      }
+    };
+
+    for (int32 idx = 0; idx < Exports.size(); ++idx)
+    {
+      prepareChunk(idx);
+    }
+
+    if (!Summary.CompressedChunks.back().DecompressedSize)
+    {
+      Summary.CompressedChunks.back().DecompressedSize = payloadSize - Summary.CompressedChunks.back().DecompressedOffset;
+      tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
+      tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
+    }
+    
+    {
+      FReadStream reader(ctxPath);
+      for (size_t idx = 0; idx < tmpChunks.size(); ++idx)
+      {
+        reader.SetPosition(Summary.CompressedChunks[idx].DecompressedOffset);
+        reader.SerializeBytes(tmpChunks[idx].UncompressedData, Summary.CompressedChunks[idx].DecompressedSize);
+      }
+    }
+
+    std::vector<FCompressedChunk>* compressedChunksPtr = &Summary.CompressedChunks;
+#if ALLOW_CONCURRENT_LZO
+    concurrency::parallel_for(size_t(0), size_t(tmpChunks.size()), [&tmpChunks, &context, compressedChunksPtr](size_t idx) {
+      const TmpChunkData& chunk = tmpChunks.at(idx);
+      int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
+      LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+      compressedChunksPtr->at(idx).CompressedSize = compressedSize;
+    });
+#else
+    for (size_t idx = 0; idx < tmpChunks.size(); ++idx) {
+      const TmpChunkData& chunk = tmpChunks.at(idx);
+      int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
+      LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+      compressedChunksPtr->at(idx).CompressedSize = compressedSize;
+    }
+#endif
+
+    FWriteStream finalWriter(context.Path);
+    finalWriter << Summary;
+    for (int32 idx = 0; idx < tmpChunks.size(); ++idx)
+    {
+      TmpChunkData& chunk = tmpChunks[idx];
+      Summary.CompressedChunks[idx].CompressedOffset = finalWriter.GetPosition();
+      finalWriter.SerializeBytes(chunk.CompressedData, Summary.CompressedChunks[idx].CompressedSize);
+      free(chunk.CompressedData);
+      free(chunk.UncompressedData);
+      chunk.CompressedData = nullptr;
+      chunk.UncompressedData = nullptr;
+    }
+    finalWriter.SetPosition(0);
+    Summary.PackageFlags |= PKG_StoreCompressed;
+    finalWriter << Summary;
+    Summary.PackageFlags &= ~PKG_StoreCompressed;
+    isOk = finalWriter.IsGood();
+  }
+
   // Since this is a "Save As" we need to restore dirty flags
   for (FObjectExport* exp : marked)
   {
     exp->ObjectFlags |= RF_Marked;
   }
   MarkDirty();
+  if (!hasSource)
+  {
+    Summary.PackageFlags |= PKG_NoSource;
+  }
   
-  bool isOk = writer.IsGood();
   if (!isOk)
   {
     context.Error = "Unknown error! Failed to write data!";
@@ -3110,6 +3309,7 @@ FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& o
   exp->ExportFlags = EF_None;
   exp->ObjectFlags = RF_Public | RF_LoadForServer | RF_LoadForClient | RF_LoadForEdit;
   exp->ClassIndex = clsImp->ObjectIndex;
+  NET_INDEX netIndex = INDEX_NONE; 
   Exports.emplace_back(exp);
   if (GetFileVersion() > VER_TERA_CLASSIC)
   {
@@ -3117,6 +3317,12 @@ FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& o
   }
   else
   {
+    netIndex = (NET_INDEX)Summary.Generations.front().NetObjects;
+    Summary.Generations.front().NetObjects++;
+    if (GetPackageFlag(PKG_NoSource) && Depends.empty())
+    {
+      Depends.emplace_back();
+    }
     Depends.front().emplace_back(0);
   }
   exp->ObjectIndex = (PACKAGE_INDEX)Exports.size();
@@ -3142,7 +3348,7 @@ FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& o
   object->SetClass(cls);
   object->MarkDirty();
   object->SetLoaded(true);
-
+  object->SetNetIndex(netIndex);
   {
     std::scoped_lock<std::mutex> l(ExportObjectsMutex);
     ExportObjects[exp->ObjectIndex] = object;
@@ -3494,11 +3700,19 @@ void FPackageDumpHelper::GetPoolItemInfo(const FString& item, bool fast, FStream
     uint8* decompressedData = (uint8*)malloc(totalDecompressedSize);
     try
     {
+#if ALLOW_CONCURRENT_LZO
       concurrency::parallel_for(size_t(0), size_t(chunks.size()), [&chunks, compressedChunksData, decompressedData, startOffset](size_t idx) {
         const FCompressedChunk& chunk = chunks[idx];
         uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
         LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
       });
+#else
+      for (size_t idx = 0; idx < chunks.size(); ++idx) {
+        const FCompressedChunk& chunk = chunks[idx];
+        uint8* dst = decompressedData + chunk.DecompressedOffset - startOffset;
+        LZO::Decompress(compressedChunksData[idx], chunk.CompressedSize, dst, chunk.DecompressedSize);
+      }
+#endif
     }
     catch (const std::exception& e)
     {

@@ -38,6 +38,7 @@ public:
 
   bool operator==(const FString& name) const;
   bool operator==(const char* name) const;
+  bool operator<(const FNameEntry& b) const;
 
   friend FStream& operator<<(FStream& s, FNameEntry& e);
 

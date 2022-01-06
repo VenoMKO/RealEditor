@@ -438,7 +438,7 @@ FString UObject::GetLocalDir(bool fileName, const char* sep)
 
 void UObject::Load()
 {
-  if (!GetPackage()->GetStream().GetLoadSerializedObjects() || Loaded || Loading)
+  if (Loaded || Loading || !GetPackage()->GetStream().GetLoadSerializedObjects())
   {
     return;
   }

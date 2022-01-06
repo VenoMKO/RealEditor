@@ -131,6 +131,8 @@ public:
   static S1DirError ValidateRootDirCandidate(const FString& s1game = {});
   // Find class object by name
   static UClass* FindClass(const FString& name);
+  // Create a new package. The package won't be managed by the shared memory/package manager!
+  static std::shared_ptr<FPackage> CreateNewPackage(const FPackageSummary& summary);
 
 private:
   // Packages must be loaded/created from the static methods
@@ -528,6 +530,7 @@ private:
   static FString RootDir;
   static std::recursive_mutex PackagesMutex;
   static std::vector<std::shared_ptr<FPackage>> LoadedPackages;
+  static std::vector<std::shared_ptr<FPackage>> LoadedSourcelessPackages;
   static std::vector<std::shared_ptr<FPackage>> DefaultClassPackages;
   static std::vector<FString> DirCache;
   static std::unordered_map<FString, FString> TfcCache;

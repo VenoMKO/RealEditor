@@ -114,6 +114,7 @@ public:
   static void InstallS1Game32();
 
   ~App();
+  bool OpenPackage(std::shared_ptr<FPackage> package);
   bool OpenPackage(const wxString& path, const wxString selection = wxEmptyString);
   bool OpenNamedPackage(const wxString& name, const wxString selection = wxEmptyString);
   wxString ShowOpenDialog(const wxString& rootDir = wxEmptyString);

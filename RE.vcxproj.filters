@@ -308,6 +308,9 @@
     <ClCompile Include="Core\Utils\MeshUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\CreatePackageDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -465,6 +468,7 @@
     <ClInclude Include="Core\Utils\PskUtils.h" />
     <ClInclude Include="Core\Tera\FMeshCommon.h" />
     <ClInclude Include="Core\Utils\MeshUtils.h" />
+    <ClInclude Include="App\Windows\CreatePackageDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -38,14 +38,22 @@ static const unsigned int BUILD_NUMBER = (
 #define EXPERIMENTAL_SOUND_LEVEL_EXPORT 1
 // Maximum number of files to open from a single file dialog
 #define OPEN_OP_MAX_FILES 14
+// Use LzoPro instead of MiniLzo
+#define USE_LZOPRO 1
+// LzoPro compression level 0 - 10(low compression(fast) - high compression(slow))
+#define LZOPRO_COMPRESSION_LEVEL 9
+// Allow concurrent compression/decompression
+#if _DEBUG
+#define ALLOW_CONCURRENT_LZO 0
+#else
+#define ALLOW_CONCURRENT_LZO 1
+#endif
+// Compress texture MipMaps
+#define TEXTURE2D_COMPRESSION 1
 
 // Load minimum class packages to improve load time.
 // Must not be used in Release builds!
-#if _DEBUG
-#define MINIMAL_CORE 1
-#else
-#define MINIMAL_CORE 0
-#endif
+#define MINIMAL_CORE _DEBUG
 
 // For testing only.
 // GPU buffer has lower quality due to packed positions and half precision UVs,
@@ -285,11 +293,13 @@ FString GetClientVersionString(const FString& s1data);
 // --------------------------------------------------------------------
 
 #define COMPRESSED_BLOCK_SIZE 0x20000
+#define COMPRESSED_CHUNK_SIZE 0x100000
 
 // Legacy macOS's RE decompression. src must contain chunks.
 namespace LZO
 {
   void Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent = true);
+  void Ñompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent = true);
 }
 
 // New decompression. compressedBuffer must point directly to a compressed data block

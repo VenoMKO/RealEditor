@@ -4,6 +4,7 @@
 #include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
+#include "CreatePackageDialog.h"
 #include "DcToolDialog.h"
 #include "ObjectPicker.h"
 #include "TextureImporter.h"
@@ -138,7 +139,15 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   }
   else
   {
-    title += package->GetSourcePath().WString();
+    if (package->GetSourcePath().Size())
+    {
+      title += package->GetSourcePath().WString();
+    }
+    else
+    {
+      title += "*";
+      title += package->GetPackageName(true).WString();
+    }
   }
   SelectionHistory.reserve(MAX_SELECTION_HISTORY);
   SetTitle(title);
@@ -301,6 +310,7 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
       if (active == p.second)
       {
         UObject* obj = active->GetObject();
+        ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d\nNet: %d"), Package->GetObjectIndex(obj), obj->GetNetIndex()));
         ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialSize()));
         ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialOffset()));
         ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetPropertiesSize()));
@@ -697,7 +707,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
   
   FObjectExport* fobj = Package->GetExportObject(index);
   ObjectTitleLabel->SetLabelText(wxString::Format(wxT("%ls (%ls)"), fobj->GetObjectNameString().WString().c_str(), fobj->GetClassNameString().WString().c_str()));
-  ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d"), index));
+  ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d"), index ));
   ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
   ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", -1));
   ObjectPropertiesSizeLabel->SetLabelText(wxString::Format("0x%08X", -1));
@@ -1094,6 +1104,7 @@ void PackageWindow::OnObjectDirty(wxCommandEvent& e)
   {
     return;
   }
+  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource));
   PACKAGE_INDEX id = (PACKAGE_INDEX)e.GetInt();
   if (ObjectTreeNode* node = DataModel->FindItemByObjectIndex(id))
   {
@@ -1112,6 +1123,7 @@ void PackageWindow::OnObjectAdded(wxCommandEvent& e)
   {
     return;
   }
+  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource));
   if (id > 0)
   {
     ObjectTreeCtrl->AddExportObject(Package->GetExportObject(id), false);
@@ -1147,7 +1159,30 @@ void PackageWindow::OnNoneObjectSelected()
 
 void PackageWindow::OnNewClicked(wxCommandEvent&)
 {
-
+  FPackageSummary summary;
+  summary.Guid = FGuid::Generate();
+  summary.PackageFlags = PKG_AllowDownload | PKG_Cooked;
+  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  {
+    summary.EngineVersion = 13249;
+    summary.ContentVersion = 142;
+    summary.PackageFlags |= PKG_RequireImportsAlreadyLoaded | PKG_NoExportAllowed | PKG_StrippedSource;
+  }
+  else
+  {
+    summary.FolderName = L"yupimods.tumblr.com\0";
+    summary.EngineVersion = 4206;
+    summary.ContentVersion = 76;
+    summary.PackageFlags |= PKG_DisallowLazyLoading;
+  }
+  CreatePackageDialog dlg(FPackage::GetCoreVersion());
+  if (dlg.ShowModal() != wxID_OK)
+  {
+    return;
+  }
+  dlg.FillSummary(summary);
+  std::shared_ptr<FPackage> pkg = FPackage::CreateNewPackage(summary);
+  App::GetSharedApp()->OpenPackage(pkg);
 }
 
 void PackageWindow::OnCreateModClicked(wxCommandEvent&)
@@ -1319,6 +1354,11 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
 
 void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
 {
+  if (Package->GetAllExports().empty())
+  {
+    REDialog::Error("Can't save an empty file!\n\nAdd at least 1 object to the file.");
+    return;
+  }
   wxString path = IODialog::SavePackageDialog(this, Package->GetPackageName(true).WString());
   if (path.empty())
   {
@@ -1338,6 +1378,10 @@ void PackageWindow::OnSaveAsClicked(wxCommandEvent& e)
   progress.SetActionText(wxT("Preparing..."));
 
   PackageSaveContext context;
+  if (Package->GetPackageFlag(PKG_NoSource))
+  {
+    context.Compression = (ECompressionFlags)Package->GetSummary().CompressionFlags;
+  }
   optionsWindow.ConfigureSaveContext(context);
   context.Path = W2A(path.ToStdWstring());
 
@@ -1598,11 +1642,11 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
   ObjectTreeCtrl->Freeze();
   LoadObjectTree();
   ObjectTreeCtrl->Thaw();
-  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE); // TODO: track package dirty state
+  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource) && Package->IsDirty());
   SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
   bool selected = false;
 
-  if (Package->GetSummary().PackageFlags & PKG_ContainsMap)
+  if (Package->GetPackageFlag(PKG_ContainsMap))
   {
     std::vector<FObjectExport*> exports = Package->GetAllExports();
     PACKAGE_INDEX levelIndex = INDEX_NONE;

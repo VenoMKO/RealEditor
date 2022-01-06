@@ -560,6 +560,15 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
   return true;
 }
 
+bool App::OpenPackage(std::shared_ptr<FPackage> package)
+{
+  PackageWindow* window = new PackageWindow(package, this);
+  PackageWindows.push_back(window);
+  window->Show();
+  SendEvent(window, PACKAGE_READY);
+  return true;
+}
+
 bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
 {
   bool composite = name.StartsWith("composite\\");

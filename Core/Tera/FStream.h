@@ -16,7 +16,9 @@ public:
   {}
 
   virtual ~FStream()
-  {}
+  {
+    int x = 1;
+  }
 
   inline FStream& operator<<(int8& v)
   {

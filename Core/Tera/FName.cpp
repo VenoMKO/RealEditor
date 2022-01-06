@@ -14,6 +14,11 @@ bool FNameEntry::operator==(const char* name) const
   return String == name;
 }
 
+bool FNameEntry::operator<(const FNameEntry& b) const
+{
+  return String < b.String;
+}
+
 FStream& operator<<(FStream& s, FNameEntry& e)
 {
   s << e.String;

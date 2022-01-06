@@ -306,6 +306,11 @@ public:
     return NetIndex;
   }
 
+  inline void SetNetIndex(NET_INDEX idx)
+  {
+    NetIndex = idx;
+  }
+
   FPackage* GetPackage() const;
 
   // Is UComponent?

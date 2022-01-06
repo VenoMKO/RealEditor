@@ -12,11 +12,6 @@ void PackageWindow::InitLayout()
 
   wxMenu* fileMenu;
   fileMenu = new wxMenu();
-  /*
-  wxMenuItem* m_menuItem3;
-  m_menuItem3 = new wxMenuItem(fileMenu, ControlElementId::New, wxString(wxT("New...")) + wxT('\t') + wxT("Ctrl+N"), wxEmptyString, wxITEM_NORMAL);
-  m_menuItem3->Enable(false);
-  fileMenu->Append(m_menuItem3);*/
 
   wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create mod..."), wxS("Create a mod from existing modded GPKs"));
   m_menuItem68->Enable(IsModernClient);
@@ -24,6 +19,8 @@ void PackageWindow::InitLayout()
 
   fileMenu->AppendSeparator();
 
+  wxMenuItem* m_menuItem3 = new wxMenuItem(fileMenu, ControlElementId::New, wxString(wxT("New GPK file...")) + wxT('\t') + wxT("Ctrl+N"), wxEmptyString, wxITEM_NORMAL);
+  fileMenu->Append(m_menuItem3);
   wxMenu* openMenu = new wxMenu;
   wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(wxT("GPK file...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
   openMenu->Append(m_menuItem4);

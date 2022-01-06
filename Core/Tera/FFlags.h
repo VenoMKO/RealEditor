@@ -8,6 +8,7 @@ enum EPackageFlags : uint32
   PKG_Cooked = 0x00000008,	// Whether this package has been cooked for the target platform.
   PKG_Unsecure = 0x00000010,   // Not trusted.
   PKG_SavedWithNewerVersion = 0x00000020,	// Package was saved with newer version.
+  PKG_NoSource = 0x00000040,
   PKG_Dirty = 0x00000100,
   PKG_PendingDeletion = 0x00000200,
   PKG_Need = 0x00008000,	// Client needs to download this package.

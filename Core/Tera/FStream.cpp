@@ -221,6 +221,7 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
 
       uint8* dest = (uint8*)v;
       std::atomic_bool err = {false};
+#if ALLOW_CONCURRENT_LZO
       concurrency::parallel_for(int32(0), totalChunkCount, [&](int32 idx) {
         const FCompressedChunkInfo& chunk = chunkInfo[idx];
         if (err.load())
@@ -232,6 +233,19 @@ void FStream::SerializeCompressed(void* v, int32 length, ECompressionFlags flags
           err.store(true);
         }
       });
+#else
+      for (int32 idx = 0; idx < totalChunkCount; ++idx) {
+        const FCompressedChunkInfo& chunk = chunkInfo[idx];
+        if (err.load())
+        {
+          return;
+        }
+        if (!DecompressMemory(flags, dest + chunk.DecompressedOffset, chunk.DecompressedSize, compressedDataChunks[idx], chunk.CompressedSize))
+        {
+          err.store(true);
+        }
+      }
+#endif
 
       for (int32 idx = 0; idx < totalChunkCount; ++idx)
       {

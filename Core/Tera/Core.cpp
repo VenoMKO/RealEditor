@@ -38,15 +38,36 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <ppl.h>
+#if USE_LZOPRO
+#include <lzo/lzodefs.h>
+#include <lzo/lzoconf.h>
+#include <lzo/lzopro/lzo1x.h>
+#pragma comment(lib, "lzopro.lib")
+#else
 #include <minilzo/minilzo.h>
+#endif
 #include <tchar.h>
 #include <shlwapi.h>
 
 #include <Tera/FPackage.h>
 #include <Utils/ALog.h>
 
+#if USE_LZOPRO
+static lzo_voidp cb_lzoalloc(lzo_callback_p self, lzo_uint items, lzo_uint size)
+{
+  LZO_UNUSED(self);
+  return (lzo_voidp)malloc(items * size);
+}
+
+static void cb_lzofree(lzo_callback_p self, lzo_voidp ptr)
+{
+  LZO_UNUSED(self);
+  free(ptr);
+}
+#else
 #define HEAP_ALLOC(var,size) lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
 static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
+#endif
 
 #define COMPRESSED_BLOCK_MAGIC PACKAGE_MAGIC
 #define COMPRESSION_FLAGS_TYPE_MASK		0x0F
@@ -492,11 +513,15 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
     decompressedOffset += compressionInfo[i].dstSize;
   }
 
-  if (concurrent)
+  if (concurrent && ALLOW_CONCURRENT_LZO)
   {
     concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
       lzo_uint decompressedSize = compressionInfo[i].dstSize;
+#if USE_LZOPRO
+      int e = lzopro_lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+#else
       int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+#endif
       if (e != LZO_E_OK)
       {
         UThrow("Corrupted compression block. Code: %d", e);
@@ -508,7 +533,11 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
     for (int32 i = 0; i < totalBlocks; ++i)
     {
       lzo_uint decompressedSize = compressionInfo[i].dstSize;
+#if USE_LZOPRO
+      int e = lzopro_lzo1x_decompress(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+#else
       int e = lzo1x_decompress_safe(start + compressionInfo[i].srcOffset, compressionInfo[i].srcSize, dstStart + compressionInfo[i].dstOffset, &decompressedSize, NULL);
+#endif
       if (e != LZO_E_OK)
       {
         UThrow("Corrupted compression block. Code: %d", e);
@@ -519,10 +548,90 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
   delete[] compressionInfo;
 }
 
-bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
+void LZO::Ñompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent)
+{
+  uint8* start = (uint8*)dst;
+  uint8* ptr = start;
+  const uint32 blockSize = COMPRESSED_BLOCK_SIZE;
+  const uint32 magic = COMPRESSED_BLOCK_MAGIC;
+  std::memcpy(ptr, &magic, sizeof(magic)); ptr += sizeof(magic);
+  std::memcpy(ptr, &blockSize, sizeof(blockSize)); ptr += sizeof(blockSize);
+  uint32* totalCompressedSize = (uint32*)ptr; ptr += sizeof(uint32);
+  std::memcpy(ptr, &srcSize, sizeof(srcSize)); ptr += sizeof(srcSize);
+  int32 totalBlocks = (int32)ceilf((float)srcSize / (float)blockSize);
+
+  lzo_init();
+
+  struct CompressionBlock {
+    uint32 srcOffset = 0;
+    uint32 srcSize = 0;
+    void* dst = nullptr;
+    uint32 dstSize = 0;
+  };
+  
+  CompressionBlock* compressionInfo = new CompressionBlock[totalBlocks];
+  {
+    uint32 offset = 0;
+    int32 left = (int32)srcSize;
+    for (int32 idx = 0; idx < totalBlocks; ++idx)
+    {
+      compressionInfo[idx].srcOffset = offset;
+      compressionInfo[idx].srcSize = std::min<uint32>(left, blockSize);
+      offset += compressionInfo[idx].srcSize;
+      left -= blockSize;
+    }
+  }
+
+  uint8* srcPtr = (uint8*)src;
+  if (concurrent && ALLOW_CONCURRENT_LZO)
+  {
+    concurrency::parallel_for(int32(0), totalBlocks, [&](int32 i) {
+      FILE_OFFSET compressedSize = compressionInfo[i].srcSize * 2;
+      compressionInfo[i].dst = malloc(compressedSize);
+      CompressMemory(COMPRESS_LZO, compressionInfo[i].dst, &compressedSize, srcPtr + compressionInfo[i].srcOffset, compressionInfo[i].srcSize);
+      compressionInfo[i].dstSize = compressedSize;
+    });
+  }
+  else
+  {
+    for (int32 i = 0; i < totalBlocks; ++i)
+    {
+      FILE_OFFSET compressedSize = compressionInfo[i].srcSize * 2;
+      compressionInfo[i].dst = malloc(compressedSize);
+      CompressMemory(COMPRESS_LZO, compressionInfo[i].dst, &compressedSize, srcPtr + compressionInfo[i].srcOffset, compressionInfo[i].srcSize);
+      compressionInfo[i].dstSize = compressedSize;
+    }
+  }
+
+  for (int32 idx = 0; idx < totalBlocks; ++idx)
+  {
+    uint32* compressedSize = (uint32*)ptr; ptr += sizeof(uint32);
+    uint32* uncompressedSize = (uint32*)ptr; ptr += sizeof(uint32);
+    *compressedSize = compressionInfo[idx].dstSize;
+    *uncompressedSize = compressionInfo[idx].srcSize;
+  }
+  uint8* dataStartPtr = ptr;
+  for (int32 idx = 0; idx < totalBlocks; ++idx)
+  {
+    int32 pos = (ptr - start) * sizeof(*start);
+    std::memcpy(ptr, compressionInfo[idx].dst, compressionInfo[idx].dstSize);
+    ptr += compressionInfo[idx].dstSize;
+    free(compressionInfo[idx].dst);
+  }
+
+  dstSize = (ptr - start) * sizeof(*start);
+  *totalCompressedSize = (ptr - dataStartPtr) * sizeof(*start);
+  delete[] compressionInfo;
+}
+
+bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize)
 {
   lzo_uint finalSize = dstSize;
+#if USE_LZOPRO
+  int e = lzopro_lzo1x_decompress_safe((lzo_bytep)src, srcSize, (lzo_bytep)dst, &finalSize, NULL);
+#else
   int e = lzo1x_decompress_safe((lzo_bytep)src, srcSize, (lzo_bytep)dst, &finalSize, NULL);
+#endif
   if (e != LZO_E_OK)
   {
     LogE("Corrupted compression block. Code: %d", e);
@@ -531,16 +640,24 @@ bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET 
   return true;
 }
 
-bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* dstSize, bool concurrent)
+bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* dstSize)
 {
   lzo_uint resultSize = *dstSize;
-  int e = lzo1x_1_compress((lzo_bytep)src, srcSize, (unsigned char*)dst, &resultSize, wrkmem);
+#if USE_LZOPRO
+  lzo_callback_t callbacks;
+  callbacks.nalloc = cb_lzoalloc;
+  callbacks.nfree = cb_lzofree;
+  callbacks.nprogress = (lzo_progress_func_t)0;
+  int e = lzopro_lzo1x_99_compress((lzo_bytep)src, srcSize, (lzo_bytep)dst, &resultSize, &callbacks, LZOPRO_COMPRESSION_LEVEL);
+#else
+  int e = lzo1x_1_compress((lzo_bytep)src, srcSize, (lzo_bytep)dst, &resultSize, wrkmem);
+#endif
   if (e != LZO_E_OK)
   {
     LogE("Failed to compress memory. Code: %d", e);
     return false;
   }
-  *dstSize = resultSize;
+  *dstSize = (FILE_OFFSET)resultSize;
   return true;
 }
 
@@ -555,7 +672,7 @@ bool DecompressMemory(ECompressionFlags flags, void* decompressedBuffer, int32 d
     DBreak();
     break;
   case COMPRESS_LZO:
-    ok = DecompressLZO(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize, true);
+    ok = DecompressLZO(compressedBuffer, compressedSize, decompressedBuffer, decompressedSize);
     break;
   case COMPRESS_LZX:
     // TODO: implement lzx
@@ -580,7 +697,7 @@ bool CompressMemory(ECompressionFlags flags, void* compressedBuffer, int32* comp
     DBreak();
     break;
   case COMPRESS_LZO:
-    ok = CompressLZO(decompressedBuffer, decompressedSize, compressedBuffer, compressedSize, true);
+    ok = CompressLZO(decompressedBuffer, decompressedSize, compressedBuffer, compressedSize);
     break;
   case COMPRESS_LZX:
     // TODO: implement lzx

@@ -37,8 +37,8 @@ CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, 
   bSizer13 = new wxBoxSizer(wxVERTICAL);
 
   DisableTextureCachingButton = new wxCheckBox(m_panel6, wxID_ANY, wxT("Disable texture caching"), wxDefaultPosition, wxDefaultSize, 0);
-  DisableTextureCachingButton->SetValue(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN);
-  DisableTextureCachingButton->Enable(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN);
+  DisableTextureCachingButton->SetValue(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN && !package->GetPackageFlag(PKG_NoSource));
+  DisableTextureCachingButton->Enable(!package->GetNoTexturePullOnSave() && package->GetFileVersion() == VER_TERA_MODERN && !package->GetPackageFlag(PKG_NoSource));
   bSizer13->Add(DisableTextureCachingButton, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText31;
@@ -80,6 +80,7 @@ CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, 
   bSizer1311 = new wxBoxSizer(wxVERTICAL);
 
   CompressPackageButton = new wxCheckBox(m_panel611, wxID_ANY, wxT("Compress package"), wxDefaultPosition, wxDefaultSize, 0);
+  CompressPackageButton->SetValue(package->GetPackageFlag(PKG_NoSource) && package->GetSummary().CompressionFlags);
   CompressPackageButton->Enable(false);
 
   bSizer1311->Add(CompressPackageButton, 0, wxALL, FromDIP(5));
