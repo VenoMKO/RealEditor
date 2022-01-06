@@ -33,6 +33,7 @@ protected:
   wxStaticText* Compression = nullptr;
   wxStaticText* AdditionalPackages = nullptr;
   wxDataViewCtrl* GenerationsTable = nullptr;
+  wxDataViewCtrl* ChunksTable = nullptr;
   wxButton* FindObjByName = nullptr;
   wxButton* FindObjByIndex = nullptr;
 };

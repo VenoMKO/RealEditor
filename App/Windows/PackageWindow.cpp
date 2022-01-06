@@ -699,6 +699,10 @@ void PackageWindow::OnExportObjectSelected(INT index)
       PackageInfoView = new ArchiveInfoView(MainPanel, this, Package.get());
       MainPanel->GetSizer()->Add(PackageInfoView, 1, wxEXPAND | wxALL, 0);
     }
+    else
+    {
+      PackageInfoView->UpdateInfo();
+    }
     EditorContainer->Show(false);
     PackageInfoView->Show(true);
     MainPanel->GetSizer()->Layout();

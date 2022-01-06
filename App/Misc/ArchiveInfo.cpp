@@ -130,6 +130,74 @@ private:
   std::vector<FGeneration> Data;
 };
 
+class ChunksDataModel : public wxDataViewVirtualListModel {
+public:
+
+  enum
+  {
+    Col_Idx = 0,
+    Col_CompressedOffset,
+    Col_CompressedSize,
+    Col_DecompressedOffset,
+    Col_DecompressedSize,
+    Col_MAX
+  };
+
+  ChunksDataModel(const std::vector<FCompressedChunk>& chunks)
+    : Data(chunks)
+  {}
+
+  unsigned int GetColumnCount() const override
+  {
+    return Col_MAX;
+  }
+
+  unsigned int GetCount() const override
+  {
+    return Data.size();
+  }
+
+  wxString GetColumnType(unsigned int col) const override
+  {
+    return wxDataViewCheckIconTextRenderer::GetDefaultType();
+  }
+
+  bool SetValueByRow(const wxVariant& variant, unsigned int row, unsigned int col) override
+  {
+    return false;
+  }
+
+  void GetValueByRow(wxVariant& variant, unsigned int row, unsigned int col) const override
+  {
+    switch (col)
+    {
+    case Col_Idx:
+      variant = wxString::Format(wxT("%d"), row + 1);
+      break;
+    case Col_CompressedOffset:
+      variant = wxString::Format(wxT("%d"), Data[row].CompressedOffset);
+      break;
+    case Col_CompressedSize:
+      variant = wxString::Format(wxT("%d"), Data[row].CompressedSize);
+      break;
+    case Col_DecompressedOffset:
+      variant = wxString::Format(wxT("%d"), Data[row].DecompressedOffset);
+      break;
+    case Col_DecompressedSize:
+      variant = wxString::Format(wxT("%d"), Data[row].DecompressedSize);
+      break;
+    }
+  }
+
+  bool GetAttrByRow(unsigned int row, unsigned int col, wxDataViewItemAttr& attr) const override
+  {
+    return false;
+  }
+
+private:
+  std::vector<FCompressedChunk> Data;
+};
+
 ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackage* package)
   : wxPanel(parent, wxID_ANY)
   , Package(package)
@@ -282,23 +350,6 @@ ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackag
 
   bSizer13->Add(bSizer191, 0, wxEXPAND, FromDIP(5));
 
-  wxBoxSizer* bSizer201;
-  bSizer201 = new wxBoxSizer(wxHORIZONTAL);
-
-  wxStaticText* m_staticText801;
-  m_staticText801 = new wxStaticText(m_panel2, wxID_ANY, wxT("Compression:"), wxDefaultPosition, wxDefaultSize, 0);
-  m_staticText801->Wrap(-1);
-  m_staticText801->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
-
-  bSizer201->Add(m_staticText801, 0, wxALL, FromDIP(5));
-
-  Compression = new wxStaticText(m_panel2, wxID_ANY, wxT("-"), wxDefaultPosition, wxDefaultSize, 0);
-  Compression->Wrap(-1);
-  bSizer201->Add(Compression, 0, wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
-
-
-  bSizer13->Add(bSizer201, 0, wxEXPAND, FromDIP(5));
-
   wxBoxSizer* bSizer1911;
   bSizer1911 = new wxBoxSizer(wxHORIZONTAL);
 
@@ -325,6 +376,26 @@ ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackag
 
   GenerationsTable = new wxDataViewCtrl(m_panel2, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(350, 100)), 0);
   bSizer13->Add(GenerationsTable, 0, wxALL, FromDIP(5));
+
+  wxBoxSizer* bSizer201;
+  bSizer201 = new wxBoxSizer(wxHORIZONTAL);
+
+  wxStaticText* m_staticText801;
+  m_staticText801 = new wxStaticText(m_panel2, wxID_ANY, wxT("Compression:"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText801->Wrap(-1);
+  m_staticText801->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
+
+  bSizer201->Add(m_staticText801, 0, wxALL, FromDIP(5));
+
+  Compression = new wxStaticText(m_panel2, wxID_ANY, wxT("-"), wxDefaultPosition, wxDefaultSize, 0);
+  Compression->Wrap(-1);
+  bSizer201->Add(Compression, 0, wxTOP | wxBOTTOM | wxRIGHT, FromDIP(5));
+
+
+  bSizer13->Add(bSizer201, 0, wxEXPAND, FromDIP(5));
+
+  ChunksTable = new wxDataViewCtrl(m_panel2, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(500, 150)), 0);
+  bSizer13->Add(ChunksTable, 0, wxALL, FromDIP(5));
 
   /*
   wxBoxSizer* bSizer131;
@@ -389,6 +460,12 @@ ArchiveInfoView::ArchiveInfoView(wxPanel* parent, PackageWindow* window, FPackag
   GenerationsTable->AppendTextColumn(_("Exports"), GenerationDataModel::Col_Exports, wxDATAVIEW_CELL_INERT, FromDIP(95), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
   GenerationsTable->AppendTextColumn(_("Net. Objects"), GenerationDataModel::Col_Network, wxDATAVIEW_CELL_INERT, FromDIP(95), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
 
+  ChunksTable->AppendTextColumn(wxEmptyString, ChunksDataModel::Col_Idx, wxDATAVIEW_CELL_INERT, FromDIP(25), wxALIGN_CENTER_HORIZONTAL);
+  ChunksTable->AppendTextColumn(_("Cmp.Offset"), ChunksDataModel::Col_CompressedOffset, wxDATAVIEW_CELL_INERT, FromDIP(111), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  ChunksTable->AppendTextColumn(_("Cmp.Size"), ChunksDataModel::Col_CompressedSize, wxDATAVIEW_CELL_INERT, FromDIP(111), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  ChunksTable->AppendTextColumn(_("Unc.Offset"), ChunksDataModel::Col_DecompressedOffset, wxDATAVIEW_CELL_INERT, FromDIP(111), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+  ChunksTable->AppendTextColumn(_("Unc.Size"), ChunksDataModel::Col_DecompressedSize, wxDATAVIEW_CELL_INERT, FromDIP(111), wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE);
+
   UpdateInfo();
 }
 
@@ -448,6 +525,9 @@ void ArchiveInfoView::UpdateInfo()
   model->DecRef();
   model = new NameDataModel(Package->GetNames());
   NamesTable->AssociateModel(model);
+  model->DecRef();
+  model = new ChunksDataModel(s.OriginalCompressedChunks);
+  ChunksTable->AssociateModel(model);
   model->DecRef();
 }
 
