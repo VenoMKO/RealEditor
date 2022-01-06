@@ -194,7 +194,7 @@ FStream& operator<<(FStream& s, FPackageSummary& sum)
   s << sum.FolderName;
   s << sum.PackageFlags;
 
-  if (fv == 610 && lv == 14)
+  if (fv == 610)
   {
     if (!s.IsReading() && (sum.PackageFlags & PKG_Cooked))
     {

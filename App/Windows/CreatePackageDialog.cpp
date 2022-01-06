@@ -113,7 +113,15 @@ void CreatePackageDialog::FillSummary(FPackageSummary& summary)
   switch (Licensee->GetSelection())
   {
   case 0:
-    lv = CoreVersion == VER_TERA_CLASSIC ? 13 : 17;
+    if (CoreVersion == VER_TERA_CLASSIC)
+    {
+      lv = 13;
+      summary.PackageFlags &= ~PKG_Cooked;
+    }
+    else
+    {
+      lv = 17;
+    }
     break;
   case 1:
     lv = 14;
