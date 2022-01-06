@@ -52,6 +52,34 @@
 #include <Tera/FPackage.h>
 #include <Utils/ALog.h>
 
+FString GetLzoError(int err)
+{
+  switch (err)
+  {
+  case LZO_E_ERROR:
+    return "LZO_E_ERROR";
+  case LZO_E_OUT_OF_MEMORY:
+    return "LZO_E_OUT_OF_MEMORY";
+  case LZO_E_NOT_COMPRESSIBLE:
+    return "LZO_E_NOT_COMPRESSIBLE";
+  case LZO_E_INPUT_OVERRUN:
+    return "LZO_E_INPUT_OVERRUN";
+  case LZO_E_OUTPUT_OVERRUN:
+    return "LZO_E_OUTPUT_OVERRUN";
+  case LZO_E_LOOKBEHIND_OVERRUN:
+    return "LZO_E_LOOKBEHIND_OVERRUN";
+  case LZO_E_EOF_NOT_FOUND:
+    return "LZO_E_EOF_NOT_FOUND";
+  case LZO_E_INPUT_NOT_CONSUMED:
+    return "LZO_E_INPUT_NOT_CONSUMED";
+  case LZO_E_NOT_YET_IMPLEMENTED:
+    return "LZO_E_NOT_YET_IMPLEMENTED";
+  case LZO_E_INVALID_ARGUMENT:
+    return "LZO_E_INVALID_ARGUMENT";
+  }
+  return FString::Sprintf("%d", err);
+}
+
 #if USE_LZOPRO
 static lzo_voidp cb_lzoalloc(lzo_callback_p self, lzo_uint items, lzo_uint size)
 {
@@ -524,7 +552,7 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
 #endif
       if (e != LZO_E_OK)
       {
-        UThrow("Corrupted compression block. Code: %d", e);
+        UThrow("Corrupted compression block. Code: %s", GetLzoError(e).C_str());
       }
     });
   }
@@ -540,7 +568,7 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
 #endif
       if (e != LZO_E_OK)
       {
-        UThrow("Corrupted compression block. Code: %d", e);
+        UThrow("Corrupted compression block. Code: %s", GetLzoError(e).C_str());
       }
     }
   }
@@ -634,7 +662,7 @@ bool DecompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET 
 #endif
   if (e != LZO_E_OK)
   {
-    LogE("Corrupted compression block. Code: %d", e);
+    LogE("Corrupted compression block. Code: %s", GetLzoError(e).C_str());
     return false;
   }
   return true;
@@ -654,7 +682,7 @@ bool CompressLZO(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET* d
 #endif
   if (e != LZO_E_OK)
   {
-    LogE("Failed to compress memory. Code: %d", e);
+    LogE("Failed to compress memory. Code: %s", GetLzoError(e).C_str());
     return false;
   }
   *dstSize = (FILE_OFFSET)resultSize;
