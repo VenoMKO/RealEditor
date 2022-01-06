@@ -111,6 +111,7 @@ ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDi
 ObjectPicker::ObjectPicker(wxWindow* parent, const wxString& title, bool allowDifferentPackage, std::shared_ptr<FPackage> package, PACKAGE_INDEX selection, const std::vector<FString>& allowedClasses)
   : WXDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(441, 438))
 {
+  AllowDifferentPackage = allowDifferentPackage;
   SetSize(FromDIP(GetSize()));
   Filter = allowedClasses;
   SetSizeHints(wxDefaultSize, wxDefaultSize);

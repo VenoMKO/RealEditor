@@ -734,9 +734,16 @@ bool AObjectProperty::DisplayEditorDialog(wxPropertyGrid* pg, wxVariant& value)
 
 void AObjectProperty::OnShowObjectClicked()
 {
-  if (UObject* obj = Value->Property->Owner->GetPackage()->GetObject(Value->GetObjectIndex()))
+  try
   {
-    App::GetSharedApp()->OpenPackage(obj->GetPackage()->GetSourcePath().WString(), obj->GetObjectPath().WString());
+    if (UObject* obj = Value->Property->Owner->GetPackage()->GetObject(Value->GetObjectIndex()))
+    {
+      App::GetSharedApp()->OpenPackage(obj->GetPackage()->GetSourcePath().WString(), obj->GetObjectPath().WString());
+    }
+  }
+  catch (const std::exception& e)
+  {
+    REDialog::Error(e.what(), "Failed to show the object!");
   }
 }
 
