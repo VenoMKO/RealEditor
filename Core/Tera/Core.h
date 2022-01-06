@@ -41,7 +41,7 @@ static const unsigned int BUILD_NUMBER = (
 // Use LzoPro instead of MiniLzo
 #define USE_LZOPRO 1
 // LzoPro compression level 0 - 10(low compression(fast) - high compression(slow))
-#define LZOPRO_COMPRESSION_LEVEL 9
+#define LZOPRO_COMPRESSION_LEVEL 10
 // Allow concurrent compression/decompression
 #if _DEBUG
 #define ALLOW_CONCURRENT_LZO 0

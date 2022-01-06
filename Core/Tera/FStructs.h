@@ -194,6 +194,7 @@ struct FPackageSummary {
   uint32 OriginalCompressionFlags = 0;
   uint32 PackageSource = 0;
   std::vector<FCompressedChunk> CompressedChunks;
+  std::vector<FCompressedChunk> OriginalCompressedChunks;
   std::vector<FString> AdditionalPackagesToCook;
   FTextureAllocations TextureAllocations;
 

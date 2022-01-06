@@ -1220,6 +1220,7 @@ std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)
   sum.PackageName = std::filesystem::path(path.WString()).filename().wstring();
   (*stream) << sum;
   sum.OriginalPackageFlags = sum.PackageFlags;
+  sum.OriginalCompressedChunks = sum.CompressedChunks;
   if (CoreVersion && sum.GetFileVersion() != CoreVersion)
   {
     if (sum.GetFileVersion() == VER_TERA_CLASSIC)
