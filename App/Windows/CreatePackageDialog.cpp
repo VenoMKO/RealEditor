@@ -62,8 +62,12 @@ CreatePackageDialog::CreatePackageDialog(int coreVer, wxWindow* parent)
   int CompressionNChoices = sizeof(CompressionChoices) / sizeof(wxString);
   Compression = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, CompressionNChoices, CompressionChoices, 0);
   Compression->SetSelection(0);
-  Compression->Enable(CoreVersion == VER_TERA_CLASSIC);
-  Compression->SetToolTip(wxT("Compress GPK file. (32-bit client only!)"));
+  // Not sure why, but unlike RU client, TW client does not like compression.
+  // As for the 64-bit client, TMM can't patch compressed packages so it's useless.
+  // Disable it for now. Maybe I'll figure out a workaround in the future.
+  // TODO: fix compression for TW client
+  Compression->Enable(false);
+  Compression->SetToolTip(wxT("Compress GPK file"));
 
   fgSizer1->Add(Compression, 0, wxALL, FromDIP(5));
 
@@ -107,7 +111,8 @@ void CreatePackageDialog::FillSummary(FPackageSummary& summary)
   summary.PackageName = PackageName->GetValue().ToStdWstring();
   if (CoreVersion > VER_TERA_CLASSIC)
   {
-    summary.FolderName = Composite->GetValue().ToStdWstring();
+    summary.FolderName = L"MOD:" + Composite->GetValue().ToStdWstring();
+    summary.FolderName.Terminate();
   }
   uint16 lv = -1;
   switch (Licensee->GetSelection())

@@ -176,7 +176,7 @@ void LevelEditor::LoadPersistentLevel()
     }
     return;
   }
-  ProgressWindow progress(Window, "Please, wait...");
+  ProgressWindow progress(Window, "Please wait...");
   progress.SetCurrentProgress(-1);
   progress.SetCanCancel(false);
   progress.SetActionText("Loading the level");

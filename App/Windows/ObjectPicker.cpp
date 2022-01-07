@@ -541,10 +541,10 @@ ClassPicker::ClassPicker(wxWindow* parent, const wxString& title)
   wxStaticText* m_staticText1;
   m_staticText1 = new wxStaticText(this, wxID_ANY, wxT("Class:"), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText1->Wrap(-1);
-  bSizer2->Add(m_staticText1, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer2->Add(m_staticText1, 0, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ClassCombo = new wxComboBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_DROPDOWN | wxCB_SORT | wxTE_PROCESS_ENTER);
-  bSizer2->Add(ClassCombo, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+  bSizer2->Add(ClassCombo, 1, wxALL | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
   ClassCombo->Freeze();
 
@@ -558,30 +558,30 @@ ClassPicker::ClassPicker(wxWindow* parent, const wxString& title)
   ClassCombo->Thaw();
 
 
-  bSizer1->Add(bSizer2, 1, wxEXPAND, 5);
+  bSizer1->Add(bSizer2, 1, wxEXPAND, FromDIP(5));
 
   wxStaticLine* m_staticline1;
   m_staticline1 = new wxStaticLine(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-  bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+  bSizer1->Add(m_staticline1, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(5));
 
   wxPanel* m_panel1;
-  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, 35), wxTAB_TRAVERSAL);
+  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 35)), wxTAB_TRAVERSAL);
   wxBoxSizer* bSizer3;
   bSizer3 = new wxBoxSizer(wxHORIZONTAL);
 
 
-  bSizer3->Add(0, 0, 1, wxEXPAND, 5);
+  bSizer3->Add(0, 0, 1, wxEXPAND, FromDIP(5));
 
   OkButton = new wxButton(m_panel1, wxID_ANY, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer3->Add(OkButton, 0, wxALL, 5);
+  bSizer3->Add(OkButton, 0, wxALL, FromDIP(5));
 
   CancelButton = new wxButton(m_panel1, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0);
-  bSizer3->Add(CancelButton, 0, wxALL, 5);
+  bSizer3->Add(CancelButton, 0, wxALL, FromDIP(5));
 
 
   m_panel1->SetSizer(bSizer3);
   m_panel1->Layout();
-  bSizer1->Add(m_panel1, 0, wxEXPAND | wxALL, 5);
+  bSizer1->Add(m_panel1, 0, wxEXPAND | wxALL, FromDIP(5));
 
 
   this->SetSizer(bSizer1);

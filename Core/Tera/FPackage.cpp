@@ -3334,6 +3334,7 @@ FObjectExport* FPackage::AddExport(const FString& inObjectName, const FString& o
   exp->ClassIndex = clsImp->ObjectIndex;
   NET_INDEX netIndex = INDEX_NONE; 
   Exports.emplace_back(exp);
+  Summary.Generations.front().Exports++;
   if (GetFileVersion() > VER_TERA_CLASSIC)
   {
     Depends.emplace_back();

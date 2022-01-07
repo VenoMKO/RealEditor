@@ -559,7 +559,7 @@ bool TextureImporter::Run()
   processor.SetGenerateMips(importer.GetGenerateMips());
   processor.SetMipFilter(importer.GetMipFilter());
 
-  ProgressWindow progress(Parent, "Please, wait...");
+  ProgressWindow progress(Parent, "Please wait...");
   progress.SetCurrentProgress(-1);
   progress.SetCanCancel(false);
   progress.SetActionText("Processing the image");

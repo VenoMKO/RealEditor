@@ -13,10 +13,7 @@ public:
   {
     DBreakIf(String.Length() > MAX_NAME_ENTRY);
 #if TERMINATE_NEW_NAMES
-    if (String.Back())
-    {
-      String += '\0';
-    }
+    String.Terminate();
 #endif
   }
 
@@ -25,10 +22,7 @@ public:
   {
     DBreakIf(String.Length() > MAX_NAME_ENTRY);
 #if TERMINATE_NEW_NAMES
-    if (String.Back())
-    {
-      String += '\0';
-    }
+    String.Terminate();
 #endif
   }
 
@@ -52,10 +46,7 @@ public:
     String = string;
     DBreakIf(String.Length() > MAX_NAME_ENTRY);
 #if TERMINATE_EXISTING_NAMES
-    if (String.Back())
-    {
-      String += '\0';
-    }
+    String.Terminate();
 #endif
   }
 

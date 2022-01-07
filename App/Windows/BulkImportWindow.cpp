@@ -191,7 +191,7 @@ public:
     bSizer23 = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* m_staticText20;
-    m_staticText20 = new wxStaticText(m_panel8, wxID_ANY, wxT("Enter class and name of the object and you want to change and press Search. RE will look for all objects matching the class with similar names."), wxDefaultPosition, wxDefaultSize, 0);
+    m_staticText20 = new wxStaticText(m_panel8, wxID_ANY, wxT("Enter the class and name of the object you want to change, and press Search. RE will look for all objects matching the class with similar names."), wxDefaultPosition, wxDefaultSize, 0);
     m_staticText20->Wrap(FromDIP(580));
     bSizer23->Add(m_staticText20, 0, wxALL, FromDIP(5));
 
@@ -846,7 +846,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
   bSizer15 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText15;
-  m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import operations. Each entry represents a single operation. Press Add to create an import operation."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText15 = new wxStaticText(m_panel7, wxID_ANY, wxT("List of import operations. Each entry represents a single operation. Press Add to create a new operation."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText15->Wrap(FromDIP(650));
   bSizer15->Add(m_staticText15, 0, wxALL, FromDIP(5));
 
@@ -898,7 +898,7 @@ BulkImportWindow::BulkImportWindow(wxWindow* parent)
 
   bSizer10->Add(m_staticText1011, 0, wxTOP | wxRIGHT | wxLEFT, FromDIP(5));
 
-  wxString TfcModeRadioChoices[] = { wxT("Generate TFC (Texture File Cache)"), wxT("Disable TFC"), wxT("Keep as is") };
+  wxString TfcModeRadioChoices[] = { wxT("Generate TFC (can greatly reduce mod's file size in some cases)"), wxT("Disable TFC (bigger mod's file size, but more stable)"), wxT("Keep as is (small size, but the mod may crash other regions clients)") };
   int TfcModeRadioNChoices = sizeof(TfcModeRadioChoices) / sizeof(wxString);
   TfcModeRadio = new wxRadioBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, TfcModeRadioNChoices, TfcModeRadioChoices, 1, wxRA_SPECIFY_COLS);
   TfcModeRadio->SetSelection(App::GetSharedApp()->GetConfig().BulkImportTfcMode);
@@ -1192,11 +1192,11 @@ void BulkImportWindow::OnContinueClicked(wxCommandEvent& event)
   {
     if (operation.HasErrors())
     {
-      REDialog::Warning(wxT("Some operations have failed. See Errors.txt in the otput folder."));
+      REDialog::Warning(wxT("Some operations have failed. See Errors.txt in the output folder."));
     }
     else
     {
-      REDialog::Info(wxT("Packages extracted sucessfully!"));
+      REDialog::Info(wxT("All packages were extracted sucessfully!"));
     }
   }
   else
@@ -1239,7 +1239,7 @@ void BulkImportWindow::UpdateControls()
 
 bool BulkImportWindow::LoadBuffer()
 {
-  ProgressWindow progress(this, wxT("Please, wait..."));
+  ProgressWindow progress(this, wxT("Please wait..."));
   progress.SetActionText(wxT("Loading object dump"));
   progress.SetCanCancel(false);
   progress.SetCurrentProgress(-1);

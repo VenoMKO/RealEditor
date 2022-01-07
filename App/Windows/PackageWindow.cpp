@@ -1185,6 +1185,7 @@ void PackageWindow::OnNewClicked(wxCommandEvent&)
     return;
   }
   dlg.FillSummary(summary);
+  summary.FolderName.Terminate();
   std::shared_ptr<FPackage> pkg = FPackage::CreateNewPackage(summary);
   App::GetSharedApp()->OpenPackage(pkg);
 }
