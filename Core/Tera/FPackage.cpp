@@ -2236,9 +2236,19 @@ bool FPackage::Save(PackageSaveContext& context)
       }
 
       Summary.DependsOffset = writer.GetPosition();
-      for (auto& dep : Depends)
+      if (Summary.GetFileVersion() > VER_TERA_CLASSIC)
       {
-        writer << dep;
+        for (auto& dep : Depends)
+        {
+          writer << dep;
+        }
+      }
+      else
+      {
+        for (auto& dep : Depends.front())
+        {
+          writer << dep;
+        }
       }
       Summary.HeaderSize = writer.GetPosition();
     }
@@ -2258,6 +2268,7 @@ bool FPackage::Save(PackageSaveContext& context)
     {
       DBreakIf(context.PreserveOffsets);
       context.Error = "Package has too much changes in the header. Can't save it with the 'Preserve Offsets' flag";
+      Summary.PackageFlags |= PKG_Dirty;
       return false;
     }
 
