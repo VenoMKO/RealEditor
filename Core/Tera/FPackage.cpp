@@ -2512,14 +2512,14 @@ bool FPackage::Save(PackageSaveContext& context)
       concurrency::parallel_for(size_t(0), size_t(tmpChunks.size()), [&tmpChunks, &context, compressedChunksPtr](size_t idx) {
         const TmpChunkData& chunk = tmpChunks.at(idx);
         int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
-        LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+        LZO::Compress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
         compressedChunksPtr->at(idx).CompressedSize = compressedSize;
       });
 #else
       for (size_t idx = 0; idx < tmpChunks.size(); ++idx) {
         const TmpChunkData& chunk = tmpChunks.at(idx);
         int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
-        LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+        LZO::Compress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
         compressedChunksPtr->at(idx).CompressedSize = compressedSize;
       }
 #endif

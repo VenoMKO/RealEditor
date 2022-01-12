@@ -576,7 +576,7 @@ void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSE
   delete[] compressionInfo;
 }
 
-void LZO::Ñompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent)
+void LZO::Compress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent)
 {
   uint8* start = (uint8*)dst;
   uint8* ptr = start;

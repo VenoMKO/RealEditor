@@ -303,7 +303,7 @@ FString GetClientVersionString(const FString& s1data);
 namespace LZO
 {
   void Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent = true);
-  void Ñompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent = true);
+  void Compress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET& dstSize, bool concurrent = true);
 }
 
 // New decompression. compressedBuffer must point directly to a compressed data block
