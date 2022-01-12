@@ -1309,7 +1309,7 @@ void PackageWindow::OnSaveClicked(wxCommandEvent& e)
     return;
   }
 
-  wxString path = GetTempFilePath().WString();
+  wxString path = Package->GetSourcePath().WString();
   ProgressWindow progress(this, "Saving");
   progress.SetCurrentProgress(-1);
   progress.SetActionText(wxT("Preparing..."));
