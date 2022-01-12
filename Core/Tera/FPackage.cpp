@@ -2080,11 +2080,8 @@ bool FPackage::Save(PackageSaveContext& context)
     return true;
   }
 
-  FString ctxPath = context.Path;
-  if (!hasSource && Summary.CompressionFlags)
-  {
-    ctxPath = GetTempFilePath();
-  }
+  bool needToMoveGpk = true;
+  FString ctxPath = GetTempFilePath();
   std::vector<FObjectExport*> marked;
 
   bool isOk = true;
@@ -2447,101 +2444,105 @@ bool FPackage::Save(PackageSaveContext& context)
     isOk = writer.IsGood();
   }
 
-  if (isOk && !hasSource && Summary.CompressionFlags)
+  if (isOk)
   {
-    struct TmpChunkData {
-      void* UncompressedData = nullptr;
-      void* CompressedData = nullptr;
-    };
+    if (!hasSource && Summary.CompressionFlags)
+    {
+      struct TmpChunkData {
+        void* UncompressedData = nullptr;
+        void* CompressedData = nullptr;
+      };
 
-    FILE_OFFSET pos = (Summary.NamesOffset && Summary.NamesOffset < Summary.HeaderSize) ? Summary.NamesOffset : Summary.HeaderSize;
+      FILE_OFFSET pos = (Summary.NamesOffset && Summary.NamesOffset < Summary.HeaderSize) ? Summary.NamesOffset : Summary.HeaderSize;
 
-    Summary.CompressedChunks.clear();
-    Summary.CompressedChunks.emplace_back();
-    Summary.CompressedChunks.back().DecompressedOffset = pos;
+      Summary.CompressedChunks.clear();
+      Summary.CompressedChunks.emplace_back();
+      Summary.CompressedChunks.back().DecompressedOffset = pos;
 
-    std::vector<TmpChunkData> tmpChunks;
-    tmpChunks.emplace_back();
+      std::vector<TmpChunkData> tmpChunks;
+      tmpChunks.emplace_back();
 
-    auto prepareChunk = [this, &tmpChunks](int32 idx) {
-      FObjectExport* exp = Exports[idx];
-      if (exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset >= COMPRESSED_CHUNK_SIZE)
+      auto prepareChunk = [this, &tmpChunks](int32 idx) {
+        FObjectExport* exp = Exports[idx];
+        if (exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset >= COMPRESSED_CHUNK_SIZE)
+        {
+          Summary.CompressedChunks.back().DecompressedSize = exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset;
+          tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
+          tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
+
+          Summary.CompressedChunks.emplace_back();
+          Summary.CompressedChunks.back().DecompressedOffset = exp->SerialOffset;
+          tmpChunks.emplace_back();
+        }
+        else if (idx && ((exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset) >= COMPRESSED_CHUNK_SIZE)
+        {
+          Summary.CompressedChunks.back().DecompressedSize = (exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset;
+          tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
+          tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
+
+          Summary.CompressedChunks.emplace_back();
+          Summary.CompressedChunks.back().DecompressedOffset = (exp->SerialOffset + exp->SerialSize);
+          tmpChunks.emplace_back();
+        }
+      };
+
+      for (int32 idx = 0; idx < Exports.size(); ++idx)
       {
-        Summary.CompressedChunks.back().DecompressedSize = exp->SerialOffset - Summary.CompressedChunks.back().DecompressedOffset;
+        prepareChunk(idx);
+      }
+
+      if (!Summary.CompressedChunks.back().DecompressedSize)
+      {
+        Summary.CompressedChunks.back().DecompressedSize = payloadSize - Summary.CompressedChunks.back().DecompressedOffset;
         tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
         tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
-
-        Summary.CompressedChunks.emplace_back();
-        Summary.CompressedChunks.back().DecompressedOffset = exp->SerialOffset;
-        tmpChunks.emplace_back();
       }
-      else if (idx && ((exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset) >= COMPRESSED_CHUNK_SIZE)
+
       {
-        Summary.CompressedChunks.back().DecompressedSize = (exp->SerialOffset + exp->SerialSize) - Summary.CompressedChunks.back().DecompressedOffset;
-        tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
-        tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
-
-        Summary.CompressedChunks.emplace_back();
-        Summary.CompressedChunks.back().DecompressedOffset = (exp->SerialOffset + exp->SerialSize);
-        tmpChunks.emplace_back();
+        FReadStream reader(ctxPath);
+        for (size_t idx = 0; idx < tmpChunks.size(); ++idx)
+        {
+          reader.SetPosition(Summary.CompressedChunks[idx].DecompressedOffset);
+          reader.SerializeBytes(tmpChunks[idx].UncompressedData, Summary.CompressedChunks[idx].DecompressedSize);
+        }
       }
-    };
 
-    for (int32 idx = 0; idx < Exports.size(); ++idx)
-    {
-      prepareChunk(idx);
-    }
-
-    if (!Summary.CompressedChunks.back().DecompressedSize)
-    {
-      Summary.CompressedChunks.back().DecompressedSize = payloadSize - Summary.CompressedChunks.back().DecompressedOffset;
-      tmpChunks.back().CompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize * 2);
-      tmpChunks.back().UncompressedData = malloc(Summary.CompressedChunks.back().DecompressedSize);
-    }
-    
-    {
-      FReadStream reader(ctxPath);
-      for (size_t idx = 0; idx < tmpChunks.size(); ++idx)
-      {
-        reader.SetPosition(Summary.CompressedChunks[idx].DecompressedOffset);
-        reader.SerializeBytes(tmpChunks[idx].UncompressedData, Summary.CompressedChunks[idx].DecompressedSize);
-      }
-    }
-
-    std::vector<FCompressedChunk>* compressedChunksPtr = &Summary.CompressedChunks;
+      std::vector<FCompressedChunk>* compressedChunksPtr = &Summary.CompressedChunks;
 #if ALLOW_CONCURRENT_LZO
-    concurrency::parallel_for(size_t(0), size_t(tmpChunks.size()), [&tmpChunks, &context, compressedChunksPtr](size_t idx) {
-      const TmpChunkData& chunk = tmpChunks.at(idx);
-      int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
-      LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
-      compressedChunksPtr->at(idx).CompressedSize = compressedSize;
-    });
+      concurrency::parallel_for(size_t(0), size_t(tmpChunks.size()), [&tmpChunks, &context, compressedChunksPtr](size_t idx) {
+        const TmpChunkData& chunk = tmpChunks.at(idx);
+        int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
+        LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+        compressedChunksPtr->at(idx).CompressedSize = compressedSize;
+      });
 #else
-    for (size_t idx = 0; idx < tmpChunks.size(); ++idx) {
-      const TmpChunkData& chunk = tmpChunks.at(idx);
-      int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
-      LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
-      compressedChunksPtr->at(idx).CompressedSize = compressedSize;
-    }
+      for (size_t idx = 0; idx < tmpChunks.size(); ++idx) {
+        const TmpChunkData& chunk = tmpChunks.at(idx);
+        int32 compressedSize = compressedChunksPtr->at(idx).DecompressedSize * 2;
+        LZO::Ñompress(chunk.UncompressedData, compressedChunksPtr->at(idx).DecompressedSize, chunk.CompressedData, compressedSize);
+        compressedChunksPtr->at(idx).CompressedSize = compressedSize;
+      }
 #endif
 
-    FWriteStream finalWriter(context.Path);
-    finalWriter << Summary;
-    for (int32 idx = 0; idx < tmpChunks.size(); ++idx)
-    {
-      TmpChunkData& chunk = tmpChunks[idx];
-      Summary.CompressedChunks[idx].CompressedOffset = finalWriter.GetPosition();
-      finalWriter.SerializeBytes(chunk.CompressedData, Summary.CompressedChunks[idx].CompressedSize);
-      free(chunk.CompressedData);
-      free(chunk.UncompressedData);
-      chunk.CompressedData = nullptr;
-      chunk.UncompressedData = nullptr;
+      FWriteStream finalWriter(context.Path);
+      finalWriter << Summary;
+      for (int32 idx = 0; idx < tmpChunks.size(); ++idx)
+      {
+        TmpChunkData& chunk = tmpChunks[idx];
+        Summary.CompressedChunks[idx].CompressedOffset = finalWriter.GetPosition();
+        finalWriter.SerializeBytes(chunk.CompressedData, Summary.CompressedChunks[idx].CompressedSize);
+        free(chunk.CompressedData);
+        free(chunk.UncompressedData);
+        chunk.CompressedData = nullptr;
+        chunk.UncompressedData = nullptr;
+      }
+      finalWriter.SetPosition(0);
+      Summary.PackageFlags |= PKG_StoreCompressed;
+      finalWriter << Summary;
+      Summary.PackageFlags &= ~PKG_StoreCompressed;
+      isOk = finalWriter.IsGood();
+      needToMoveGpk = false;
     }
-    finalWriter.SetPosition(0);
-    Summary.PackageFlags |= PKG_StoreCompressed;
-    finalWriter << Summary;
-    Summary.PackageFlags &= ~PKG_StoreCompressed;
-    isOk = finalWriter.IsGood();
   }
 
   // Since this is a "Save As" we need to restore dirty flags
@@ -2558,6 +2559,17 @@ bool FPackage::Save(PackageSaveContext& context)
   if (!isOk)
   {
     context.Error = "Unknown error! Failed to write data!";
+  }
+  else if (needToMoveGpk)
+  {
+    std::error_code err;
+    std::filesystem::path dstPath(A2W(context.Path));
+    std::filesystem::rename(ctxPath.WString(), dstPath, err);
+    if (err)
+    {
+      context.Error = "Failed to save file!\nCheck if you have permissions to write to the destination and if there is enough free disk space.";
+      return false;
+    }
   }
   return isOk;
 }
