@@ -86,7 +86,7 @@ enum ClassIco : int {
   IcoSoundCue,
 };
 
-wxIcon GetSysIconFromDll(const wxString& path, int id, wxIcon& def)
+wxIcon GetSysIconFromDll(const char* path, int id, wxIcon& def)
 {
   auto result = wxIcon(wxIconLocation(path, -id));
   if (result.IsOk())
@@ -391,11 +391,9 @@ void ObjectTreeModel::BuildIcons()
   bitmap = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, wxART_OTHER, wxSize(16, 16));
   IconList->Add(bitmap);
 
-  const wxString imageres = R"(C:\Windows\system32\imageres.dll)";
-
   // Default icon
   auto defIcon = wxIcon();
-  defIcon = GetSysIconFromDll(imageres, 2, defIcon);
+  defIcon = GetSysIconFromDll("imageres.dll", 2, defIcon);
   IconList->Add(defIcon);
 
   // Class icon
