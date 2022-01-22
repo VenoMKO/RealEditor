@@ -546,6 +546,9 @@ FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
       case FStaticMeshExportConfig::CFG_LastFormat:
         s << c.LastFormat;
         break;
+      case FStaticMeshExportConfig::CFG_ExportLODs:
+        s << c.ExportLODs;
+        break;
       default:
         s.Close();
         // no break
@@ -561,6 +564,7 @@ FStream& operator<<(FStream& s, FStaticMeshExportConfig& c)
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ScaleFactor, c.ScaleFactor, d.ScaleFactor);
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_TextureFormat, c.TextureFormat, d.TextureFormat);
     SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_LastFormat, c.LastFormat, d.LastFormat);
+    SerializeKVIfNotDefault(FStaticMeshExportConfig::CFG_ExportLODs, c.ExportLODs, d.ExportLODs);
     SerializeKey(FStaticMeshExportConfig::CFG_End);
   }
   return s;

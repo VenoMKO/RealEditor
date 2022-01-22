@@ -32,7 +32,7 @@ enum MaterialsMenuID {
 class StaticMeshExportOptions : public WXDialog {
 public:
   StaticMeshExportOptions(wxWindow* parent, const FStaticMeshExportConfig& cfg)
-    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 194), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
+    : WXDialog(parent, wxID_ANY, wxT("Export options"), wxDefaultPosition, wxSize(268, 204), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU)
   {
     SetSize(FromDIP(GetSize()));
     SetSizeHints(wxDefaultSize, wxDefaultSize);
@@ -53,6 +53,10 @@ public:
 
 
     bSizer1->Add(bSizer2, 0, wxEXPAND, FromDIP(5));
+
+    ExportLODs = new wxCheckBox(this, wxID_ANY, wxT("Export LODs"), wxDefaultPosition, wxDefaultSize, 0);
+    ExportLODs->SetToolTip(wxT("Available only for FBX!"));
+    bSizer1->Add(ExportLODs, 0, wxALL, FromDIP(5));
 
     ExportTextures = new wxCheckBox(this, wxID_ANY, wxT("Export textures"), wxDefaultPosition, wxDefaultSize, 0);
     bSizer1->Add(ExportTextures, 0, wxALL, FromDIP(5));
@@ -105,6 +109,7 @@ public:
     ScaleFactor->SetValidator(wxFloatingPointValidator<float>(2, &ScaleFactorValue, wxNUM_VAL_DEFAULT));
 
     ExportTextures->SetValue(cfg.ExportTextures);
+    ExportLODs->SetValue(cfg.ExportLODs);
 
     if (!HasAVX2())
     {
@@ -129,6 +134,11 @@ public:
   bool GetExportTextures() const
   {
     return ExportTextures->GetValue();
+  }
+
+  bool GetExportLODs() const
+  {
+    return ExportLODs->GetValue();
   }
 
   TextureProcessor::TCFormat GetTextureFormat() const
@@ -168,6 +178,7 @@ private:
 protected:
   wxTextCtrl* ScaleFactor = nullptr;
   wxCheckBox* ExportTextures = nullptr;
+  wxCheckBox* ExportLODs = nullptr;
   wxChoice* TextureFormat = nullptr;
 
   float ScaleFactorValue = 1.;
@@ -245,11 +256,13 @@ void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
   appConfig.StaticMeshExportConfig.ScaleFactor = opts.GetScaleFactor();
   appConfig.StaticMeshExportConfig.ExportTextures = opts.GetExportTextures();
   appConfig.StaticMeshExportConfig.TextureFormat = opts.GetTextureFormatIndex();
+  appConfig.StaticMeshExportConfig.ExportLODs = opts.GetExportLODs();
   App::GetSharedApp()->SaveConfig();
 
   MeshExportContext ctx;
   ctx.ExportSkeleton = false;
   ctx.Scale3D = FVector(opts.GetScaleFactor());
+  ctx.ExportLods = opts.GetExportLODs();
   wxString fbxpath = IODialog::SaveStaticMeshDialog(Window, Object->GetObjectNameString().WString());
   if (fbxpath.empty())
   {

@@ -73,6 +73,7 @@ struct FStaticMeshExportConfig {
     CFG_ScaleFactor,
     CFG_TextureFormat,
     CFG_LastFormat,
+    CFG_ExportLODs,
     CFG_End = 0xFFFF
   };
 
@@ -80,6 +81,7 @@ struct FStaticMeshExportConfig {
   int32 LastFormat = 0;
   bool ExportTextures = true;
   float ScaleFactor = 1.;
+  bool ExportLODs = false;
 
   friend FStream& operator<<(FStream& s, FStaticMeshExportConfig& c);
 };
