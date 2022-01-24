@@ -292,7 +292,11 @@ public:
 
   uint32 GetExportFlags() const;
 
+  void SetExportFlags(uint32 flags);
+
   uint64 GetObjectFlags() const;
+
+  void SetObjectFlags(uint64 flags);
 
   FString GetFullObjectName() const;
 

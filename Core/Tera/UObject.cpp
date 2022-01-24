@@ -26,9 +26,27 @@ uint32 UObject::GetExportFlags() const
   return Export->ExportFlags;
 }
 
+void UObject::SetExportFlags(uint32 flags)
+{
+  if (flags != Export->ExportFlags)
+  {
+    Export->ExportFlags = flags;
+    MarkDirty();
+  }
+}
+
 uint64 UObject::GetObjectFlags() const
 {
   return Export->ObjectFlags;
+}
+
+void UObject::SetObjectFlags(uint64 flags)
+{
+  if (flags != Export->ObjectFlags)
+  {
+    Export->ObjectFlags = flags;
+    MarkDirty();
+  }
 }
 
 FString UObject::GetFullObjectName() const

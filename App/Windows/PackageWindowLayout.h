@@ -48,7 +48,6 @@ void PackageWindow::InitLayout()
 
   fileMenu->AppendSeparator();
 
-
   wxMenuItem* m_menuItem51;
   m_menuItem51 = new wxMenuItem(fileMenu, ControlElementId::ShowInExplorer, wxString(wxT("Show in Explorer")), wxEmptyString, wxITEM_NORMAL);
   fileMenu->Append(m_menuItem51);
@@ -104,6 +103,11 @@ void PackageWindow::InitLayout()
   wxMenuItem* m_menuItem70 = new wxMenuItem(m_menu4, ControlElementId::BulkCompositeExtract, wxString(wxT("Bulk import...")), wxS("Bulk import to composite packages"), wxITEM_NORMAL);
   m_menuItem70->Enable(IsModernClient);
   m_menu4->Append(m_menuItem70);
+
+  m_menu4->AppendSeparator();
+
+  wxMenuItem* editFlags = new wxMenuItem(m_menu4, ControlElementId::EditPkgFlags, wxString(wxT("Package flags...")), wxEmptyString, wxITEM_NORMAL);
+  m_menu4->Append(editFlags);
 
   menuBar->Append(m_menu4, wxT("Edit"));
 
@@ -257,6 +261,10 @@ void PackageWindow::InitLayout()
 
   bSizer31->Add(ObjectFlagsTextfield, 1, wxALL, 1);
 
+  EditObjectFlagsButton = new wxButton(ObjectInfoPanel, ControlElementId::EditObjFlags, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0);
+  EditObjectFlagsButton->SetToolTip(wxT("Edit object flags"));
+  bSizer31->Add(EditObjectFlagsButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
+
 
   bSizer13->Add(bSizer31, 0, wxEXPAND, FromDIP(5));
 
@@ -338,6 +346,9 @@ void PackageWindow::InitLayout()
 
   bSizer60->Add(ExportFlagsTextfield, 1, wxALIGN_CENTER_VERTICAL | wxALL, 1);
 
+  EditExportFlagsButton = new wxButton(ObjectInfoPanel, ControlElementId::EditExpFlags, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0);
+  EditExportFlagsButton->SetToolTip(wxT("Edit export flags"));
+  bSizer60->Add(EditExportFlagsButton, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
 
   bSizer47->Add(bSizer60, 1, 0, FromDIP(5));
 

@@ -1045,7 +1045,7 @@ FString PackageFlagsToString(uint32 flags)
     s += "ContainsFaceFXData, ";
   if (flags & PKG_NoExportAllowed)
     s += "NoExportAllowed, ";
-  if (flags & PKG_NoExportAllowed)
+  if (flags & PKG_StrippedSource)
     s += "StrippedSource, ";
   if (s.Size())
   {

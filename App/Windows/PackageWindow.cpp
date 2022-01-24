@@ -10,6 +10,7 @@
 #include "TextureImporter.h"
 #include "DependsResolveDialog.h"
 #include "REDialogs.h"
+#include "FlagsDialog.h"
 #include "../Misc/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
@@ -50,6 +51,7 @@ enum ControlElementId {
   ShowInExplorer,
   Save,
   SaveAs,
+  EditPkgFlags,
   Close,
   Exit,
   SettingsWin,
@@ -76,6 +78,8 @@ enum ControlElementId {
   SearchAccl,
   EscButton,
   ObjTreeCtrl,
+  EditExpFlags,
+  EditObjFlags,
   OpenRecentStart /* OpenRecentStart must be the last id. OpenRecentStart + n - recent file at index n */
 };
 
@@ -310,6 +314,8 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
       if (active == p.second)
       {
         UObject* obj = active->GetObject();
+        EditExportFlagsButton->Enable(true);
+        EditObjectFlagsButton->Enable(true);
         ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d\nNet: %d"), Package->GetObjectIndex(obj), obj->GetNetIndex()));
         ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialSize()));
         ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialOffset()));
@@ -385,6 +391,8 @@ void PackageWindow::SidebarSplitterOnIdle(wxIdleEvent&)
 
 void PackageWindow::OnObjectTreeSelectItem(wxDataViewEvent& e)
 {
+  EditExportFlagsButton->Enable(false);
+  EditObjectFlagsButton->Enable(false);
   ObjectTreeNode* node = (ObjectTreeNode*)ObjectTreeCtrl->GetCurrentItem().GetID();
   if (!node)
   {
@@ -1709,6 +1717,17 @@ void PackageWindow::OnHelpClicked(wxCommandEvent&)
   wxLaunchDefaultBrowser(HelpUrl);
 }
 
+void PackageWindow::OnEditPackageFlagsClicked(wxCommandEvent&)
+{
+  FlagsDialog* d = FlagsDialog::PackageFlagsDialog((EPackageFlags)GetPackage()->GetSummary().PackageFlags);
+  if (d->ShowModal() != wxID_OK)
+  {
+    delete d;
+    return;
+  }
+
+}
+
 void PackageWindow::OnAddPackageClicked(int parentIdx)
 {
   FObjectExport* parent = parentIdx != FAKE_EXPORT_ROOT ? Package->GetExportObject(parentIdx) : nullptr;
@@ -2066,6 +2085,45 @@ void PackageWindow::OnForwardClicked(wxCommandEvent&)
   NavigateHistory();
 }
 
+void PackageWindow::OnEditObjectFlagsClicked(wxCommandEvent&)
+{
+  if (!ActiveEditor || !ActiveEditor->GetObject())
+  {
+    return;
+  }
+  UObject* obj = ActiveEditor->GetObject();
+  FlagsDialog* dialog = FlagsDialog::ObjectFlagsDialog((EObjectFlags)obj->GetObjectFlags(), this);
+  if (dialog->ShowModal() != wxID_OK)
+  {
+    delete dialog;
+    return;
+  }
+  obj->SetObjectFlags(dialog->GetFlags<uint64>());
+  std::string flags = ObjectFlagsToString(obj->GetObjectFlags());
+  ObjectFlagsTextfield->SetLabelText(flags);
+  delete dialog;
+}
+
+void PackageWindow::OnEditExportFlagsClicked(wxCommandEvent&)
+{
+  if (!ActiveEditor || !ActiveEditor->GetObject())
+  {
+    return;
+  }
+  UObject* obj = ActiveEditor->GetObject();
+  FlagsDialog* dialog = FlagsDialog::ExportFlagsDialog((EFExportFlags)obj->GetExportFlags(), this);
+  if (dialog->ShowModal() != wxID_OK)
+  {
+    delete dialog;
+    return;
+  }
+  obj->SetExportFlags(dialog->GetFlags<uint32>());
+  std::string flags = ExportFlagsToString(obj->GetExportFlags());
+  ExportFlagsTextfield->SetLabelText(flags);
+  delete dialog;
+}
+
+
 void PackageWindow::OnSearchEnter(wxCommandEvent& event)
 {
   FString search = SearchField->GetValue().ToStdWstring();
@@ -2234,6 +2292,7 @@ EVT_MENU(ControlElementId::OpenComposite, PackageWindow::OnOpenCompositeClicked)
 EVT_MENU(ControlElementId::ShowInExplorer, PackageWindow::OnShowInExplorerClicked)
 EVT_MENU(ControlElementId::Save, PackageWindow::OnSaveClicked)
 EVT_MENU(ControlElementId::SaveAs, PackageWindow::OnSaveAsClicked)
+EVT_MENU(ControlElementId::EditPkgFlags, PackageWindow::OnEditPackageFlagsClicked)
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
 EVT_MENU(ControlElementId::DcTool, PackageWindow::OnDcToolClicked)
@@ -2261,6 +2320,8 @@ EVT_COMMAND(wxID_ANY, OBJECT_ADD, PackageWindow::OnObjectAdded)
 EVT_COMMAND(wxID_ANY, UPDATE_PROPERTIES, PackageWindow::OnUpdateProperties)
 EVT_BUTTON(ControlElementId::Back, PackageWindow::OnBackClicked)
 EVT_BUTTON(ControlElementId::Forward, PackageWindow::OnForwardClicked)
+EVT_BUTTON(ControlElementId::EditExpFlags, PackageWindow::OnEditExportFlagsClicked)
+EVT_BUTTON(ControlElementId::EditObjFlags, PackageWindow::OnEditObjectFlagsClicked)
 EVT_TEXT(ControlElementId::Search, PackageWindow::OnSearchText)
 EVT_MENU(ControlElementId::SearchAccl, PackageWindow::OnFocusSearch)
 EVT_MENU(ControlElementId::EscButton, PackageWindow::OnEscClicked)

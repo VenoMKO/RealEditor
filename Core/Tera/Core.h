@@ -54,6 +54,8 @@ static const unsigned int BUILD_NUMBER = (
 #define TERMINATE_NEW_NAMES 1
 // Add NULL-terminator to existing FNameEntries on edit
 #define TERMINATE_EXISTING_NAMES 1
+// Allow internal flags edits
+#define INTERNAL_FLAGS _DEBUG
 
 // Load minimum class packages to improve load time.
 // Must not be used in Release builds!

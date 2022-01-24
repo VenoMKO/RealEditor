@@ -102,6 +102,7 @@ private:
   void OnBulkCompositeExtract(wxCommandEvent&);
   void OnBulkPackageExport(PACKAGE_INDEX objIndex);
   void OnHelpClicked(wxCommandEvent&);
+  void OnEditPackageFlagsClicked(wxCommandEvent&);
 
   void OnAddPackageClicked(int parent);
   void OnAddTextureClicked(int parent);
@@ -138,6 +139,9 @@ private:
   void OnForwardClicked(wxCommandEvent&);
   void NavigateHistory();
 
+  void OnEditObjectFlagsClicked(wxCommandEvent&);
+  void OnEditExportFlagsClicked(wxCommandEvent&);
+
   void OnSearchEnter(wxCommandEvent&);
   void OnSearchText(wxCommandEvent&);
   void OnFocusSearch(wxCommandEvent&);
@@ -166,11 +170,13 @@ private:
   wxMenuItem* SaveMenu = nullptr;
   wxMenuItem* SaveAsMenu = nullptr;
   wxTextCtrl* ObjectFlagsTextfield = nullptr;
+  wxButton* EditObjectFlagsButton = nullptr;
   wxStaticText* ObjectOffsetLabel = nullptr;
   wxStaticText* ObjectSizeLabel = nullptr;
   wxStaticText* ObjectPropertiesSizeLabel = nullptr;
   wxStaticText* ObjectDataSizeLabel = nullptr;
   wxTextCtrl* ExportFlagsTextfield = nullptr;
+  wxButton* EditExportFlagsButton = nullptr;
   wxToolBar* Toolbar = nullptr;
   wxPropertyGridManager* PropertiesCtrl = nullptr;
   wxPropertyCategory* PropertyRootCategory = nullptr;
