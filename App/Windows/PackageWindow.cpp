@@ -1719,13 +1719,16 @@ void PackageWindow::OnHelpClicked(wxCommandEvent&)
 
 void PackageWindow::OnEditPackageFlagsClicked(wxCommandEvent&)
 {
-  FlagsDialog* d = FlagsDialog::PackageFlagsDialog((EPackageFlags)GetPackage()->GetSummary().PackageFlags);
+  FPackageSummary& sum = GetPackage()->GetSummary();
+  FlagsDialog* d = FlagsDialog::PackageFlagsDialog((EPackageFlags)sum.PackageFlags, this);
   if (d->ShowModal() != wxID_OK)
   {
     delete d;
     return;
   }
-
+  sum.PackageFlags = d->GetFlags<uint32>();
+  GetPackage()->MarkDirty();
+  delete d;
 }
 
 void PackageWindow::OnAddPackageClicked(int parentIdx)

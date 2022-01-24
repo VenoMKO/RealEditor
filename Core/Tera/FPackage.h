@@ -397,6 +397,11 @@ public:
     return Summary;
   }
 
+  inline FPackageSummary& GetSummary()
+  {
+    return Summary;
+  }
+
   // Table of texture allocations. Writable!
   inline FTextureAllocations& GetTextureAllocations()
   {
