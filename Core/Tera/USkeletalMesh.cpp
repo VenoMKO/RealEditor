@@ -423,20 +423,49 @@ void FStaticLODModel::Serialize(FStream& s, UObject* owner, int32 idx)
 
   s << RequiredBones;
 
+#if SAVE_RAWINDICES
   if (s.GetFV() == VER_TERA_CLASSIC)
   {
-    LegacyRawPointIndices.Serialize(s, owner);
-    RawPointIndices.Realloc(LegacyRawPointIndices.GetElementCount());
-    for (int32 idx = 0; idx < LegacyRawPointIndices.GetElementCount(); ++idx)
+    if (!s.IsReading() && RawPointIndices.GetElementCount())
     {
-      int32 v = *(uint16*)LegacyRawPointIndices.GetAllocation() + (idx * LegacyRawPointIndices.GetElementSize());
-      memcpy((uint8*)RawPointIndices.GetAllocation() + (idx * RawPointIndices.GetElementSize()), &v, RawPointIndices.GetElementSize());
+      LegacyRawPointIndices.Realloc(RawPointIndices.GetElementCount());
+      uint16* dst = (uint16*)LegacyRawPointIndices.GetAllocation();
+      uint32* src = (uint32*)RawPointIndices.GetAllocation();
+      for (int32 idx = 0; idx < RawPointIndices.GetElementCount(); ++idx)
+      {
+        memcpy(&dst[idx], &src[idx], LegacyRawPointIndices.GetElementSize());
+      }
+    }
+    LegacyRawPointIndices.Serialize(s, owner);
+    if (s.IsReading())
+    {
+      RawPointIndices.Realloc(LegacyRawPointIndices.GetElementCount());
+      uint32* dst = (uint32*)RawPointIndices.GetAllocation(); 
+      uint16* src = (uint16*)LegacyRawPointIndices.GetAllocation();
+      for (int32 idx = 0; idx < RawPointIndices.GetElementCount(); ++idx)
+      {
+        uint32 item = (uint32)src[idx];
+        memcpy(&dst[idx], &item, RawPointIndices.GetElementSize());
+      }
     }
   }
   else
   {
     RawPointIndices.Serialize(s, owner);
   }
+#else
+  // Raw point indices are useless. Save disk space by discarding them.
+  if (s.GetFV() == VER_TERA_CLASSIC)
+  {
+    FWordBulkData tmp;
+    tmp.Serialize(s, owner);
+  }
+  else
+  {
+    FIntBulkData tmp;
+    tmp.Serialize(s, owner);
+  }
+#endif
 
   if (s.GetFV() > VER_TERA_CLASSIC)
   {
@@ -552,6 +581,15 @@ void FGPUSkinVertexBase::Serialize(FStream& s)
   {
     s << BoneWeight[idx];
   }
+}
+
+void FGPUSkinVertexBase::Serialize(FStream& s, FVector& pos)
+{
+  if (s.GetFV() == VER_TERA_CLASSIC)
+  {
+    s << pos;
+  }
+  Serialize(s);
 }
 
 bool USkeletalMesh::RegisterProperty(FPropertyTag* property)
@@ -1191,6 +1229,15 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
     delete sectionIndexBufferArray[sectionIndex];
   }
 
+#if SAVE_RAWINDICES
+  lod.RawPointIndices.Realloc(rawPointIndices.size());
+  memcpy(lod.RawPointIndices.GetAllocation(), &rawPointIndices.front(), lod.RawPointIndices.GetElementCount()* lod.RawPointIndices.GetElementSize());
+#endif
+
+  if (GetPackage()->GetFileVersion() == VER_TERA_CLASSIC)
+  {
+    lod.VertexBufferGPUSkin.bUsePackedPosition = false;
+  }
   lod.VertexBufferGPUSkin.ElementCount = lod.NumVertices;
   lod.VertexBufferGPUSkin.AllocateBuffer();
 
@@ -1211,6 +1258,10 @@ bool USkeletalMesh::AcceptVisitor(MeshTravallerData* importData, uint32 lodIdx, 
   {
     // Old skeleton may not match the new one, thus all LODs are invalid. Remove them.
     LodModels.resize(1);
+    if (LODInfo)
+    {
+      LODInfo->resize(1);
+    }
     lodIdx = 0;
   }
 

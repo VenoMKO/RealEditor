@@ -65,6 +65,8 @@ static const unsigned int BUILD_NUMBER = (
 // GPU buffer has lower quality due to packed positions and half precision UVs,
 // so its better to use CPU buffer instead. (Tera uses GPU buffer to render models)
 #define USE_GPU_VERTEX_BUFFER 0
+// Build and save SkelMesh's raw points index buffers
+#define SAVE_RAWINDICES 0
 
 #if _DEBUG
 // DUMP_PATH should be set in the ENV

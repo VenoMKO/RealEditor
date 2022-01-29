@@ -1838,7 +1838,7 @@ bool FbxUtils::ExportSkeletalMesh(USkeletalMesh* sourceMesh, MeshExportContext& 
     {
       for (int influenceIndex = 0; influenceIndex < MAX_INFLUENCES; influenceIndex++)
       {
-        uint16 influenceBone = v.BoneMap->at(v.InfluenceBones[influenceIndex]);
+        uint16 influenceBone = v.BoneMap ? v.BoneMap->at(v.InfluenceBones[influenceIndex]) : v.InfluenceBones[influenceIndex];
         float w = (float)v.InfluenceWeights[influenceIndex];
         float influenceWeight = w / 255.0f;
 

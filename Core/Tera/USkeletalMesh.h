@@ -207,6 +207,7 @@ struct FGPUSkinVertexBase {
   uint8 BoneWeight[MAX_INFLUENCES];
 
   void Serialize(FStream& s);
+  void Serialize(FStream& s, FVector& pos);
 };
 
 template<uint32 NumTexCoords = 1>
@@ -216,9 +217,15 @@ struct FGPUSkinVertexFloatAABB : public FGPUSkinVertexBase {
 
   friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAABB& v)
   {
-    v.Serialize(s);
-
-    s << v.Position;
+    if (s.GetFV() == VER_TERA_CLASSIC)
+    {
+      v.Serialize(s, v.Position);
+    }
+    else
+    {
+      v.Serialize(s);
+      s << v.Position;
+    }
 
     for (int32 idx = 0; idx < NumTexCoords; ++idx)
     {
@@ -236,8 +243,10 @@ struct FGPUSkinVertexFloatAAB : public FGPUSkinVertexBase {
   friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAAB& v)
   {
     v.Serialize(s);
-
-    s << v.Position;
+    if (s.GetFV() > VER_TERA_CLASSIC)
+    {
+      s << v.Position;
+    }
 
     for (int32 idx = 0; idx < NumTexCoords; ++idx)
     {
@@ -254,9 +263,15 @@ struct FGPUSkinVertexFloatABB : public FGPUSkinVertexBase {
 
   friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatABB& v)
   {
-    v.Serialize(s);
-
-    s << v.Position;
+    if (s.GetFV() == VER_TERA_CLASSIC)
+    {
+      v.Serialize(s, v.Position);
+    }
+    else
+    {
+      v.Serialize(s);
+      s << v.Position;
+    }
 
     for (int32 idx = 0; idx < NumTexCoords; ++idx)
     {
@@ -274,8 +289,10 @@ struct FGPUSkinVertexFloatAB : public FGPUSkinVertexBase {
   friend FStream& operator<<(FStream& s, FGPUSkinVertexFloatAB& v)
   {
     v.Serialize(s);
-
-    s << v.Position;
+    if (s.GetFV() > VER_TERA_CLASSIC)
+    {
+      s << v.Position;
+    }
 
     for (int32 idx = 0; idx < NumTexCoords; ++idx)
     {
@@ -327,7 +344,7 @@ struct  FSkeletalMeshVertexBuffer {
 
   bool bDisableCompression = false;
   bool bUseFullPrecisionUVs = false;
-  bool bUsePackedPosition = true;
+  bool bUsePackedPosition = true; // 32-bit client does NOT support packed positions!
 
   uint32 NumVertices = 0;
   uint32 NumTexCoords = 1;
