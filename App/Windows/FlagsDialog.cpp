@@ -85,7 +85,7 @@ public:
     {
       if (item.Enabled)
       {
-        result |= (uint32)item.Flag;
+        result |= item.Flag;
       }
     }
     return result;
@@ -253,7 +253,6 @@ FlagsDialog* FlagsDialog::ObjectFlagsDialog(EObjectFlags flags, wxWindow* parent
   list.emplace_back("ArchetypeObject", RF_ArchetypeObject, RF_ArchetypeObject & flags);
   list.emplace_back("AsyncLoading", RF_AsyncLoading, RF_AsyncLoading & flags);
   list.emplace_back("BeginDestroyed", RF_BeginDestroyed, RF_BeginDestroyed & flags);
-  list.emplace_back("ClassDefaultObject", RF_ClassDefaultObject, RF_ClassDefaultObject & flags);
   list.emplace_back("Cooked", RF_Cooked, RF_Cooked & flags);
   list.emplace_back("DebugBeginDestroyed", RF_DebugBeginDestroyed, RF_DebugBeginDestroyed & flags);
   list.emplace_back("DebugFinishDestroyed", RF_DebugFinishDestroyed, RF_DebugFinishDestroyed & flags);
@@ -301,10 +300,15 @@ FlagsDialog* FlagsDialog::ObjectFlagsDialog(EObjectFlags flags, wxWindow* parent
   list.emplace_back("ZombieComponent", RF_ZombieComponent, RF_ZombieComponent & flags);
 
 #if INTERNAL_FLAGS
+  list.emplace_back("ClassDefaultObject", RF_ClassDefaultObject, RF_ClassDefaultObject & flags);
   list.emplace_back("Marked", RF_Marked, RF_Marked & flags);
   list.emplace_back("Native", RF_Native, RF_Native & flags);
   list.emplace_back("HasStack", RF_HasStack, RF_HasStack & flags);
 #else
+  if (RF_ClassDefaultObject & flags)
+  {
+    d->InternalFlags |= (uint64)RF_ClassDefaultObject;
+  }
   if (RF_Marked & flags)
   {
     d->InternalFlags |= (uint64)RF_Marked;
