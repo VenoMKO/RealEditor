@@ -18,7 +18,7 @@ public:
 
 	void OnCloseWindow(wxCloseEvent& event);
 	void PumpMessages(wxCommandEvent&);
-	bool Show(bool show = true);
+	bool Show(bool show = true) override;
 
 	wxDECLARE_EVENT_TABLE();
 

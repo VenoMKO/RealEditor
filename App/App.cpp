@@ -1239,6 +1239,9 @@ void App::ShowWelcomeBeforeExit(wxCommandEvent&)
     ExitMainLoop();
     return;
   }
+  
+  ALog::Show(false);
+
   InitScreen = new WelcomeDialog(nullptr);
   if (InitScreen->ShowModal() == wxID_OK)
   {
