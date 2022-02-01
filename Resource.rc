@@ -109,6 +109,8 @@ IDB_SKEL_OFF            RCDATA                  "Resources\\Btn_Skeleton_Off.png
 
 IDB_ICO_SOUND_CUE       RCDATA                  "Resources\\Classes\\icon_sound_cue.png"
 
+IDB_ICO_TEXT            RCDATA                  "Resources\\Classes\\icon_text.png"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
