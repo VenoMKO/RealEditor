@@ -429,7 +429,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
 
   wxMenu menu;
   menu.SetClientData((void*)node);
-  bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript);
+  bool allowEdit = !Package->GetPackageFlag(PKG_ContainsMap) && !Package->GetPackageFlag(PKG_ContainsScript) && !Package->GetPackageFlag(PKG_ROAccess);
   bool isRootExp = false;
   bool isModernClient = FPackage::GetCoreVersion() == VER_TERA_MODERN;
   if (node->GetObjectIndex() >= 0)
@@ -457,7 +457,7 @@ void PackageWindow::OnObjectTreeContextMenu(wxDataViewEvent& e)
     else
     {
       menu.Append(ObjTreeMenuId::BulkImport, wxT("Bulk import..."));
-      menu.Enable(ObjTreeMenuId::BulkImport, isModernClient);
+      menu.Enable(ObjTreeMenuId::BulkImport, isModernClient && !Package->GetPackageFlag(PKG_ROAccess));
       menu.AppendSeparator();
       menu.Append(ObjTreeMenuId::CopyObject, wxT("Copy"))->Enable(!node->GetParent() || node->GetParent()->GetClassName() == NAME_Package);
       menu.Append(ObjTreeMenuId::PasteObject, wxT("Paste"))->Enable(false);
@@ -1116,7 +1116,7 @@ void PackageWindow::OnObjectDirty(wxCommandEvent& e)
   {
     return;
   }
-  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource));
+  SaveMenu->Enable(!Package->IsComposite() && !Package->GetPackageFlag(PKG_NoSource) && !Package->GetPackageFlag(PKG_ROAccess));
   PACKAGE_INDEX id = (PACKAGE_INDEX)e.GetInt();
   if (ObjectTreeNode* node = DataModel->FindItemByObjectIndex(id))
   {
@@ -1135,7 +1135,7 @@ void PackageWindow::OnObjectAdded(wxCommandEvent& e)
   {
     return;
   }
-  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource));
+  SaveMenu->Enable(!Package->IsComposite() && !Package->GetPackageFlag(PKG_NoSource) && !Package->GetPackageFlag(PKG_ROAccess));
   if (id > 0)
   {
     ObjectTreeCtrl->AddExportObject(Package->GetExportObject(id), false);
@@ -1655,8 +1655,9 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
   ObjectTreeCtrl->Freeze();
   LoadObjectTree();
   ObjectTreeCtrl->Thaw();
-  SaveMenu->Enable(!Package->IsComposite() && ALLOW_UI_PKG_SAVE && !Package->GetPackageFlag(PKG_NoSource) && Package->IsDirty());
-  SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()) && ALLOW_UI_PKG_SAVE);
+  SaveMenu->Enable(!Package->IsComposite() && !Package->GetPackageFlag(PKG_NoSource) && Package->IsDirty() && !Package->GetPackageFlag(PKG_ROAccess));
+  SaveAsMenu->Enable(!(Package->IsReadOnly() && !Package->IsComposite()));
+  EditFlagsMenu->Enable(!Package->IsReadOnly());
   bool selected = false;
 
   if (Package->GetPackageFlag(PKG_ContainsMap))
@@ -1676,6 +1677,20 @@ void PackageWindow::OnPackageReady(wxCommandEvent&)
       {
         ObjectTreeCtrl->Select(wxDataViewItem(item));
         OnExportObjectSelected(levelIndex);
+        ObjectTreeCtrl->EnsureVisible(wxDataViewItem(item));
+        selected = true;
+      }
+    }
+  }
+  else if (Package->GetPackageFlag(PKG_ROAccess))
+  {
+    if (UObject* obj = Package->GetObject("ReadMe"))
+    {
+      PACKAGE_INDEX objectIndex = Package->GetObjectIndex(obj);
+      if (ObjectTreeNode* item = ((ObjectTreeModel*)ObjectTreeCtrl->GetModel())->FindItemByObjectIndex(objectIndex))
+      {
+        ObjectTreeCtrl->Select(wxDataViewItem(item));
+        OnExportObjectSelected(objectIndex);
         ObjectTreeCtrl->EnsureVisible(wxDataViewItem(item));
         selected = true;
       }

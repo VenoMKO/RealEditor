@@ -169,6 +169,7 @@ private:
   wxMenuItem* LogWindowMenu = nullptr;
   wxMenuItem* SaveMenu = nullptr;
   wxMenuItem* SaveAsMenu = nullptr;
+  wxMenuItem* EditFlagsMenu = nullptr;
   wxTextCtrl* ObjectFlagsTextfield = nullptr;
   wxButton* EditObjectFlagsButton = nullptr;
   wxStaticText* ObjectOffsetLabel = nullptr;

@@ -140,6 +140,8 @@ private:
     : Summary(sum)
   {}
 
+  static std::shared_ptr<FPackage> CreateModDescriptor(const FString& name, const FString& author);
+
 public:
   ~FPackage();
 
@@ -430,7 +432,7 @@ public:
 
   inline bool IsReadOnly() const
   {
-    return !AllowEdit || Composite;
+    return !AllowEdit || Composite || Summary.PackageFlags & PKG_ROAccess;
   }
 
   inline bool IsComposite() const

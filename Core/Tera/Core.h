@@ -283,6 +283,8 @@ FString GetTempFilePath();
 
 FString GetClientVersionString(const FString& s1data);
 
+void GetTargetTmmVersion(int32& major, int32& minor);
+
 #ifndef DBreak()
 #if _DEBUG
 #include <intrin.h>

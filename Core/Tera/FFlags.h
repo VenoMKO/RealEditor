@@ -9,6 +9,7 @@ enum EPackageFlags : uint32
   PKG_Unsecure = 0x00000010,   // Not trusted.
   PKG_SavedWithNewerVersion = 0x00000020,	// Package was saved with newer version.
   PKG_NoSource = 0x00000040,
+  PKG_ROAccess = 0x00000080,
   PKG_Dirty = 0x00000100,
   PKG_PendingDeletion = 0x00000200,
   PKG_Need = 0x00008000,	// Client needs to download this package.
@@ -55,6 +56,7 @@ enum EObjectFlags : uint64
   RF_IsCrossLevelReferenced = 0x0000000000400000,		// This object has been pointed to by a cross-level reference, and therefore requires additional cleanup upon deletion
   RF_IsTransacting = 0x0000000000800000, // The object is being moved
   RF_TransNew = 0x0000000001000000, // The object is new and needs serialization(used by MTransStream to prevent double-serialization of existing objects)
+  RF_ObjectIsRO = 0x0000000002000000,
 
   RF_Saved = 0x0000000080000000,		// Object has been saved via SavePackage. Temporary.
   RF_Transactional = 0x0000000100000000,		// Object is transactional.

@@ -27,6 +27,8 @@ namespace IODialog
   wxString SaveAnimDirDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the animations..."));
 
   wxString SaveSoundCueDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the sound cue..."));
+
+  wxString SaveTextDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the text..."));
 }
 
 namespace REDialog

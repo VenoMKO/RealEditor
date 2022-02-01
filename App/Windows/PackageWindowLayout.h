@@ -106,8 +106,8 @@ void PackageWindow::InitLayout()
 
   m_menu4->AppendSeparator();
 
-  wxMenuItem* editFlags = new wxMenuItem(m_menu4, ControlElementId::EditPkgFlags, wxString(wxT("Package flags...")), wxEmptyString, wxITEM_NORMAL);
-  m_menu4->Append(editFlags);
+  EditFlagsMenu = new wxMenuItem(m_menu4, ControlElementId::EditPkgFlags, wxString(wxT("Package flags...")), wxEmptyString, wxITEM_NORMAL);
+  m_menu4->Append(EditFlagsMenu);
 
   menuBar->Append(m_menu4, wxT("Edit"));
 

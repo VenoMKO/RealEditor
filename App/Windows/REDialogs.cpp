@@ -592,6 +592,29 @@ namespace IODialog
     }
     return result;
   }
+
+  wxString SaveTextDialog(wxWindow* parent, const wxString& filename, const wxString& inPath, const wxString& caption)
+  {
+    REScopedDialogCounter h;
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = App::GetSharedApp()->GetExportPath();
+    }
+
+    static const std::vector<std::pair<std::string, std::string>> extensions = { {".txt", "Text"} };
+    wxString result;
+    int32 ext = 0;
+    SaveDialog(parent, filename, path, caption, extensions, result, ext);
+    if (result.Length())
+    {
+      wxFileName f(result);
+      cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
+      App::GetSharedApp()->SaveConfig();
+    }
+    return result;
+  }
 }
 
 namespace REDialog

@@ -422,6 +422,37 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
 
   std::vector<FILE_OFFSET> offsets;
   FWriteStream write(destination);
+
+  if (std::shared_ptr<FPackage> desc = FPackage::CreateModDescriptor(name, author))
+  {
+    PackageSaveContext sctx;
+    sctx.EmbedObjectPath = false;
+    sctx.PreserveOffsets = false;
+    sctx.DisableTextureCaching = false;
+    sctx.FullRecook = false;
+    sctx.Path = GetTempFilePath();
+    try
+    {
+      desc->Save(sctx);
+    }
+    catch (...)
+    {
+      desc = nullptr;
+    }
+    if (desc)
+    {
+      FReadStream rs(sctx.Path);
+      FILE_OFFSET size = rs.GetSize();
+      if (size)
+      {
+        void* data = malloc(size);
+        rs.SerializeBytes(data, size);
+        write.SerializeBytes(data, size);
+        free(data);
+      }
+    }
+  }
+
   for (const FString& path : items)
   {
     if (path.FileExtension().ToUpper() == "TFC")
@@ -1574,6 +1605,43 @@ bool FPackage::NamedPackageExists(const FString& name, bool updateDirCache)
     return NamedPackageExists(name, false);
   }
   return false;
+}
+
+std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, const FString& author)
+{
+  FPackageSummary summary;
+  summary.FolderName.Terminate();
+  summary.Guid = FGuid::Generate();
+  summary.SetFileVersion(VER_TERA_MODERN, 17);
+  summary.PackageFlags = PKG_AllowDownload | PKG_Cooked | PKG_RequireImportsAlreadyLoaded | PKG_NoExportAllowed | PKG_StrippedSource | PKG_ROAccess;
+  summary.EngineVersion = 13249;
+  summary.ContentVersion = 142;
+  summary.PackageSource = CalculateStringCRC((const uint8*)name.C_str(), name.Length());
+  std::shared_ptr<FPackage> result = FPackage::CreateNewPackage(summary);
+  if (UTextBuffer* buffer = Cast<UTextBuffer>(result->GetObject(result->AddExport("ReadMe", NAME_TextBuffer, nullptr))))
+  {
+    buffer->SetObjectFlags(RF_LoadForEdit | RF_NotForClient | RF_NotForServer | RF_ObjectIsRO);
+    FString desc = "Mod: ";
+    desc += name;
+    desc += "\nAuthor: ";
+    desc += author;
+    desc += FString::Sprintf("\nMade by: Real Editor v.%d.%d", APP_VER_MAJOR, APP_VER_MINOR);
+    int32 tmm_ver_major, tmm_ver_minor = 0;
+    GetTargetTmmVersion(tmm_ver_major, tmm_ver_minor);
+    desc += "\nTarget TMM version: ";
+    if (tmm_ver_major)
+    {
+      desc += FString::Sprintf("v.%d.%d(or greater)", tmm_ver_major, tmm_ver_minor);
+    }
+    else
+    {
+      desc += "Unknown";
+    }
+    desc += "\n\nTo install this mod:\n * Start Tera Mod Manager(TMM)\n * Press Add and select this file\n\nIf you don't have TMM you can find it here: https://github.com/VenoMKO/TMM/releases";
+    buffer->SetText(desc);
+    return result;
+  }
+  return nullptr;
 }
 
 FPackage::~FPackage()

@@ -496,6 +496,26 @@ FString GetClientVersionString(const FString& s1data)
   return result;
 }
 
+void GetTargetTmmVersion(int32& major, int32& minor)
+{
+  static_assert(VER_TERA_FILEMOD == 2, "Update TMM version getter!");
+  switch (VER_TERA_FILEMOD)
+  {
+  case 1:
+    major = 1;
+    minor = 0;
+    break;
+  case 2:
+    major = 1;
+    minor = 10;
+    break;
+  default:
+    major = 0;
+    minor = 0;
+    break;
+  }
+}
+
 void LZO::Decompress(const void* src, FILE_OFFSET srcSize, void* dst, FILE_OFFSET dstSize, bool concurrent)
 {
   lzo_bytep ptr = (lzo_bytep)src;
