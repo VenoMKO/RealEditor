@@ -28,3 +28,22 @@ protected:
 
   bool NeedsSetup = true;
 };
+
+class TextBufferEditor : public GenericEditor {
+public:
+  using GenericEditor::GenericEditor;
+  TextBufferEditor(wxPanel* parent, PackageWindow* window);
+
+  void OnObjectLoaded() override;
+
+  void PopulateToolBar(wxToolBar* toolbar) override;
+
+  void OnImportClicked(wxCommandEvent& e) override;
+
+  void OnExportClicked(wxCommandEvent&) override;
+
+protected:
+  wxStyledTextCtrl* TextView = nullptr;
+
+  bool NeedsSetup = true;
+};

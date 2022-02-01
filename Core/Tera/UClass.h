@@ -39,6 +39,13 @@ public:
     return Text;
   }
 
+  inline void SetText(const FString& text)
+  {
+    Text = text;
+    Text.Terminate();
+    MarkDirty();
+  }
+
 protected:
   int32 Pos = 0;
   int32 Top = 0;

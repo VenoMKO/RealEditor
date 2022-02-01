@@ -1,6 +1,10 @@
 #include "ClassEditor.h"
 
+#include <Tera/Cast.h>
 #include <Tera/UProperty.h>
+#include <Tera/FPackage.h>
+
+#include "../Windows/REDialogs.h"
 
 #include <wx/notebook.h>
 #include <wx/propgrid/propgrid.h>
@@ -309,4 +313,62 @@ void ClassEditor::LoadClassProperties()
   int32 idx = 0;
   iterator(((UClass*)Object)->GetPropertyLink(), PropertiesList, root, idx);
   PropertiesList->Thaw();
+}
+
+TextBufferEditor::TextBufferEditor(wxPanel* parent, PackageWindow* window)
+  : GenericEditor(parent, window)
+{
+  this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
+
+  wxBoxSizer* bSizer1;
+  bSizer1 = new wxBoxSizer(wxVERTICAL);
+
+  TextView = new wxStyledTextCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxEmptyString);
+  bSizer1->Add(TextView, 1, wxEXPAND | wxALL, FromDIP(5));
+
+  this->SetSizer(bSizer1);
+  this->Layout();
+}
+
+void TextBufferEditor::OnObjectLoaded()
+{
+  if (NeedsSetup)
+  {
+    NeedsSetup = false;
+    if (UTextBuffer* buffer = Cast<UTextBuffer>(Object))
+    {
+      TextView->SetReadOnly(false);
+      TextView->SetText(buffer->GetText().WString());
+      TextView->SetReadOnly(true);
+    }
+  }
+  GenericEditor::OnObjectLoaded();
+}
+
+void TextBufferEditor::PopulateToolBar(wxToolBar* toolbar)
+{
+  GenericEditor::PopulateToolBar(toolbar);
+  if (auto item = toolbar->FindById(eID_Import))
+  {
+    item->Enable(Object && !Object->GetPackage()->IsComposite() && !Object->GetPackage()->GetPackageFlag(PKG_ContainsScript) && !(Object->GetObjectFlags() & RF_ObjectIsRO));
+  }
+}
+
+void TextBufferEditor::OnImportClicked(wxCommandEvent& e)
+{
+
+}
+
+void TextBufferEditor::OnExportClicked(wxCommandEvent&)
+{
+  if (UTextBuffer* buffer = Cast<UTextBuffer>(Object))
+  {
+    wxString path = IODialog::SaveTextDialog(this, Object->GetObjectName().GetString().WString());
+    if (path.size())
+    {
+      FWriteStream s(path.ToStdWstring());
+      std::string text = buffer->GetText().String();
+      s.SerializeBytes(text.data(), !text.size() || text.back() ? text.size() : text.size() - 1);
+    }
+  }
 }

@@ -103,6 +103,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   {
     editor = new PrefabEditor(parent, window);
   }
+  else if (c == UTextBuffer::StaticClassName())
+  {
+    editor = new TextBufferEditor(parent, window);
+  }
   else if (c == ULevelStreaming::StaticClassName() || c == ULevelStreamingAlwaysLoaded::StaticClassName() || c == ULevelStreamingDistance::StaticClassName() ||
     c == ULevelStreamingKismet::StaticClassName() || c == ULevelStreamingPersistent::StaticClassName() || c == US1LevelStreamingDistance::StaticClassName() ||
     c == US1LevelStreamingBaseLevel::StaticClassName() || c == US1LevelStreamingSound::StaticClassName() || c == US1LevelStreamingSuperLow::StaticClassName() ||
@@ -173,8 +177,11 @@ void GenericEditor::PopulateToolBar(wxToolBar* toolbar)
   if (Object->GetDataSize() > 0)
   {
     toolbar->AddTool(eID_Export, "Export", wxBitmap(MAKE_IDB(IDB_EXPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Export object data...");
-    toolbar->AddTool(eID_Import, "Import", wxBitmap(MAKE_IDB(IDB_IMPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
-    toolbar->FindById(eID_Import)->Enable(false);
+    if (!Object->GetPackage()->GetPackageFlag(PKG_ROAccess))
+    {
+      toolbar->AddTool(eID_Import, "Import", wxBitmap(MAKE_IDB(IDB_IMPORT), wxBITMAP_TYPE_PNG_RESOURCE), "Import object data...");
+      toolbar->FindById(eID_Import)->Enable(false);
+    }
   }
 
   if (Object)

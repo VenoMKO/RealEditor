@@ -84,6 +84,7 @@ enum ClassIco : int {
   IcoAnimSet,
   IcoAnimSeq,
   IcoSoundCue,
+  IcoText,
 };
 
 wxIcon GetSysIconFromDll(const char* path, int id, wxIcon& def)
@@ -150,7 +151,7 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   {
     return IcoSoundCue;
   }
-  if (className == wxT("Field") || className == wxT("TextBuffer"))
+  if (className == wxT("Field"))
   {
     return IcoField;
   }
@@ -173,6 +174,10 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   if (className == wxT("Level"))
   {
     return IcoLevel;
+  }
+  if (className == wxT("TextBuffer"))
+  {
+    return IcoText;
   }
   if (className == wxT("LevelStreaming") || className == wxT("LevelStreamingAlwaysLoaded") || className == wxT("LevelStreamingDistance") ||
       className == wxT("LevelStreamingKismet") || className == wxT("LevelStreamingPersistent") || className == wxT("S1LevelStreamingDistance") ||
@@ -434,6 +439,9 @@ void ObjectTreeModel::BuildIcons()
 
   // SoundCue icon
   IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_SOUND_CUE), wxBITMAP_TYPE_PNG_RESOURCE));
+
+  // TextBuffer icon
+  IconList->Add(wxBitmap(MAKE_IDB(IDB_ICO_TEXT), wxBITMAP_TYPE_PNG_RESOURCE));
 }
 
 void ObjectTreeModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsigned int col) const
