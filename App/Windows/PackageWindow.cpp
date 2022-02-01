@@ -1226,7 +1226,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
     return;
   }
 
-  wxString dest = wxSaveFileSelector("mod", "gpk", modInfo.GetName(), this);
+  wxString dest = IODialog::SavePackageDialog(this, modInfo.GetName(), wxEmptyString, wxT("Save the mod file..."));
   if (dest.empty())
   {
     return;
@@ -1238,6 +1238,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
   try
   {
     FPackage::CreateCompositeMod(paths, dest.ToStdWstring(), modInfo.GetName().ToStdString(), modInfo.GetAuthor().ToStdString());
+    REDialog::Info("The mod file has been successfully created.");
   }
   catch (const std::exception& e)
   {
