@@ -162,6 +162,7 @@
     <ClInclude Include="Core\Tera\FMeshCommon.h" />
     <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />
+    <ClInclude Include="Core\Tera\CoreTmmVersions.h" />
     <ClInclude Include="Core\Tera\UActor.h" />
     <ClInclude Include="Core\Tera\UActorComponent.h" />
     <ClInclude Include="Core\Tera\UAnimation.h" />

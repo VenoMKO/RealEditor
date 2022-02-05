@@ -498,7 +498,9 @@ FString GetClientVersionString(const FString& s1data)
 
 void GetTargetTmmVersion(int32& major, int32& minor)
 {
-  static_assert(VER_TERA_FILEMOD == 2, "Update TMM version getter!");
+#if USE_LEGACY_FILEMOD_VER == 0
+  static_assert(VER_TERA_FILEMOD == 3, "Update TMM version getter!");
+#endif
   switch (VER_TERA_FILEMOD)
   {
   case 1:
@@ -508,6 +510,10 @@ void GetTargetTmmVersion(int32& major, int32& minor)
   case 2:
     major = 1;
     minor = 10;
+    break;
+  case 3:
+    major = 2;
+    minor = 0;
     break;
   default:
     major = 0;

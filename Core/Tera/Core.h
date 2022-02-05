@@ -126,7 +126,8 @@ enum { MSP_MAX = 1 };
 #define PACKAGE_MAGIC 0x9E2A83C1
 #define VER_TERA_CLASSIC 610
 #define VER_TERA_MODERN 897
-#define VER_TERA_FILEMOD 2
+
+#include "CoreTmmVersions.h"
 
 #ifndef M_PI
 #define _USE_MATH_DEFINES

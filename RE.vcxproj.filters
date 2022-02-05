@@ -473,6 +473,7 @@
     <ClInclude Include="Core\Utils\MeshUtils.h" />
     <ClInclude Include="App\Windows\CreatePackageDialog.h" />
     <ClInclude Include="App\Windows\FlagsDialog.h" />
+    <ClInclude Include="Core\Tera\CoreTmmVersions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

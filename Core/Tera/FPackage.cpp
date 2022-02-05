@@ -423,6 +423,7 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
   std::vector<FILE_OFFSET> offsets;
   FWriteStream write(destination);
 
+#if USE_LEGACY_FILEMOD_VER == 0
   if (std::shared_ptr<FPackage> desc = FPackage::CreateModDescriptor(name, author))
   {
     PackageSaveContext sctx;
@@ -452,6 +453,7 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
       }
     }
   }
+#endif
 
   for (const FString& path : items)
   {
@@ -1625,13 +1627,13 @@ std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, con
     desc += name;
     desc += "\nAuthor: ";
     desc += author;
-    desc += FString::Sprintf("\nMade by: Real Editor v.%d.%d", APP_VER_MAJOR, APP_VER_MINOR);
+    desc += FString::Sprintf("\nMade by: Real Editor v.%d.%02d", APP_VER_MAJOR, APP_VER_MINOR);
     int32 tmm_ver_major, tmm_ver_minor = 0;
     GetTargetTmmVersion(tmm_ver_major, tmm_ver_minor);
     desc += "\nTarget TMM version: ";
     if (tmm_ver_major)
     {
-      desc += FString::Sprintf("v.%d.%d(or greater)", tmm_ver_major, tmm_ver_minor);
+      desc += FString::Sprintf("v.%d.%02d(or greater)", tmm_ver_major, tmm_ver_minor);
     }
     else
     {
