@@ -314,8 +314,8 @@ bool PackageWindow::OnObjectLoaded(const std::string& id)
       if (active == p.second)
       {
         UObject* obj = active->GetObject();
-        EditExportFlagsButton->Enable(true);
-        EditObjectFlagsButton->Enable(true);
+        EditExportFlagsButton->Enable(!(obj->GetObjectFlags() & RF_ObjectIsRO) && !Package->GetPackageFlag(PKG_ROAccess));
+        EditObjectFlagsButton->Enable(!(obj->GetObjectFlags() & RF_ObjectIsRO) && !Package->GetPackageFlag(PKG_ROAccess));
         ObjectTitleLabel->SetToolTip(wxString::Format(wxT("Index: %d\nNet: %d"), Package->GetObjectIndex(obj), obj->GetNetIndex()));
         ObjectSizeLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialSize()));
         ObjectOffsetLabel->SetLabelText(wxString::Format("0x%08X", obj->GetSerialOffset()));
