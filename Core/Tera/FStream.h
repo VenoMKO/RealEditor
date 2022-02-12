@@ -12,13 +12,9 @@
 // Abstract stream to read and write data
 class FStream {
 public:
-  FStream()
-  {}
+  FStream() = default;
 
-  virtual ~FStream()
-  {
-    int x = 1;
-  }
+  virtual ~FStream() = default;
 
   inline FStream& operator<<(int8& v)
   {

@@ -39,7 +39,7 @@ struct RawMaterial {
 };
 
 struct MeshTravallerData {
-  // TODO: implement skeleton import
+  // Replace skeleton
   bool ImportSkeleton = false;
   // If false RE will calculate tangents
   bool ImportTangents = true;
