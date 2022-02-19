@@ -793,77 +793,111 @@ void PackageWindow::DebugOnTestCookObject(wxCommandEvent&)
 
 void PackageWindow::DebugOnSplitMod(wxCommandEvent&)
 {
+#if _DEBUG
   wxString path = wxLoadFileSelector("Mod", wxT("GPK file|*.gpk"), wxEmptyString, this);
   if (path.empty())
   {
     return;
   }
+
   FReadStream rs(path.ToStdWstring());
-  rs.SetPosition(rs.GetSize() - 4);
-  int32 magic = 0;
-  rs << magic;
-  if (magic != PACKAGE_MAGIC)
+  FCompositeMeta meta;
+  try
   {
+    rs << meta;
+  }
+  catch (const std::exception& e)
+  {
+    REDialog::Error(e.what());
     return;
   }
 
-  int32 containerOffset = 0;
-  int32 containerOffsets = 0;
-  int32 containerOffsetsCount = 0;
-  int32 metaSize = 0;
-
-  rs.SetPosition(rs.GetSize() - (5 * sizeof(int32)));
-  rs << containerOffset;
-  rs << containerOffsets;
-  rs << containerOffsetsCount;
-  rs << metaSize;
-
-  std::vector<int32> offsets;
-  rs.SetPosition(containerOffsets);
-  for (int32 idx = 0; idx < containerOffsetsCount; ++idx)
+  if (meta.Packages.empty())
   {
-    int32 tmp = 0;
-    rs << tmp;
-    offsets.push_back(tmp);
-  }
-
-  if (offsets.empty())
-  {
+    REDialog::Error("The file has no composite packages!");
     return;
   }
 
+  bool mcheck = true, pcheck = true;
+  if (FCompositeMeta::ComputeMetaChecksum(rs, meta) != meta.MetaCRC)
+  {
+    mcheck = false;
+  }
+  if (FCompositeMeta::ComputePayloadChecksum(rs, meta) != meta.PayloadCRC)
+  {
+    pcheck = false;
+  }
+  if (!mcheck || !pcheck)
+  {
+    REDialog::Warning(wxString::Format("Mod file integrity check failed:\n * Meta: %s\n * Payload: %s", mcheck ? "OK" : "Error", pcheck ? "OK" : "Error"));
+  }
+
+  
   wxDirDialog dlg(NULL, "Select a directory to extract packages to...", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
   if (dlg.ShowModal() != wxID_OK || dlg.GetPath().empty())
   {
     return;
   }
 
-  for (int32 idx = 0; idx < offsets.size(); ++idx)
+  FString dir = dlg.GetPath().ToStdWstring();
+
+  for (int32 idx = 0; idx < meta.Packages.size(); ++idx)
   {
-    rs.SetPosition(offsets[idx]);
-    int32 len = 0;
-    if (idx + 1 < offsets.size())
+    const FCompositeMeta::FPackageEntry& pkg = meta.Packages[idx];
+    if (!pkg.Size)
     {
-      len = offsets[idx + 1] - offsets[idx];
+      LogW("Skipping an empty package entry at %d[%d]", pkg.Offset, idx);
+      continue;
+    }
+    
+    FString dst = dir;
+    if (pkg.ObjectPath.Empty())
+    {
+      dst = dst.FStringByAppendingPath(FString::Sprintf("Package_%d", idx));
     }
     else
     {
-      len = rs.GetSize() - metaSize;
+      size_t pos = pkg.ObjectPath.FindFirstOf('.', 0);
+      if (pos != std::string::npos)
+      {
+        dst = dst.FStringByAppendingPath(pkg.ObjectPath.Substr(0, pos));
+      }
     }
-
-    if (len <= 0)
+    dst += ".gpk";
+    
+    void* data = malloc(pkg.Size);
+    rs.SetPosition(pkg.Offset);
+    if (pkg.Compression != COMPRESS_None && pkg.CompressedSize)
     {
-      continue;
+      void* compressedData = malloc(pkg.CompressedSize);
+      rs.SerializeBytes(compressedData, pkg.CompressedSize);
+      DecompressMemory((ECompressionFlags)pkg.Compression, data, pkg.Size, compressedData, pkg.CompressedSize);
+      free(compressedData);
     }
+    else
+    {
+      rs.SerializeBytes(data, pkg.Size);
+    }
+    
+    FWriteStream ws(dst);
+    ws.SerializeBytes(data, pkg.Size);
 
-    void* data = malloc(len);
-    FWriteStream ws(dlg.GetPath().ToStdWstring() + L"\\Package_" + std::to_wstring(idx) + L".gpk");
-    rs.SerializeBytes(data, len);
-    ws.SerializeBytes(data, len);
     free(data);
   }
 
-  offsets.clear();
+  for (const FCompositeMeta::FTfcEntry& tfc : meta.Tfcs)
+  {
+    FString dst = dir.FStringByAppendingPath(FString::Sprintf("WorldTextures%02d.tfc", tfc.Index));
+    FWriteStream ws(dst);
+    rs.SetPosition(tfc.Offset);
+    void* data = malloc(tfc.Size);
+    rs.SerializeBytes(data, tfc.Size);
+    ws.SerializeBytes(data, tfc.Size);
+    free(data);
+  }
+  
+  ShellExecute(NULL, NULL, dir.WString().c_str(), NULL, NULL, SW_SHOWNORMAL);
+#endif
 }
 
 void PackageWindow::DebugOnDupSelection(wxCommandEvent&)
@@ -1215,9 +1249,10 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
     return;
   }
   std::vector<FString> paths;
+  CompositeModContext ctx;
   for (const wxString& str : result)
   {
-    paths.push_back(str.ToStdWstring());
+    ctx.Items.emplace_back(str.ToStdWstring());
   }
 
   CreateModWindow modInfo(this);
@@ -1225,24 +1260,38 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
   {
     return;
   }
-
-  wxString dest = IODialog::SavePackageDialog(this, modInfo.GetName(), wxEmptyString, wxT("Save the mod file..."));
-  if (dest.empty())
+  ctx.Author = modInfo.GetAuthor().ToStdWstring();
+  ctx.Name = modInfo.GetName().ToStdWstring();
+  ctx.Path = IODialog::SavePackageDialog(this, modInfo.GetName(), wxEmptyString, wxT("Save the mod file...")).ToStdWstring();
+  if (ctx.Path.Empty())
   {
     return;
   }
+  ctx.Container = ctx.Path.Filename(false);
 
   App::GetSharedApp()->GetConfig().LastModAuthor = modInfo.GetAuthor().ToStdWstring();
   App::GetSharedApp()->SaveConfig();
 
-  try
+
+  ProgressWindow progress(this, "Saving");
+  progress.SetCurrentProgress(-1);
+  progress.SetActionText(wxT("Preparing..."));
+  ctx.ProgressDescriptionCallback = [&progress](std::string desc) {
+    SendEvent(&progress, UPDATE_PROGRESS_DESC, A2W(desc));
+  };
+
+  std::thread([&progress, &ctx] {
+    bool result = FPackage::CreateCompositeMod(ctx);
+    SendEvent(&progress, UPDATE_PROGRESS_FINISH, result);
+  }).detach();
+
+  if (!progress.ShowModal())
   {
-    FPackage::CreateCompositeMod(paths, dest.ToStdWstring(), modInfo.GetName().ToStdString(), modInfo.GetAuthor().ToStdString());
-    REDialog::Info("The mod file has been successfully created.");
+    REDialog::Error(A2W(ctx.Error), "Failed to create the mod!");
   }
-  catch (const std::exception& e)
+  else
   {
-    REDialog::Error(e.what());
+    REDialog::Info("The mod file has been successfully created.");
   }
 }
 

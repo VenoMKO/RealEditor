@@ -2440,3 +2440,106 @@ struct FQuatFloat32NoW {
 
   friend FStream& operator<<(FStream& s, FQuatFloat32NoW& q);
 };
+
+struct FCompositeMeta {
+  static uint32 ComputeMetaChecksum(FStream& s, FCompositeMeta& m);
+  static uint32 ComputePayloadChecksum(FStream& s, FCompositeMeta& m);
+
+  FCompositeMeta() = default;
+
+  FCompositeMeta(int32 version)
+    : Version(version)
+  {}
+
+  FCompositeMeta(int32 version, const FString& container)
+    : Version(version)
+    , Container(container)
+  {}
+
+  struct FPackageEntry {
+    FPackageEntry() = default;
+
+    FPackageEntry(FILE_OFFSET offset, FILE_OFFSET size, const FString& objectPath, FILE_OFFSET compressedSize = 0)
+      : Offset(offset)
+      , Size(size)
+      , CompressedSize(compressedSize)
+      , ObjectPath(objectPath)
+    {}
+
+    FILE_OFFSET Offset = 0;
+    FILE_OFFSET Size = 0;
+    FILE_OFFSET CompressedSize = 0;
+    FString ObjectPath;
+    uint8 Compression = COMPRESS_None;
+
+    friend FStream& operator<<(FStream& s, FPackageEntry& e);
+  };
+
+  struct FTfcEntry {
+    FTfcEntry() = default;
+    FTfcEntry(FILE_OFFSET offset, FILE_OFFSET size, int32 index)
+      : Offset(offset)
+      , Size(size)
+      , Index(index)
+    {}
+
+    FILE_OFFSET Offset = 0;
+    FILE_OFFSET Size = 0;
+    int32 Index = 0;
+
+    friend FStream& operator<<(FStream& s, FTfcEntry& e);
+  };
+
+  // Mod version
+  int32 Version = VER_TERA_FILEMOD;
+  // Minimal version of TMM required to open the mod
+  int32 MinVersion = VER_TERA_FILEMOD_NEW_META;
+  // Used by TMM to mark installed gpks
+  bool Installed = false;
+  // New meta offset
+  FILE_OFFSET MetaOffset = 0;
+  // Payload integrity check
+  uint32 PayloadCRC = 0;
+  FILE_OFFSET PayloadCRCOffset = 0;
+  // Metadata integrity check
+  uint32 MetaCRC = 0;
+  FILE_OFFSET MetaCRCOffset = 0;
+
+  // Descriptor
+  FILE_OFFSET DescriptorOffset = 0;
+  FILE_OFFSET DescriptorSize = -1;
+
+  // Contents
+  std::vector<FPackageEntry> Packages;
+  std::vector<FTfcEntry> Tfcs;
+
+  FString Name;
+  FString Author;
+  FString Container;
+
+  int32 LegacyRegionLock = 0;
+  FILE_OFFSET LegacyHeaderSize = 0;
+  FILE_OFFSET LegacyTfcEnd = -1;
+  FILE_OFFSET LegacyPackagesEnd = -1;
+  
+
+  inline void AddTfcOffset(FILE_OFFSET offset, FILE_OFFSET size, int32 index)
+  {
+    Tfcs.emplace_back(offset, size, index);
+  }
+
+  inline void AddPackageOffset(const FString& name, FILE_OFFSET offset, FILE_OFFSET size)
+  {
+    Packages.emplace_back(offset, size, name);
+  }
+
+  inline void AddCompressedPackageOffset(const FString& name, FILE_OFFSET offset, FILE_OFFSET size, FILE_OFFSET compressedSize)
+  {
+    Packages.emplace_back(offset, size, name);
+  }
+
+  friend FStream& operator<<(FStream& s, FCompositeMeta& m);
+
+private:
+  void SerializeLegacy(FStream& s);
+};

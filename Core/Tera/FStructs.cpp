@@ -1252,3 +1252,348 @@ FBox::FBox(const std::vector<FVector>& points)
     (*this) += point;
   }
 }
+
+FStream& operator<<(FStream& s, FCompositeMeta& m)
+{
+  if (s.IsReading() || USE_LEGACY_FILEMOD_VER)
+  {
+    m.SerializeLegacy(s);
+    if (m.Version < VER_TERA_FILEMOD_NEW_META)
+    {
+      return s;
+    }
+  }
+  
+  int32 magic = PACKAGE_MAGIC;
+  m.MetaOffset = s.GetPosition();
+  if (s.IsReading())
+  {
+    s.SetPosition(s.GetPosition() - sizeof(magic)); // Legacy header returns the stream pointing to the trailing magic. Seek to the header start offset.
+    s << m.MetaOffset;
+    s.SetPosition(m.MetaOffset);
+  }
+
+  s << magic;
+
+  if (magic != PACKAGE_MAGIC)
+  {
+    UThrow("Corrupted mod metadata! S-point is missing.");
+  }
+
+  s << m.MinVersion;
+
+  m.MetaCRCOffset = s.GetPosition();
+  s << m.MetaCRC;
+  m.PayloadCRCOffset = s.GetPosition();
+  s << m.PayloadCRC;
+
+  s << m.DescriptorOffset << m.DescriptorSize;
+  s << m.Installed;
+  s << m.Packages;
+  s << m.Tfcs;
+
+  // Insert new fields here
+
+  if (!s.IsReading())
+  {
+    s << m.MetaOffset;
+    m.SerializeLegacy(s);
+  }
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCompositeMeta::FPackageEntry& e)
+{
+  s << e.Offset;
+  s << e.Size;
+  s << e.Compression;
+  if (e.Compression != COMPRESS_None)
+  {
+    s << e.CompressedSize;
+  }
+  s << e.ObjectPath;
+  return s;
+}
+
+FStream& operator<<(FStream& s, FCompositeMeta::FTfcEntry& e)
+{
+  return s << e.Offset << e.Size << e.Index;
+}
+
+void FCompositeMeta::SerializeLegacy(FStream& s)
+{
+  // Legacy Meta:
+
+  // MAGIC
+
+  // Author
+  // Name
+  // Container(Filename)
+  // Composite offsets...
+  // if VER_TERA_FILEMOD >= 2
+  //  Tfc offsets... { offset, size, idx }
+  // endif
+
+  // MAGIC
+
+  // if VER_TERA_FILEMOD >= 2
+  //  Tfc end offset
+  //  Tfc offsets offset
+  //  Tfc count
+  //  Composite end offset
+  // endif
+
+  // Version (exists since V2. TMM 1.0 will read MAGIC instead)
+
+  // Region-lock
+  // Author offset
+  // Name offset
+  // Container offset
+  // Composite offsets offset
+  // Composite offsets count
+  // Meta size
+
+  // MAGIC
+  // EOF
+
+  bool stub = Version > VER_TERA_FILEMOD_ADD_TFC && !s.IsReading();
+  int32 magic = PACKAGE_MAGIC;
+  if (!s.IsReading())
+  {
+    LegacyHeaderSize = s.GetPosition();
+    s << magic;
+    FILE_OFFSET authorOffset = s.GetPosition();
+    s << Author;
+    FILE_OFFSET nameOffset = s.GetPosition();
+    s << Name;
+    FILE_OFFSET containerOffset = s.GetPosition();
+    s << Container;
+    FILE_OFFSET packageOffsets = s.GetPosition();
+    if (stub)
+    {
+      s << DescriptorOffset;
+    }
+    else
+    {
+      for (auto& pkg : Packages)
+      {
+        s << pkg.Offset;
+      }
+    }
+    FILE_OFFSET tfcOffsets = -1;
+    if (Version >= VER_TERA_FILEMOD_ADD_TFC)
+    {
+      tfcOffsets = s.GetPosition();
+      if (!stub)
+      {
+        for (auto& tfc : Tfcs)
+        {
+          s << tfc;
+        }
+      }
+    }
+
+    s << magic;
+
+    if (Version >= VER_TERA_FILEMOD_ADD_TFC)
+    {
+      s << LegacyTfcEnd;
+      s << tfcOffsets;
+      int32 count = stub ? 0 : (int32)Tfcs.size();
+      s << count;
+      s << LegacyPackagesEnd;
+    }
+
+    s << Version;
+    s << LegacyRegionLock;
+
+    s << authorOffset;
+    s << nameOffset;
+    s << containerOffset;
+    s << packageOffsets;
+
+    int32 packageCount = stub ? 1 : (int32)Packages.size();
+    s << packageCount;
+
+    LegacyHeaderSize = s.GetPosition() + sizeof(magic) + sizeof(LegacyHeaderSize) - LegacyHeaderSize;
+    s << LegacyHeaderSize;
+    s << magic;
+    return;
+  }
+  
+  auto reverseRead = [&] (auto& item) {
+    FILE_OFFSET pos = s.GetPosition() - sizeof(item);
+    s.SetPosition(pos);
+    s << item;
+    s.SetPosition(pos);
+  };
+
+  s.SetPosition(s.GetSize());
+
+  reverseRead(magic);
+
+  if (magic != PACKAGE_MAGIC)
+  {
+    UThrow("Corrupted mod metadata! LS-point is missing.");
+  }
+
+  reverseRead(LegacyHeaderSize);
+
+  int32 packageCount = 0;
+  reverseRead(packageCount);
+  Packages.resize(packageCount);
+
+  FILE_OFFSET packageOffsets = 0;
+  FILE_OFFSET containerOffset = 0;
+  FILE_OFFSET nameOffset = 0;
+  FILE_OFFSET authorOffset = 0;
+  reverseRead(packageOffsets);
+  reverseRead(containerOffset);
+  reverseRead(nameOffset);
+  reverseRead(authorOffset);
+
+  reverseRead(LegacyRegionLock);
+  reverseRead(Version);
+
+  FILE_OFFSET tfcOffsets = -1;
+  if (Version >= VER_TERA_FILEMOD_ADD_TFC)
+  {
+    reverseRead(LegacyPackagesEnd);
+    int32 count = 0;
+    reverseRead(count);
+    Tfcs.resize(count);
+    reverseRead(tfcOffsets);
+    reverseRead(LegacyTfcEnd);
+  }
+
+  reverseRead(magic);
+  if (magic != PACKAGE_MAGIC)
+  {
+    UThrow("Corrupted mod metadata! LM-point is missing.");
+  }
+
+  if (Version >= VER_TERA_FILEMOD_ADD_TFC)
+  {
+    s.SetPosition(tfcOffsets);
+    for (auto& tfc : Tfcs)
+    {
+      s << tfc;
+    }
+  }
+
+  s.SetPosition(packageOffsets);
+  for (auto& pkg : Packages)
+  {
+    s << pkg.Offset;
+  }
+
+  s.SetPosition(containerOffset);
+  s << Container;
+  s.SetPosition(nameOffset);
+  s << Name;
+  s.SetPosition(authorOffset);
+  s << Author;
+
+  FILE_OFFSET endPos = s.GetSize() - LegacyHeaderSize;
+
+  if (Version < VER_TERA_FILEMOD_NEW_META && Packages.size())
+  {
+    for (int32 idx = 0; idx < Packages.size(); ++idx)
+    {
+      auto& pkg = Packages[idx];
+
+      s.SetPosition(pkg.Offset);
+      FPackageSummary sum;
+      try
+      {
+        s << sum;
+      }
+      catch (const std::exception& exp)
+      {
+        LogE(exp.what());
+        continue;
+      }
+      if (sum.FolderName.StartWith("MOD:"))
+      {
+        pkg.ObjectPath = sum.FolderName.Substr(4);
+      }
+
+      if (idx > 0)
+      {
+        Packages[idx - 1].Size = pkg.Offset - Packages[idx - 1].Offset;
+      }
+    }
+    if (Tfcs.size())
+    {
+      Packages.back().Size = Tfcs.front().Offset - Packages.back().Offset;
+    }
+    else
+    {
+      Packages.back().Size = s.GetSize() - LegacyHeaderSize;
+    }
+  }
+
+  s.SetPosition(endPos);
+  s << magic;
+  s.SetPosition(endPos);
+
+  if (magic != PACKAGE_MAGIC)
+  {
+    UThrow("Corrupted mod metadata! LE-point is missing.");
+  }
+}
+
+uint32 FCompositeMeta::ComputeMetaChecksum(FStream& s, FCompositeMeta& m)
+{
+  FILE_OFFSET size = s.GetSize() - m.MetaCRCOffset - sizeof(m.MetaCRC);
+  void* data = malloc(size);
+  s.SetPosition(m.MetaCRCOffset + sizeof(m.MetaCRC));
+  s.SerializeBytes(data, size);
+  uint32 crc = CalculateDataCRC(data, size);
+  free(data);
+  return crc;
+}
+
+uint32 FCompositeMeta::ComputePayloadChecksum(FStream& s, FCompositeMeta& m)
+{
+  uint32 crc = 0;
+  void* data = nullptr;
+
+  if (m.DescriptorSize)
+  {
+    data = malloc(m.DescriptorSize);
+    s.SetPosition(m.DescriptorOffset);
+    s.SerializeBytes(data, m.DescriptorSize);
+    crc = CalculateDataCRC(data, m.DescriptorSize, crc);
+    free(data);
+  }
+  
+  for (const auto& pkg : m.Packages)
+  {
+    FILE_OFFSET size = pkg.CompressedSize ? pkg.CompressedSize : pkg.Size;
+    if (!size)
+    {
+      continue;
+    }
+    data = malloc(size);
+    s.SetPosition(pkg.Offset);
+    s.SerializeBytes(data, size);
+    crc = CalculateDataCRC(data, size, crc);
+    free(data);
+  }
+
+  for (const auto& tfc : m.Tfcs)
+  {
+    if (!tfc.Size)
+    {
+      continue;
+    }
+    data = malloc(tfc.Size);
+    s.SetPosition(tfc.Offset);
+    s.SerializeBytes(data, tfc.Size);
+    crc = CalculateDataCRC(data, tfc.Size, crc);
+    free(data);
+  }
+
+  return crc;
+}

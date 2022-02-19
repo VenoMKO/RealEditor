@@ -358,19 +358,21 @@ std::vector<FString> FPackage::GetCachedDirCache(const FString& s1game)
   return dirCache;
 }
 
-void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author)
+bool FPackage::CreateCompositeMod(CompositeModContext& ctx)
 {
   std::vector<FString> objects;
   std::vector<std::pair<FString, int32>> tfcs;
 
-  for (const FString& path : items)
+  std::vector<FString> packages;
+  for (const FString& path : ctx.Items)
   {
     if (path.FileExtension().ToUpper() == "TFC")
     {
       FString fname = path.Filename();
       if (!fname.StartWith(NAME_WorldTextures) || fname.Size() < strlen(NAME_WorldTextures) + 3)
       {
-        UThrow("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+        ctx.Error = FString::Sprintf("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+        return false;
       }
       int32 idx = 0;
       try
@@ -383,48 +385,70 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
       }
       if (idx <= 0)
       {
-        UThrow("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+        ctx.Error = FString::Sprintf("Incorrect TFC name: %s!", path.Filename().UTF8().c_str());
+        return false;
       }
-      tfcs.push_back(std::make_pair(path, idx));
+      tfcs.emplace_back(std::make_pair(path, idx));
       continue;
     }
 
     FReadStream s(path);
     FPackageSummary sum;
-    s << sum;
+    try
+    {
+      s << sum;
+    }
+    catch (const std::exception& e)
+    {
+      ctx.Error = FString::Sprintf("Failed to read %s:\n%s", path.Filename().C_str(), e.what());
+      return false;
+    }
+    if (sum.GetFileVersion() == VER_TERA_CLASSIC)
+    {
+      ctx.Error = FString::Sprintf("The package %s is from an old 32-bit game and is not supported by the modern game.", path.Filename().C_str());
+      return false;
+    }
     if (!s.IsGood())
     {
-      UThrow("Failed to read package %s.", path.Filename().C_str());
+      ctx.Error = FString::Sprintf("Failed to read package %s.", path.Filename().C_str());
+      return false;
     }
     if (!sum.FolderName.StartWith("MOD:"))
     {
-      UThrow("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+      ctx.Error = FString::Sprintf("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+      return false;
     }
     FString objName = sum.FolderName.Substr(4);
     if (objName.Empty())
     {
-      UThrow("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+      ctx.Error = FString::Sprintf("Package %s has no composite info! Try to resave it from the original.", sum.PackageName.C_str());
+      return false;
     }
     for (int32 idx = 0; idx < objects.size(); ++idx)
     {
       if (objects[idx] == objName)
       {
-        UThrow("%s and %s are modifying the same composite package!", path.Filename().C_str(), items[idx].Filename().C_str());
+        ctx.Error = FString::Sprintf("%s and %s are modifying the same composite package!", path.Filename().C_str(), ctx.Items[idx].Filename().C_str());
+        return false;
       }
     }
-    objects.push_back(objName);
+    objects.emplace_back(objName);
+    packages.emplace_back(path);
   }
 
   if (objects.empty())
   {
-    UThrow("You did not select any valid GPK file!");
+    ctx.Error = FString::Sprintf("You did not select any valid GPK file!");
+    return false;
   }
 
-  std::vector<FILE_OFFSET> offsets;
-  FWriteStream write(destination);
+  FCompositeMeta meta(VER_TERA_FILEMOD, ctx.Container);
+  meta.Name = ctx.Name;
+  meta.Author = ctx.Author;
+  FWriteStream write(ctx.Path);
 
 #if USE_LEGACY_FILEMOD_VER == 0
-  if (std::shared_ptr<FPackage> desc = FPackage::CreateModDescriptor(name, author))
+  if (std::shared_ptr<FPackage> desc = FPackage::CreateModDescriptor(meta.Name, meta.Author))
   {
     PackageSaveContext sctx;
     sctx.EmbedObjectPath = false;
@@ -432,6 +456,7 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
     sctx.DisableTextureCaching = false;
     sctx.FullRecook = false;
     sctx.Path = GetTempFilePath();
+    sctx.Compression = COMPRESS_LZO;
     try
     {
       desc->Save(sctx);
@@ -448,31 +473,81 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
       {
         void* data = malloc(size);
         rs.SerializeBytes(data, size);
+        meta.DescriptorOffset = write.GetPosition();
+        meta.DescriptorSize = size;
         write.SerializeBytes(data, size);
         free(data);
       }
     }
   }
 #endif
+  
+  const bool compress = USE_MOD_COMPRESSION && ctx.Compression != COMPRESS_None && meta.Version >= VER_TERA_FILEMOD_NEW_META;
 
-  for (const FString& path : items)
+  if (compress && ctx.ProgressDescriptionCallback)
   {
-    if (path.FileExtension().ToUpper() == "TFC")
-    {
-      continue;
-    }
-    FReadStream read(path);
-    FILE_OFFSET size = read.GetSize();
-    void* data = malloc(size);
-    read.SerializeBytes(data, size);
-    offsets.push_back(write.GetPosition());
-    write.SerializeBytes(data, size);
-    free(data);
+    ctx.ProgressDescriptionCallback("Compressing...");
   }
 
-  FILE_OFFSET gpkEndOffset = write.GetPosition();
+  std::vector<void*> dataBlocks(packages.size());
+  auto writePackage = [&](size_t idx) {
+    FReadStream read(packages[idx]);
+    FILE_OFFSET size = read.GetSize();
+    FString name = objects[idx];
+    void* data = malloc(size);
+    read.SerializeBytes(data, size);
+    if (compress)
+    {
+      int32 compressedSize = size * 2;
+      void* compressedData = malloc(compressedSize);
+      if (CompressMemory(ctx.Compression, compressedData, &compressedSize, data, size) && compressedSize < size)
+      {
+        dataBlocks[idx] = compressedData;
+        meta.Packages[idx].CompressedSize = compressedSize;
+        meta.Packages[idx].Compression = ctx.Compression;
+        free(data);
+      }
+      else
+      {
+        dataBlocks[idx] = data;
+        free(compressedData);
+      }
+    }
+    else
+    {
+      dataBlocks[idx] = data;
+    }
+    meta.Packages[idx].ObjectPath = name;
+    meta.Packages[idx].Size = size;
+  };
 
-  std::vector<std::tuple<FILE_OFFSET, FILE_OFFSET, int32>> tfcOffsets;
+  meta.Packages.resize(objects.size());
+#if CONCURRENT_MOD_COMPRESSION
+  concurrency::parallel_for(size_t(0), size_t(packages.size()), [&](size_t index) {
+    writePackage(index);
+  });
+#else
+  for (int32 index = 0; index < packages.size(); ++index)
+  {
+    writePackage(index);
+  }
+#endif
+
+  if (ctx.ProgressDescriptionCallback)
+  {
+    ctx.ProgressDescriptionCallback("Packing...");
+  }
+
+  for (int32 idx = 0; idx < dataBlocks.size(); ++idx)
+  {
+    FILE_OFFSET size = meta.Packages[idx].CompressedSize ? meta.Packages[idx].CompressedSize : meta.Packages[idx].Size;
+    meta.Packages[idx].Offset = write.GetPosition();
+    write.SerializeBytes(dataBlocks[idx], size);
+    free(dataBlocks[idx]);
+    dataBlocks[idx] = nullptr;
+  }
+  meta.LegacyPackagesEnd = write.GetPosition();
+
   for (const auto& tfc : tfcs)
   {
     FReadStream read(tfc.first);
@@ -482,100 +557,34 @@ void FPackage::CreateCompositeMod(const std::vector<FString>& items, const FStri
     read.SerializeBytes(data, tfcSize);
     write.SerializeBytes(data, tfcSize);
     free(data);
-    tfcOffsets.push_back({ tfcOffset, tfcSize, tfc.second });
+    meta.AddTfcOffset(tfcOffset, tfcSize, tfc.second);
   }
-  FILE_OFFSET tfcEnd = write.GetPosition();
 
-  // Save metadata
+  meta.LegacyTfcEnd = write.GetPosition();
 
-  // MAGIC
-  
-  // Author
-  // Name
-  // Container(Filename)
-  // Composite offsets...
-  // if VER_TERA_FILEMOD >= 2
-  //  Tfc offsets... { offset, size, idx }
-  // endif
+  write << meta;
 
-  // MAGIC
-
-  // if VER_TERA_FILEMOD >= 2
-  //  Tfc end offset
-  //  Tfc offsets offset
-  //  Tfc count
-  //  Composite end offset
-  // endif
-
-  // Version (exists since V2. TMM 1.0 will read MAGIC instead)
-
-  // Region-lock
-  // Author offset
-  // Name offset
-  // Container offset
-  // Composite offsets offset
-  // Composite offsets count
-  // Meta size
-
-  // MAGIC
-  // EOF
-
-  uint32 tmp = PACKAGE_MAGIC;
-  uint32 metaSize = write.GetPosition();
-  write << tmp;
-
-  FILE_OFFSET authorOffset = write.GetPosition();
-  write << author;
-  FILE_OFFSET nameOffset = write.GetPosition();
-  write << name;
-  FILE_OFFSET containerOffset = write.GetPosition();
-  FString container = destination.Filename(false);
-  write << container;
-  
-  FILE_OFFSET offsetsOffset = write.GetPosition();
-  for (FILE_OFFSET offset : offsets)
+  if (meta.PayloadCRCOffset)
   {
-    write << offset;
+    write.Flush();
+    {
+      FReadStream r(ctx.Path);
+      meta.PayloadCRC = FCompositeMeta::ComputePayloadChecksum(r, meta);
+    }
+    write.SetPosition(meta.PayloadCRCOffset);
+    write << meta.PayloadCRC;
   }
-
-  FILE_OFFSET tfcOffsetsOffset = write.GetPosition();
-  for (const auto& tpl : tfcOffsets)
+  if (meta.MetaCRCOffset)
   {
-    FILE_OFFSET tmp = std::get<0>(tpl);
-    write << tmp;
-
-    tmp = std::get<1>(tpl);
-    write << tmp;
-    
-    int32 idx = std::get<2>(tpl);
-    write << idx;
+    write.Flush();
+    {
+      FReadStream r(ctx.Path);
+      meta.MetaCRC = FCompositeMeta::ComputeMetaChecksum(r, meta);
+    }
+    write.SetPosition(meta.MetaCRCOffset);
+    write << meta.MetaCRC;
   }
-  
-  tmp = PACKAGE_MAGIC;
-  write << tmp;
-  write << tfcEnd;
-  write << tfcOffsetsOffset;
-  tmp = tfcOffsets.size();
-  write << tmp;
-  write << gpkEndOffset;
-  tmp = VER_TERA_FILEMOD;
-  write << tmp;
-  tmp = 0; // Region-lock (unused): 1 - direct object path search, 0 - incomplete object path search
-  write << tmp;
-  write << authorOffset;
-  write << nameOffset;
-  write << containerOffset;
-  write << offsetsOffset;
-  tmp = (uint32)offsets.size();
-  write << tmp;
-  FILE_OFFSET metaSizeOffset = write.GetPosition();
-  write << metaSize;
-  tmp = PACKAGE_MAGIC;
-  write << tmp;
-
-  metaSize = write.GetPosition() - metaSize;
-  write.SetPosition(metaSizeOffset);
-  write << metaSize;
+  return true;
 }
 
 std::vector<UClass*> FPackage::GetClasses()
@@ -1612,6 +1621,9 @@ bool FPackage::NamedPackageExists(const FString& name, bool updateDirCache)
 std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, const FString& author)
 {
   FPackageSummary summary;
+  int32 tmm_ver_major = 0, tmm_ver_minor = 0;
+  GetTargetTmmVersion(tmm_ver_major, tmm_ver_minor);
+  summary.FolderName = FString::Sprintf("MOD:TMM version %d.%02d", tmm_ver_major, tmm_ver_minor);
   summary.FolderName.Terminate();
   summary.Guid = FGuid::Generate();
   summary.SetFileVersion(VER_TERA_MODERN, 17);
@@ -1628,8 +1640,6 @@ std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, con
     desc += "\nAuthor: ";
     desc += author;
     desc += FString::Sprintf("\nMade by: Real Editor v.%d.%02d", APP_VER_MAJOR, APP_VER_MINOR);
-    int32 tmm_ver_major, tmm_ver_minor = 0;
-    GetTargetTmmVersion(tmm_ver_major, tmm_ver_minor);
     desc += "\nTarget TMM version: ";
     if (tmm_ver_major)
     {

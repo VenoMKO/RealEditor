@@ -488,6 +488,11 @@ public:
     Stream.close();
   }
 
+  void Flush()
+  {
+    Stream.flush();
+  }
+
 protected:
   FString Path;
   std::ofstream Stream;

@@ -28,6 +28,18 @@ struct PackageSaveContext {
   std::function<bool(void)> IsCancelledCallback;
 };
 
+struct CompositeModContext {
+  FString Path;
+  FString Author;
+  FString Name;
+  FString Container;
+  std::vector<FString> Items;
+  ECompressionFlags Compression = COMPRESS_LZO;
+
+  FString Error;
+  std::function<void(std::string)> ProgressDescriptionCallback;
+};
+
 // Helper class for faster composite object dump generation.
 // Does not fully load packages, does not use FPackage cache
 // Uses MStreams for much faster serialization
@@ -118,7 +130,7 @@ public:
   // Get cached dir contents
   static std::vector<FString> GetCachedDirCache(const FString& s1game = {});
   // Create a composite mod package
-  static void CreateCompositeMod(const std::vector<FString>& items, const FString& destination, FString name, FString author);
+  static bool CreateCompositeMod(CompositeModContext& context);
   // Get all classes
   static std::vector<UClass*> GetClasses();
   // Register a built-in class
