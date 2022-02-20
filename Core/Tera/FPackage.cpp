@@ -1620,7 +1620,7 @@ bool FPackage::NamedPackageExists(const FString& name, bool updateDirCache)
   return false;
 }
 
-std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, const FString& author)
+std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, const FString& author, const FString& appVer)
 {
   FPackageSummary summary;
   int32 tmm_ver_major = 0, tmm_ver_minor = 0;
@@ -1641,7 +1641,8 @@ std::shared_ptr<FPackage> FPackage::CreateModDescriptor(const FString& name, con
     desc += name;
     desc += "\nAuthor: ";
     desc += author;
-    desc += FString::Sprintf("\nMade by: Real Editor v.%d.%02d", APP_VER_MAJOR, APP_VER_MINOR);
+    desc += "\nMade by: Real Editor ";
+    desc += appVer;
     desc += "\nTarget TMM version: ";
     if (tmm_ver_major)
     {

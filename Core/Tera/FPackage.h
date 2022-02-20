@@ -36,6 +36,8 @@ struct CompositeModContext {
   std::vector<FString> Items;
   ECompressionFlags Compression = COMPRESS_LZO;
 
+  FString AppVersion;
+
   FString Error;
   std::function<void(std::string)> ProgressDescriptionCallback;
 };
@@ -152,7 +154,7 @@ private:
     : Summary(sum)
   {}
 
-  static std::shared_ptr<FPackage> CreateModDescriptor(const FString& name, const FString& author);
+  static std::shared_ptr<FPackage> CreateModDescriptor(const FString& name, const FString& author, const FString& appVer);
 
 public:
   ~FPackage();
