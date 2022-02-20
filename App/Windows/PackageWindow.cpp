@@ -33,6 +33,7 @@
 
 #include <Utils/ALog.h>
 #include <Tera/Cast.h>
+#include <Tera/CoreCompression.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/UObject.h>
@@ -1523,8 +1524,9 @@ void PackageWindow::OnSettingsClicked(wxCommandEvent&  e)
 
 void PackageWindow::OnToggleLogClicked(wxCommandEvent&)
 {
-  bool isShown = ALog::IsShown();
-  ALog::Show(!isShown);
+  wxFrame* log = App::GetSharedApp()->GetLogConsole();
+  bool isShown = log->IsShown();
+  log->Show(!isShown);
   Application->GetConfig().LogConfig.ShowLog = !isShown;
 }
 

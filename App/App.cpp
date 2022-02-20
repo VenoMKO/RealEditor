@@ -7,6 +7,7 @@
 #include "Windows/REDialogs.h"
 #include "Windows/DcToolDialog.h"
 #include "Windows/WelcomeDialog.h"
+#include "Windows/LogWindow.h"
 
 #include <wx/mimetype.h>
 #include <wx/cmdline.h>
@@ -822,7 +823,6 @@ bool App::OnInit()
   }
   InstanceChecker = new wxSingleInstanceChecker;
   ALog::SharedLog();
-  ALog::SetConfig(Config.LogConfig);
   
   IsReady = true;
   
@@ -845,7 +845,7 @@ int App::OnRun()
     Server->Run();
     if (Config.LogConfig.ShowLog)
     {
-      ALog::SharedLog()->Show();
+      GetLogConsole()->Show();
     }
 
     if (OpenList.empty() || NeedsInitialScreen)
@@ -1165,11 +1165,9 @@ int App::OnExit()
 {
   FPackage::GetTransactionStream().Clear();
   FPackage::UnloadDefaultClassPackages();
-  ALog::GetConfig(Config.LogConfig);
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   cfg.SetConfig(Config);
   cfg.Save();
-  ALog::SharedLog()->OnAppExit();
   return wxApp::OnExit();
 }
 
@@ -1248,7 +1246,10 @@ void App::ShowWelcomeBeforeExit(wxCommandEvent&)
     return;
   }
   
-  ALog::Show(false);
+  if (LogConsole)
+  {
+    LogConsole->Show(false);
+  }
 
   InitScreen = new WelcomeDialog(nullptr);
   if (InitScreen->ShowModal() == wxID_OK)
@@ -1265,7 +1266,10 @@ void App::ShowWelcomeBeforeExit(wxCommandEvent&)
   InitScreen->Destroy();
   InitScreen = nullptr;
   ShuttingDown = true;
-  ALog::Show(false);
+  if (LogConsole)
+  {
+    LogConsole->Show(false);
+  }
   ExitMainLoop();
 }
 
@@ -1285,6 +1289,12 @@ ALDevice* App::InitAudioDevice()
     LogE("AudioDevice init: %s", e.what());
   }
   return AudioDevice;
+}
+
+LogWindow* App::CreateLogConsole()
+{
+  LogConsole = new LogWindow(wxPoint(Config.LogConfig.LogRect.Min.X, Config.LogConfig.LogRect.Min.Y), wxSize(Config.LogConfig.LogRect.Max.X, Config.LogConfig.LogRect.Max.Y));
+  return LogConsole;
 }
 
 void App::OnRegisterMime(wxCommandEvent&)
@@ -1714,6 +1724,27 @@ void App::OnActivateApp(wxActivateEvent& e)
     }
   }
   e.Skip();
+}
+
+wxFrame* App::GetLogConsole()
+{
+  if (!LogConsole)
+  {
+    CreateLogConsole();
+  }
+  return (wxFrame*)LogConsole;
+}
+
+void App::LogConsoleWillClose()
+{
+  if (LogConsole)
+  {
+    Config.LogConfig.LogRect.Min.X = LogConsole->GetPosition().x;
+    Config.LogConfig.LogRect.Min.Y = LogConsole->GetPosition().y;
+    Config.LogConfig.LogRect.Max.X = LogConsole->GetSize().GetWidth();
+    Config.LogConfig.LogRect.Max.Y = LogConsole->GetSize().GetHeight();
+    LogConsole = nullptr;
+  }
 }
 
 void App::OnFatalException()

@@ -182,6 +182,10 @@ public:
 
   void OnActivateApp(wxActivateEvent& e);
 
+  wxFrame* GetLogConsole();
+
+  void LogConsoleWillClose();
+
 private:
   bool OnInit() override;
   int OnRun() override;
@@ -192,6 +196,7 @@ private:
   void OnObjectLoaded(wxCommandEvent& e);
   void ShowWelcomeBeforeExit(wxCommandEvent&);
   ALDevice* InitAudioDevice();
+  class LogWindow* CreateLogConsole();
   void DecreaseREDialogsCount()
   {
     REDialogsCount--;
@@ -210,6 +215,7 @@ private:
 private:
   FAppConfig Config;
   class WelcomeDialog* InitScreen = nullptr;
+  class LogWindow* LogConsole = nullptr;
   BulkImportWindow* BulkImporter = nullptr;
   ALDevice* AudioDevice = nullptr;
   wxSingleInstanceChecker* InstanceChecker = nullptr;

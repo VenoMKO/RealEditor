@@ -5,17 +5,17 @@
 #include <Utils/ALog.h>
 #include <Utils/AConfiguration.h>
 
-wxDEFINE_EVENT(PUMP_LOG_WINDOW, wxCommandEvent);
+#define POLL_INTERVAL 1000
+#define MAX_LINES 500
+#define CLEAN_LINES 400
 
-#define MAX_LINES 50000
-#define CLEAN_LINES 25000
-
-LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
-  : wxFrame(parent, id, wxTheApp->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - Log"), pos, size, style)
+LogWindow::LogWindow(const wxPoint& pos, const wxSize& size)
+  : wxFrame(nullptr, wxID_ANY, wxTheApp->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - Log"), pos, size, wxCAPTION | wxSTAY_ON_TOP | wxCLOSE_BOX | wxFRAME_TOOL_WINDOW | wxTAB_TRAVERSAL)
 {
+  DesiredPosition = pos;
   SetSize(FromDIP(GetSize()));
   SetIcon(wxICON(#114));
-  SetSizeHints(FromDIP(wxSize(700, 300)), wxDefaultSize);
+  SetSizeHints(GetSize(), wxDefaultSize);
 
   wxBoxSizer* bSizer1 = new wxBoxSizer(wxVERTICAL);
   LogCtrl = new wxRichTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxVSCROLL | wxHSCROLL | wxNO_BORDER | wxWANTS_CHARS);
@@ -26,10 +26,9 @@ LogWindow::LogWindow(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
   Layout();
 
   Centre(wxBOTH);
-}
 
-LogWindow::~LogWindow()
-{
+  PollTimer.Bind(wxEVT_TIMER, &LogWindow::OnTick, this);
+  PollTimer.Start(POLL_INTERVAL);
 }
 
 void LogWindow::OnCloseWindow(wxCloseEvent& event)
@@ -40,27 +39,35 @@ void LogWindow::OnCloseWindow(wxCloseEvent& event)
     config.LogConfig.ShowLog = false;
     App::GetSharedApp()->SaveConfig();
   }
-  Logger->OnLogClose();
   wxFrame::OnCloseWindow(event);
 }
 
-void LogWindow::PumpMessages(wxCommandEvent&)
+void LogWindow::PumpMessages()
 {
   std::vector<ALogEntry> entries;
-  Logger->GetEntries(entries, LastMessageIndex);
+  if (DisplayedMessages > MAX_LINES)
+  {
+    DisplayedMessages = 0;
+    LogCtrl->Clear();
+    LastMessageIndex -= CLEAN_LINES;
+  }
+  ALog::SharedLog()->GetEntries(entries, LastMessageIndex);
+
+  if (entries.empty())
+  {
+    return;
+  }
+
   LogCtrl->Freeze();
   LogCtrl->SetInsertionPointEnd();
-  if (LogCtrl->GetValue().size() >= MAX_LINES)
+  size_t eIdx = 0;
+  if (entries.size() > MAX_LINES)
   {
-    LogCtrl->SetValue(LogCtrl->GetValue().substr(CLEAN_LINES));
-  }
-  int32 eIdx = 0;
-  if (entries.size() > 5000)
-  {
-    eIdx = entries.size() - 5000;
+    eIdx = entries.size() - CLEAN_LINES;
   }
   for (; eIdx < entries.size(); ++eIdx)
   {
+    DisplayedMessages++;
     ALogEntry& e = entries[eIdx];
     std::string msg = e.Text;
     if (msg.back() != '\n')
@@ -91,17 +98,36 @@ void LogWindow::PumpMessages(wxCommandEvent&)
   LogCtrl->ScrollIntoView(LogCtrl->GetCaretPosition(), WXK_PAGEDOWN);
 }
 
-bool LogWindow::Show(bool show /*= true*/)
+void LogWindow::OnTick(wxTimerEvent& e)
 {
-  bool result = wxFrame::Show(show);
-  if (show && !MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL))
+  PumpMessages();
+}
+
+bool LogWindow::Show(bool show)
+{
+  if (show && DesiredPosition.x && DesiredPosition.y)
   {
-    Center();
+    SetPosition(DesiredPosition);
+    DesiredPosition = wxPoint(0, 0);
+  }
+  bool result = wxFrame::Show(show);
+  if (show)
+  {
+    PumpMessages();
+    if (!MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONULL))
+    {
+      Center();
+    }
   }
   return result;
 }
 
+bool LogWindow::Destroy()
+{
+  App::GetSharedApp()->LogConsoleWillClose();
+  return wxFrame::Destroy();
+}
+
 wxBEGIN_EVENT_TABLE(LogWindow, wxFrame)
-EVT_COMMAND(wxID_ANY, PUMP_LOG_WINDOW, LogWindow::PumpMessages)
 EVT_CLOSE(OnCloseWindow)
 wxEND_EVENT_TABLE()
