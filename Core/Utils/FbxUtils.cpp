@@ -9,6 +9,8 @@
 #include <vector>
 #include <utility>
 
+#include "../../App/AppVersion.h"
+
 #define MERGE_CONVEX_HULLS 0
 // Reduce bezier tangents. For debug only.
 #define ANIMATION_LOW_BEZIER 1
