@@ -543,9 +543,7 @@ void LevelExportOptionsWindow::FillActorsTable(const FMapExportConfig& cfg)
   list.emplace_back("Prefabs", FMapExportConfig::ActorClass::Prefabs, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Prefabs));
   list.emplace_back("Skeletal Meshes", FMapExportConfig::ActorClass::SkeletalMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkeletalMeshes));
   list.emplace_back("Sky Lights", FMapExportConfig::ActorClass::SkyLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SkyLights));
-#if EXPERIMENTAL_SOUND_LEVEL_EXPORT
   list.emplace_back("Sound Nodes", FMapExportConfig::ActorClass::Sounds, cfg.GetClassEnabled(FMapExportConfig::ActorClass::Sounds));
-#endif
   list.emplace_back("SpeedTrees", FMapExportConfig::ActorClass::SpeedTrees, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpeedTrees));
   list.emplace_back("Spot Lights", FMapExportConfig::ActorClass::SpotLights, cfg.GetClassEnabled(FMapExportConfig::ActorClass::SpotLights));
   list.emplace_back("Static Meshes", FMapExportConfig::ActorClass::StaticMeshes, cfg.GetClassEnabled(FMapExportConfig::ActorClass::StaticMeshes));

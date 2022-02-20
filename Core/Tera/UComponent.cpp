@@ -1,6 +1,7 @@
 #include "UComponent.h"
 #include "FStream.h"
 #include "UClass.h"
+#include "CoreMath.h"
 
 void UComponent::PreSerialize(FStream& s)
 {

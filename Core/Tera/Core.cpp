@@ -49,7 +49,10 @@
 #include <tchar.h>
 #include <shlwapi.h>
 
-#include <Tera/FPackage.h>
+#include "CoreMath.h"
+#include "CoreCompression.h"
+#include "FPackage.h"
+
 #include <Utils/ALog.h>
 
 FString GetLzoError(int err)
@@ -433,19 +436,6 @@ std::string Sprintf(const std::string fmt, ...)
   std::string msg = Sprintf(fmt.c_str(), ap);
   va_end(ap);
   return msg;
-}
-
-void memswap(void* a, void* b, size_t size)
-{
-  if (!size)
-  {
-    return;
-  }
-  void* tmp = malloc(size);
-  memcpy(tmp, a, size);
-  memcpy(a, b, size);
-  memcpy(b, tmp, size);
-  free(tmp);
 }
 
 FString GetTempDir()
@@ -1186,23 +1176,6 @@ float USRand()
   float Result;
   *(int32*)&Result = (*(int32*)&SRandTemp & 0xff800000) | (GSRandSeed & 0x007fffff);
   return UFractional(Result);
-}
-
-float UFractional(float value)
-{
-  return value - Trunc(value);
-}
-
-int32 Trunc(float v)
-{
-  return _mm_cvtt_ss2si(_mm_set_ss(v));
-}
-
-std::string GetAppVersion()
-{
-  std::stringstream stream;
-  stream << "v." << APP_VER_MAJOR << '.' << std::setw(2) << std::setfill('0') << APP_VER_MINOR << BUILD_SUFFIX;
-  return stream.str();
 }
 
 bool HasAVX2()

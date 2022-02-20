@@ -5,6 +5,8 @@
 #include <fstream>
 #include <algorithm>
 
+#include "../../App/AppVersion.h"
+
 #define WIN_POS_FULLSCREEN INT_MIN
 #define WIN_POS_CENTER INT_MIN + 1
 

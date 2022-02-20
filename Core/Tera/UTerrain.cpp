@@ -1,6 +1,7 @@
 #include "UTerrain.h"
 #include "FPackage.h"
 #include "Cast.h"
+#include "CoreMath.h"
 
 #include <Utils/ALog.h>
 

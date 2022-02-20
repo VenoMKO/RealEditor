@@ -473,7 +473,14 @@
     <ClInclude Include="Core\Utils\MeshUtils.h" />
     <ClInclude Include="App\Windows\CreatePackageDialog.h" />
     <ClInclude Include="App\Windows\FlagsDialog.h" />
-    <ClInclude Include="Core\Tera\CoreTmmVersions.h" />
+    <ClInclude Include="Core\Tera\CoreTypes.h" />
+    <ClInclude Include="Core\Tera\CoreDebug.h" />
+    <ClInclude Include="Core\Tera\CoreMath.h" />
+    <ClInclude Include="Core\Tera\CoreCompression.h" />
+    <ClInclude Include="Core\Tera\CoreVersion.h" />
+    <ClInclude Include="Core\Tera\CoreStrings.h" />
+    <ClInclude Include="Core\Tera\UObjectHelpers.h" />
+    <ClInclude Include="App\AppVersion.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -1,4 +1,5 @@
 #include "App.h"
+#include "AppVersion.h"
 #include "Windows/ProgressWindow.h"
 #include "Windows/SettingsWindow.h"
 #include "Windows/CompositePackagePicker.h"
@@ -36,6 +37,13 @@ wxDEFINE_EVENT(OBJECT_LOADED, wxCommandEvent);
 wxDEFINE_EVENT(REGISTER_MIME, wxCommandEvent);
 wxDEFINE_EVENT(UNREGISTER_MIME, wxCommandEvent);
 wxDEFINE_EVENT(SHOW_FINAL_INIT, wxCommandEvent);
+
+std::string GetAppVersion()
+{
+  std::stringstream stream;
+  stream << "v." << APP_VER_MAJOR << '.' << std::setw(2) << std::setfill('0') << APP_VER_MINOR << BUILD_SUFFIX;
+  return stream.str();
+}
 
 wxString GetConfigPath()
 {

@@ -6,6 +6,9 @@
 
 #include <Utils/AConfiguration.h>
 
+// Maximum number of files to open from a single file dialog
+#define OPEN_OP_MAX_FILES 14
+
 namespace
 {
   // Looks like wxWidgets has a bug that prevents wxFileDialog to select a default filter. wxFileDialog chooses the first element in the list regardless of the input.

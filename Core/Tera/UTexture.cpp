@@ -2,9 +2,10 @@
 #include "Cast.h"
 #include "FPackage.h"
 #include "UClass.h"
+#include "CoreMath.h"
 
-#include "Utils/ALog.h"
-#include "Utils/TextureProcessor.h"
+#include <Utils/ALog.h>
+#include <Utils/TextureProcessor.h>
 
 #include <../Extern/glew/glew.h>
 #include <osg/Image>

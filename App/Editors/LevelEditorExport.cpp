@@ -2183,7 +2183,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
         }
       }
     }
-#if EXPERIMENTAL_SOUND_LEVEL_EXPORT
+
     if (ctx.CuesMap.size())
     {
       std::error_code ec;
@@ -2215,7 +2215,7 @@ void LevelEditor::PrepareToExportLevel(LevelExportContext& ctx)
         ofs << cuesList.UTF8();
       }
     }
-#endif
+
     if (ctx.Config.Materials || ctx.Config.Textures)
     {
       if (!ExportMaterialsAndTexture(ctx, &progress))
@@ -3307,7 +3307,6 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
     exportItem.AdditionalLayers.emplace_back("RE_Sounds");
     std::vector<USoundNodeWave*> waves = actor->GetAllWaves();
     ctx.Waves.insert(ctx.Waves.end(), waves.begin(), waves.end());
-#if EXPERIMENTAL_SOUND_LEVEL_EXPORT
     for (USoundCue* cue : actor->MusicList)
     {
       if (!cue)
@@ -3321,7 +3320,6 @@ void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor)
       asset += cueData.UTF8();
       ctx.CuesMap[cue] = asset;
     }
-#endif
   }
   else if (UAmbientSound* actor = Cast<UAmbientSound>(untypedActor))
   {

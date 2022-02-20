@@ -3,6 +3,7 @@
 #include "UObject.h"
 #include "FPackage.h"
 
+#include "CoreMath.h"
 #include "Utils/ALog.h"
 
 #include <objbase.h>

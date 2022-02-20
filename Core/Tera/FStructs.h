@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "FString.h"
 #include "FName.h"
+#include "UObjectHelpers.h"
 
 #define Quant16BitDiv     (32767.f)
 #define Quant16BitFactor  (32767.f)

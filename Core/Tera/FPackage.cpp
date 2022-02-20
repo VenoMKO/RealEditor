@@ -11,6 +11,8 @@
 #include "UTexture.h"
 #include "UObjectReferencer.h"
 #include "Cast.h"
+#include "CoreMath.h"
+#include "CoreCompression.h"
 
 #include <Utils/FPackageObserver.h>
 

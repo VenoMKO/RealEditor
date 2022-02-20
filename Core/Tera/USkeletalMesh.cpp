@@ -1,7 +1,9 @@
 #include "USkeletalMesh.h"
 #include "FObjectResource.h"
-#include <Tera/Cast.h>
-#include <Tera/FPackage.h>
+#include "Cast.h"
+#include "CoreMath.h"
+#include "FPackage.h"
+
 #include <Utils/MeshTravaller.h>
 
 struct FSkinVertexMeta {

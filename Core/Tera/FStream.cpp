@@ -6,6 +6,7 @@
 #include "FObjectResource.h"
 
 #include "Cast.h"
+#include "CoreCompression.h"
 #include <Utils/ALog.h>
 
 #include <ppl.h>
