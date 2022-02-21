@@ -481,6 +481,7 @@
     <ClInclude Include="Core\Tera\CoreStrings.h" />
     <ClInclude Include="Core\Tera\UObjectHelpers.h" />
     <ClInclude Include="App\AppVersion.h" />
+    <ClInclude Include="Core\Utils\APerfSamples.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

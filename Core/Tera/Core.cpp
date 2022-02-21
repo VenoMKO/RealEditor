@@ -286,8 +286,6 @@ uint64 GetFileTime(const std::wstring& path)
   return 0;
 }
 
-#include <wx/string.h>
-
 void UThrow(const char* fmt, ...)
 {
   va_list ap;

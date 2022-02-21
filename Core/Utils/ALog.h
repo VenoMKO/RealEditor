@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <Tera/CoreStrings.h>
 
 struct ALogEntry {
   enum class Type
@@ -10,7 +11,10 @@ struct ALogEntry {
     NONE = 0,
     ERR,
     WARN,
-    INFO
+    INFO,
+    USR,
+    PERF,
+    DBG
   };
   std::time_t Time = 0;
   std::string Text;
@@ -20,18 +24,22 @@ struct ALogEntry {
 class ALog {
 public:
   static ALog* SharedLog();
-
-  static void ILog(const std::string& msg);
-  static void ELog(const std::string& msg);
-  static void WLog(const std::string& msg);
+  static void Log(const std::string& msg, ALogEntry::Type channel);
   
   void GetEntries(std::vector<ALogEntry>& output, size_t& index);
 
 private:
-  static void Log(const std::string& msg, ALogEntry::Type channel);
+  
   void Push(const ALogEntry& entry);
 
 private:
   std::recursive_mutex EntriesMutex;
   std::vector<ALogEntry> Entries;
 };
+
+#define LogI(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::INFO)
+#define LogW(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::WARN)
+#define LogE(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::ERR)
+#define LogU(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::USR)
+#define LogD(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::DBG)
+#define LogP(...) ALog::Log(Sprintf(__VA_ARGS__), ALogEntry::Type::PERF)

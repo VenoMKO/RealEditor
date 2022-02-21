@@ -16,7 +16,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/Cast.h>
 
-#include <Utils/ALog.h>
+#include <Utils/APerfSamples.h>
 
 enum ObjTreeMenuId {
   ObjectList = wxID_HIGHEST + 1,

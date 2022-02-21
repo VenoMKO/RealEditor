@@ -188,6 +188,7 @@
     <ClInclude Include="Core\Tera\UTerrain.h" />
     <ClInclude Include="Core\Tera\UVolumes.h" />
     <ClInclude Include="Core\Utils\ALDevice.h" />
+    <ClInclude Include="Core\Utils\APerfSamples.h" />
     <ClInclude Include="Core\Utils\CompositePatcher.h" />
     <ClInclude Include="Core\Utils\DCKeyTool.h" />
     <ClInclude Include="Core\Utils\DDS.h" />

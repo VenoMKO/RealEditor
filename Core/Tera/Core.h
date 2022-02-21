@@ -4,7 +4,7 @@
 // --------------------------------------------------------------------
 
 // Enables performance samples in Release builds
-#define ENABLE_PERF_SAMPLE 1
+#define ENABLE_PERF_SAMPLE 0
 
 // If disabled names won't show FName numbers
 // and may cause bugs related to objects search
@@ -103,28 +103,6 @@ FString GetTempDir();
 FString GetTempFilePath();
 // Get file's last modification date
 uint64 GetFileTime(const std::wstring& path);
-
-#define LogI(...) ALog::ILog(Sprintf(__VA_ARGS__))
-#define LogW(...) ALog::WLog(Sprintf(__VA_ARGS__))
-#define LogE(...) ALog::ELog(Sprintf(__VA_ARGS__))
-
-#include <chrono>
-// Performance measurement
-#if ENABLE_PERF_SAMPLE
-#define PERF_START(ID) auto start##ID = std::chrono::high_resolution_clock::now()
-#define PERF_END(ID) LogE("Perf %s: %dms", #ID, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start##ID).count())
-#define PERF_START_I(ID) uint64 start##ID = 0
-#define PERF_ITER_BEGIN(ID) auto _tmpStart##ID = std::chrono::high_resolution_clock::now()
-#define PERF_ITER_END(ID) start##ID += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - _tmpStart##ID).count();
-#define PERF_END_I(ID) LogE("Perf %s: %llums", #ID, start##ID)
-#else
-#define PERF_START(ID)
-#define PERF_END(ID)
-#define PERF_START_I(ID)
-#define PERF_ITER_BEGIN(ID)
-#define PERF_ITER_END(ID)
-#define PERF_END_I(ID)
-#endif
 
 #define MAKE_IDB(name) "#" wxSTRINGIZE(## name)
 

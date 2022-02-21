@@ -1,5 +1,4 @@
 #include "FPackage.h"
-#include "Utils/ALog.h"
 #include "FStream.h"
 #include "FObjectResource.h"
 #include "UObject.h"
@@ -14,6 +13,7 @@
 #include "CoreMath.h"
 #include "CoreCompression.h"
 
+#include <Utils/APerfSamples.h>
 #include <Utils/FPackageObserver.h>
 
 #include <iostream>

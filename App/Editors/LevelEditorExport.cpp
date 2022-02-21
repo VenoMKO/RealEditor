@@ -20,7 +20,7 @@
 #include <Tera/UPrefab.h>
 #include <Tera/UModel.h>
 
-#include <Utils/ALog.h>
+#include <Utils/APerfSamples.h>
 #include <Utils/T3DUtils.h>
 #include <Utils/FbxUtils.h>
 #include <Utils/TextureProcessor.h>

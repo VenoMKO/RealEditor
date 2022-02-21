@@ -19,8 +19,8 @@
 #include <Tera/FPackage.h>
 
 #include <Utils/AConfiguration.h>
-#include <Utils/ALog.h>
 #include <Utils/DCKeyTool.h>
+#include <Utils/APerfSamples.h>
 
 #include <execution>
 #include <filesystem>

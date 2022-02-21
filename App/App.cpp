@@ -20,7 +20,7 @@
 
 #include <sys/stat.h>
 
-#include <Utils/ALog.h>
+#include <Utils/APerfSamples.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
 #include <Utils/ALDevice.h>

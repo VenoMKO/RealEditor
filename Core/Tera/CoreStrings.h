@@ -1,5 +1,6 @@
 #pragma once
-#include <string>
+#include "CoreTypes.h"
+
 // Check if a string needs to be converted to wstring
 bool IsAnsi(const std::string& str);
 bool IsAnsi(const std::wstring& str);
