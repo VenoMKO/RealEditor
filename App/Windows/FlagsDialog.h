@@ -2,7 +2,7 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
 
 #include <Tera/Core.h>
 #include <Tera/FFlags.h>

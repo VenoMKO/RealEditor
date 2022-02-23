@@ -4,7 +4,7 @@
 #include <Tera/UPrefab.h>
 #include <osg/MatrixTransform>
 
-#include "../Misc/OSGWindow.h"
+#include "../CustomViews/OSGView.h"
 
 
 class PrefabEditor : public GenericEditor {

@@ -1,7 +1,9 @@
 #pragma once
 #define WXDEBUG 1
 #ifdef _DEBUG
+#ifndef _CRTDBG_MAP_ALLOC
 #define _CRTDBG_MAP_ALLOC
+#endif
 #endif
 #include <wx/msw/msvcrt.h>
 #include <wx/wx.h>
@@ -9,12 +11,12 @@
 #include <wx/snglinst.h>
 #include <vector>
 #include "Misc/RpcCom.h"
-#include "Misc/WXDialog.h"
+#include "Misc/AConfiguration.h"
+#include "Windows/WXDialog.h"
 #include "Windows/PackageWindow.h"
 
 #include <Tera/Core.h>
-#include <Utils/AConfiguration.h>
-#include <Utils/ALDevice.h>
+#include <Tera/Utils/ALDevice.h>
 
 class wxEventHandler;
 inline void SendEvent(wxEvtHandler* obj, wxEventType type)

@@ -47,67 +47,7 @@
     <ClCompile Include="App\Misc\RpcCom.cpp">
       <Filter>Source Files\App</Filter>
     </ClCompile>
-    <ClCompile Include="App\Misc\OSGWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\Core.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FName.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FObjectResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FPackage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FPropertyTag.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FStructs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UComponent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UMetaData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UNames.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UObject.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UObjectFactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UObjectRedirector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UPersistentCookerData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UProperty.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UStaticMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\TextureProcessor.cpp">
+    <ClCompile Include="App\CustomViews\OSGView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Extern\minilzo\minilzo.c">
@@ -119,64 +59,25 @@
     <ClCompile Include="App\Windows\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Utils\TextureTravaller.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App\Windows\CompositePatcherWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\CompositePatcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Windows\CreateModWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\CookingOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\USkeletalMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\FbxUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\StaticMeshEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\USoundNode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\SoundWaveEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\SoundTravaller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\UAnimation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App\Misc\ArchiveInfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UPhysAsset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UActorComponent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UActor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\ULevel.cpp">
+    <ClCompile Include="App\CustomViews\ArchiveInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\ClassEditor.cpp">
@@ -188,25 +89,13 @@
     <ClCompile Include="App\Editors\StaticMeshActorEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\ULevelStreaming.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\USpeedTree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\SpeedTreeEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UTerrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\MaterialView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\MaterialEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UMaterialExpression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp">
@@ -221,19 +110,7 @@
     <ClCompile Include="App\Misc\BulkImportOperation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Utils\TfcBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\AConfiguration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\ALog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Windows\PackageWindowExport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\ULight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\LevelExportOptions.cpp">
@@ -242,13 +119,7 @@
     <ClCompile Include="App\Editors\LevelEditorExport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\UPrefab.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Editors\PrefabEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\ULightMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\REDialogs.cpp">
@@ -260,52 +131,25 @@
     <ClCompile Include="App\Windows\DependsResolveDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\UObjectReferencer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\DCKeyTool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Windows\DcToolDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Extern\pugixml\pugixml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\DC.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App\Windows\WelcomeDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Misc\wxModalWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\ALDevice.cpp">
+    <ClCompile Include="App\Windows\wxModalWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\AnimationEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App\Misc\WXDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\UVolumes.cpp">
+    <ClCompile Include="App\Windows\WXDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Editors\SoundCueEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\PskUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Tera\FMeshCommon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\MeshUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App\Windows\CreatePackageDialog.cpp">
@@ -314,7 +158,7 @@
     <ClCompile Include="App\Windows\FlagsDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Tera\FMapper.cpp">
+    <ClCompile Include="App\Misc\AConfiguration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -342,87 +186,35 @@
     </ClInclude>
     <ClInclude Include="App\Misc\ObjectProperties.h" />
     <ClInclude Include="App\Misc\ObjectTreeModel.h" />
-    <ClInclude Include="App\Misc\OSGWindow.h" />
-    <ClInclude Include="Core\Tera\Cast.h" />
-    <ClInclude Include="Core\Tera\Core.h" />
-    <ClInclude Include="Core\Tera\FFlags.h" />
-    <ClInclude Include="Core\Tera\FName.h" />
-    <ClInclude Include="Core\Tera\FObjectResource.h" />
-    <ClInclude Include="Core\Tera\FPackage.h" />
-    <ClInclude Include="Core\Tera\FPropertyTag.h" />
-    <ClInclude Include="Core\Tera\FStream.h" />
-    <ClInclude Include="Core\Tera\FString.h" />
-    <ClInclude Include="Core\Tera\FStructs.h" />
-    <ClInclude Include="Core\Tera\UClass.h" />
-    <ClInclude Include="Core\Tera\UComponent.h" />
-    <ClInclude Include="Core\Tera\UMaterial.h" />
-    <ClInclude Include="Core\Tera\UMetaData.h" />
-    <ClInclude Include="Core\Tera\UNames.h" />
-    <ClInclude Include="Core\Tera\UObject.h" />
-    <ClInclude Include="Core\Tera\UObjectRedirector.h" />
-    <ClInclude Include="Core\Tera\UPersistentCookerData.h" />
-    <ClInclude Include="Core\Tera\UProperty.h" />
-    <ClInclude Include="Core\Tera\UStaticMesh.h" />
-    <ClInclude Include="Core\Tera\UTexture.h" />
-    <ClInclude Include="Core\Utils\TextureProcessor.h" />
+    <ClInclude Include="App\CustomViews\OSGView.h" />
     <ClInclude Include="Extern\minilzo\lzoconf.h" />
     <ClInclude Include="Extern\minilzo\lzodefs.h" />
     <ClInclude Include="Extern\minilzo\minilzo.h" />
     <ClInclude Include="App\Windows\CompositePackagePicker.h" />
     <ClInclude Include="App\Windows\TextureImporter.h" />
-    <ClInclude Include="Core\Utils\TextureTravaller.h" />
-    <ClInclude Include="Core\Utils\CompositePatcher.h" />
-    <ClInclude Include="App\Windows\CompositePatcherWindow.h" />
     <ClInclude Include="App\Windows\CreateModWindow.h" />
     <ClInclude Include="App\Windows\CookingOptions.h" />
-    <ClInclude Include="Core\Tera\USkeletalMesh.h" />
-    <ClInclude Include="Core\Tera\kDOP.h" />
-    <ClInclude Include="Core\Utils\FbxUtils.h" />
     <ClInclude Include="App\Editors\SkelMeshEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
-    <ClInclude Include="Core\Utils\DDS.h" />
-    <ClInclude Include="Core\Tera\USoundNode.h" />
     <ClInclude Include="App\Editors\SoundWaveEditor.h" />
-    <ClInclude Include="Core\Utils\SoundTravaller.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
-    <ClInclude Include="Core\Tera\UAnimation.h" />
-    <ClInclude Include="App\Misc\ArchiveInfo.h" />
-    <ClInclude Include="Core\Tera\UPhysAsset.h" />
-    <ClInclude Include="Core\Tera\UActor.h" />
-    <ClInclude Include="Core\Tera\UActorComponent.h" />
-    <ClInclude Include="Core\Tera\ULevel.h" />
+    <ClInclude Include="App\CustomViews\ArchiveInfo.h" />
     <ClInclude Include="App\Editors\ClassEditor.h" />
-    <ClInclude Include="Core\Tera\UTerrain.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\StaticMeshActorEditor.h" />
-    <ClInclude Include="Core\Tera\ULevelStreaming.h" />
-    <ClInclude Include="Core\Tera\USpeedTree.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
     <ClInclude Include="App\Windows\MaterialView.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
-    <ClInclude Include="Core\Tera\UMaterialExpression.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
     <ClInclude Include="App\Windows\ObjectPicker.h" />
     <ClInclude Include="App\Windows\BulkImportWindow.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
-    <ClInclude Include="Core\Utils\TfcBuilder.h" />
-    <ClInclude Include="Core\Utils\AConfiguration.h" />
-    <ClInclude Include="Core\Utils\ALog.h" />
-    <ClInclude Include="Core\Utils\T3DUtils.h" />
-    <ClInclude Include="Core\Tera\ULight.h" />
     <ClInclude Include="App\Windows\LevelExportOptions.h" />
-    <ClInclude Include="Core\Tera\UPrefab.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
-    <ClInclude Include="Core\Tera\ULightMap.h" />
-    <ClInclude Include="Core\Utils\MeshTravaller.h" />
     <ClInclude Include="App\Windows\REDialogs.h" />
     <ClInclude Include="App\Windows\MaterialMapperDialog.h" />
-    <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="App\Windows\DependsResolveDialog.h" />
-    <ClInclude Include="Core\Tera\UObjectReferencer.h" />
-    <ClInclude Include="Core\Utils\DCKeyTool.h" />
     <ClInclude Include="App\Windows\DcToolDialog.h" />
-    <ClInclude Include="Core\Tera\DC.h" />
     <ClInclude Include="Extern\pugixml\pugiconfig.hpp" />
     <ClInclude Include="Extern\pugixml\pugixml.hpp" />
     <ClInclude Include="Extern\rapidjson\allocators.h" />
@@ -463,29 +255,14 @@
     <ClInclude Include="Extern\rapidjson\stringbuffer.h" />
     <ClInclude Include="Extern\rapidjson\writer.h" />
     <ClInclude Include="App\Windows\WelcomeDialog.h" />
-    <ClInclude Include="App\Misc\wxModalWindow.h" />
-    <ClInclude Include="Core\Utils\ALDevice.h" />
-    <ClInclude Include="Core\Utils\FPackageObserver.h" />
+    <ClInclude Include="App\Windows\wxModalWindow.h" />
     <ClInclude Include="App\Editors\AnimationEditor.h" />
-    <ClInclude Include="App\Misc\WXDialog.h" />
-    <ClInclude Include="Core\Tera\UModel.h" />
-    <ClInclude Include="Core\Tera\UVolumes.h" />
+    <ClInclude Include="App\Windows\WXDialog.h" />
     <ClInclude Include="App\Editors\SoundCueEditor.h" />
-    <ClInclude Include="Core\Utils\PskUtils.h" />
-    <ClInclude Include="Core\Tera\FMeshCommon.h" />
-    <ClInclude Include="Core\Utils\MeshUtils.h" />
     <ClInclude Include="App\Windows\CreatePackageDialog.h" />
     <ClInclude Include="App\Windows\FlagsDialog.h" />
-    <ClInclude Include="Core\Tera\CoreTypes.h" />
-    <ClInclude Include="Core\Tera\CoreDebug.h" />
-    <ClInclude Include="Core\Tera\CoreMath.h" />
-    <ClInclude Include="Core\Tera\CoreCompression.h" />
-    <ClInclude Include="Core\Tera\CoreVersion.h" />
-    <ClInclude Include="Core\Tera\CoreStrings.h" />
-    <ClInclude Include="Core\Tera\UObjectHelpers.h" />
     <ClInclude Include="App\AppVersion.h" />
-    <ClInclude Include="Core\Utils\APerfSamples.h" />
-    <ClInclude Include="Core\Tera\FMapper.h" />
+    <ClInclude Include="App\Misc\AConfiguration.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

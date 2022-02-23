@@ -12,16 +12,14 @@
 #include <map>
 #include <vector>
 
-#include <Utils/FPackageObserver.h>
+#include <Tera/FPackage.h>
 
 wxDECLARE_EVENT(PACKAGE_READY, wxCommandEvent);
 wxDECLARE_EVENT(SELECT_OBJECT, wxCommandEvent);
 wxDECLARE_EVENT(PACKAGE_ERROR, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROPERTIES, wxCommandEvent);
 
-class App;
 class ArchiveInfoView;
-class FPackage;
 class UObject;
 
 struct DebugIterContext {
@@ -32,7 +30,7 @@ class PackageWindow
   : public wxFrame
   , public FPackageObserver {
 public:
-  PackageWindow(std::shared_ptr<FPackage>& package, App* application);
+  PackageWindow(std::shared_ptr<FPackage>& package);
   ~PackageWindow();
   std::shared_ptr<FPackage> GetPackage() const
   {
@@ -94,7 +92,6 @@ private:
   void OnMoveEnd(wxMoveEvent& e);
   void OnSize(wxSizeEvent& e);
   void OnMaximized(wxMaximizeEvent& e);
-  void OnPatchCompositeMapClicked(wxCommandEvent&);
   void OnDcToolClicked(wxCommandEvent&);
   void OnDecryptClicked(wxCommandEvent&);
   void OnEncryptClicked(wxCommandEvent&);
@@ -161,7 +158,6 @@ private:
   wxDECLARE_EVENT_TABLE();
 
 private:
-  App* Application = nullptr;
   std::shared_ptr<FPackage> Package = nullptr;
   ObjectTreeDataViewCtrl* ObjectTreeCtrl = nullptr;
   wxSearchCtrl* SearchField = nullptr;

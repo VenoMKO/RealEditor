@@ -2,12 +2,12 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 #include <wx/filepicker.h>
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
+#include "../Misc/AConfiguration.h"
 
 #include <filesystem>
 
-#include <Utils/AConfiguration.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/TextureUtils.h>
 
 struct LevelExportContext {
 
@@ -98,7 +98,7 @@ struct LevelExportContext {
 
   inline std::filesystem::path GetMaterialExpressionsPath() const
   {
-    return GetMaterialDir() + MatExpressionsStorage;
+    return GetMaterialDir() / std::filesystem::path(MatExpressionsStorage);
   }
 
   // A list of default mesh materials before actor overrides for RE Helper plugin

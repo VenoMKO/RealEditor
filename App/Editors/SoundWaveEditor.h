@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GenericEditor.h"
-#include <Utils/ALDevice.h>
+#include <Tera/Utils/ALDevice.h>
 #include <Tera/USoundNode.h>
 
 class SoundWaveEditor 

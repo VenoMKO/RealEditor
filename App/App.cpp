@@ -20,10 +20,10 @@
 
 #include <sys/stat.h>
 
-#include <Utils/APerfSamples.h>
 #include <Tera/FPackage.h>
 #include <Tera/FStream.h>
-#include <Utils/ALDevice.h>
+#include <Tera/Utils/APerfSamples.h>
+#include <Tera/Utils/ALDevice.h>
 
 const char* APP_NAME = "Real Editor";
 const char* VENDOR_NAME_32 = "Real Editor x32";
@@ -515,7 +515,7 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
     return false;
   }
 
-  PackageWindow* window = new PackageWindow(package, this);
+  PackageWindow* window = new PackageWindow(package);
   if (frameInfo.size())
   {
     wxPoint pos = window->GetPosition();
@@ -571,7 +571,7 @@ bool App::OpenPackage(const wxString& path, const wxString selectionIn)
 
 bool App::OpenPackage(std::shared_ptr<FPackage> package)
 {
-  PackageWindow* window = new PackageWindow(package, this);
+  PackageWindow* window = new PackageWindow(package);
   PackageWindows.push_back(window);
   window->Show();
   SendEvent(window, PACKAGE_READY);
@@ -663,7 +663,7 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
   {
     App::AddRecentFile(L"composite\\" + package->GetPackageName().WString());
   }
-  PackageWindow* window = new PackageWindow(package, this);
+  PackageWindow* window = new PackageWindow(package);
   if (frameInfo.size())
   {
     wxPoint pos = window->GetPosition();
@@ -895,6 +895,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
     catch (const std::exception& e)
     {
+      LogE("Failed to load Core.u: %s", e.what());
       SendEvent(pWindow, UPDATE_PROGRESS_FINISH);
       SendEvent(this, LOAD_CORE_ERROR, "Failed to load Core.u file!\n\nThe file may be corrupted or does not exist.");
       return;

@@ -1,4 +1,4 @@
-#include "OSGWindow.h"
+#include "OSGView.h"
 
 #include <wx/wx.h>
 

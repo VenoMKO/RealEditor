@@ -81,11 +81,6 @@ void PackageWindow::InitLayout()
 
   wxMenu* mapperTools = new wxMenu();
 
-  wxMenuItem* m_menuItem65 = new wxMenuItem(mapperTools, ControlElementId::CompositePatch, wxString(wxT("Patch the composite map...")), wxS("Patch an entry in the CompositePackageMapper.dat file at your S1Game folder"), wxITEM_NORMAL);
-  m_menuItem65->Enable(IsModernClient);
-  mapperTools->Append(m_menuItem65);
-  mapperTools->AppendSeparator();
-
   wxMenuItem* m_menuItem66 = new wxMenuItem(mapperTools, ControlElementId::DecryptMapper, wxString(wxT("Decrypt a mapper file...")), wxS("Decrypt a *Mapper.dat file and save it as a text file at a location of your choice."), wxITEM_NORMAL);
   m_menuItem66->Enable(IsModernClient);
   mapperTools->Append(m_menuItem66);

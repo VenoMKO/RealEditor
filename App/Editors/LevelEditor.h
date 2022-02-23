@@ -4,7 +4,7 @@
 #include <Tera/ULevel.h>
 #include <Tera/ULevelStreaming.h>
 
-#include "../Misc/OSGWindow.h"
+#include "../CustomViews/OSGView.h"
 #include "../Windows/LevelExportOptions.h"
 #include <osg/MatrixTransform>
 

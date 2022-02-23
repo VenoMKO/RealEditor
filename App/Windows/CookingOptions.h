@@ -1,7 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <Tera/FPackage.h>
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
 
 class CookingOptionsWindow : public WXDialog
 {

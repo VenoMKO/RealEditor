@@ -21,7 +21,7 @@ void SoundCueEditor::OnExportClicked(wxCommandEvent&)
   {
     FString cueData = "Game/";
     cueData += tmpCtx.DataDirName;
-    cueData += "/" + Cast<USoundCue>(Object)->ExportCueToText(false);
+    cueData += "/" + Cast<USoundCue>(Object)->ExportCueToText(false, App::GetSharedApp()->GetConfig().MapExportConfig.GlobalScale);
     std::filesystem::path p(path.ToStdWstring());
     p /= Object->GetObjectNameString().WString() + L".cue";
     std::ofstream ofs(p);

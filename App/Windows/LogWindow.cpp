@@ -1,9 +1,9 @@
 #include "../App.h"
+#include "../Misc/AConfiguration.h"
 #include "LogWindow.h"
 #include <wx/richtext/richtextctrl.h>
 
-#include <Utils/ALog.h>
-#include <Utils/AConfiguration.h>
+#include <Tera/Utils/ALog.h>
 
 #define POLL_INTERVAL 1000
 #define MAX_LINES 500

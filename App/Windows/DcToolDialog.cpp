@@ -10,17 +10,16 @@
 #include <wx/mstream.h>
 
 #include "../App.h"
+#include "../Misc/AConfiguration.h"
 #include "ProgressWindow.h"
 #include "REDialogs.h"
 
-#include <Tera/Core.h>
 #include <Tera/FStream.h>
 #include <Tera/FString.h>
 #include <Tera/FPackage.h>
 
-#include <Utils/AConfiguration.h>
-#include <Utils/DCKeyTool.h>
-#include <Utils/APerfSamples.h>
+#include <Tera/Utils/DCKeyTool.h>
+#include <Tera/Utils/APerfSamples.h>
 
 #include <execution>
 #include <filesystem>
@@ -265,13 +264,12 @@ void DcToolDialog::OnFindClicked(wxCommandEvent& event)
     }
     return;
   }
-  HANDLE proc = DCKeyTool::GetTeraProcess();
-  if (!proc)
+  DCKeyTool tool;
+  if (!tool.IsTeraRunning())
   {
     REDialog::Error("Start your Tera client and try again.", "Tera is not running!");
     return;
   }
-  DCKeyTool tool(proc);
   if (!tool.FindKey())
   {
     REDialog::Error("Wait for the server selection screen to appear and then try again.", "Couldn't find the key!");

@@ -223,7 +223,13 @@ osg::MatrixTransform* CreateStaticMesh(UStaticMeshComponent* component)
       if (UTexture2D* tex = material->GetDiffuseTexture())
       {
         osg::ref_ptr<osg::Image> img = new osg::Image;
-        tex->RenderTo(img.get(), 64);
+        int32 texWidth = 64, texHeight = 64;
+        uint32 type, format, intFormat = 0;
+        void* bitmapData = nullptr;
+        if (tex->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) && bitmapData)
+        {
+          img->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+        }
         osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);
@@ -319,7 +325,13 @@ osg::MatrixTransform* CreateSkelMesh(USkeletalMeshComponent* component)
         if (UTexture2D* tex = material->GetDiffuseTexture())
         {
           osg::ref_ptr<osg::Image> img = new osg::Image;
-          tex->RenderTo(img.get());
+          int32 texWidth = 0, texHeight = 0;
+          uint32 type, format, intFormat = 0;
+          void* bitmapData = nullptr;
+          if (tex->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) && bitmapData)
+          {
+            img->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+          }
           osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);

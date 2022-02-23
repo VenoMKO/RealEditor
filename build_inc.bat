@@ -19,6 +19,5 @@ echo Build: %TOTAL%
 
 if "%CONF%"=="%REL%" (
 	>build_num.txt echo %TOTAL%
-	powershell "$(Get-Item Core/Tera/Core.h).lastwritetime=$(Get-Date)"
 )
 exit 0

@@ -9,10 +9,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/USoundNode.h>
 
-#include <Utils/TextureTravaller.h>
-#include <Utils/TextureProcessor.h>
-#include <Utils/SoundTravaller.h>
-#include <Utils/TfcBuilder.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <thread>
 

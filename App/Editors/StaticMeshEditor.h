@@ -3,7 +3,7 @@
 #include <Tera/UStaticMesh.h>
 #include <Tera/UTexture.h>
 
-#include "../Misc/OSGWindow.h"
+#include "../CustomViews/OSGView.h"
 
 class StaticMeshEditor : public GenericEditor {
 public:

@@ -1,7 +1,8 @@
 #include "AnimationEditor.h"
 #include "../App.h"
-#include "../Misc/WXDialog.h"
+#include "../Misc/AConfiguration.h"
 #include "../Windows/ObjectPicker.h"
+#include "../Windows/WXDialog.h"
 #include "../Windows/REDialogs.h"
 #include "../Windows/ProgressWindow.h"
 
@@ -28,8 +29,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/FPackage.h>
 
-#include <Utils/AConfiguration.h>
-#include <Utils/FbxUtils.h>
+#include <Tera/Utils/MeshUtils.h>
 
 #include <wx/valnum.h>
 #include <wx/statline.h>
@@ -695,6 +695,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
           std::wstring tmp = ctx.Path;
           ctx.Path = ((std::filesystem::path(tmp) / source->GetObjectNameString().WString()).replace_extension("psk")).wstring();
           auto utils = MeshUtils::CreateUtils(exporterType);
+          utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
           utils->ExportSkeletalMesh(source, ctx);
           ctx.Path = tmp;
         }
@@ -710,6 +711,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
             }
             ctx.Path = (p / seq->SequenceName.String().WString()).replace_extension(extCh).wstring();
             auto utils = MeshUtils::CreateUtils(exporterType);
+            utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
             if (!(result = utils->ExportAnimationSequence(source, seq, ctx)))
             {
               break;
@@ -720,6 +722,7 @@ void AnimSetEditor::OnExportClicked(wxCommandEvent& e)
       else
       {
         auto utils = MeshUtils::CreateUtils(exporterType);
+        utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
         result = utils->ExportAnimationSet(source, Cast<UAnimSet>(Object), ctx);
       }
     }
@@ -898,6 +901,7 @@ void AnimSequenceEditor::OnExportClicked(wxCommandEvent& e)
     bool result = false;
     {
       auto utils = MeshUtils::CreateUtils(exporterType);
+      utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
       if (ctx.ExportMesh && source && exporterType == MeshExporterType::MET_Psk)
       {
         if (ctx.ProgressDescFunc)

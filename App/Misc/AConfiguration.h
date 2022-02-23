@@ -167,7 +167,7 @@ struct FMapExportConfig {
   bool IgnoreHidden = true;
   bool SplitT3D = false;
   float GlobalScale = 4.f;
-  
+
   // Materials
   bool Materials = true;
   bool Textures = true;
@@ -184,13 +184,13 @@ struct FMapExportConfig {
   // Terrains
   bool ResampleTerrain = true;
   bool SplitTerrainWeights = true;
-  
+
   // Models
   bool ExportLods = false;
   bool ExportMLods = false;
   bool ConvexCollisions = true;
   bool ExportLightmapUVs = false;
-  
+
 
   bool GetClassEnabled(ActorClass classFlag) const
   {
@@ -291,7 +291,7 @@ struct FAppConfig
   {
     return VerMajor > major || (VerMajor == major && VerMinor >= minor);
   }
-  
+
   // CFG_RootDir: CookedPC path(UTF8)
   FString RootDir;
   // CFG_WindowRect: Window. Min - Origin, Max - Size
@@ -401,7 +401,7 @@ public:
 
   // Save config to the file. Returns false on error
   bool Save();
-  
+
   FAppConfig GetConfig() const;
   void SetConfig(const FAppConfig& cfg);
 

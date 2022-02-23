@@ -11,6 +11,9 @@
 
 const int32 CanvasPadding = 200;
 
+
+#define MAKE_IDB(name) "#" wxSTRINGIZE(## name)
+
 UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
   : DragableCanvas(parent)
   , Material(material)
@@ -145,7 +148,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
   auto drawLabelFunc = [&dc](wxString text, const wxPoint& at, unsigned maxWidth = 0) {
     wxSize size = dc.GetTextExtent(text);
     bool truncate = false;
-    while (maxWidth && size.x > maxWidth && text.size() > 3)
+    while (maxWidth && (unsigned)size.x > maxWidth && text.size() > 3)
     {
       text = text.substr(0, text.size() - 3);
       size = dc.GetTextExtent(text);

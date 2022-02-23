@@ -1,6 +1,6 @@
 #pragma once
 #include "GenericEditor.h"
-#include "../Misc/OSGWindow.h"
+#include "../CustomViews/OSGView.h"
 
 #include <osgAnimation/Animation>
 #include <osgAnimation/BasicAnimationManager>

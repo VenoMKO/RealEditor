@@ -5,7 +5,6 @@
 
 #include <filesystem>
 
-#include <Utils/APerfSamples.h>
 #include <Tera/FPackage.h>
 #include <Tera/FObjectResource.h>
 #include <Tera/Cast.h>
@@ -17,8 +16,9 @@
 #include <Tera/USoundNode.h>
 #include <Tera/USpeedTree.h>
 
-#include <Utils/FbxUtils.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/APerfSamples.h>
+#include <Tera/Utils/MeshUtils.h>
+#include <Tera/Utils/TextureUtils.h>
 
 void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
 {
@@ -452,6 +452,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         }
         
         auto utils = MeshUtils::CreateUtils(exportType);
+        utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
         if (exp->GetClassName() == UStaticMesh::StaticClassName())
         {
           ctx.Scale3D *= appConfig.StaticMeshExportConfig.ScaleFactor;
@@ -539,12 +540,13 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
         const char* ext = exporterType == MeshExporterType::MET_Fbx ? "fbx" : "psa";
         if (ctx.SplitTakes)
         {
-          dest.replace_extension().wstring();
+          dest.replace_extension();
           std::error_code err;
           std::filesystem::create_directories(dest, err);
           std::vector<UObject*> inner = set->GetInner();
           int32 total = (int32)inner.size();
           auto utils = MeshUtils::CreateUtils(exporterType);
+          utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
           for (int32 idx = 0; idx < total; ++idx)
           {
             if (UAnimSequence* seq = Cast<UAnimSequence>(inner[idx]))
@@ -569,6 +571,7 @@ void PackageWindow::OnBulkPackageExport(PACKAGE_INDEX objIndex)
             lastCount = prg;
           };
           auto utils = MeshUtils::CreateUtils(exporterType);
+          utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
           utils->ExportAnimationSet(source, set, ctx);
           progressCounter += lastCount;
           count += lastCount;

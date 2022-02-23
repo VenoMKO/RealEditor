@@ -2,7 +2,7 @@
 #include <wx/wx.h>
 #include <atomic>
 
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
 
 wxDECLARE_EVENT(UPDATE_MAX_PROGRESS, wxCommandEvent);
 wxDECLARE_EVENT(UPDATE_PROGRESS, wxCommandEvent);

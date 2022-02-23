@@ -3,8 +3,7 @@
 #include "../Windows/REDialogs.h"
 #include "../App.h"
 
-#include <Utils/ALog.h>
-#include <Utils/SoundTravaller.h>
+#include <Tera/Utils/ALog.h>
 
 #include <AL/al.h>
 #include <AL/alc.h>

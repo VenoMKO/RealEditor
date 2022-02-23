@@ -2,9 +2,8 @@
 #include <wx/statline.h>
 #include <wx/statbmp.h>
 #include "../App.h"
-#include "../Misc/WXDialog.h"
-
-#include <Utils/AConfiguration.h>
+#include "WXDialog.h"
+#include "../Misc/AConfiguration.h"
 
 // Maximum number of files to open from a single file dialog
 #define OPEN_OP_MAX_FILES 14

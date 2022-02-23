@@ -1,6 +1,6 @@
 #pragma once
 #include <wx/wx.h>
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
 
 class CreateModWindow : public WXDialog
 {

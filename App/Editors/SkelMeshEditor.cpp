@@ -3,6 +3,7 @@
 #include "../Windows/PackageWindow.h"
 #include "../Windows/ProgressWindow.h"
 #include "../Windows/MaterialMapperDialog.h"
+#include "../Misc/AConfiguration.h"
 #include "../App.h"
 #include <wx/valnum.h>
 
@@ -24,10 +25,9 @@
 #include <Tera/Cast.h>
 #include <Tera/UMaterial.h>
 
-#include <Utils/ALog.h>
-#include <Utils/MeshUtils.h>
-#include <Utils/AConfiguration.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/ALog.h>
+#include <Tera/Utils/MeshUtils.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <filesystem>
 #include <functional>
@@ -632,6 +632,7 @@ void SkelMeshEditor::OnExportClicked(wxCommandEvent&)
   bool r = false;
   MeshExporterType exportType = MeshUtils::GetExporterTypeFromExtension(wxFileName(fbxpath).GetExt().Lower().ToStdString());
   auto utils = MeshUtils::CreateUtils(exportType);
+  utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
   appConfig.SkelMeshExportConfig.LastFormat = (int32)exportType;
   App::GetSharedApp()->SaveConfig();
   if (exportType == MET_Psk)
@@ -948,6 +949,7 @@ void SkelMeshEditor::OnImportClicked(wxCommandEvent&)
 
   ctx.Path = path.ToStdWstring();
   auto utils = MeshUtils::CreateUtils(MET_Fbx);
+  utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
   if (!utils->ImportSkeletalMesh(ctx))
   {
     REDialog::Error(ctx.Error);
@@ -1114,7 +1116,13 @@ void SkelMeshEditor::CreateRenderModel()
         if (UTexture2D* tex = material->GetDiffuseTexture())
         {
           osg::ref_ptr<osg::Image> img = new osg::Image;
-          tex->RenderTo(img.get());
+          int32 texWidth = 0, texHeight = 0;
+          uint32 type, format, intFormat = 0;
+          void* bitmapData = nullptr;
+          if (tex->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) && bitmapData)
+          {
+            img->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+          }
           osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);

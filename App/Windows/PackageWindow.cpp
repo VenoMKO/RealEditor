@@ -1,7 +1,6 @@
 #include "PackageWindow.h"
 #include "ProgressWindow.h"
 #include "CompositePackagePicker.h"
-#include "CompositePatcherWindow.h"
 #include "CookingOptions.h"
 #include "CreateModWindow.h"
 #include "CreatePackageDialog.h"
@@ -11,7 +10,8 @@
 #include "DependsResolveDialog.h"
 #include "REDialogs.h"
 #include "FlagsDialog.h"
-#include "../Misc/ArchiveInfo.h"
+
+#include "../CustomViews/ArchiveInfo.h"
 #include "../Misc/ObjectProperties.h"
 #include "../App.h"
 
@@ -31,7 +31,6 @@
 #include <wx/clipbrd.h>
 #include <wx/richmsgdlg.h>
 
-#include <Utils/ALog.h>
 #include <Tera/Cast.h>
 #include <Tera/CoreCompression.h>
 #include <Tera/FPackage.h>
@@ -39,7 +38,8 @@
 #include <Tera/UObject.h>
 #include <Tera/UClass.h>
 #include <Tera/ULevel.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/ALog.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <ShlObj.h>
 
@@ -59,7 +59,6 @@ enum ControlElementId {
   LogWin,
   Help,
   DcTool,
-  CompositePatch,
   DecryptMapper,
   EncryptMapper,
   DumpObjectsMap,
@@ -122,13 +121,12 @@ const wxString HelpUrl = wxS("https://github.com/VenoMKO/RealEditor/wiki");
 
 #include "PackageWindowLayout.h"
 
-PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* application)
+PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package)
   : wxFrame(nullptr, wxID_ANY, wxEmptyString)
-  , Application(application)
   , Package(package)
 {
   SetSize(FromDIP(GetSize()));
-  wxString title = application->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - ");
+  wxString title = App::GetSharedApp()->GetAppDisplayName() + wxT(" ") + GetAppVersion() + wxT(" - ");
   if (package->IsComposite())
   {
     std::wstring sub = package->GetCompositePath();
@@ -167,7 +165,7 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   SetPropertiesHidden(true);
   SetContentHidden(true);
 
-  wxPoint pos = Application->GetLastWindowPosition();
+  wxPoint pos = App::GetSharedApp()->GetLastWindowPosition();
   if (pos.x == WIN_POS_FULLSCREEN)
   {
     Maximize();
@@ -175,17 +173,17 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
   else if (pos.x == WIN_POS_CENTER)
   {
     CenterOnScreen();
-    Application->SetLastWindowPosition(GetPosition());
+    App::GetSharedApp()->SetLastWindowPosition(GetPosition());
   }
   else
   {
     pos.x += 25; pos.y += 25;
     SetPosition(pos);
-    Application->SetLastWindowPosition(pos);
+    App::GetSharedApp()->SetLastWindowPosition(pos);
   }
   if (pos.x != WIN_POS_FULLSCREEN)
   {
-    SetSize(Application->GetLastWindowSize());
+    SetSize(App::GetSharedApp()->GetLastWindowSize());
   }
   OnNoneObjectSelected();
   {
@@ -198,11 +196,11 @@ PackageWindow::PackageWindow(std::shared_ptr<FPackage>& package, App* applicatio
     }
     wxSize hint;
     float dx;
-    hint = Application->GetLastWindowObjectSash();
+    hint = App::GetSharedApp()->GetLastWindowObjectSash();
     dx = float(hint.x) / float(hint.y);
     SidebarSplitter->SetSashPosition(width * dx);
 
-    hint = Application->GetLastWindowPropSash();
+    hint = App::GetSharedApp()->GetLastWindowPropSash();
     PropertiesPos = hint.y - hint.x;
     ContentSplitter->SetSashPosition(PropertiesPos);
     ContentSplitter->SetSashGravity(1);
@@ -232,7 +230,7 @@ void PackageWindow::OnCloseWindow(wxCloseEvent& event)
   }
   wxFrame::OnCloseWindow(event);
   Package->RemoveObserver(this);
-  Application->PackageWindowWillClose(this);
+  App::GetSharedApp()->PackageWindowWillClose(this);
 }
 
 PackageWindow::~PackageWindow()
@@ -646,7 +644,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
   }
   if (!PerformingHistoryNavigation)
   {
-    if (SelectionHistoryPos && SelectionHistoryPos < SelectionHistory.size())
+    if (SelectionHistoryPos && SelectionHistoryPos < (int64)SelectionHistory.size())
     {
       SelectionHistory.erase(SelectionHistory.begin(), SelectionHistory.begin() + SelectionHistoryPos);
     }
@@ -658,7 +656,7 @@ void PackageWindow::OnImportObjectSelected(INT index)
     SelectionHistory.insert(SelectionHistory.begin(), index);
     SelectionHistoryPos = 0;
   }
-  BackButton->Enable(SelectionHistory.size() && SelectionHistory.size() - 1 > SelectionHistoryPos);
+  BackButton->Enable(SelectionHistory.size() && (int64)SelectionHistory.size() - 1 > SelectionHistoryPos);
   ForwardButton->Enable(SelectionHistory.size() && SelectionHistoryPos);
   if (index == FAKE_IMPORT_ROOT)
   {
@@ -679,7 +677,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
 {
   if (!PerformingHistoryNavigation)
   {
-    if (SelectionHistoryPos && SelectionHistoryPos < SelectionHistory.size())
+    if (SelectionHistoryPos && SelectionHistoryPos < (int64)SelectionHistory.size())
     {
       SelectionHistory.erase(SelectionHistory.begin(), SelectionHistory.begin() + SelectionHistoryPos);
     }
@@ -693,7 +691,7 @@ void PackageWindow::OnExportObjectSelected(INT index)
     }
     SelectionHistoryPos = 0;
   }
-  BackButton->Enable(SelectionHistory.size() && SelectionHistory.size() - 1 > SelectionHistoryPos);
+  BackButton->Enable(SelectionHistory.size() && (int64)SelectionHistory.size() - 1 > SelectionHistoryPos);
   ForwardButton->Enable(SelectionHistory.size() && SelectionHistoryPos);
 
   if (index == FAKE_EXPORT_ROOT || !index)
@@ -1122,8 +1120,8 @@ bool PackageWindow::Show(bool show)
     Center();
     if (!IsMaximized())
     {
-      Application->SetLastWindowSize(GetSize());
-      Application->SetLastWindowPosition(GetPosition());
+      App::GetSharedApp()->SetLastWindowSize(GetSize());
+      App::GetSharedApp()->SetLastWindowPosition(GetPosition());
     }
   }
   return result;
@@ -1269,6 +1267,7 @@ void PackageWindow::OnCreateModClicked(wxCommandEvent&)
     return;
   }
   ctx.Container = ctx.Path.Filename(false);
+  ctx.AppVersion = GetAppVersion();
 
   App::GetSharedApp()->GetConfig().LastModAuthor = modInfo.GetAuthor().ToStdWstring();
   App::GetSharedApp()->SaveConfig();
@@ -1301,25 +1300,25 @@ void PackageWindow::OnOpenClicked(wxCommandEvent&)
   std::vector<wxString> paths = IODialog::OpenMultiPackageDialog(this);
   for (const wxString& path : paths)
   {
-    Application->OpenPackage(path);
+    App::GetSharedApp()->OpenPackage(path);
   }
 }
 
 void PackageWindow::OnOpenByNameClicked(wxCommandEvent&)
 {
-  wxString name = Application->ShowOpenByNameDialog(this);
+  wxString name = App::GetSharedApp()->ShowOpenByNameDialog(this);
   if (name.size())
   {
-    Application->OpenNamedPackage(name);
+    App::GetSharedApp()->OpenNamedPackage(name);
   }
 }
 
 void PackageWindow::OnOpenCompositeClicked(wxCommandEvent&)
 {
-  wxString name = Application->ShowOpenCompositeDialog(this);
+  wxString name = App::GetSharedApp()->ShowOpenCompositeDialog(this);
   if (name.size())
   {
-    Application->OpenNamedPackage(name);
+    App::GetSharedApp()->OpenNamedPackage(name);
   }
 }
 
@@ -1514,12 +1513,12 @@ void PackageWindow::OnCloseClicked(wxCommandEvent& e)
 
 void PackageWindow::OnExitClicked(wxCommandEvent&)
 {
-  Application->OnExitClicked();
+  App::GetSharedApp()->OnExitClicked();
 }
 
 void PackageWindow::OnSettingsClicked(wxCommandEvent&  e)
 {
-  Application->OnShowSettings(e);
+  App::GetSharedApp()->OnShowSettings(e);
 }
 
 void PackageWindow::OnToggleLogClicked(wxCommandEvent&)
@@ -1527,25 +1526,25 @@ void PackageWindow::OnToggleLogClicked(wxCommandEvent&)
   wxFrame* log = App::GetSharedApp()->GetLogConsole();
   bool isShown = log->IsShown();
   log->Show(!isShown);
-  Application->GetConfig().LogConfig.ShowLog = !isShown;
+  App::GetSharedApp()->GetConfig().LogConfig.ShowLog = !isShown;
 }
 
 void PackageWindow::OnMoveEnd(wxMoveEvent& e)
 {
   if (IsMaximized())
   {
-    Application->SetLastWindowPosition(wxPoint(WIN_POS_FULLSCREEN, 0));
+    App::GetSharedApp()->SetLastWindowPosition(wxPoint(WIN_POS_FULLSCREEN, 0));
   }
   else
   {
-    Application->SetLastWindowPosition(GetPosition());
+    App::GetSharedApp()->SetLastWindowPosition(GetPosition());
 
-    Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
+    App::GetSharedApp()->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
     if (ContentSplitter->IsSplit())
     {
-      Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+      App::GetSharedApp()->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
     }
-    Application->SetLastWindowSize(GetSize());
+    App::GetSharedApp()->SetLastWindowSize(GetSize());
   }
   if (ActiveEditor)
   {
@@ -1558,14 +1557,14 @@ void PackageWindow::OnSize(wxSizeEvent& e)
 {
   if (!DisableSizeUpdates)
   {
-    Application->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
+    App::GetSharedApp()->SetLastWindowObjectSash(SidebarSplitter->GetSashPosition(), SidebarSplitter->GetSize().x);
     if (ContentSplitter->IsSplit())
     {
-      Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+      App::GetSharedApp()->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
     }
     if (!IsMaximized())
     {
-      Application->SetLastWindowSize(GetSize());
+      App::GetSharedApp()->SetLastWindowSize(GetSize());
     }
   }
   e.Skip();
@@ -1573,14 +1572,8 @@ void PackageWindow::OnSize(wxSizeEvent& e)
 
 void PackageWindow::OnMaximized(wxMaximizeEvent& e)
 {
-  Application->SetLastWindowPosition(wxPoint(WIN_POS_FULLSCREEN, 0));
+  App::GetSharedApp()->SetLastWindowPosition(wxPoint(WIN_POS_FULLSCREEN, 0));
   e.Skip();
-}
-
-void PackageWindow::OnPatchCompositeMapClicked(wxCommandEvent&)
-{
-  CompositePatcherWindow patcher(this, Package->GetPackageName().WString());
-  patcher.ShowModal();
 }
 
 void PackageWindow::OnDcToolClicked(wxCommandEvent&)
@@ -2140,7 +2133,7 @@ void PackageWindow::OnPropertiesSplitter(wxSplitterEvent& e)
 {
   if (!ContentSplitter->IsSashInvisible())
   {
-    Application->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
+    App::GetSharedApp()->SetLastWindowPropertiesSash(ContentSplitter->GetSashPosition(), ContentSplitter->GetSize().x);
   }
 }
 
@@ -2316,7 +2309,7 @@ void PackageWindow::NavigateHistory()
   {
     SelectionHistoryPos = 0;
   }
-  else if (SelectionHistoryPos >= SelectionHistory.size() && SelectionHistory.size())
+  else if (SelectionHistoryPos >= (int64)SelectionHistory.size() && SelectionHistory.size())
   {
     SelectionHistoryPos = SelectionHistory.size() - 1;
   }
@@ -2367,7 +2360,6 @@ EVT_MENU(ControlElementId::EditPkgFlags, PackageWindow::OnEditPackageFlagsClicke
 EVT_MENU(ControlElementId::Close, PackageWindow::OnCloseClicked)
 EVT_MENU(ControlElementId::Exit, PackageWindow::OnExitClicked)
 EVT_MENU(ControlElementId::DcTool, PackageWindow::OnDcToolClicked)
-EVT_MENU(ControlElementId::CompositePatch, PackageWindow::OnPatchCompositeMapClicked)
 EVT_MENU(ControlElementId::DecryptMapper, PackageWindow::OnDecryptClicked)
 EVT_MENU(ControlElementId::EncryptMapper, PackageWindow::OnEncryptClicked)
 EVT_MENU(ControlElementId::SettingsWin, PackageWindow::OnSettingsClicked)

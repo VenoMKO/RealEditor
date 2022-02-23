@@ -1,7 +1,6 @@
 #include "AConfiguration.h"
-#include "ALog.h"
-
-#include <Tera\FStream.h>
+#include <Tera/Utils/ALog.h>
+#include <Tera/FStream.h>
 
 #define SerializeKey(key) { uint16 k = key; s << k; } //
 #define SerializeKeyValue(key, value) { uint16 k = key; s << k << value; } //
@@ -24,7 +23,7 @@ bool AConfiguration::Load()
   }
 
   (*s) << Config;
-  
+
   bool result = s->IsGood();
   delete s;
   return result;
@@ -47,7 +46,7 @@ bool AConfiguration::Save()
 
 FAppConfig AConfiguration::GetDefaultConfig() const
 {
-  return FAppConfig();
+  return {};
 }
 
 FAppConfig AConfiguration::GetConfig() const
@@ -111,7 +110,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_ActorMask:
         s << c.ActorClasses;
         break;
-      // General
+        // General
       case FMapExportConfig::CFG_GlobalScale:
         s << c.GlobalScale;
         break;
@@ -124,7 +123,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_SplitT3D:
         s << c.SplitT3D;
         break;
-      // Materials
+        // Materials
       case FMapExportConfig::CFG_Material:
         s << c.Materials;
         break;
@@ -134,7 +133,7 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_TexturesFormat:
         s << c.TextureFormat;
         break;
-      // Lights
+        // Lights
       case FMapExportConfig::CFG_SpotLightMul:
         s << c.SpotLightMul;
         break;
@@ -144,14 +143,14 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
       case FMapExportConfig::CFG_InvSqrtFalloff:
         s << c.InvSqrtFalloff;
         break;
-      // Terrain
+        // Terrain
       case FMapExportConfig::CFG_TerrainResample:
         s << c.ResampleTerrain;
         break;
       case FMapExportConfig::CFG_SplitTerrainWeights:
         s << c.SplitTerrainWeights;
         break;
-      // Models
+        // Models
       case FMapExportConfig::CFG_Lods:
         s << c.ExportLods;
         break;
@@ -194,15 +193,15 @@ FStream& operator<<(FStream& s, FMapExportConfig& c)
     SerializeKVIfNotDefault(FMapExportConfig::CFG_PointLightMul, c.PointLightMul, d.PointLightMul);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_InvSqrtFalloff, c.InvSqrtFalloff, d.InvSqrtFalloff);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_DynamicShadows, c.ForceDynamicShadows, d.ForceDynamicShadows);
-    
+
     SerializeKVIfNotDefault(FMapExportConfig::CFG_TerrainResample, c.ResampleTerrain, d.ResampleTerrain);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_SplitTerrainWeights, c.SplitTerrainWeights, d.SplitTerrainWeights);
-    
+
     SerializeKVIfNotDefault(FMapExportConfig::CFG_Lods, c.ExportLods, d.ExportLods);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_RBCollisions, c.ConvexCollisions, d.ConvexCollisions);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_MLods, c.ExportMLods, d.ExportMLods);
     SerializeKVIfNotDefault(FMapExportConfig::CFG_LightmapUVs, c.ExportLightmapUVs, d.ExportLightmapUVs);
-    
+
     SerializeKey(FMapExportConfig::CFG_End);
   }
   return s;
@@ -227,7 +226,7 @@ void SerializeVersion(FStream& s, FAppConfig& c)
     else
     {
       // Old config stored version as float
-      c.VerMajor = floor(oldVersion);
+      c.VerMajor = (uint16)floorf(oldVersion);
       float intp = 0;
       float fracp = modf(oldVersion, &intp);
       c.VerMajor = (uint16)intp;

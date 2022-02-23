@@ -11,11 +11,10 @@
 #include "../Windows/ProgressWindow.h"
 #include "../Windows/REDialogs.h"
 
-#include <Utils/ALog.h>
+#include <Tera/Utils/ALog.h>
 #include <Tera/Cast.h>
 #include <Tera/FPackage.h>
-#include <Utils/TextureProcessor.h>
-#include <Utils/TextureTravaller.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <thread>
 
@@ -173,11 +172,17 @@ void TextureEditor::CreateRenderTexture()
   {
     Image = new osg::Image;
   }
-  if (!Texture->RenderTo(Image.get()))
+
+  int32 texWidth = 0, texHeight = 0;
+  uint32 type, format, intFormat = 0;
+  void* bitmapData = nullptr;
+  if (!Texture->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) || !bitmapData)
   {
     Image = nullptr;
     return;
+    
   }
+  Image->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
 
   const float minV = std::min(std::max(GetSize().x, Image->s()), std::max(GetSize().y, Image->t()));
   const float canvasSizeX = GetSize().x / minV;
@@ -699,8 +704,9 @@ void TextureCubeEditor::CreateRenderTexture()
   {
     Image = new osg::Image;
   }
-  if (!Cube->RenderTo(Image.get()))
+  if (1)//!Cube->RenderTo(Image.get()))
   {
+    DBreak();
     Image = nullptr;
     return;
   }

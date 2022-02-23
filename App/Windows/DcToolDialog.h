@@ -2,7 +2,7 @@
 #include <wx/wx.h>
 #include <wx/filepicker.h>
 #include <wx/radiobox.h>
-#include "../Misc/WXDialog.h"
+#include "WXDialog.h"
 
 class DcToolDialog : public WXDialog {
 public:

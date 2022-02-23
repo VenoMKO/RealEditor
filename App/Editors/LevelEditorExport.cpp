@@ -20,10 +20,10 @@
 #include <Tera/UPrefab.h>
 #include <Tera/UModel.h>
 
-#include <Utils/APerfSamples.h>
-#include <Utils/T3DUtils.h>
-#include <Utils/FbxUtils.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/APerfSamples.h>
+#include <Tera/Utils/T3DUtils.h>
+#include <Tera/Utils/MeshUtils.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <functional>
 
@@ -610,7 +610,8 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
     path.replace_extension("fbx");
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
     {
-      FbxUtils utils;
+      auto utils = MeshUtils::CreateUtils(MeshExporterType::MET_Fbx);
+      utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
       MeshExportContext fbxCtx;
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
@@ -621,7 +622,7 @@ ComponentDataFunc ExportStaticMeshComponentData = [](T3DFile& f, LevelExportCont
         fbxCtx.Scale3D = FVector(ctx.Config.GlobalScale);
         fbxCtx.ApplyRootTransform = true;
       }
-      if (!utils.ExportStaticMesh(component->StaticMesh, fbxCtx))
+      if (!utils->ExportStaticMesh(component->StaticMesh, fbxCtx))
       {
         ctx.Errors.emplace_back("Error: Failed to save static mesh " + component->StaticMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
       }
@@ -714,7 +715,8 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
     path.replace_extension("fbx");
     if (ctx.Config.OverrideData || !std::filesystem::exists(path, err))
     {
-      FbxUtils utils;
+      auto utils = MeshUtils::CreateUtils(MeshExporterType::MET_Fbx);
+      utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
       MeshExportContext fbxCtx;
       fbxCtx.Path = path.wstring();
       fbxCtx.ExportLods = ctx.Config.ExportLods;
@@ -724,7 +726,7 @@ ComponentDataFunc ExportSkeletalMeshComponentData = [](T3DFile& f, LevelExportCo
         fbxCtx.Scale3D = FVector(ctx.Config.GlobalScale);
         fbxCtx.ApplyRootTransform = true;
       }
-      if (!utils.ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
+      if (!utils->ExportSkeletalMesh(component->SkeletalMesh, fbxCtx))
       {
         ctx.Errors.emplace_back("Error: Failed to save skeletal mesh " + component->SkeletalMesh->GetLocalDir(true).UTF8() + " of " + GetActorName(component->GetOuter()));
       }
@@ -947,7 +949,7 @@ ComponentDataFunc ExportSpeedTreeComponentData = [](T3DFile& f, LevelExportConte
   }
   AddCommonPrimitiveComponentParameters(f, ctx, component);
 };
-#pragma mark ExportPointLightComponentData
+
 ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UPointLightComponent* component = Cast<UPointLightComponent>(acomp);
   if (!component)
@@ -976,7 +978,7 @@ ComponentDataFunc ExportPointLightComponentData = [](T3DFile& f, LevelExportCont
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-#pragma mark ExportSpotLightComponentData
+
 ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   USpotLightComponent* component = Cast<USpotLightComponent>(acomp);
   if (!component)
@@ -1007,7 +1009,7 @@ ComponentDataFunc ExportSpotLightComponentData = [](T3DFile& f, LevelExportConte
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-#pragma mark ExportDirectionalLightComponentData
+
 ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UDirectionalLightComponent* component = Cast<UDirectionalLightComponent>(acomp);
   if (!component)
@@ -1033,7 +1035,7 @@ ComponentDataFunc ExportDirectionalLightComponentData = [](T3DFile& f, LevelExpo
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-#pragma mark ExportSkyLightComponentData
+
 ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   USkyLightComponent* component = Cast<USkyLightComponent>(acomp);
   if (!component)
@@ -1064,7 +1066,7 @@ ComponentDataFunc ExportSkyLightComponentData = [](T3DFile& f, LevelExportContex
     f.AddGuid("LightGuid", component->LightGuid);
   }
 };
-#pragma mark ExportHeightFogComponentData
+
 ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UHeightFogComponent* component = Cast<UHeightFogComponent>(acomp);
   if (!component)
@@ -1080,7 +1082,7 @@ ComponentDataFunc ExportHeightFogComponentData = [](T3DFile& f, LevelExportConte
   f.AddFloat("FogCutoffDistance", component->ExtinctionDistance);
   f.AddLinearColor("FogInscatteringColor", component->LightColor);
 };
-#pragma mark ExportVolumeComponentData
+
 ComponentDataFunc ExportVolumeComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UBrushComponent* component = Cast<UBrushComponent>(acomp);
   if (!component)
@@ -1151,7 +1153,7 @@ ComponentDataFunc ExportVolumeComponentData = [](T3DFile& f, LevelExportContext&
     f.AddCustom("BrushBodySetup", "BodySetup'\"BodySetup_0\"'");
   }
 };
-#pragma mark ExportAudioComponentData
+
 ComponentDataFunc ExportAudioComponentData = [](T3DFile& f, LevelExportContext& ctx, UActorComponent* acomp) {
   UAmbientSound* sound = acomp->GetTypedOuter<UAmbientSound>();
   if (!sound)

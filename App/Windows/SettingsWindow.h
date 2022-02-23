@@ -1,7 +1,7 @@
 #pragma once
 #include <wx/wx.h>
-#include "../Misc/WXDialog.h"
-#include <Utils/AConfiguration.h>
+#include "WXDialog.h"
+#include "../Misc/AConfiguration.h"
 
 class SettingsWindow : public WXDialog {
 public:

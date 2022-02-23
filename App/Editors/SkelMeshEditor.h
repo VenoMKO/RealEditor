@@ -3,7 +3,7 @@
 #include <Tera/USkeletalMesh.h>
 #include <Tera/UTexture.h>
 
-#include "../Misc/OSGWindow.h"
+#include "../CustomViews/OSGView.h"
 
 class SkelMeshEditor : public GenericEditor {
 public:

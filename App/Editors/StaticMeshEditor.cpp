@@ -1,6 +1,7 @@
 #include "StaticMeshEditor.h"
 #include "../Windows/PackageWindow.h"
 #include "../Windows/REDialogs.h"
+#include "../Misc/AConfiguration.h"
 #include "../App.h"
 #include <wx/valnum.h>
 
@@ -13,10 +14,9 @@
 #include <Tera/Cast.h>
 #include <Tera/UMaterial.h>
 
-#include <Utils/ALog.h>
-#include <Utils/MeshUtils.h>
-#include <Utils/AConfiguration.h>
-#include <Utils/TextureProcessor.h>
+#include <Tera/Utils/ALog.h>
+#include <Tera/Utils/MeshUtils.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <filesystem>
 #include <functional>
@@ -271,6 +271,7 @@ void StaticMeshEditor::OnExportClicked(wxCommandEvent&)
   ctx.Path = fbxpath.ToStdWstring();
   MeshExporterType exporterType = MeshUtils::GetExporterTypeFromExtension(wxFileName(fbxpath).GetExt().Lower().ToStdString());
   auto utils = MeshUtils::CreateUtils(exporterType);
+  utils->SetCreatorInfo(App::GetSharedApp()->GetAppDisplayName().ToStdString(), GetAppVersion());
   appConfig.StaticMeshExportConfig.LastFormat = (int32)exporterType;
   App::GetSharedApp()->SaveConfig();
 
@@ -617,7 +618,13 @@ void StaticMeshEditor::CreateRenderModel()
       if (UTexture2D* tex = material->GetDiffuseTexture())
       {
         osg::ref_ptr<osg::Image> img = new osg::Image;
-        tex->RenderTo(img.get());
+        int32 texWidth = 0, texHeight = 0;
+        uint32 type, format, intFormat = 0;
+        void* bitmapData = nullptr;
+        if (tex->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) && bitmapData)
+        {
+          img->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+        }
         osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);
         osgtex->setWrap(osg::Texture::WrapParameter::WRAP_T, osg::Texture::WrapMode::REPEAT);

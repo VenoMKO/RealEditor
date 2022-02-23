@@ -1,7 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <atomic>
-#include <Utils/ALog.h>
+#include <Tera/Utils/ALog.h>
 
 class wxRichTextCtrl;
 class LogWindow : public wxFrame

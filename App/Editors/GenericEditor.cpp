@@ -3,7 +3,7 @@
 #include "../Windows/REDialogs.h"
 #include "../App.h"
 
-#include <Utils/ALog.h>
+#include <Tera/Utils/ALog.h>
 #include <Tera/UObject.h>
 #include <Tera/FStream.h>
 #include <Tera/FPackage.h>

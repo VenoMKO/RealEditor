@@ -16,7 +16,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/Cast.h>
 
-#include <Utils/APerfSamples.h>
+#include <Tera/Utils/APerfSamples.h>
 
 enum ObjTreeMenuId {
   ObjectList = wxID_HIGHEST + 1,
@@ -704,7 +704,7 @@ protected:
       return;
     }
     auto rows = ((BulkImportOperationEntryModel*)List->GetModel())->GetRows();
-    int idx = int(event.GetItem().GetID()) - 1;
+    int idx = (int)reinterpret_cast<uint64>(event.GetItem().GetID()) - 1;
     if (idx < 0 || rows.size() <= idx)
     {
       return;
@@ -756,7 +756,7 @@ protected:
       List->Freeze();
       for (auto& item : selection)
       {
-        int idx = int(item.GetID()) - 1;
+        int idx = (int)reinterpret_cast<uint64>(item.GetID()) - 1;
         wxVariant value = !results[idx].Enabled;
         List->GetModel()->ChangeValue(value, item, BulkImportOperationEntryModel::Col_Check);
       }
@@ -1108,7 +1108,7 @@ void BulkImportWindow::OnEditOperationClicked(wxCommandEvent& event)
   {
     return;
   }
-  int idx = int(OperationsList->GetCurrentItem().GetID()) - 1;
+  int idx = (int)reinterpret_cast<uint64>(OperationsList->GetCurrentItem().GetID()) - 1;
   BulkImportAction& op = Actions[idx];
   AddImportOperationDialog dlg(this, ObjectDumpBuffer, op);
   if (dlg.ShowModal() != wxID_OK)
@@ -1128,7 +1128,7 @@ void BulkImportWindow::OnRemoveOperationClicked(wxCommandEvent& event)
   {
     return;
   }
-  int idx = int(OperationsList->GetCurrentItem().GetID()) - 1;
+  int idx = (int)reinterpret_cast<uint64>(OperationsList->GetCurrentItem().GetID()) - 1;
   Actions.erase(Actions.begin() + idx);
   wxDataViewModel* model = new BulkImportModel(Actions);
   OperationsList->AssociateModel(model);

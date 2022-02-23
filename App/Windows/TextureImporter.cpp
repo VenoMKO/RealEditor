@@ -6,10 +6,8 @@
 #include <Tera/FStream.h>
 #include <Tera/UTexture.h>
 
-#include <Utils/ALog.h>
-#include <Utils/DDS.h>
-#include <Utils/TextureProcessor.h>
-#include <Utils/TextureTravaller.h>
+#include <Tera/Utils/ALog.h>
+#include <Tera/Utils/TextureUtils.h>
 
 #include <wx/statline.h>
 #include <wx/filename.h>
