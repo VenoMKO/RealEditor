@@ -1680,7 +1680,8 @@ void PackageWindow::OnEncryptClicked(wxCommandEvent&)
     }
     try
     {
-      GEncrytMapperFile(destination.ToStdWstring(), decrypted);
+      std::filesystem::path destPath(destination.ToStdWstring());
+      GEncrytMapperFile(destPath, decrypted);
     }
     catch (...)
     {

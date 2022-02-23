@@ -1,5 +1,6 @@
 #pragma once
 #include "UObject.h"
+#include "FObjectArray.h"
 
 class UTexture;
 class UTexture2D;

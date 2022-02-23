@@ -154,15 +154,6 @@ FStream& operator<<(FStream& s, FTextureAllocations& t)
   return s << t.TextureTypes;
 }
 
-FStream& operator<<(FStream& s, FCompositePackageMapEntry& e)
-{
-  s << e.ObjectPath;
-  s << e.FileName;
-  s << e.Offset;
-  s << e.Size;
-  return s;
-}
-
 FStream& operator<<(FStream& s, FCompressedChunkInfo& c)
 {
   return s << c.CompressedSize << c.DecompressedSize;

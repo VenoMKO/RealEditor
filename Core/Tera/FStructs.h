@@ -151,15 +151,6 @@ struct FTextureAllocations {
   friend FStream& operator<<(FStream& s, FTextureAllocations& t);
 };
 
-struct FCompositePackageMapEntry {
-  FString ObjectPath;
-  FString FileName;
-  FILE_OFFSET Offset = 0;
-  FILE_OFFSET Size = 0;
-
-  friend FStream& operator<<(FStream& s, FCompositePackageMapEntry& e);
-};
-
 struct FCompressedChunkInfo {
   int32 CompressedSize = 0;
   int32 DecompressedSize = 0;

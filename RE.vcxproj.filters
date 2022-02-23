@@ -314,6 +314,9 @@
     <ClCompile Include="App\Windows\FlagsDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Tera\FMapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -482,6 +485,7 @@
     <ClInclude Include="Core\Tera\UObjectHelpers.h" />
     <ClInclude Include="App\AppVersion.h" />
     <ClInclude Include="Core\Utils\APerfSamples.h" />
+    <ClInclude Include="Core\Tera\FMapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

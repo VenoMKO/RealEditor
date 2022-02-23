@@ -58,6 +58,7 @@
     <ClCompile Include="App\Windows\TextureImporter.cpp" />
     <ClCompile Include="App\Windows\WelcomeDialog.cpp" />
     <ClCompile Include="Core\Tera\DC.cpp" />
+    <ClCompile Include="Core\Tera\FMapper.cpp" />
     <ClCompile Include="Core\Tera\FMeshCommon.cpp" />
     <ClCompile Include="Core\Tera\ULight.cpp" />
     <ClCompile Include="Core\Tera\ULightMap.cpp" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Core\Tera\CoreTypes.h" />
     <ClInclude Include="Core\Tera\CoreVersion.h" />
     <ClInclude Include="Core\Tera\DC.h" />
+    <ClInclude Include="Core\Tera\FMapper.h" />
     <ClInclude Include="Core\Tera\FMeshCommon.h" />
     <ClInclude Include="Core\Tera\FObjectArray.h" />
     <ClInclude Include="Core\Tera\kDOP.h" />

@@ -357,7 +357,7 @@ void SettingsWindow::OnUpdateMappersClicked(wxCommandEvent&)
 
     try
     {
-      FPackage::LoadCompositePackageMapper(true);
+      FPackage::LoadCompositePackageMapper();
     }
     catch (const std::exception& e)
     {

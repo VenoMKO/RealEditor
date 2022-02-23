@@ -413,6 +413,16 @@ public:
     return (*this) += W2A(std::wstring(str));
   }
 
+  inline std::string& GetStorage()
+  {
+    return Data;
+  }
+
+  inline const std::string& GetStorage() const
+  {
+    return Data;
+  }
+
   inline std::string String() const
   {
     if (KoreanCodePage)

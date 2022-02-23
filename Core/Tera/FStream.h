@@ -1,7 +1,6 @@
 #pragma once
 #include "Core.h"
 #include "FString.h"
-#include "FObjectArray.h"
 
 #include <fstream>
 #include <functional>
@@ -95,9 +94,6 @@ public:
     SerializeBytes(&v, 8);
     return *this;
   }
-
-  template <typename T>
-  FStream& operator<<(struct FObjectArray<T>& arr);
 
   FStream& operator<<(class FName& n);
 

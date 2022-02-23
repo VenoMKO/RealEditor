@@ -1168,6 +1168,7 @@ int App::OnExit()
   AConfiguration cfg = AConfiguration(W2A(GetConfigPath().ToStdWstring()));
   cfg.SetConfig(Config);
   cfg.Save();
+  delete ALog::SharedLog();
   return wxApp::OnExit();
 }
 
@@ -1515,7 +1516,7 @@ void App::DumpCompositeObjects()
 
     try
     {
-      FPackage::LoadCompositePackageMapper(true);
+      FPackage::LoadCompositePackageMapper();
     }
     catch (const std::exception& e)
     {

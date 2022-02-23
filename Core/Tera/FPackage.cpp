@@ -24,14 +24,8 @@
 #include <ppl.h>
 #include <cwctype>
 
-const char* PackageMapperName = "PkgMapper";
-const char* CompositePackageMapperName = "CompositePackageMapper";
-const char* ObjectRedirectorMapperName = "ObjectRedirectorMapper";
 const char* PackageListName = "DirCache.re";
 const char* PersistentDataName = "GlobalPersistentCookerData";
-
-const char Key1[] = { 12, 6, 9, 4, 3, 14, 1, 10, 13, 2, 7, 15, 0, 8, 5, 11 };
-const char Key2[] = { 'G', 'e', 'n', 'e', 'r', 'a', 't', 'e', 'P', 'a', 'c', 'k', 'a', 'g', 'e', 'M', 'a', 'p', 'p', 'e', 'r' };
 
 FString FPackage::RootDir;
 std::recursive_mutex FPackage::PackagesMutex;
@@ -132,95 +126,6 @@ void BuildPackageList(const FString& path, std::vector<FString>& dirCache, std::
   }
 
   PERF_END(S1GameIterator);
-}
-
-void EncryptMapper(const FString& decrypted, std::vector<char>& encrypted)
-{
-  size_t size = decrypted.Size();
-  size_t offset = 0;
-  encrypted.resize(size);
-  for (offset = 0; offset < size; ++offset)
-  {
-    encrypted[offset] = decrypted[offset] ^ Key2[offset % sizeof(Key2)];
-  }
-
-  {
-    size_t a = 1;
-    size_t b = size - 1;
-    for (offset = (size / 2 + 1) / 2; offset; --offset, a += 2, b -= 2)
-    {
-      std::swap(encrypted[a], encrypted[b]);
-    }
-  }
-
-  std::array<char, sizeof(Key1)> tmp;
-  for (size_t offset = 0; offset + sizeof(Key1) <= size; offset += sizeof(Key1))
-  {
-    memcpy(&tmp[0], &encrypted[offset], sizeof(Key1));
-    for (size_t idx = 0; idx < sizeof(Key1); ++idx)
-    {
-      encrypted[offset + idx] = tmp[Key1[idx]];
-    }
-  }
-}
-
-void DecryptMapper(const std::filesystem::path& path, FString& decrypted)
-{
-  if (!std::filesystem::exists(path))
-  {
-    UThrow("File \"%s\" does not exist!", path.string().c_str());
-  }
-  std::vector<char> encrypted;
-  size_t size = 0;
-
-  {
-    std::ifstream s(path.wstring(), std::ios::binary | std::ios::ate);
-    if (!s.is_open())
-    {
-      UThrow("Can't open \"%s\"!", path.string().c_str());
-    }
-    s.seekg(0, std::ios_base::end);
-    size = s.tellg();
-    s.seekg(0, std::ios_base::beg);
-    encrypted.resize(size);
-    decrypted.Resize(size);
-    s.read(&encrypted[0], size);
-  }
-  
-  LogI("Decrypting \"%s\"", path.filename().string().c_str());
-
-  size_t offset = 0;
-  for (; offset + sizeof(Key1) <= size; offset += sizeof(Key1))
-  {
-    for (size_t idx = 0; idx < sizeof(Key1); ++idx)
-    {
-      decrypted[offset + idx] = encrypted[offset + Key1[idx]];
-    }
-  }
-  for (; offset < size; ++offset)
-  {
-    decrypted[offset] = encrypted[offset];
-  }
-
-  {
-    size_t a = 1;
-    size_t b = size - 1;
-    for (offset = (size / 2 + 1) / 2; offset; --offset, a += 2, b -= 2)
-    {
-      std::swap(decrypted[a], decrypted[b]);
-    }
-  }
-
-  for (offset = 0; offset < size; ++offset)
-  {
-    decrypted[offset] ^= Key2[offset % sizeof(Key2)];
-  }
-
-  if ((*(wchar*)decrypted.C_str()) == 0xFEFF)
-  {
-    FString utfstr = ((wchar*)decrypted.C_str()) + 1;
-    decrypted = utfstr;
-  }
 }
 
 void FPackage::SetRootPath(const FString& path)
@@ -1008,10 +913,7 @@ void FPackage::LoadPkgMapper(bool rebuild)
       LogI("Loaded cached %s storage.", PackageMapperName);
       return;
     }
-    else
-    {
-      LogW("%s storage is outdated! Updating...", PackageMapperName);
-    }
+    LogW("%s storage is outdated! Updating...", PackageMapperName);
   }
 
   if (!std::filesystem::exists(encryptedPath))
@@ -1019,39 +921,15 @@ void FPackage::LoadPkgMapper(bool rebuild)
     UThrow("Failed to open %s", encryptedPath.string().c_str());
   }
 
-  FString buffer;
-  DecryptMapper(encryptedPath, buffer);
-
-  size_t pos = 0;
-  size_t prevPos = 0;
-  while ((pos = buffer.Find('|', prevPos)) != std::string::npos)
-  {
-    size_t sepPos = buffer.Find(',', prevPos);
-    if (sepPos == std::string::npos || sepPos > pos)
-    {
-      UThrow("%s is corrupted!", PackageMapperName);
-    }
-    FString key = buffer.Substr(prevPos, sepPos - prevPos).ToUpper();
-    FString value = buffer.Substr(sepPos + 1, pos - sepPos - 1);
-    PkgMap.emplace(key, value);
-    pos++;
-    std::swap(pos, prevPos);
-  }
+  DeserializePkgMapper(encryptedPath, PkgMap);
 
   LogI("Saving %s storage", PackageMapperName);
   FWriteStream ws(storagePath.wstring());
   ws << fts;
   ws << PkgMap;
-
-#if DUMP_MAPPERS
-  std::filesystem::path debugPath = storagePath;
-  debugPath.replace_extension(".txt");
-  std::ofstream os(debugPath.wstring());
-  os.write(&buffer[0], buffer.Size());
-#endif
 }
 
-void FPackage::LoadCompositePackageMapper(bool rebuild)
+void FPackage::LoadCompositePackageMapper()
 {
   {
     std::scoped_lock<std::mutex> l(MissingPackagesMutex);
@@ -1062,88 +940,7 @@ void FPackage::LoadCompositePackageMapper(bool rebuild)
   std::filesystem::path encryptedPath = std::filesystem::path(RootDir.WString()) / "CookedPC" / CompositePackageMapperName;
   encryptedPath.replace_extension(".dat");
 
-#if CACHE_COMPOSITE_MAP
-  LogI("Reading %s storage...", CompositePackageMapperName);
-  std::filesystem::path storagePath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
-  storagePath.replace_extension(".re");
-  uint64 fts = GetFileTime(encryptedPath.wstring());
-  if (std::filesystem::exists(storagePath) && !rebuild)
-  {
-    FReadStream s(storagePath.wstring());
-    uint64 ts = 0;
-    s << ts;
-    if (fts == ts || !fts)
-    {
-      s << CompositPackageMap;
-      for (auto pair : CompositPackageMap)
-      {
-        CompositPackageList[pair.second.FileName.ToUpper()].push_back(pair.first);
-      }
-      return;
-    }
-    else
-    {
-      LogW("%s storage is outdated! Updating...", CompositePackageMapperName);
-    }
-  }
-#endif
-
-  FString buffer;
-  DecryptMapper(encryptedPath, buffer);
-
-  size_t pos = 0;
-  size_t posEnd = 0;
-  while ((pos = buffer.Find('?', posEnd)) != std::string::npos)
-  {
-    FString fileName = buffer.Substr(posEnd, pos - posEnd);
-    posEnd = buffer.Find('!', pos);
-    do
-    {
-      pos++;
-      FCompositePackageMapEntry entry;
-      entry.FileName = fileName;
-
-      size_t elementEnd = buffer.Find(',', pos);
-      entry.ObjectPath = buffer.Substr(pos, elementEnd - pos);
-      std::swap(pos, elementEnd);
-      pos++;
-
-      elementEnd = buffer.Find(',', pos);
-      FString packageName = buffer.Substr(pos, elementEnd - pos);
-      std::swap(pos, elementEnd);
-      pos++;
-
-      elementEnd = buffer.Find(',', pos);
-      entry.Offset = (FILE_OFFSET)std::stoul(buffer.Substr(pos, elementEnd - pos).String());
-      std::swap(pos, elementEnd);
-      pos++;
-
-      elementEnd = buffer.Find(',', pos);
-      entry.Size = (FILE_OFFSET)std::stoul(buffer.Substr(pos, elementEnd - pos).String());
-      std::swap(pos, elementEnd);
-      pos++;
-
-      DBreakIf(CompositPackageMap.count(packageName));
-      CompositPackageMap[packageName] = entry;
-      CompositPackageList[fileName].push_back(packageName);
-    } while (buffer.Find('|', pos) < posEnd - 1);
-    pos++;
-    posEnd++;
-  }
-
-#if CACHE_COMPOSITE_MAP
-  LogI("Saving %s storage", CompositePackageMapperName);
-  FWriteStream s(storagePath.wstring());
-  s << fts;
-  s << CompositPackageMap;
-#endif
-
-#if DUMP_MAPPERS
-  std::filesystem::path debugPath = std::filesystem::path(RootDir.WString()) / CompositePackageMapperName;
-  debugPath.replace_extension(".txt");
-  std::ofstream os(debugPath.wstring());
-  os.write(&buffer[0], buffer.Size());
-#endif
+  DeserializeCompositePackageMapper(encryptedPath, CompositPackageMap, CompositPackageList);
 
   LogI("Loaded %s storage", CompositePackageMapperName);
 }
@@ -1168,43 +965,15 @@ void FPackage::LoadObjectRedirectorMapper(bool rebuild)
       LogI("Loaded cached %s storage.", ObjectRedirectorMapperName);
       return;
     }
-    else
-    {
-      LogW("%s storage is outdated! Updating...", ObjectRedirectorMapperName);
-    }
+    LogW("%s storage is outdated! Updating...", ObjectRedirectorMapperName);
   }
 
-  FString buffer;
-  DecryptMapper(encryptedPath, buffer);
-  
-  size_t pos = 0;
-  size_t prevPos = 0;
-  while ((pos = buffer.Find('|', prevPos)) != std::string::npos)
-  {
-    size_t sepPos = buffer.Find(',', prevPos);
-    if (sepPos == std::string::npos || sepPos > pos)
-    {
-      UThrow("%s is corrupted!", ObjectRedirectorMapperName);
-    }
-    FString key = buffer.Substr(prevPos, sepPos - prevPos);
-    FString value = buffer.Substr(sepPos + 1, pos - sepPos - 1);
-    ObjectRedirectorMap.emplace(key, value);
-    pos++;
-    std::swap(pos, prevPos);
-  }
+  DeserializeObjectRedirectorMapper(encryptedPath, ObjectRedirectorMap);
   
   LogI("Saving %s storage", ObjectRedirectorMapperName);
   FWriteStream ws(storagePath.wstring());
   ws << fts;
   ws << ObjectRedirectorMap;
-
-#if DUMP_MAPPERS
-  std::filesystem::path debugPath = storagePath;
-  debugPath.replace_extension(".txt");
-  std::ofstream os(debugPath.wstring(), std::ios::out | std::ios::binary | std::ios::trunc);
-  os.write(&buffer[0], buffer.Size());
-  os.close();
-#endif
 }
 
 std::shared_ptr<FPackage> FPackage::GetPackage(const FString& path)

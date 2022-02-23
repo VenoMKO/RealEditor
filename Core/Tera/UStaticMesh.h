@@ -2,6 +2,7 @@
 #include "UObject.h"
 #include "FStream.h"
 #include "FStructs.h"
+#include "FObjectArray.h"
 #include "kDOP.h"
 #include "ULightMap.h"
 

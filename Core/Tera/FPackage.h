@@ -3,6 +3,7 @@
 #include "FName.h"
 #include "FStructs.h"
 #include "FStream.h"
+#include "FMapper.h"
 
 #include <memory>
 #include <atomic>
@@ -96,7 +97,7 @@ public:
   // Load Package Map
   static void LoadPkgMapper(bool rebuild = false);
   // Load Composite Package Map
-  static void LoadCompositePackageMapper(bool rebuild = false);
+  static void LoadCompositePackageMapper();
   // Load ObjectReference Map
   static void LoadObjectRedirectorMapper(bool rebuild = false);
   // Load and retain a package at the path. Every GetPackage call must pair a UnloadPackage call
