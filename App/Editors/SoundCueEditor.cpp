@@ -1,3 +1,4 @@
+#include "../App.h"
 #include "SoundCueEditor.h"
 #include "../Windows/REDialogs.h"
 #include "../Windows/LevelExportOptions.h"

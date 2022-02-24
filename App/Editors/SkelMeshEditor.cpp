@@ -1116,12 +1116,10 @@ void SkelMeshEditor::CreateRenderModel()
         if (UTexture2D* tex = material->GetDiffuseTexture())
         {
           osg::ref_ptr<osg::Image> img = new osg::Image;
-          int32 texWidth = 0, texHeight = 0;
-          uint32 type, format, intFormat = 0;
-          void* bitmapData = nullptr;
-          if (tex->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) && bitmapData)
+          UTextureBitmapInfo info;
+          if (tex->GetBitmapData(info) && info.IsValid())
           {
-            img->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+            img->setImage(info.Width, info.Height, 0, info.InternalFormat, info.Format, info.Type, (unsigned char*)info.Allocation, osg::Image::AllocationMode::NO_DELETE);
           }
           osg::ref_ptr<osg::Texture2D> osgtex = new osg::Texture2D(img);
           osgtex->setWrap(osg::Texture::WrapParameter::WRAP_S, osg::Texture::WrapMode::REPEAT);

@@ -238,21 +238,21 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
+    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\$(TargetName)\</IntDir>
     <TargetName>Real Editor</TargetName>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug ASAN|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
+    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\$(TargetName)\</IntDir>
     <TargetName>Real Editor</TargetName>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\</IntDir>
+    <IntDir>$(SolutionDir)Build\$(Configuration)\Objs\$(TargetName)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
     <TargetName>Real Editor</TargetName>
   </PropertyGroup>

@@ -1,3 +1,5 @@
+#include <glew/glew.h>
+
 #include "TextureEditor.h"
 #include "../App.h"
 
@@ -173,16 +175,14 @@ void TextureEditor::CreateRenderTexture()
     Image = new osg::Image;
   }
 
-  int32 texWidth = 0, texHeight = 0;
-  uint32 type, format, intFormat = 0;
-  void* bitmapData = nullptr;
-  if (!Texture->GetBitmapData(texWidth, texHeight, bitmapData, type, format, intFormat) || !bitmapData)
+  UTextureBitmapInfo info;
+  if (!Texture->GetBitmapData(info) || !info.IsValid())
   {
     Image = nullptr;
     return;
     
   }
-  Image->setImage(texWidth, texHeight, 0, intFormat, format, type, (unsigned char*)bitmapData, osg::Image::AllocationMode::NO_DELETE);
+  Image->setImage(info.Width, info.Height, 0, info.InternalFormat, info.Format, info.Type, (unsigned char*)info.Allocation, osg::Image::AllocationMode::NO_DELETE);
 
   const float minV = std::min(std::max(GetSize().x, Image->s()), std::max(GetSize().y, Image->t()));
   const float canvasSizeX = GetSize().x / minV;
@@ -700,13 +700,97 @@ void TextureCubeEditor::CreateRenderer()
 
 void TextureCubeEditor::CreateRenderTexture()
 {
+  if (!HasAVX2())
+  {
+    LogE("Failed to render cube: a CPU with AVX2 instructions is rquired!");
+    return;
+  }
   if (!Image)
   {
     Image = new osg::Image;
   }
-  if (1)//!Cube->RenderTo(Image.get()))
+
+  std::array<UTexture2D*, 6> faces = Cube->GetFaces();
+  TextureProcessor::TCFormat inputFormat = TextureProcessor::TCFormat::None;
+  for (auto& face : faces)
   {
-    DBreak();
+    if (!face)
+    {
+      LogE("Failed to render cube: missing a cube face");
+      return;
+    }
+    TextureProcessor::TCFormat f = TextureProcessor::TCFormat::None;
+    switch (face->Format)
+    {
+    case PF_DXT1:
+      f = TextureProcessor::TCFormat::DXT1;
+      break;
+    case PF_DXT3:
+      f = TextureProcessor::TCFormat::DXT3;
+      break;
+    case PF_DXT5:
+      f = TextureProcessor::TCFormat::DXT5;
+      break;
+    case PF_A8R8G8B8:
+      f = TextureProcessor::TCFormat::ARGB8;
+      break;
+    case PF_G8:
+      f = TextureProcessor::TCFormat::G8;
+      break;
+    }
+    if (inputFormat != TextureProcessor::TCFormat::None && inputFormat != f)
+    {
+      LogE("Failed to render cube: format %d is not supported", (int)inputFormat);
+      Image = nullptr;
+      return;
+    }
+    inputFormat = f;
+  }
+
+  TextureProcessor processor(inputFormat, TextureProcessor::TCFormat::ARGB8);
+  for (int32 idx = 0; idx < faces.size(); ++idx)
+  {
+    UTextureBitmapInfo info;
+    if (!faces[idx]->GetBitmapData(info) || !info.IsValid())
+    {
+      Image = nullptr;
+      LogE("Failed to render cube: failed to load bitmap");
+      return;
+    }
+    processor.SetInputCubeFace(idx, info.Allocation, info.Size, info.Width, info.Height);
+  }
+
+  if (!processor.UnfoldCube())
+  {
+    Image = nullptr;
+    LogE("Failed to render cube: %s", processor.GetError().c_str());
+    return;
+  }
+
+  auto& mips = processor.GetOutputMips();
+  if (mips.empty())
+  {
+    LogE("Failed to render cube: texture processor outputed no mips");
+    Image = nullptr;
+    return;
+  }
+
+  bool hasVaildImage = false;
+  for (auto& mip : mips)
+  {
+    if (mip.SizeX && mip.SizeY && mip.Data)
+    {
+      void* data = malloc(mip.Size);
+      memcpy(data, mip.Data, mip.Size);
+      Image->setImage(mip.SizeX, mip.SizeY, 0, Cube->SRGB ? GL_SRGB8_ALPHA8_EXT : GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE, (uint8*)data, osg::Image::AllocationMode::USE_MALLOC_FREE);
+      hasVaildImage = true;
+      break;
+    }
+  }
+
+  if (mips.empty())
+  {
+    LogE("Failed to render cube: texture processor outputed no vaild mips");
     Image = nullptr;
     return;
   }
