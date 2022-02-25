@@ -359,3 +359,6 @@ build_num_total.txt
 
 # Build-in 32-bit S1Game
 *.[Uu]
+
+# Build folder
+Build/
