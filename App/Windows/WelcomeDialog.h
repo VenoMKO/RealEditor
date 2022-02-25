@@ -3,7 +3,7 @@
 #include <wx/dataview.h>
 #include <wx/statusbr.h>
 
-#include "wxModalWindow.h"
+#include "WXModalWindow.h"
 
 class WelcomeDialog : public wxModalWindow {
 public:

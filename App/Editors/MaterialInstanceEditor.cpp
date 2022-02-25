@@ -1,5 +1,5 @@
 #include "MaterialInstanceEditor.h"
-#include "../Windows/MaterialView.h"
+#include "../CustomViews/MaterialView.h"
 
 #include <Tera/Cast.h>
 

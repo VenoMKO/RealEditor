@@ -1,6 +1,5 @@
 #pragma once
 #include "GenericEditor.h"
-#include "../Windows/MaterialView.h"
 #include <wx/scrolwin.h>
 
 #include <Tera/UMaterial.h>

@@ -1,4 +1,4 @@
-#include "wxModalWindow.h"
+#include "WXModalWindow.h"
 
 wxModalWindow::wxModalWindow()
   : wxFrame() {

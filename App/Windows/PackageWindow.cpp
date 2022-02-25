@@ -12,7 +12,7 @@
 #include "FlagsDialog.h"
 
 #include "../CustomViews/ArchiveInfo.h"
-#include "../Misc/ObjectProperties.h"
+#include "../CustomViews/ObjectProperties.h"
 #include "../App.h"
 
 #include <algorithm>

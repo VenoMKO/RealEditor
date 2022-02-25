@@ -111,7 +111,8 @@ void CreatePackageDialog::FillSummary(FPackageSummary& summary)
   summary.PackageName = PackageName->GetValue().ToStdWstring();
   if (CoreVersion > VER_TERA_CLASSIC)
   {
-    summary.FolderName = L"MOD:" + Composite->GetValue().ToStdWstring();
+    summary.FolderName = FN_MOD_PREFIX;
+    summary.FolderName += Composite->GetValue().ToStdWstring();
     summary.FolderName.Terminate();
   }
   uint16 lv = -1;

@@ -1,7 +1,7 @@
 #pragma once
-// #define CUSTOM_BUILD ".1"
 static const unsigned short APP_VER_MAJOR = 2;
 static const unsigned short APP_VER_MINOR = 40;
+// #define CUSTOM_BUILD ".1"
 static const unsigned int BUILD_NUMBER = (
   #include "../../build_num.txt"
 );
