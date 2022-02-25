@@ -17,7 +17,7 @@ CookingOptionsWindow::CookingOptionsWindow(wxWindow* parent, FPackage* package, 
 
   EnableCompositeInfoButton = new wxCheckBox(m_panel5, wxID_ANY, wxT("Embed composite information"), wxDefaultPosition, wxDefaultSize, 0);
   EnableCompositeInfoButton->Enable(Package->IsComposite() && Package->GetFolderName() == "None");
-  EnableCompositeInfoButton->SetValue(Package->IsComposite() || Package->GetFolderName().StartWith("MOD:"));
+  EnableCompositeInfoButton->SetValue(Package->IsComposite() || Package->GetFolderName().StartsWith("MOD:"));
   bSizer11->Add(EnableCompositeInfoButton, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText3;

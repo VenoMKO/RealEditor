@@ -25,11 +25,11 @@ public:
     for (const FString& path : recent)
     {
       RecentItem item;
-      if (path.StartWith("composite\\"))
+      if (path.StartsWith("composite\\"))
       {
         item.Name = path.Substr(10).WString();
       }
-      else if (path.StartWith("named\\"))
+      else if (path.StartsWith("named\\"))
       {
         item.Name = path.Substr(6).WString();
       }

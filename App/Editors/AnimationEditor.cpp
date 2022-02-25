@@ -1067,11 +1067,11 @@ void GenericAnimEditor::CreateRenderModel()
     customRotation.X = 90;
     customRotation.Z = 180 + 90;
   }
-  else if (objName.StartWith("ATTACH_"))
+  else if (objName.StartsWith("ATTACH_"))
   {
     customRotation.Z = -90;
   }
-  else if (objName.StartWith("SWITCH_"))
+  else if (objName.StartsWith("SWITCH_"))
   {
     customRotation.Z = 180;
     customRotation.X = 90;
