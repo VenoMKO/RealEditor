@@ -756,7 +756,7 @@ void AnimSetEditor::OnObjectLoaded()
   }
   GenericAnimEditor::OnObjectLoaded();
   ShowMissingMesh(!Mesh);
-  if (!Object || Object->GetPackage()->GetFileVersion() < VER_TERA_MODERN)
+  if (!Object || Object->GetPackage()->GetFileVersion() < VER_ASTELLIA)
   {
     TakePicker->Enable(false);
     MeshButton->Enable(false);

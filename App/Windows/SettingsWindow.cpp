@@ -9,7 +9,12 @@
 
 #include <Tera/FPackage.h>
 
-const wxString RootDir = wxS("S1Game");
+const wxString RootDir = GameRootDir;
+#if IS_ASTELLIA_BUILD
+const wxString ExamplePath = wxS("D:\\Games\\Astellia\\NSGame\\");
+#else
+const wxString ExamplePath = wxS("D:\\Games\\Gameforge\\tera\\Client\\S1Game\\");
+#endif
 const wxString UpdatesUrl = wxS("https://github.com/VenoMKO/RealEditor/releases");
 
 enum ControlElementId {
@@ -32,7 +37,7 @@ bool IsValidDir(const wxString& path)
 }
 
 SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& output, bool allowRebuild, const wxPoint& pos)
-  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, 468), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
+  : WXDialog(nullptr, wxID_ANY, wxS("Settings"), pos, wxSize(668, IS_TERA_BUILD ? 468 : 398), wxCAPTION | wxCLOSE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL)
   , CurrentConfig(currentConfig)
   , NewConfig(output)
   , AllowRebuild(allowRebuild)
@@ -47,7 +52,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer1 = new wxBoxSizer(wxVERTICAL);
 
   wxStaticText* m_staticText5;
-  m_staticText5 = new wxStaticText(this, wxID_ANY, wxT("S1Game"), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText5 = new wxStaticText(this, wxID_ANY, RootDir, wxDefaultPosition, wxDefaultSize, 0);
   m_staticText5->Wrap(-1);
   m_staticText5->SetFont(wxFont(wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString));
 
@@ -66,8 +71,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText7->Wrap(-1);
   bSizer5->Add(m_staticText7, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
-  wxString root = CurrentConfig.UseBuiltInS1Game32 ? wxString("N/A") : wxString(CurrentConfig.RootDir.WString());
-  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, root, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+  PathField = new wxTextCtrl(m_panel2, ControlElementId::Path, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
   bSizer5->Add(PathField, 1, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
   PathField->Enable(!CurrentConfig.UseBuiltInS1Game32);
 
@@ -79,10 +83,11 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer4->Add(bSizer5, 1, wxEXPAND, FromDIP(5));
 
   wxStaticText* m_staticText6;
-  m_staticText6 = new wxStaticText(m_panel2, wxID_ANY, wxT("Select the S1Game folder of your Tera client. This path will be used to find and load packages and resources. The path may look like this: \"D:\\Games\\Gameforge\\Tera\\Client\\S1Game\\\"."), wxDefaultPosition, wxDefaultSize, 0);
+  m_staticText6 = new wxStaticText(m_panel2, wxID_ANY, wxS("Select the ") + RootDir + wxS(" folder of your game client.This path will be used to find and load packages and resources.The path may look like this: \"") + ExamplePath + wxS("\"."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText6->Wrap(FromDIP(570));
   bSizer4->Add(m_staticText6, 1, wxBOTTOM | wxRIGHT | wxLEFT | wxEXPAND, FromDIP(5));
 
+#if IS_TERA_BUILD
   wxStaticLine* m_staticline2;
   m_staticline2 = new wxStaticLine(m_panel2, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
   bSizer4->Add(m_staticline2, 0, wxEXPAND | wxTOP | wxBOTTOM, 7);
@@ -94,6 +99,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   m_staticText81 = new wxStaticText(m_panel2, wxID_ANY, wxT("Enable this option if you want to open a 32-bit GPK file, but you don't have a full 32-bit client."), wxDefaultPosition, wxDefaultSize, 0);
   m_staticText81->Wrap(-1);
   bSizer4->Add(m_staticText81, 0, wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
+#endif
 
   m_panel2->SetSizer(bSizer4);
   m_panel2->Layout();
@@ -121,7 +127,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer13 = new wxBoxSizer(wxVERTICAL);
 
   RebuildCacheButton = new wxButton(m_panel8, ControlElementId::DirCache, wxT("Rebuild Cache"), wxDefaultPosition, wxDefaultSize, 0);
-  RebuildCacheButton->SetToolTip(wxT("Update a cached list of packages in your S1Game folder. Usefull when ") + wxTheApp->GetAppDisplayName() + wxT(" can't find an object."));
+  RebuildCacheButton->SetToolTip(wxT("Update a cached list of packages in your ") + RootDir  + wxS(" folder. Usefull when ") + wxTheApp->GetAppDisplayName() + wxT(" can't find an object."));
   bSizer13->Add(RebuildCacheButton, 0, wxALL | wxEXPAND, FromDIP(5));
 
   UpdateMappingButton = new wxButton(m_panel8, ControlElementId::Mappers, wxT("Update Mapping"), wxDefaultPosition, wxDefaultSize, 0);
@@ -167,7 +173,11 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer7 = new wxBoxSizer(wxHORIZONTAL);
 
   wxStaticText* m_staticText9;
-  m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk and *.u packages by double clicking in the Windows File Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
+#if IS_TERA_BUILD
+  m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.gpk, *.gmp, *.upk, *.umap, and *.u packages by double clicking in the Windows File Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
+#else
+  m_staticText9 = new wxStaticText(m_panel5, wxID_ANY, wxT("This allows you to open *.upk, *.umap, and *.u packages by double clicking in the Windows File Explorer window. Press Associate to enable the feature or Dissociate to disable."), wxDefaultPosition, wxSize(-1, -1), 0);
+#endif
   m_staticText9->Wrap(FromDIP(300));
   bSizer7->Add(m_staticText9, 0, wxALL, FromDIP(5));
 
@@ -206,7 +216,7 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
   bSizer11->Add(FastObjDump, 0, wxALL, FromDIP(5));
 
   ShowImportObjects = new wxCheckBox(m_panel6, ControlElementId::ShowImports, wxT("Show package imports"));
-  ShowImportObjects->SetToolTip(wxT("Allow GPK object tree to display referenced objects(imports)."));
+  ShowImportObjects->SetToolTip(wxT("Allow GPK/UPK/UMAP object tree to display referenced objects(imports)."));
   ShowImportObjects->SetValue(CurrentConfig.ShowImports);
   bSizer11->Add(ShowImportObjects, 0, wxALL, FromDIP(5));
 
@@ -249,10 +259,26 @@ SettingsWindow::SettingsWindow(const FAppConfig& currentConfig, FAppConfig& outp
 
   this->Centre(wxBOTH);
 
-  UseBuiltInS1Game32->SetValue(CurrentConfig.UseBuiltInS1Game32);
-  UseBuiltInS1Game32->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(SettingsWindow::OnUseBuiltInS1Game32), NULL, this);
+  if (UseBuiltInS1Game32)
+  {
+    UseBuiltInS1Game32->SetValue(CurrentConfig.UseBuiltInS1Game32);
+    UseBuiltInS1Game32->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(SettingsWindow::OnUseBuiltInS1Game32), NULL, this);
+  }
+  
+#if IS_ASTELLIA_BUILD
+  FastObjDump->Enable(false);
+  UpdateMappingButton->Enable(false);
+  wxString root = CurrentConfig.RootDir.Empty() ? wxEmptyString : wxString(CurrentConfig.RootDir.FStringByAppendingPath(GameRootDir));
+#else
+  wxString root = CurrentConfig.UseBuiltInS1Game32 ? wxString("N/A") : wxString(CurrentConfig.RootDir.WString());
+#endif
+  PathField->SetValue(root);
 
-  if (!IsValidDir(PathField->GetValue()) && !UseBuiltInS1Game32->GetValue())
+  if (!IsValidDir(PathField->GetValue())
+#if IS_TERA_BUILD
+      && UseBuiltInS1Game32 && !UseBuiltInS1Game32->GetValue()
+#endif
+    )
   {
     ApplyButton->Enable(false);
     ApplyButton->SetToolTip(wxT("You must specify the \"" + RootDir + "\". Press \"Browse\" and select the folder."));
@@ -292,7 +318,7 @@ void SettingsWindow::OnPathChanged(wxCommandEvent&)
 {
   if (!IsValidDir(PathField->GetValue()))
   {
-    ApplyButton->Enable(UseBuiltInS1Game32->GetValue());
+    ApplyButton->Enable(IS_TERA_BUILD ? UseBuiltInS1Game32->GetValue() : false);
     ApplyButton->SetToolTip(wxT("You must specify the \"" + RootDir + "\". Press \"Browse\" and select the folder."));
   }
   else
@@ -444,7 +470,7 @@ void SettingsWindow::OnDcToolClicked(wxCommandEvent&)
 {
   if (NewConfig.RootDir.Empty())
   {
-    REDialog::Error("Set the S1Game folder first!");
+    REDialog::Error(wxS("Set the ") + RootDir + wxS(" folder first!"));
     return;
   }
   DcToolDialog dlg(this);
@@ -464,8 +490,14 @@ void SettingsWindow::OnCancelClicked(wxCommandEvent&)
 void SettingsWindow::OnOkClicked(wxCommandEvent&)
 {
   NewConfig.FastObjectDump = FastObjDump->GetValue();
+#if IS_ASTELLIA_BUILD
+  std::filesystem::path path = PathField->GetValue().ToStdWstring();
+  FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(path.wstring());
+  NewConfig.RootDir = path.parent_path().wstring();
+#else
   std::wstring path = NewConfig.UseBuiltInS1Game32 ? NewConfig.RootDir.WString() : PathField->GetValue().ToStdWstring();
   FPackage::S1DirError err = FPackage::ValidateRootDirCandidate(path);
+#endif
   if (err == FPackage::S1DirError::OK)
   {
     EndModal(wxID_OK);
@@ -474,15 +506,15 @@ void SettingsWindow::OnOkClicked(wxCommandEvent&)
   {
     if (err == FPackage::S1DirError::NOT_FOUND)
     {
-      REDialog::Error("S1Game folder does not exist or can't be accessed.");
+      REDialog::Error(RootDir + wxS(" folder does not exist or can't be accessed."));
     }
     else if (err == FPackage::S1DirError::NAME_MISSMATCH)
     {
-      REDialog::Error("The folder must be called S1Game!");
+      REDialog::Error(wxS("The folder must be called ") + RootDir + wxS("!"));
     }
     else if (err == FPackage::S1DirError::CLASSES_NOT_FOUND)
     {
-      REDialog::Error("S1Game folder does not contain neccessery *.U files.");
+      REDialog::Error(RootDir + wxS(" folder does not contain neccessery *.U files."));
     }
     else if (err == FPackage::S1DirError::ACCESS_DENIED && CurrentConfig.RootDir != PathField->GetValue().ToStdWstring())
     {

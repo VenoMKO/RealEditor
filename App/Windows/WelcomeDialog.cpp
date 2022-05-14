@@ -188,12 +188,18 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   bSizer4 = new wxBoxSizer(wxHORIZONTAL);
 
   OpenFileButton = new wxButton(m_panel3, wxID_ANY, wxT("Open package..."), wxDefaultPosition, FromDIP(wxSize(115, -1)), 0);
+#if IS_TERA_BUILD
   OpenFileButton->SetToolTip(wxT("Open a GPK, GMP, U file from a disk"));
+#endif
 
   bSizer4->Add(OpenFileButton, 0, wxALL, FromDIP(5));
 
   wxStaticText* m_staticText13;
+#if IS_TERA_BUILD
   m_staticText13 = new wxStaticText(m_panel3, wxID_ANY, wxT("Open a GPK/GMP/U file"), wxDefaultPosition, wxDefaultSize, 0);
+#else
+  m_staticText13 = new wxStaticText(m_panel3, wxID_ANY, wxT("Open a UPK/UMAP/U file"), wxDefaultPosition, wxDefaultSize, 0);
+#endif
   m_staticText13->Wrap(-1);
   bSizer4->Add(m_staticText13, 0, wxTOP | wxBOTTOM | wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(5));
 
@@ -278,8 +284,8 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   bSizer5->Fit(m_panel3);
   bSizer3->Add(m_panel3, 0, wxEXPAND | wxALL, FromDIP(5));
 
-  ShowWelcome = new wxCheckBox(this, wxID_ANY, wxT("Show this dialog when a last GPK window is closed"), wxDefaultPosition, wxDefaultSize, 0);
-  ShowWelcome->SetToolTip(wxT("Disable this option if you want Real Editor to exit after a last GPK window is closed."));
+  ShowWelcome = new wxCheckBox(this, wxID_ANY, wxT("Show this dialog when a last package window is closed"), wxDefaultPosition, wxDefaultSize, 0);
+  ShowWelcome->SetToolTip(wxT("Disable this option if you want Real Editor to exit after a last package window is closed."));
   ShowWelcome->SetValue(true);
   bSizer3->Add(ShowWelcome, 0, wxALL, FromDIP(5));
 
@@ -344,7 +350,13 @@ WelcomeDialog::WelcomeDialog(wxWindow* parent)
   RecentCtrl->AssociateModel(model);
   model->DecRef();
 
+#if !IS_TERA_BUILD
+  OpenByNameField->SetHint(wxT("Type a UPK name..."));
+  ObjectDumpButton->Enable(false);
+  DataCenterButton->Enable(false);
+#else
   OpenByNameField->SetHint(wxT("Type a GPK name..."));
+#endif
 }
 
 WelcomeDialog::~WelcomeDialog()
@@ -390,7 +402,7 @@ int WelcomeDialog::ShowModal()
     {
       ModalRunning = true;
       ProgressWindow progress(nullptr, "Loading...");
-      progress.SetActionText("Enumerating S1Game contents...");
+      progress.SetActionText("Enumerating game folder contents...");
       progress.SetCurrentProgress(-1);
       progress.SetCanCancel(false);
       std::vector<std::pair<std::string, std::string>> failed;

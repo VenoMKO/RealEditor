@@ -25,8 +25,17 @@
 #include <Tera/Utils/APerfSamples.h>
 #include <Tera/Utils/ALDevice.h>
 
+
+#if IS_ASTELLIA_BUILD
+const char* APP_NAME = "Astellia Editor";
+const char* VENDOR_NAME_32 = "Astellia Editor";
+#elif IS_BNS_BUILD
+const char* APP_NAME = "Blade and Soul Editor";
+const char* VENDOR_NAME_32 = "Blade and Soul Editor";
+#else
 const char* APP_NAME = "Real Editor";
 const char* VENDOR_NAME_32 = "Real Editor x32";
+#endif
 const char* VENDOR_NAME_64 = "Real Editor x64";
 
 wxIMPLEMENT_APP(App);
@@ -649,9 +658,13 @@ bool App::OpenNamedPackage(const wxString& name, const wxString selectionIn)
     wxString msg = "Possible solutions:\n";
     msg += " * Check the file name\n";
     msg += " * Press Window -> Settings and Rebuild Cache\n";
-    msg += "If the package is composite:\n";
-    msg += " * Open TMM and click Restore original .dat\n";
-    msg += " * Rebuild ObjectDump.txt\n";
+    if (FPackage::GetCoreVersion() == VER_TERA_MODERN)
+    {
+      msg += "If the package is composite:\n";
+      msg += " * Open TMM and click Restore original .dat\n";
+      msg += " * Rebuild ObjectDump.txt\n";
+    }
+    
     REDialog::Error(msg, wxS("Package ") + fixedName + wxS(" not found!"));
     return false;
   }
@@ -785,7 +798,12 @@ bool App::OnInit()
   {
     Config = cfg.GetConfig();
   }
-  FPackage::S1DirError verr = FPackage::ValidateRootDirCandidate(Config.RootDir);
+#if IS_ASTELLIA_BUILD
+  const FString rootDir = Config.RootDir.FStringByAppendingPath(GameRootDir);
+#else
+  const FString rootDir = Config.RootDir;
+#endif
+  FPackage::S1DirError verr = FPackage::ValidateRootDirCandidate(rootDir);
   if (verr == FPackage::S1DirError::ACCESS_DENIED)
   {
     if (REDialog::Auth())
@@ -877,7 +895,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 {
   PERF_START(LoadCore);
   FPackage::CleanCacheDir();
-  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating S1Game folder contents...");
+  SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Enumerating the game folder contents...");
   FPackage::SetRootPath(Config.RootDir);
   if (pWindow->IsCanceled())
   {
@@ -912,7 +930,7 @@ void App::LoadCore(ProgressWindow* pWindow)
   std::thread compositMapper;
   std::thread pkgMapper;
   std::thread objectRedirectorMapper;
-  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  if (FPackage::GetCoreVersion() == VER_TERA_MODERN)
   {
     SetAppDisplayName(VENDOR_NAME_64);
     SetVendorDisplayName(VENDOR_NAME_64);
@@ -970,7 +988,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading stripped meta data...");
 #ifndef _DEBUG
-  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  if (IS_TERA_BUILD && FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
   {
     std::unordered_map<FString, std::unordered_map<FString, AMetaDataEntry>> meta;
     try
@@ -988,13 +1006,13 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
   }
 #endif
-#if MINIMAL_CORE
-  const std::vector<FString> classPackageNames = { "Engine.u", "S1Game.u", "GFxUI.u" };
-  const std::vector<FString> extraClassPackageNames;
-#else
-  const std::vector<FString> classPackageNames = { "Engine.u", "GameFramework.u", "S1Game.u", "GFxUI.u", "IpDrv.u", "UnrealEd.u", "GFxUIEditor.u" };
-  const std::vector<FString> extraClassPackageNames = { "WinDrv.u", "OnlineSubsystemPC.u" };
-#endif
+  const std::vector<FString> classPackageNames = FPackage::ClassPackages(false, true);
+  std::vector<FString> extraClassPackageNames;
+  if (!MINIMAL_CORE)
+  {
+    extraClassPackageNames = FPackage::ClassPackages(false, false);
+  }
+
   PERF_START(ClassPackagesLoad);
   for (const FString& name : classPackageNames)
   {
@@ -1066,7 +1084,7 @@ void App::LoadCore(ProgressWindow* pWindow)
 
   SendEvent(pWindow, UPDATE_PROGRESS_DESC, "Loading Mappers...");
 
-  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  if (FPackage::GetCoreVersion() == VER_TERA_MODERN)
   {
     pkgMapper.join();
     compositMapper.join();
@@ -1082,7 +1100,7 @@ void App::LoadCore(ProgressWindow* pWindow)
     }
   }
 
-  if (FPackage::GetCoreVersion() > VER_TERA_CLASSIC)
+  if (FPackage::GetCoreVersion() == VER_TERA_MODERN)
   {
     const auto& compositeMap = FPackage::GetCompositePackageMap();
     CompositePackageNames.reserve(compositeMap.size());
@@ -1303,8 +1321,10 @@ void App::OnRegisterMime(wxCommandEvent&)
 {
   wxString appPath = argv[0];
   wxMimeTypesManager man;
+#if IS_TERA_BUILD
   RegisterFileType(".gpk", "Tera Game Package", appPath, man);
   RegisterFileType(".gmp", "Tera Game Map", appPath, man);
+#endif
   RegisterFileType(".u", "Unreal Script Package", appPath, man);
   RegisterFileType(".upk", "Unreal Package", appPath, man);
   RegisterFileType(".umap", "Unreal Map", appPath, man);
@@ -1313,8 +1333,10 @@ void App::OnRegisterMime(wxCommandEvent&)
 void App::OnUnregisterMime(wxCommandEvent&)
 {
   wxMimeTypesManager man;
+#if IS_TERA_BUILD
   UnregisterFileType(".gpk", man);
   UnregisterFileType(".gmp", man);
+#endif
   UnregisterFileType(".u", man);
   UnregisterFileType(".upk", man);
   UnregisterFileType(".umap", man);
@@ -1396,7 +1418,13 @@ const wxArrayString& App::GetCompositePackageNames() const
 bool App::CheckMimeTypes(bool strict) const
 {
   wxMimeTypesManager man;
+#if IS_ASTELLIA_BUILD
+  std::vector<wxString> extensions = { wxS(".u"), wxS(".upk"), wxS(".umap") };
+#elif IS_BNS_BUILD
+  std::vector<wxString> extensions = { wxS(".u"), wxS(".upk"), wxS(".umap") };
+#else
   std::vector<wxString> extensions = { wxS(".gpk"), wxS(".gmp"), wxS(".u"), wxS(".upk"), wxS(".umap") };
+#endif
   for (const wxString& extension : extensions)
   {
     if (!CheckFileType(strict ? argv[0] : wxEmptyString, extension, man))

@@ -5,7 +5,7 @@
 
 void PackageWindow::InitLayout()
 {
-  bool IsModernClient = FPackage::GetCoreVersion() == VER_TERA_MODERN;
+  
   wxMenuBar* menuBar;
   menuBar = new wxMenuBar(0);
   menuBar->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
@@ -13,6 +13,8 @@ void PackageWindow::InitLayout()
   wxMenu* fileMenu;
   fileMenu = new wxMenu();
 
+#if IS_TERA_BUILD
+  bool IsModernClient = FPackage::GetCoreVersion() == VER_TERA_MODERN;
   wxMenuItem* m_menuItem68 = new wxMenuItem(fileMenu, ControlElementId::CreateMod, wxS("Create mod..."), wxS("Create a mod from existing modded GPKs"));
   m_menuItem68->Enable(IsModernClient);
   fileMenu->Append(m_menuItem68);
@@ -21,16 +23,19 @@ void PackageWindow::InitLayout()
 
   wxMenuItem* m_menuItem3 = new wxMenuItem(fileMenu, ControlElementId::New, wxString(wxT("New GPK file...")) + wxT('\t') + wxT("Ctrl+N"), wxEmptyString, wxITEM_NORMAL);
   fileMenu->Append(m_menuItem3);
+#endif
   wxMenu* openMenu = new wxMenu;
-  wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(wxT("GPK file...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
+  wxMenuItem* m_menuItem4 = new wxMenuItem(openMenu, ControlElementId::Open, wxString(IS_TERA_BUILD ? wxT("GPK file...") : wxT("UPK file...")) + wxT('\t') + wxT("Ctrl+O"), wxEmptyString, wxITEM_NORMAL);
   openMenu->Append(m_menuItem4);
   wxMenuItem* m_menuItem41;
   m_menuItem41 = new wxMenuItem(openMenu, ControlElementId::OpenByName, wxString(wxT("By name...")) + wxT('\t') + wxT("Ctrl+Shift+O"), wxEmptyString, wxITEM_NORMAL);
   openMenu->Append(m_menuItem41);
+#if IS_TERA_BUILD
   wxMenuItem* m_menuItem5;
   m_menuItem5 = new wxMenuItem(openMenu, ControlElementId::OpenComposite, wxString(wxT("Composite package...")), wxS("Open a composite package by its name"), wxITEM_NORMAL);
   m_menuItem5->Enable(IsModernClient);
   openMenu->Append(m_menuItem5);
+#endif
   fileMenu->AppendSubMenu(openMenu, "Open");
 
   wxMenu* menuRecent = new wxMenu;
@@ -76,6 +81,7 @@ void PackageWindow::InitLayout()
 
   m_menu4->AppendSeparator();*/
 
+#if IS_TERA_BUILD
   wxMenuItem* dcMenu = new wxMenuItem(m_menu4, ControlElementId::DcTool, wxString(wxT("DataCenter tool...")), wxS("Unpack and export datacenter files"), wxITEM_NORMAL);
   m_menu4->Append(dcMenu);
 
@@ -100,6 +106,8 @@ void PackageWindow::InitLayout()
   m_menu4->Append(m_menuItem70);
 
   m_menu4->AppendSeparator();
+
+#endif
 
   EditFlagsMenu = new wxMenuItem(m_menu4, ControlElementId::EditPkgFlags, wxString(wxT("Package flags...")), wxEmptyString, wxITEM_NORMAL);
   m_menu4->Append(EditFlagsMenu);
