@@ -2,6 +2,8 @@
 
 #include <wx/statline.h>
 
+#include <Tera/CoreTMM.h>
+
 CreatePackageDialog::CreatePackageDialog(int coreVer, wxWindow* parent)
   : WXDialog(parent, wxID_ANY, _("Create GPK"), wxDefaultPosition, wxSize(361, 235))
 {
@@ -111,7 +113,7 @@ void CreatePackageDialog::FillSummary(FPackageSummary& summary)
   summary.PackageName = PackageName->GetValue().ToStdWstring();
   if (CoreVersion > VER_TERA_CLASSIC)
   {
-    summary.FolderName = FN_MOD_PREFIX;
+    summary.FolderName = TMM_ModPrefix;
     summary.FolderName += Composite->GetValue().ToStdWstring();
     summary.FolderName.Terminate();
   }
