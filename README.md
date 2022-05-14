@@ -53,7 +53,3 @@ You can get the latest version in the [Releases](https://github.com/VenoMKO/Real
 ## System requirements
 * Windows 10 x64 (RE can run on previous Windows versions, but some features may not work)
 * CPU with AVX2 instructions (Intel Haswell / AMD Excavator or newer)
-
-## Contacts
-* Discord: Yupi#9153
-* Tumblr: [YupiMods](https://yupimods.tumblr.com/)
