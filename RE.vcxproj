@@ -15,6 +15,7 @@
     <ClCompile Include="App\CustomViews\ObjectProperties.cpp" />
     <ClCompile Include="App\Editors\AnimationEditor.cpp" />
     <ClCompile Include="App\Editors\ClassEditor.cpp" />
+    <ClCompile Include="App\Editors\LandscapeEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditor.cpp" />
     <ClCompile Include="App\Editors\LevelEditorExport.cpp" />
     <ClCompile Include="App\Editors\MaterialEditor.cpp" />
@@ -68,6 +69,7 @@
     <ClInclude Include="App\CustomViews\ObjectProperties.h" />
     <ClInclude Include="App\Editors\AnimationEditor.h" />
     <ClInclude Include="App\Editors\ClassEditor.h" />
+    <ClInclude Include="App\Editors\LandscapeEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />

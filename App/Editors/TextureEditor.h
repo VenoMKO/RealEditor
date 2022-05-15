@@ -33,9 +33,9 @@ protected:
   void CreateRenderer();
 
   // Create the texture and push it to the renderer;
-  void CreateRenderTexture();
+  virtual void CreateRenderTexture();
 
-private:
+ protected:
   UTexture2D* Texture = nullptr;
   osg::ref_ptr<osg::Image> Image = nullptr;
   osg::ref_ptr<osg::Geode> Root = nullptr;

@@ -22,6 +22,7 @@
 #include "MaterialInstanceEditor.h"
 #include "PrefabEditor.h"
 #include "SoundCueEditor.h"
+#include "LandscapeEditor.h"
 
 #include "../resource.h"
 
@@ -106,6 +107,14 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (c == UTextBuffer::StaticClassName())
   {
     editor = new TextBufferEditor(parent, window);
+  }
+  else if (c == ULandscapeComponent::StaticClassName())
+  {
+    editor = new LandscapeComponentEditor(parent, window);
+  }
+  else if (c == ULandscape::StaticClassName())
+  {
+    editor = new LandscapeEditor(parent, window);
   }
   else if (c == ULevelStreaming::StaticClassName() || c == ULevelStreamingAlwaysLoaded::StaticClassName() || c == ULevelStreamingDistance::StaticClassName() ||
     c == ULevelStreamingKismet::StaticClassName() || c == ULevelStreamingPersistent::StaticClassName() || c == US1LevelStreamingDistance::StaticClassName() ||

@@ -161,6 +161,9 @@
     <ClCompile Include="App\CustomViews\ObjectProperties.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Editors\LandscapeEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -263,6 +266,7 @@
     <ClInclude Include="App\Misc\AConfiguration.h" />
     <ClInclude Include="App\CustomViews\MaterialView.h" />
     <ClInclude Include="App\CustomViews\ObjectProperties.h" />
+    <ClInclude Include="App\Editors\LandscapeEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
