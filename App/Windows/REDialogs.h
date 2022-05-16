@@ -16,6 +16,7 @@ namespace IODialog
 
   wxString OpenTextureDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Import a texture..."));
   wxString SaveTextureDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the texture..."));
+  wxString SaveImageDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString extension = wxT(".png"), const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the image..."));
 
   wxString OpenMeshDialog(wxWindow* parent = nullptr, const wxString& path = wxEmptyString, const wxString& caption = wxT("Import a 3D model..."));
   wxString SaveMeshDialog(wxWindow* parent = nullptr, const wxString& filename = wxEmptyString, const wxString& path = wxEmptyString, const wxString& caption = wxT("Save the 3D model..."));

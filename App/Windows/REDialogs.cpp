@@ -459,6 +459,22 @@ namespace IODialog
     return result;
   }
 
+  wxString SaveImageDialog(wxWindow* parent, const wxString& filename, const wxString extension, const wxString& inPath, const wxString& caption)
+  {
+    REScopedDialogCounter h;
+    FAppConfig& cfg = App::GetSharedApp()->GetConfig();
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = cfg.LastExportPath.WString();
+    }
+    wxString result;
+    int32 ext = 0;
+    const std::vector<std::pair<std::string, std::string>> extensions = { {extension.ToStdString(), extension.ToStdString()} };
+    SaveDialog(parent, filename, path, caption, extensions, result, ext);
+    return result;
+  }
+
   wxString OpenMeshDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
   {
     REScopedDialogCounter h;

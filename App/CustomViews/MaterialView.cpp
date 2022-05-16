@@ -9,6 +9,8 @@
 
 #include "../resource.h"
 
+#include "../Windows/REDialogs.h"
+
 const int32 CanvasPadding = 200;
 
 
@@ -134,11 +136,19 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
 
 void UDKMaterialGraph::OnPaint(wxPaintEvent& e)
 {
-  wxBufferedPaintDC dc(this);
-  Render(dc);
+  wxAutoBufferedPaintDC dc(this);
+  if (dc.GetSelectedBitmap().IsOk())
+  {
+    Render(dc);
+  }
+  else if (!DcError)
+  {
+    DcError = true;
+    REDialog::Error("Failed to create a device context to render the graph.\nTry to reduce Scale in Windows' \"Display settings\".");
+  }
 }
 
-void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
+void UDKMaterialGraph::Render(wxMemoryDC& dc)
 {
   wxBrush panelBrush = dc.GetBackground();
   dc.SetBackground(wxBrush(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE)));

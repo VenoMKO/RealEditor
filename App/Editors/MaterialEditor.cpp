@@ -1,7 +1,13 @@
 #include "MaterialEditor.h"
 #include "../CustomViews/MaterialView.h"
 
+#include "../App.h"
+#include "../Windows/REDialogs.h"
+#include "../Windows/ProgressWindow.h"
+
 #include <Tera/Cast.h>
+
+#include <thread>
 
 MaterialEditor::MaterialEditor(wxPanel* parent, PackageWindow* window)
   : GenericEditor(parent, window)
@@ -29,7 +35,35 @@ void MaterialEditor::OnObjectLoaded()
   GenericEditor::OnObjectLoaded();
 }
 
+void MaterialEditor::OnExportClicked(wxCommandEvent&)
+{
+  if (Graph)
+  {
+    wxAutoBufferedPaintDC dc(Graph);
+    if (dc.GetSelectedBitmap().IsOk())
+    {
+      wxString path = IODialog::SaveImageDialog(this, Object->GetObjectNameString().String());
+      if (path.size())
+      {
+        ProgressWindow progress(this, "Please wait...");
+        progress.SetCurrentProgress(-1);
+        progress.SetCanCancel(false);
+        progress.SetActionText("Saving the image");
+        progress.Layout();
+
+        std::thread([&] {
+          Graph->Render(dc);
+          dc.GetSelectedBitmap().SaveFile(path, wxBITMAP_TYPE_PNG);
+          SendEvent(&progress, UPDATE_PROGRESS_FINISH, true);
+        }).detach();
+       
+        progress.ShowModal();
+      }
+    }
+  }
+}
+
 void MaterialEditor::BuildGraph()
 {
-  new UDKMaterialGraph(Canvas, Cast<UMaterial>(Object));
+  Graph = new UDKMaterialGraph(Canvas, Cast<UMaterial>(Object));
 }

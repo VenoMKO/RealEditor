@@ -76,12 +76,12 @@ class UDKMaterialGraph : public DragableCanvas {
 public:
   UDKMaterialGraph(wxWindow* parent, UMaterial* material);
 
+  void Render(wxMemoryDC& dc);
+
 protected:
   void OnPaint(wxPaintEvent& e);
   void OnEraseBg(wxEraseEvent&)
   {}
-
-  void Render(wxBufferedPaintDC& dc);
 
 protected:
   UMaterial* Material = nullptr;
@@ -91,5 +91,6 @@ protected:
   std::vector<FExpressionInput> MaterialInputs;
   bool NeedsPositionCalculation = true;
   std::map<UMaterialExpression*, size_t> ExpressionMap;
+  bool DcError = false;
   DECLARE_EVENT_TABLE()
 };
