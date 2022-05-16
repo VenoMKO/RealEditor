@@ -27,7 +27,7 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
 
   if (expressions.empty())
   {
-    SetSize(500, 500);
+    SetSize(FromDIP(500), FromDIP(500));
     return;
   }
 
@@ -57,33 +57,33 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
 
   if (minX == maxX || minY == maxY)
   {
-    SetSize(500, 500);
+    SetSize(FromDIP(500), FromDIP(500));
   }
 
-  int canvasWidth = abs(minX) + abs(maxX) + (CanvasPadding * 2);
-  int canvasHeight = abs(minY) + abs(maxY) + (CanvasPadding * 2);
+  int canvasWidth = FromDIP(abs(minX) + abs(maxX) + (CanvasPadding * 2));
+  int canvasHeight = FromDIP(abs(minY) + abs(maxY) + (CanvasPadding * 2));
 
   if (!canvasWidth)
   {
-    canvasWidth = 500;
+    canvasWidth = FromDIP(500);
   }
   if (!canvasHeight)
   {
-    canvasHeight = 500;
+    canvasHeight = FromDIP(500);
   }
 
   parent->SetVirtualSize(canvasWidth, canvasHeight);
 
   if (minX < 0)
   {
-    CanvasOffsetX = abs(minX);
+    CanvasOffsetX = FromDIP(abs(minX));
   }
-  CanvasOffsetX += CanvasPadding;
+  CanvasOffsetX += FromDIP(CanvasPadding);
   if (minY < 0)
   {
-    CanvasOffsetY = abs(minY);
+    CanvasOffsetY = FromDIP(abs(minY));
   }
-  CanvasOffsetY += CanvasPadding;
+  CanvasOffsetY += FromDIP(CanvasPadding);
 
   for (UMaterialExpression* exp : expressions)
   {
@@ -91,11 +91,11 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
     MaterialExpressionInfo& i = GraphNodes.emplace_back();
     exp->AcceptVisitor(i);
     i.Expression = exp;
-    i.Position.x += CanvasOffsetX;
-    i.Position.y += CanvasOffsetY;
+    i.Position.x = FromDIP(i.Position.x) + CanvasOffsetX;
+    i.Position.y = FromDIP(i.Position.y) + CanvasOffsetY;
     if (!i.Size.x || !i.Size.y)
     {
-      i.Size = wxSize(80, 94);
+      i.Size = FromDIP(wxSize(80, 94));
     }
   }
 
@@ -145,7 +145,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
   dc.Clear();
   dc.SetBrush(dc.GetBackground());
 
-  auto drawLabelFunc = [&dc](wxString text, const wxPoint& at, unsigned maxWidth = 0) {
+  auto drawLabelFunc = [&](wxString text, const wxPoint& at, unsigned maxWidth = 0) {
     wxSize size = dc.GetTextExtent(text);
     bool truncate = false;
     while (maxWidth && (unsigned)size.x > maxWidth && text.size() > 3)
@@ -161,7 +161,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
     dc.DrawText(text, at);
   };
 
-  auto drawExpressionCaption = [&dc, &drawLabelFunc](const MaterialExpressionInfo& i) {
+  auto drawExpressionCaption = [&](const MaterialExpressionInfo& i) {
     if (i.Title.StartsWith("Comment"))
     {
       wxPoint at = i.Position;
@@ -172,26 +172,26 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
     else
     {
       wxPoint at = i.Position;
-      at.x += 2;
-      drawLabelFunc(i.Title, at, i.Size.x - 2);
+      at.x += FromDIP(2);
+      drawLabelFunc(i.Title, at, i.Size.x - FromDIP(2));
     }
   };
 
-  const int outputNodeHeight = 7;
+  const int outputNodeHeight = FromDIP(7);
 
   if (NeedsPositionCalculation)
   {
     NeedsPositionCalculation = false;
     for (MaterialExpressionInfo& i : GraphNodes)
     {
-      int width = i.Size.x + 4;
+      int width = i.Size.x + FromDIP(4);
       wxSize titleExtent = dc.GetTextExtent(i.Title);
       if (titleExtent.x > width)
       {
-        i.Size.x = titleExtent.x + 4;
+        i.Size.x = titleExtent.x + FromDIP(4);
       }
 
-      int posY = titleExtent.y + i.Position.y + 14;
+      int posY = titleExtent.y + i.Position.y + FromDIP(14);
       int posX = i.Size.x + i.Position.x;
 
       if (i.TextValue.size())
@@ -203,16 +203,16 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
           wxSize ext = dc.GetTextExtent(line);
           if (ext.x >= width)
           {
-            width = ext.x + 4;
+            width = ext.x + FromDIP(4);
           }
-          posY += 14;
+          posY += FromDIP(14);
         }
-        posY += 4;
+        posY += FromDIP(4);
       }
 
       if (i.Size.x < width)
       {
-        i.Size.x = width + 4;
+        i.Size.x = width + FromDIP(4);
         posX = i.Size.x + i.Position.x;
       }
 
@@ -222,8 +222,8 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
         posY += outputNodeHeight * 2;
       }
 
-      posY = titleExtent.y + i.Position.y + 6;
-      posX = i.Position.x - 10;
+      posY = titleExtent.y + i.Position.y + FromDIP(6);
+      posX = i.Position.x - FromDIP(10);
 
       i.PosRGB.x = posX;
       i.PosRGB.y = posY;
@@ -283,11 +283,11 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
     wxSize titleExtent = dc.GetTextExtent(i.Title);
 
     dc.DrawRectangle(i.Position, wxSize(i.Size.x, titleExtent.y));
-    dc.DrawRectangle(wxPoint(i.Position.x, i.Position.y + 2 + titleExtent.y), wxSize(i.Size.x, i.Size.y - titleExtent.y - 2));
+    dc.DrawRectangle(wxPoint(i.Position.x, i.Position.y + FromDIP(2) + titleExtent.y), wxSize(i.Size.x, i.Size.y - titleExtent.y - FromDIP(2)));
     drawExpressionCaption(i);
 
-    int posY = titleExtent.y + i.Position.y + 6;
-    int posX = i.Position.x - 10;
+    int posY = titleExtent.y + i.Position.y + FromDIP(6);
+    int posX = i.Position.x - FromDIP(10);
     int inPosY = posY;
 
     if (i.TextValue.size())
@@ -296,10 +296,10 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
       std::string line;
       while (getline(stream, line))
       {
-        drawLabelFunc(line, wxPoint(posX + 12, inPosY), i.Size.x);
-        inPosY += 14;
+        drawLabelFunc(line, wxPoint(posX + FromDIP(12), inPosY), i.Size.x);
+        inPosY += FromDIP(14);
       }
-      inPosY += 4;
+      inPosY += FromDIP(4);
     }
     
     dc.SetPen(wxPen(wxColor(), 0, wxPENSTYLE_TRANSPARENT));
@@ -309,29 +309,29 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
 
     // Composite
     dc.SetBrush(wxBrush(wxColor(0, 0, 0)));
-    dc.DrawRectangle(wxPoint(posX, posY), wxSize(10, outputNodeHeight));
+    dc.DrawRectangle(wxPoint(posX, posY), wxSize(FromDIP(10), outputNodeHeight));
 
     if (i.NeedsMultipleOutputs)
     {
       // Red
       posY += outputNodeHeight * 2;
       dc.SetBrush(wxBrush(wxColor(255, 0, 0)));
-      dc.DrawRectangle(wxPoint(posX, posY), wxSize(10, outputNodeHeight));
+      dc.DrawRectangle(wxPoint(posX, posY), wxSize(FromDIP(10), outputNodeHeight));
 
-      // Gree
+      // Green
       posY += outputNodeHeight * 2;
       dc.SetBrush(wxBrush(wxColor(0, 255, 0)));
-      dc.DrawRectangle(wxPoint(posX, posY), wxSize(10, outputNodeHeight));
+      dc.DrawRectangle(wxPoint(posX, posY), wxSize(FromDIP(10), outputNodeHeight));
 
       // Blue
       posY += outputNodeHeight * 2;
       dc.SetBrush(wxBrush(wxColor(0, 0, 255)));
-      dc.DrawRectangle(wxPoint(posX, posY), wxSize(10, outputNodeHeight));
+      dc.DrawRectangle(wxPoint(posX, posY), wxSize(FromDIP(10), outputNodeHeight));
 
       // Alpha
       posY += outputNodeHeight * 2;
       dc.SetBrush(wxBrush(wxColor(255, 255, 255)));
-      dc.DrawRectangle(wxPoint(posX, posY), wxSize(10, outputNodeHeight));
+      dc.DrawRectangle(wxPoint(posX, posY), wxSize(FromDIP(10), outputNodeHeight));
     }
 
     // Inputs
@@ -341,19 +341,19 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
     for (FExpressionInput& input : i.Inputs)
     {
       dc.SetBrush(wxBrush(wxColor(0, 0, 0)));
-      wxPoint inputTriangle[4] = { {posX, posY + int(outputNodeHeight * .6)}, {posX, posY + int(outputNodeHeight * .45)}, {posX + 10, posY}, {posX + 10, posY + outputNodeHeight} };
+      wxPoint inputTriangle[4] = { {posX, posY + int(outputNodeHeight * .6)}, {posX, posY + int(outputNodeHeight * .45)}, {posX + FromDIP(10), posY}, {posX + FromDIP(10), posY + outputNodeHeight} };
       dc.DrawPolygon(4, inputTriangle);
       wxString title = input.GetDescription().WString();
       wxSize ext = dc.GetTextExtent(title);
-      drawLabelFunc(title, wxPoint(posX - ext.x - 4, posY - (ext.y * .25)));
+      drawLabelFunc(title, wxPoint(posX - ext.x - FromDIP(4), posY - (ext.y * .25)));
       posY += outputNodeHeight * 2;
     }
   }
 
-  auto createConnection = [](wxGraphicsContext* ctx, const wxPoint& start, const wxPoint& end, const wxColor* color = nullptr) {
+  auto createConnection = [&](wxGraphicsContext* ctx, const wxPoint& start, const wxPoint& end, const wxColor* color = nullptr) {
     wxGraphicsPath path = ctx->CreatePath();
     path.MoveToPoint(start);
-    path.AddCurveToPoint(start.x + 20, start.y, end.x - 20, end.y, end.x, end.y);
+    path.AddCurveToPoint(start.x + FromDIP(20), start.y, end.x - FromDIP(20), end.y, end.x, end.y);
     ctx->PushState();
     if (!color)
     {
@@ -388,8 +388,8 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
       }
 
       wxPoint dst = i.InputsPositions[idx];
-      dst.y -= outputNodeHeight / 2 + 2;
-      dst.x += 10;
+      dst.y -= outputNodeHeight / 2 + FromDIP(2);
+      dst.x += FromDIP(10);
       
 
       MaterialExpressionInfo& di = GraphNodes[ExpressionMap[input.Expression]];
@@ -436,7 +436,7 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
   dc.SetPen(defaultPen);
   dc.SetBrush(panelBrush);
 
-  int matWidth = std::max<int>(dc.GetTextExtent(Material->GetObjectNameString().WString()).x, 150);
+  int matWidth = std::max<int>(dc.GetTextExtent(Material->GetObjectNameString().WString()).x, FromDIP(150));
   for (FExpressionInput& input : MaterialInputs)
   {
     wxSize extent = dc.GetTextExtent(input.Title.WString());
@@ -447,27 +447,27 @@ void UDKMaterialGraph::Render(wxBufferedPaintDC& dc)
   }
   
   int posX = CanvasOffsetX;
-  int posY = CanvasOffsetY + dc.GetTextExtent(Material->GetObjectNameString().WString()).y + 4;
+  int posY = CanvasOffsetY + dc.GetTextExtent(Material->GetObjectNameString().WString()).y + FromDIP(4);
   dc.SetPen(wxPen(wxColor(0, 0, 0), 2));
   dc.SetBrush(wxBrush(wxColor(120, 120, 120)));
-  dc.DrawRectangle(wxPoint(posX, CanvasOffsetY), wxSize(matWidth + 4, posY - CanvasOffsetY));
-  drawLabelFunc(Material->GetObjectNameString().WString(), wxPoint(CanvasOffsetX + 2, CanvasOffsetY + 2), matWidth);
+  dc.DrawRectangle(wxPoint(posX, CanvasOffsetY), wxSize(matWidth + FromDIP(4), posY - CanvasOffsetY));
+  drawLabelFunc(Material->GetObjectNameString().WString(), wxPoint(CanvasOffsetX + FromDIP(2), CanvasOffsetY + FromDIP(2)), matWidth);
 
-  posY += 2;
-  dc.DrawRectangle(wxPoint(posX, posY), wxSize(matWidth + 4, std::min<int>(MaterialInputs.size() * outputNodeHeight * 3, 300)));
+  posY += FromDIP(2);
+  dc.DrawRectangle(wxPoint(posX, posY), wxSize(matWidth + FromDIP(4), std::min<int>(MaterialInputs.size() * outputNodeHeight * 3, FromDIP(300))));
   dc.SetBrush(wxBrush(wxColor(0, 0, 0)));
   dc.SetPen(wxPen(wxColor(), 0, wxPENSTYLE_TRANSPARENT));
   for (FExpressionInput& input : MaterialInputs)
   {
     wxSize extent = dc.GetTextExtent(input.Title.WString());
-    dc.DrawRectangle(wxPoint(posX + matWidth + 4, posY + 4), wxSize(10, outputNodeHeight));
+    dc.DrawRectangle(wxPoint(posX + matWidth + FromDIP(4), posY + FromDIP(4)), wxSize(FromDIP(10), outputNodeHeight));
     drawLabelFunc(input.Title.WString(), wxPoint(posX + matWidth - extent.x, posY));
 
     if (input.IsConnected() && ExpressionMap.count(input.Expression))
     {
-      wxPoint dst(posX + matWidth + 4, posY);
+      wxPoint dst(posX + matWidth + FromDIP(4), posY);
       dst.y += outputNodeHeight;
-      dst.x += 10;
+      dst.x += FromDIP(10);
 
 
       MaterialExpressionInfo& di = GraphNodes[ExpressionMap[input.Expression]];
