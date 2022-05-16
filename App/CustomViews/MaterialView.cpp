@@ -20,6 +20,7 @@ UDKMaterialGraph::UDKMaterialGraph(wxWindow* parent, UMaterial* material)
   : DragableCanvas(parent)
   , Material(material)
 {
+  SetBackgroundStyle(wxBG_STYLE_PAINT);
   for (FPropertyTag* tag : Material->MaterialInputs)
   {
     FExpressionInput& in = MaterialInputs.emplace_back(tag);
