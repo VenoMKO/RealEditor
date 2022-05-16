@@ -11,14 +11,8 @@ MaterialInstanceEditor::MaterialInstanceEditor(wxPanel* parent, PackageWindow* w
   wxBoxSizer* bSizer1;
   bSizer1 = new wxBoxSizer(wxHORIZONTAL);
 
-  Canvas = new wxScrolledWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN | wxHSCROLL | wxVSCROLL);
-  Canvas->SetScrollRate(50, 50);
-  Canvas->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_APPWORKSPACE));
-
-  bSizer1->Add(Canvas, 1, wxEXPAND | wxALL, 1);
-
   wxPanel* m_panel1;
-  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, -1), wxTAB_TRAVERSAL);
+  m_panel1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
   wxBoxSizer* bSizer2;
   bSizer2 = new wxBoxSizer(wxVERTICAL);
@@ -28,15 +22,15 @@ MaterialInstanceEditor::MaterialInstanceEditor(wxPanel* parent, PackageWindow* w
   m_staticText1->Wrap(-1);
   bSizer2->Add(m_staticText1, 0, wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, FromDIP(5));
 
-  StaticParameterOverrides = new wxPropertyGridManager(m_panel1, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(250, -1)), wxPGMAN_DEFAULT_STYLE);
+  StaticParameterOverrides = new wxPropertyGridManager(m_panel1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE);
   StaticParameterOverrides->SetExtraStyle(wxPG_EX_MODE_BUTTONS | wxPG_EX_NATIVE_DOUBLE_BUFFERING);
-  bSizer2->Add(StaticParameterOverrides, 1, wxEXPAND | wxTOP | wxBOTTOM | wxLEFT, 1);
+  bSizer2->Add(StaticParameterOverrides, 1, wxEXPAND | wxALL, FromDIP(1));
 
 
   m_panel1->SetSizer(bSizer2);
   m_panel1->Layout();
   bSizer2->Fit(m_panel1);
-  bSizer1->Add(m_panel1, 0, wxEXPAND, FromDIP(5));
+  bSizer1->Add(m_panel1, 1, wxEXPAND | wxALL, FromDIP(5));
 
   SetSizer(bSizer1);
   Layout();
@@ -49,11 +43,6 @@ void MaterialInstanceEditor::OnObjectLoaded()
     NeedsGraph = false;
     if (UMaterialInstance* mi = Cast<UMaterialInstance>(Object))
     {
-      if (UMaterial* parent = Cast<UMaterial>(mi->GetParent()))
-      {
-        new UDKMaterialGraph(Canvas, parent);
-      }
-
       StaticParameterOverrides->Freeze();
       wxPropertyCategory* root = new wxPropertyCategory(Object->GetObjectNameString().WString(), wxT("Root"));
       StaticParameterOverrides->Append(root);
