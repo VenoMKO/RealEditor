@@ -12,9 +12,12 @@ enum ControlElementId {
 CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString& title, bool filePackages)
   : WXDialog(parent, wxID_ANY, title)
 {
-  SetSize(FromDIP(GetSize()));
+#if IS_TERA_BUILD
   FilePackages = filePackages;
-  SetSize(445, 144);
+#else
+  FilePackages = true;
+#endif
+  SetSize(FromDIP(445), FromDIP(144));
   this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
   wxBoxSizer* bSizer1;
@@ -30,7 +33,7 @@ CompositePackagePicker::CompositePackagePicker(wxWindow* parent, const wxString&
   bSizer2->Add(m_staticText, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(5));
 
   CompositeName = new wxTextCtrl(m_panel1, ControlElementId::TextField, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-  if (filePackages)
+  if (FilePackages)
   {
     wxArrayString complete;
     for (const auto& name : FPackage::FilePackageNames)
