@@ -19,6 +19,7 @@
 #include "LevelEditor.h"
 #include "SpeedTreeEditor.h"
 #include "MaterialEditor.h"
+#include "MaterialFunctionEditor.h"
 #include "MaterialInstanceEditor.h"
 #include "PrefabEditor.h"
 #include "SoundCueEditor.h"
@@ -91,6 +92,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
   else if (c == UMaterial::StaticClassName())
   {
     editor = new MaterialEditor(parent, window);
+  }
+  else if (c == UMaterialFunction::StaticClassName())
+  {
+    editor = new MaterialFunctionEditor(parent, window);
   }
   else if (c == UMaterialInstance::StaticClassName() || c == UMaterialInstanceConstant::StaticClassName())
   {

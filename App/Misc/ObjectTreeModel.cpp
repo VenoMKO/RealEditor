@@ -155,7 +155,7 @@ ClassIco ObjectClassToClassIco(const wxString& className)
   {
     return IcoField;
   }
-  if (className == wxT("Material"))
+  if (className == wxT("Material") || className == wxT("MaterialFunction"))
   {
     return IcoMat;
   }

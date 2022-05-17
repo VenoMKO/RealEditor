@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 
+#include <Tera/UMaterialFunction.h>
 #include <Tera/UMaterialExpression.h>
 
 class MaterialExpressionInfo : public UMaterialExpressionViewVisitor {
@@ -29,6 +30,11 @@ public:
     Inputs = input;
   }
 
+  void SetOutput(const std::vector<FExpressionInput>& input) override
+  {
+    MFOutputs = input;
+  }
+
   void SetEditorPosition(int32 x, int32 y) override
   {
     Position = wxPoint(x, y);
@@ -37,6 +43,11 @@ public:
   void SetEditorSize(int32 x, int32 y) override
   {
     Size = wxSize(x, y);
+  }
+
+  void SetIsFinalNode(bool flag = true) override
+  {
+    IsFinal = flag;
   }
 
   wxString Title;
@@ -54,6 +65,9 @@ public:
   wxPoint PosA;
   std::vector<wxPoint> InputsPositions;
   UMaterialExpression* Expression = nullptr;
+  std::vector<FExpressionInput> MFOutputs;
+  std::vector<wxPoint> MFOutputsPositions;
+  bool IsFinal = false;
 };
 
 // Parent MUST be a wxScrolledWindow!.
@@ -75,6 +89,7 @@ protected:
 class UDKMaterialGraph : public DragableCanvas {
 public:
   UDKMaterialGraph(wxWindow* parent, UMaterial* material);
+  UDKMaterialGraph(wxWindow* parent, UMaterialFunction* func);
 
   void Render(wxMemoryDC& dc);
 
@@ -84,7 +99,7 @@ protected:
   {}
 
 protected:
-  UMaterial* Material = nullptr;
+  wxString ObjectName;
   int32 CanvasOffsetX = 0;
   int32 CanvasOffsetY = 0;
   std::vector<MaterialExpressionInfo> GraphNodes;

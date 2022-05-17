@@ -32,6 +32,7 @@
     <ClCompile Include="App\CustomViews\ArchiveInfo.cpp" />
     <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
+    <ClCompile Include="App\Editors\MaterialFunctionEditor.cpp" />
     <ClCompile Include="App\Windows\WXDialog.cpp" />
     <ClCompile Include="App\Windows\wxModalWindow.cpp" />
     <ClCompile Include="App\Windows\CreatePackageDialog.cpp" />
@@ -72,6 +73,7 @@
     <ClInclude Include="App\Editors\LandscapeEditor.h" />
     <ClInclude Include="App\Editors\LevelEditor.h" />
     <ClInclude Include="App\Editors\MaterialEditor.h" />
+    <ClInclude Include="App\Editors\MaterialFunctionEditor.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
     <ClInclude Include="App\Editors\SoundCueEditor.h" />
