@@ -147,6 +147,9 @@ void PackageWindow::InitLayout()
   wxMenuItem* debugIter = new wxMenuItem(m_menu3, ControlElementId::DebugIter, wxT("Iterate GPKs"), wxEmptyString, wxITEM_NORMAL);
   m_menu3->Append(debugIter);
 
+  wxMenuItem* debugSelect = new wxMenuItem(m_menu3, ControlElementId::DebugSelect, wxT("Select object..."), wxEmptyString, wxITEM_NORMAL);
+  m_menu3->Append(debugSelect);
+
   menuBar->Append(m_menu3, wxT("Debug"));
 
   

@@ -151,6 +151,7 @@ private:
   void DebugOnDupSelection(wxCommandEvent&);
   void DebugMarkDirty(wxCommandEvent&);
   void DebugIteratePackages(wxCommandEvent&);
+  void DebugSelectObject(wxCommandEvent&);
   void DebugIteratePackage(FPackage* package, DebugIterContext& ctx);
 
   void UpdateAccelerators();

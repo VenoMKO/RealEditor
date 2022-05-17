@@ -104,3 +104,22 @@ protected:
 private:
   wxString ClassName;
 };
+
+class DebugObjectPicker : public WXDialog {
+public:
+  DebugObjectPicker(wxWindow* parent);
+
+  PACKAGE_INDEX GetResult() const;
+
+protected:
+  void OnText(wxCommandEvent&);
+  void OnTextEnter(wxCommandEvent&);
+  void OnOkClicked(wxCommandEvent&);
+  void OnCancelClicked(wxCommandEvent&);
+
+protected:
+  wxTextCtrl* CompositeName = nullptr;
+  wxButton* CancelButton = nullptr;
+  wxButton* OpenButton = nullptr;
+  PACKAGE_INDEX Result = 0;
+};

@@ -70,6 +70,7 @@ enum ControlElementId {
   DebugDup,
   DebugDirty,
   DebugIter,
+  DebugSelect,
   Back,
   Forward,
   ContentSplitter,
@@ -1019,6 +1020,29 @@ void PackageWindow::DebugIteratePackages(wxCommandEvent&)
     }
   }
 #endif
+}
+
+void PackageWindow::DebugSelectObject(wxCommandEvent&)
+{
+  DebugObjectPicker picker(this);
+  UObject* selection = nullptr;
+  while (!selection)
+  {
+    if (picker.ShowModal() != wxID_OK)
+    {
+      return;
+    }
+    if (!GetPackage()->IsValidObjectIndex(picker.GetResult()))
+    {
+      REDialog::Error("Invalid index");
+      continue;
+    }
+    selection = GetPackage()->GetObject(picker.GetResult());
+  }
+  if (selection)
+  {
+    SelectObject(selection);
+  }
 }
 
 void PackageWindow::DebugIteratePackage(FPackage* package, DebugIterContext& ctx)
@@ -2396,4 +2420,5 @@ EVT_MENU(ControlElementId::DebugSplitMod, PackageWindow::DebugOnSplitMod)
 EVT_MENU(ControlElementId::DebugDup, PackageWindow::DebugOnDupSelection)
 EVT_MENU(ControlElementId::DebugDirty, PackageWindow::DebugMarkDirty)
 EVT_MENU(ControlElementId::DebugIter, PackageWindow::DebugIteratePackages)
+EVT_MENU(ControlElementId::DebugSelect, PackageWindow::DebugSelectObject)
 wxEND_EVENT_TABLE()
