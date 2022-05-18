@@ -272,6 +272,9 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
     <Manifest>
       <AdditionalManifestFiles>$(ProjectDir)Resources\app.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -309,6 +312,9 @@ msbuild.exe "$(ProjectDir)Extern\wxWidgets\build\msw\wx_vc16.sln" /t:Build /p:Co
     <Manifest>
       <AdditionalManifestFiles>$(ProjectDir)Resources\app.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
