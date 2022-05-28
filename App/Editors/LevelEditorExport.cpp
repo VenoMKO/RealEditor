@@ -17,6 +17,7 @@
 #include <Tera/UTexture.h>
 #include <Tera/ULight.h>
 #include <Tera/UTerrain.h>
+#include <Tera/ULandscape.h>
 #include <Tera/UPrefab.h>
 #include <Tera/UModel.h>
 
@@ -38,6 +39,7 @@ std::vector<UObject*> SaveMaterialMap(UMeshComponent* component, LevelExportCont
 
 void ExportActor(T3DFile& f, LevelExportContext& ctx, UActor* untypedActor);
 void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor);
+void ExportLandscapeActor(T3DFile& f, LevelExportContext& ctx, ULandscape* actor);
 
 std::string GetActorName(UObject* actor)
 {
@@ -2325,6 +2327,14 @@ void LevelEditor::ExportLevel(T3DFile& f, ULevel* level, LevelExportContext& ctx
       }
       ExportTerrainActor(f, ctx, Cast<UTerrain>(actor));
     }
+    if (actor->GetClassName() == ULandscape::StaticClassName())
+    {
+      if (!ctx.Config.GetClassEnabled(FMapExportConfig::ActorClass::Terrains))
+      {
+        continue;
+      }
+      ExportLandscapeActor(f, ctx, Cast<ULandscape>(actor));
+    }
     if (skip.size() && std::find(skip.begin(), skip.end(), actor) != skip.end())
     {
       continue;
@@ -3763,6 +3773,154 @@ void ExportTerrainActor(T3DFile& f, LevelExportContext& ctx, UTerrain* actor)
           parent = Cast<UMaterialInterface>(parent->GetParent());
         }
         ctx.UsedMaterials.push_back(tmat.Material->Material);
+      }
+    }
+  }
+}
+
+void ExportLandscapeActor(T3DFile& f, LevelExportContext& ctx, ULandscape* actor)
+{
+  int32 width = 0;
+  int32 height = 0;
+
+  std::error_code err;
+  std::filesystem::path dst = ctx.GetTerrainDir();
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+  dst /= "HeightMap";
+  dst.replace_extension(HasAVX2() ? "png" : "dds");
+
+
+  if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
+  {
+    if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
+    {
+      std::filesystem::create_directories(ctx.GetTerrainDir(), err);
+    }
+    UTextureBitmapInfo bitmap;
+    actor->GetHeightMapData(bitmap);
+    if (!bitmap.Allocation)
+    {
+      return;
+    }
+    TextureProcessor processor(TextureProcessor::TCFormat::G16, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
+    processor.SetOutputPath(W2A(dst.wstring()));
+    processor.SetInputData(bitmap.Allocation, bitmap.Size);
+    processor.SetInputDataDimensions(bitmap.Width, bitmap.Height);
+    if (!processor.Process())
+    {
+      ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " heightmap: " + processor.GetError());
+      LogW("Failed to export %s heights: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+      free(bitmap.Allocation);
+      return;
+    }
+    free(bitmap.Allocation);
+  }
+
+  dst = ctx.GetTerrainDir();
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
+  dst /= "WeightMaps";
+
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+
+  {
+    for (int32 idx = 0; idx < actor->Layers.size(); ++idx)
+    {
+      const auto& layer = actor->Layers[idx];
+      UTextureBitmapInfo bitmap;
+      actor->GetWeighMapData(layer.LayerName, bitmap);
+      if (!bitmap.Allocation)
+      {
+        continue;
+      }
+      std::filesystem::path texPath = dst / layer.LayerName.String().UTF8();
+      texPath.replace_extension(HasAVX2() ? "png" : "dds");
+      if (ctx.Config.OverrideData || !std::filesystem::exists(texPath))
+      {
+        TextureProcessor processor(TextureProcessor::TCFormat::G8, HasAVX2() ? TextureProcessor::TCFormat::PNG : TextureProcessor::TCFormat::DDS);
+        processor.SetOutputPath(W2A(texPath.wstring()));
+        processor.SetInputData(bitmap.Allocation, bitmap.Size);
+        processor.SetInputDataDimensions(bitmap.Width, bitmap.Height);
+        if (!processor.Process())
+        {
+          ctx.Errors.emplace_back("Error: Failed to export " + GetActorName(actor) + " weightmap: " + processor.GetError());
+          LogW("Failed to export %s weightmap: %s", actor->GetObjectPath().UTF8().c_str(), processor.GetError().c_str());
+        }
+      }
+      free(bitmap.Allocation);
+    }
+  }
+
+  dst = ctx.GetTerrainDir();
+  dst /= actor->GetPackage()->GetPackageName().UTF8();
+  dst /= actor->GetObjectNameString().UTF8();
+
+  if (!std::filesystem::exists(dst, err))
+  {
+    std::filesystem::create_directories(dst, err);
+  }
+
+  dst /= "Setup";
+  dst.replace_extension("txt");
+
+  if (ctx.Config.OverrideData || !std::filesystem::exists(dst, err))
+  {
+    if (!std::filesystem::exists(ctx.GetTerrainDir(), err))
+    {
+      std::filesystem::create_directories(ctx.GetTerrainDir(), err);
+    }
+    std::ofstream s(dst);
+    s << actor->GetObjectPath().UTF8() << "\n\n";
+    FVector loc = actor->Location * ctx.Config.GlobalScale;
+    FVector rot = actor->Rotation.Normalized().Euler();
+    FVector scale = actor->DrawScale3D * actor->DrawScale * ctx.Config.GlobalScale;
+    ctx.TerrainInfo.emplace_back(actor->GetPackage()->GetPackageName().UTF8() + '_' + actor->GetObjectNameString().UTF8() + '\n');
+    ctx.TerrainInfo.emplace_back(FString::Sprintf("\tLocation: (X=%06f,Y=%06f,Z=%06f)\n", loc.X, loc.Y, loc.Z).UTF8().c_str());
+    ctx.TerrainInfo.emplace_back(FString::Sprintf("\tScale: (X=%06f,Y=%06f,Z=%06f)\n", scale.X, scale.Y, scale.Z).UTF8().c_str());
+    if (!rot.IsZero())
+    {
+      ctx.TerrainInfo.emplace_back(FString::Sprintf("\tRotation: (Pitch=%06f,Yaw=%06f,Roll=%06f)\n", rot.Y, rot.Z, rot.X).UTF8().c_str());
+    }
+    s << "Location: (X=" << std::to_string(loc.X) << ",Y=" << std::to_string(loc.Y) << ",Z=" << std::to_string(loc.Z) << ")\n";
+    if (!rot.IsZero())
+    {
+      s << "Rotation: (Pitch=" << std::to_string(rot.Y) << ",Yaw=" << std::to_string(rot.Z) << ",Roll=" << std::to_string(rot.X) << ")\n";
+    }
+    s << "Scale: (X=" << std::to_string(scale.X) << ",Y=" << std::to_string(scale.Y) << ",Z=" << std::to_string(scale.Z) << ")\n\n";
+    s << "Layers(" << std::to_string(actor->LayerInfoObjs.size()) << "):\n";
+
+    const char* padding = "  ";
+    for (int32 idx = 0; idx < actor->Layers.size(); ++idx)
+    {
+      const auto& layer = actor->Layers[idx];
+      s << "Layer " << idx + 1 << ":\n";
+      s << padding << "Name: " << layer.LayerName.String().UTF8() << '\n';
+      s << padding << "Material: ";
+      if (layer.OverrideMaterial)
+      {
+        s << layer.OverrideMaterial->GetLocalDir().UTF8() + layer.OverrideMaterial->GetObjectNameString().UTF8() << '\n';
+        if (ctx.Config.Materials || ctx.Config.Textures)
+        {
+          UMaterialInterface* parent = Cast<UMaterialInterface>(layer.OverrideMaterial->GetParent());
+          while (parent)
+          {
+            ctx.UsedMaterials.push_back(parent);
+            parent = Cast<UMaterialInterface>(parent->GetParent());
+          }
+          ctx.UsedMaterials.push_back(layer.OverrideMaterial);
+        }
+      }
+      else
+      {
+        s << "NULL\n";
       }
     }
   }
