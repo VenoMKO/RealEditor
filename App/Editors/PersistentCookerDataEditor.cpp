@@ -5,6 +5,7 @@
 #include "../Windows/ProgressWindow.h"
 
 #include <Tera/Cast.h>
+#include <Tera/FStructs.h>
 #include <Tera/FPackage.h>
 #include <Tera/UTexture.h>
 #include <Tera/UClass.h>
@@ -226,6 +227,65 @@ void PersistentCookerDataEditor::OnExportClicked(wxCommandEvent& e)
     std::filesystem::path p(root / L"VersionMap.xml");
     doc.save_file(p.wstring().c_str());
   });
+  std::thread scriptShaThread = std::thread([&] {
+    const auto& scriptSha = data->GetFilenameToScriptSHA();
+    if (scriptSha.size())
+    {
+      pugi::xml_document doc;
+      for (const auto& item : scriptSha)
+      {
+        pugi::xml_node node = doc.append_child(W2A(item.first.WString()).c_str());
+        pugi::xml_attribute attr = node.append_attribute("SHA");
+        attr.set_value(item.second.GetString().C_str());
+      }
+      std::filesystem::path p(root / L"SciptSHA.xml");
+      doc.save_file(p.wstring().c_str());
+    }
+  });
+  std::thread timeMapThread = std::thread([&] {
+    const auto& timeMap = data->GetFilenameToTimeMap();
+    if (timeMap.size())
+    {
+      pugi::xml_document doc;
+      for (const auto& item : timeMap)
+      {
+        pugi::xml_node node = doc.append_child("Package");
+        {
+          pugi::xml_attribute attr = node.append_attribute("Name");
+          attr.set_value(W2A(item.first.WString()).c_str());
+        }
+        {
+          pugi::xml_attribute attr = node.append_attribute("Time");
+          attr.set_value(item.second);
+        }
+      }
+      std::filesystem::path p(root / L"FilenameToTimeMap.xml");
+      doc.save_file(p.wstring().c_str());
+    }
+    });
+  std::thread localizationMapThread = std::thread([&] {
+    const auto& localeMap = data->GetLocalizationMap();
+    if (localeMap.size())
+    {
+      pugi::xml_document doc;
+      for (const auto& item : localeMap)
+      {
+        pugi::xml_node root = doc.append_child(W2A(item.first.WString()).c_str());
+        for (const auto& map : item.second)
+        {
+          pugi::xml_node node = root.append_child(W2A(map.first.WString()).c_str());
+          for (const auto& it : map.second)
+          {
+            pugi::xml_node child = node.append_child("Item");
+            pugi::xml_attribute attr = child.append_attribute("FullObjectName");
+            attr.set_value((W2A(it.FullObjectName.GetString().WString())).c_str());
+          }
+        }
+      }
+      std::filesystem::path p(root / L"LocalizationMap.xml");
+      doc.save_file(p.wstring().c_str());
+    }
+    });
 
   ProgressWindow progress(this, wxT("Exporting"));
   progress.SetCurrentProgress(-1);
@@ -238,6 +298,9 @@ void PersistentCookerDataEditor::OnExportClicked(wxCommandEvent& e)
     cookedTextureFileCacheInfoThread.join();
     textureUsageInfoThread.join();
     versionMapThread.join();
+    scriptShaThread.join();
+    timeMapThread.join();
+    localizationMapThread.join();
     SendEvent(&progress, UPDATE_PROGRESS_FINISH);
   }).detach();
 
