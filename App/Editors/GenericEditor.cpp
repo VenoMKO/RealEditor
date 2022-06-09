@@ -24,6 +24,7 @@
 #include "PrefabEditor.h"
 #include "SoundCueEditor.h"
 #include "LandscapeEditor.h"
+#include "PersistentCookerDataEditor.h"
 
 #include "../resource.h"
 
@@ -127,6 +128,10 @@ GenericEditor* GenericEditor::CreateEditor(wxPanel* parent, PackageWindow* windo
     c == US1LevelStreamingVOID::StaticClassName())
   {
     editor = new StreamingLevelEditor(parent, window);
+  }
+  else if (c == UPersistentCookerData::StaticClassName())
+  {
+    editor = new PersistentCookerDataEditor(parent, window);
   }
   else
   {

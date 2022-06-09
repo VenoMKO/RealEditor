@@ -4,6 +4,7 @@
 #include "../App.h"
 #include "WXDialog.h"
 #include "../Misc/AConfiguration.h"
+#include "REDialogs.h"
 
 // Maximum number of files to open from a single file dialog
 #define OPEN_OP_MAX_FILES 14
@@ -640,6 +641,21 @@ namespace IODialog
       wxFileName f(result);
       cfg.LastExportPath = f.GetPathWithSep().ToStdWstring();
       App::GetSharedApp()->SaveConfig();
+    }
+    return result;
+  }
+  wxString OpenDirectoryDialog(wxWindow* parent, const wxString& inPath, const wxString& caption)
+  {
+    REScopedDialogCounter h;
+    wxString path = inPath;
+    if (path.empty())
+    {
+      path = App::GetSharedApp()->GetExportPath();
+    }
+    wxString result = wxDirSelector(caption, path, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST, wxDefaultPosition, parent);
+    if (result.Length())
+    {
+      App::GetSharedApp()->SaveExportPath(result);
     }
     return result;
   }

@@ -167,6 +167,12 @@
     <ClCompile Include="App\Editors\MaterialFunctionEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="App\Windows\BakeModDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Editors\PersistentCookerDataEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\App.h">
@@ -271,6 +277,8 @@
     <ClInclude Include="App\CustomViews\ObjectProperties.h" />
     <ClInclude Include="App\Editors\LandscapeEditor.h" />
     <ClInclude Include="App\Editors\MaterialFunctionEditor.h" />
+    <ClInclude Include="App\Windows\BakeModDialog.h" />
+    <ClInclude Include="App\Editors\PersistentCookerDataEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -21,6 +21,7 @@
     <ClCompile Include="App\Editors\MaterialEditor.cpp" />
     <ClCompile Include="App\Editors\MaterialInstanceEditor.cpp" />
     <ClCompile Include="App\Editors\ObjectRedirectorEditor.cpp" />
+    <ClCompile Include="App\Editors\PersistentCookerDataEditor.cpp" />
     <ClCompile Include="App\Editors\PrefabEditor.cpp" />
     <ClCompile Include="App\Editors\SkelMeshEditor.cpp" />
     <ClCompile Include="App\Editors\SoundCueEditor.cpp" />
@@ -33,6 +34,7 @@
     <ClCompile Include="App\Misc\BulkImportOperation.cpp" />
     <ClCompile Include="App\Misc\CompositeExtractModel.cpp" />
     <ClCompile Include="App\Editors\MaterialFunctionEditor.cpp" />
+    <ClCompile Include="App\Windows\BakeModDialog.cpp" />
     <ClCompile Include="App\Windows\WXDialog.cpp" />
     <ClCompile Include="App\Windows\wxModalWindow.cpp" />
     <ClCompile Include="App\Windows\CreatePackageDialog.cpp" />
@@ -75,6 +77,7 @@
     <ClInclude Include="App\Editors\MaterialEditor.h" />
     <ClInclude Include="App\Editors\MaterialFunctionEditor.h" />
     <ClInclude Include="App\Editors\MaterialInstanceEditor.h" />
+    <ClInclude Include="App\Editors\PersistentCookerDataEditor.h" />
     <ClInclude Include="App\Editors\PrefabEditor.h" />
     <ClInclude Include="App\Editors\SoundCueEditor.h" />
     <ClInclude Include="App\Editors\SpeedTreeEditor.h" />
@@ -87,6 +90,7 @@
     <ClInclude Include="App\Editors\StaticMeshEditor.h" />
     <ClInclude Include="App\Misc\BulkImportOperation.h" />
     <ClInclude Include="App\Misc\CompositeExtractModel.h" />
+    <ClInclude Include="App\Windows\BakeModDialog.h" />
     <ClInclude Include="App\Windows\WXDialog.h" />
     <ClInclude Include="App\Windows\wxModalWindow.h" />
     <ClInclude Include="App\Windows\CreatePackageDialog.h" />
