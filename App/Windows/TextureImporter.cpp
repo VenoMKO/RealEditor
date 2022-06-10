@@ -114,7 +114,7 @@ EPixelFormat TextureImporterOptions::GetDDSPixelFormat(const wxString& ddsPath)
 }
 
 TextureImporterOptions::TextureImporterOptions(wxWindow* parent, EPixelFormat fmt, bool bNormal, bool bSRGB, TextureAddress addressX, TextureAddress addressY)
-  : WXDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 565))
+  : WXDialog(parent, wxID_ANY, wxT("Import options"), wxDefaultPosition, wxSize(552, 595))
 {
   SetSize(FromDIP(GetSize()));
   SetSizeHints(wxDefaultSize, wxDefaultSize);
