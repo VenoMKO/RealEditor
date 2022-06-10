@@ -249,6 +249,7 @@ struct FAppConfig
     CFG_TempS1GameDir,
     CFG_LastDcClient,
     CFG_ShowImports,
+    CFG_LastBakeMod,
 
     // Log
     CFG_LogBegin = 100,
@@ -346,6 +347,8 @@ struct FAppConfig
   int32 LastDcClient = 0;
   // CFG_ShowImports
   bool ShowImports = false;
+  // CFG_LastBakeMod
+  FString LastBakeMod;
 
   // Fast accessor to the last opened GPK file path
   FString GetLastFilePackagePath() const
